@@ -38,6 +38,8 @@ Ensure `~/.local/bin` is on your `PATH` (add `export PATH="$HOME/.local/bin:$PAT
 
 ```bash
 runpodctl doctor                    # First time setup (API key + SSH)
+runpodctl --help                    # See current top-level commands
+runpodctl pod create --help         # Inspect exact current flags before creating
 runpodctl gpu list                  # See available GPUs
 runpodctl hub search vllm           # Find a hub repo
 runpodctl serverless create --hub-id <id> --name "my-vllm"  # Deploy from hub
@@ -47,6 +49,30 @@ runpodctl pod list                  # List your pods
 ```
 
 API key: https://runpod.io/console/user/settings
+
+## Live Help Is Authoritative
+
+Live `runpodctl --help` output is authoritative for exact flags, aliases, and command syntax. Use this skill for workflows, decision rules, safety notes, and common examples.
+
+```bash
+runpodctl --help
+runpodctl <resource> --help
+runpodctl <resource> <action> --help
+```
+
+Before using unfamiliar commands, inspect live help first. Do not rely on this skill as an exhaustive flag reference.
+
+## Decision Rules
+
+- Use Hub when the user wants a known deployable app or worker such as vLLM, ComfyUI, Whisper, or a Runpod-maintained repo.
+- Use templates when the user already has a template ID, wants reusable image/config defaults, or needs lower-level control than Hub.
+- Use direct pod creation with `--image` when the user has a specific Docker image and does not need a saved template.
+- Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
+- Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
+- Do not pass GPU flags when creating CPU pods. Check `runpodctl pod create --help` for the current valid flag set.
+- For SSH, prefer `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. Do not use deprecated interactive SSH commands.
+- Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
+- Clean up paid resources after tests: delete serverless endpoints, pods, and temporary volumes created for validation.
 
 ## Commands
 
@@ -70,10 +96,7 @@ runpodctl pod update <pod-id> --name "new"            # Update pod
 runpodctl pod delete <pod-id>                         # Delete pod (aliases: rm, remove)
 ```
 
-**List flags:** `--all` / `-a`, `--status`, `--since`, `--created-after`, `--name`, `--compute-type`
-**Get flags:** `--include-machine`, `--include-network-volume`
-
-**Create flags:** `--template-id` (required if no `--image`), `--image` (required if no `--template-id`), `--name`, `--gpu-id`, `--gpu-count`, `--compute-type`, `--ssh` (default true), `--container-disk-in-gb`, `--volume-in-gb`, `--volume-mount-path`, `--network-volume-id`, `--ports`, `--env`, `--cloud-type`, `--data-center-ids`, `--global-networking`, `--public-ip`, `--min-cuda-version`, `--docker-args`, `--registry-auth-id`, `--country-code`, `--stop-after`, `--terminate-after`, `--compliance`
+For exact pod flags, run `runpodctl pod <action> --help`.
 
 ### Hub
 
@@ -92,7 +115,7 @@ runpodctl hub get <listing-id>                        # Get by listing id
 runpodctl hub get runpod-workers/worker-vllm          # Get by owner/name
 ```
 
-**List/search flags:** `--type` (POD, SERVERLESS), `--category`, `--order-by` (stars, deploys, createdAt, updatedAt, releasedAt, views), `--order-dir` (asc, desc), `--limit`, `--offset`, `--owner`
+For exact Hub flags, run `runpodctl hub <action> --help`.
 
 ### Serverless (alias: sls)
 
@@ -108,9 +131,7 @@ runpodctl serverless delete <endpoint-id>             # Delete endpoint
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
-**List flags:** `--include-template`, `--include-workers`
-**Update flags:** `--name`, `--template-id` (swap template), `--workers-min`, `--workers-max`, `--idle-timeout`, `--scale-by` (delay or requests), `--scale-threshold`
-**Create flags:** `--name`, `--template-id` or `--hub-id` (one required), `--gpu-id`, `--gpu-count`, `--compute-type`, `--workers-min`, `--workers-max`, `--network-volume-id`, `--data-center-ids`, `--env`, `--min-cuda-version`, `--scale-by`, `--scale-threshold`, `--idle-timeout`, `--flash-boot`, `--execution-timeout`, `--network-volume-ids`
+For exact serverless flags, run `runpodctl serverless <action> --help`.
 
 ### Templates (alias: tpl)
 
@@ -131,9 +152,7 @@ runpodctl template update <template-id> --name "new"  # Update template
 runpodctl template delete <template-id>               # Delete template
 ```
 
-**List flags:** `--type` (official, community, user), `--limit`, `--offset`, `--all`
-**Update flags:** `--name`, `--image`, `--container-disk-in-gb`
-**Create flags:** `--name`, `--image`, `--container-disk-in-gb`, `--volume-in-gb`, `--volume-mount-path`, `--ports`, `--env`, `--docker-start-cmd`, `--docker-entrypoint`, `--serverless`, `--readme`
+For exact template flags, run `runpodctl template <action> --help`.
 
 ### Network Volumes (alias: nv)
 
@@ -145,7 +164,7 @@ runpodctl network-volume update <volume-id> --name "new"  # Update volume
 runpodctl network-volume delete <volume-id>           # Delete volume
 ```
 
-**Create flags:** `--name`, `--size`, `--data-center-id`
+For exact network volume flags, run `runpodctl network-volume <action> --help`.
 
 ### Models
 
@@ -158,6 +177,8 @@ runpodctl model add --name "my-model" --model-path ./model  # Add model
 runpodctl model remove --name "my-model"              # Remove model
 ```
 
+For exact model flags, run `runpodctl model <action> --help`.
+
 ### Registry (alias: reg)
 
 ```bash
@@ -166,6 +187,8 @@ runpodctl registry get <registry-id>                  # Get registry auth
 runpodctl registry create --name "x" --username "u" --password "p"  # Create registry auth
 runpodctl registry delete <registry-id>               # Delete registry auth
 ```
+
+For exact registry flags, run `runpodctl registry <action> --help`.
 
 ### Info
 
@@ -178,6 +201,8 @@ runpodctl billing pods                                # Pod billing history
 runpodctl billing serverless                          # Serverless billing history
 runpodctl billing network-volume                      # Volume billing history
 ```
+
+For exact info and billing flags, run `runpodctl <command> --help` or `runpodctl billing <resource> --help`.
 
 ### SSH
 
