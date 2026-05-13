@@ -5,7 +5,7 @@ allowed-tools: Bash(runpodctl:*)
 compatibility: Linux, macOS
 metadata:
   author: runpod
-  version: "2.2"
+  version: "2.3"
 license: Apache-2.0
 ---
 
@@ -75,7 +75,7 @@ runpodctl pod delete <pod-id>                         # Delete pod (aliases: rm,
 **List flags:** `--all` / `-a`, `--status`, `--since`, `--created-after`, `--name`, `--compute-type`
 **Get flags:** `--include-machine`, `--include-network-volume`
 
-**Create flags:** `--template-id` (required if no `--image`), `--image` (required if no `--template-id`), `--name`, `--gpu-id`, `--gpu-count`, `--compute-type`, `--ssh` (default true), `--container-disk-in-gb`, `--volume-in-gb`, `--volume-mount-path`, `--network-volume-id`, `--ports`, `--env`, `--cloud-type`, `--data-center-ids`, `--global-networking`, `--public-ip`
+**Create flags:** `--template-id` (required if no `--image`), `--image` (required if no `--template-id`), `--name`, `--gpu-id`, `--gpu-count`, `--compute-type`, `--ssh` (default true), `--container-disk-in-gb`, `--volume-in-gb`, `--volume-mount-path`, `--network-volume-id`, `--ports`, `--env`, `--cloud-type`, `--data-center-ids`, `--global-networking`, `--public-ip`, `--min-cuda-version`, `--docker-args`, `--registry-auth-id`, `--country-code`, `--stop-after`, `--terminate-after`, `--compliance`
 
 ### Hub
 
@@ -111,8 +111,8 @@ runpodctl serverless delete <endpoint-id>             # Delete endpoint
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
 **List flags:** `--include-template`, `--include-workers`
-**Update flags:** `--name`, `--workers-min`, `--workers-max`, `--idle-timeout`, `--scaler-type` (QUEUE_DELAY or REQUEST_COUNT), `--scaler-value`
-**Create flags:** `--name`, `--template-id` or `--hub-id` (one required), `--gpu-id`, `--gpu-count`, `--compute-type`, `--workers-min`, `--workers-max`, `--network-volume-id`, `--data-center-ids`, `--env`
+**Update flags:** `--name`, `--template-id` (swap template), `--workers-min`, `--workers-max`, `--idle-timeout`, `--scale-by` (delay or requests), `--scale-threshold`
+**Create flags:** `--name`, `--template-id` or `--hub-id` (one required), `--gpu-id`, `--gpu-count`, `--compute-type`, `--workers-min`, `--workers-max`, `--network-volume-id`, `--data-center-ids`, `--env`, `--min-cuda-version`, `--scale-by`, `--scale-threshold`, `--idle-timeout`, `--flash-boot`, `--execution-timeout`, `--network-volume-ids`
 
 ### Templates (alias: tpl)
 
@@ -134,6 +134,7 @@ runpodctl template delete <template-id>               # Delete template
 ```
 
 **List flags:** `--type` (official, community, user), `--limit`, `--offset`, `--all`
+**Update flags:** `--name`, `--image`, `--container-disk-in-gb`
 **Create flags:** `--name`, `--image`, `--container-disk-in-gb`, `--volume-in-gb`, `--volume-mount-path`, `--ports`, `--env`, `--docker-start-cmd`, `--docker-entrypoint`, `--serverless`, `--readme`
 
 ### Network Volumes (alias: nv)
@@ -186,7 +187,11 @@ runpodctl billing network-volume                      # Volume billing history
 runpodctl ssh info <pod-id>                           # Get SSH info (command + key, does not connect)
 runpodctl ssh list-keys                               # List SSH keys
 runpodctl ssh add-key                                 # Add SSH key
+runpodctl ssh remove-key --name <name>                # Remove key by name
+runpodctl ssh remove-key --fingerprint <fp>           # Remove key by fingerprint
 ```
+
+**Remove-key:** if multiple keys share a name, use `--fingerprint` to disambiguate.
 
 **Agent note:** `ssh info` returns connection details, not an interactive session. If interactive SSH is not available, execute commands remotely via `ssh user@host "command"`.
 
