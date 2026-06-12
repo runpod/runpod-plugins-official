@@ -98,7 +98,7 @@ result = await server.post("/v1/completions", {"prompt": "hello"})
 models = await server.get("/v1/models")
 
 # QB-style
-job = await server.run({"prompt": "hello"})
+job = await server.run({"prompt": "hello"})        # optional: webhook="https://..." for completion callback
 await job.wait()
 print(job.output)
 ```
@@ -130,24 +130,34 @@ Endpoint(
     cpu=CpuInstanceType.CPU5C_4_8,        # CPU type (mutually exclusive with gpu)
     workers=5,                             # shorthand for (0, 5)
     workers=(1, 5),                        # explicit (min, max)
+    max_concurrency=1,                     # concurrent requests per worker (default 1)
     idle_timeout=60,                       # seconds before scale-down (default: 60)
     dependencies=["torch"],                # pip packages for remote exec
     system_dependencies=["ffmpeg"],        # apt-get packages
     image="org/image:tag",                 # pre-built Docker image (client mode)
     env={"KEY": "val"},                    # environment variables
     volume=NetworkVolume(...),             # persistent storage
+    datacenter=DataCenter.US_CA_2,         # pin to datacenter(s) (default: all)
     gpu_count=1,                           # GPUs per worker
     template=PodTemplate(containerDiskInGb=100),
     flashboot=True,                        # fast cold starts
+    accelerate_downloads=True,             # speed up model/file downloads (default True)
+    min_cuda_version=CudaVersion.V12_8,    # minimum CUDA version (default 12.8)
+    scaler_type=ServerlessScalerType.QUEUE_DELAY,  # or REQUEST_COUNT
+    scaler_value=4,                        # scaler threshold (default 4)
     execution_timeout_ms=0,                # max execution time (0 = unlimited)
 )
 ```
 
 - `gpu=` and `cpu=` are mutually exclusive
 - `workers=5` means `(0, 5)`. Default is `(0, 1)`
+- `max_concurrency` -- requests handled concurrently per worker (default 1). Raise it for I/O-bound LB routes so one worker serves multiple requests
 - `idle_timeout` default is **60 seconds**
 - `flashboot=True` (default) -- enables fast cold starts via snapshot restore
 - `gpu_count` -- GPUs per worker (default 1), use >1 for multi-GPU models
+- `datacenter` -- a `DataCenter` enum, list, or string; defaults to all for GPU endpoints
+- `scaler_type` -- `ServerlessScalerType.QUEUE_DELAY` (default) or `REQUEST_COUNT`
+- `DataCenter`, `CudaVersion`, and `ServerlessScalerType` are importable from `runpod_flash`
 
 ### NetworkVolume
 
@@ -182,15 +192,17 @@ await job.cancel()
 | Enum | GPU | VRAM |
 |------|-----|------|
 | `ANY` | any | varies |
-| `AMPERE_16` | RTX A4000 | 16GB |
-| `AMPERE_24` | RTX A5000/L4 | 24GB |
-| `AMPERE_48` | A40/A6000 | 48GB |
-| `AMPERE_80` | A100 | 80GB |
+| `AMPERE_16` | RTX A4000 / A4500 / RTX 4000 Ada / RTX 2000 Ada | 16GB |
+| `AMPERE_24` | RTX A5000 / L4 / RTX 3090 | 24GB |
+| `AMPERE_48` | A40 / RTX A6000 | 48GB |
+| `AMPERE_80` | A100 (PCIe / SXM4) | 80GB |
 | `ADA_24` | RTX 4090 | 24GB |
 | `ADA_32_PRO` | RTX 5090 | 32GB |
-| `ADA_48_PRO` | RTX 6000 Ada | 48GB |
+| `ADA_48_PRO` | RTX 6000 Ada / L40 / L40S | 48GB |
 | `ADA_80_PRO` | H100 PCIe (80GB) / H100 HBM3 (80GB) / H100 NVL (94GB) | 80GB+ |
 | `HOPPER_141` | H200 | 141GB |
+| `BLACKWELL_96` | RTX PRO 6000 Blackwell | 96GB |
+| `BLACKWELL_180` | B200 | 180GB |
 
 ## CPU Types (CpuInstanceType)
 
