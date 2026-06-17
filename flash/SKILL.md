@@ -273,5 +273,6 @@ results = await asyncio.gather(compute(a), compute(b), compute(c))
 
 ## Resources
 
+- Flash source: https://github.com/runpod/flash
 - Runnable examples: https://github.com/runpod/flash-examples
 - Docs: https://docs.runpod.io
