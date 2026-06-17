@@ -273,16 +273,5 @@ results = await asyncio.gather(compute(a), compute(b), compute(c))
 
 ## Resources
 
-When you need a complete, runnable reference, consult these:
-
-- **Examples repo** -- [github.com/runpod/flash-examples](https://github.com/runpod/flash-examples). Working end-to-end apps you can clone (`git clone https://github.com/runpod/flash-examples.git`) and run with `flash run`. Organized by topic:
-  - `01_getting_started/` -- hello world, CPU worker, mixed CPU+GPU workers, declaring dependencies
-  - `02_ml_inference/` -- real model inference (e.g. text-to-speech)
-  - `03_advanced_workers/` -- load-balanced multi-route endpoints
-  - `04_scaling_performance/` -- autoscaling configuration
-  - `05_data_workflows/` -- network volumes for persistent storage
-  - `06_real_world/` -- production apps (e.g. ComfyUI face swap)
-- **Official docs** -- [docs.runpod.io](https://docs.runpod.io)
-- **PyPI package** -- [`runpod-flash`](https://pypi.org/project/runpod-flash/)
-
-If a task resembles one of the categories above (especially load balancers, volumes, or autoscaling), look up the matching example for the current, idiomatic pattern before writing from scratch.
+- Runnable examples: https://github.com/runpod/flash-examples
+- Docs: https://docs.runpod.io
