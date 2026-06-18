@@ -20,4 +20,4 @@ The agent should:
 - Uses `await ep.runsync({"prompt": "hello"}, timeout=...)` with a timeout > 60 (e.g. 120) OR uses `await ep.run(...)` + `await job.wait()` to avoid the 60s cap
 - Accesses the result via `job.output`
 - Uses `await` on the call
-- Does NOT pass `id=` together with `name=` or `image=`
+- Does NOT pass `id=` together with `image=` (`id=` + `name=` is legal and harmless)

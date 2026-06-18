@@ -107,7 +107,7 @@ Connect to an existing endpoint by ID (no provisioning):
 
 ```python
 ep = Endpoint(id="abc123")
-job = await ep.runsync({"input": "hello"})
+job = await ep.runsync({"prompt": "hello"})  # runsync wraps this as {"input": {"prompt": "hello"}}
 print(job.output)
 ```
 
@@ -143,7 +143,7 @@ Endpoint(
     flashboot=True,                        # fast cold starts
     accelerate_downloads=True,             # speed up model/file downloads (default True)
     min_cuda_version=CudaVersion.V12_8,    # minimum CUDA version (default 12.8)
-    scaler_type=ServerlessScalerType.QUEUE_DELAY,  # or REQUEST_COUNT
+    scaler_type=ServerlessScalerType.QUEUE_DELAY,  # default unset; or REQUEST_COUNT
     scaler_value=4,                        # scaler threshold (default 4)
     execution_timeout_ms=0,                # max execution time (0 = unlimited)
 )
@@ -156,7 +156,7 @@ Endpoint(
 - `flashboot=True` (default) -- enables fast cold starts via snapshot restore
 - `gpu_count` -- GPUs per worker (default 1), use >1 for multi-GPU models
 - `datacenter` -- a `DataCenter` enum, list, or string; defaults to all for GPU endpoints
-- `scaler_type` -- `ServerlessScalerType.QUEUE_DELAY` (default) or `REQUEST_COUNT`
+- `scaler_type` -- defaults to `QUEUE_DELAY` for queue-based endpoints and `REQUEST_COUNT` for load-balanced endpoints; pass `ServerlessScalerType.QUEUE_DELAY` or `REQUEST_COUNT` to override
 - `DataCenter`, `CudaVersion`, and `ServerlessScalerType` are importable from `runpod_flash`
 
 ### NetworkVolume
