@@ -17,14 +17,28 @@ pip install runpod-flash                 # requires Python >=3.10,<3.14
 
 # auth option 1: browser-based login (saves token locally)
 flash login
+flash login --no-open                    # headless: print URL instead of opening a browser
+flash login --timeout 300                # max seconds to wait for browser auth (default 600)
 
 # auth option 2: API key via environment variable
 export RUNPOD_API_KEY=your_key
 
 flash init my-project                    # scaffold a new project in ./my-project (writes AGENTS.md + CLAUDE.md)
+flash init .                             # scaffold in the current directory
+flash init my-project --force            # overwrite existing files (-f)
 flash update                             # update the CLI to the latest version
 flash update --version 1.16.0            # pin a specific version (-V also works)
 ```
+
+### Coding agent integration
+
+`flash init` writes an `AGENTS.md` (CLI-first rules for AI coding tools) at the project root, plus a `CLAUDE.md` symlink to it. Existing `AGENTS.md`/`CLAUDE.md` files are left untouched. For projects already past `flash init`, install the agent files manually:
+
+```bash
+python -c "from runpod_flash.rules import install_agent_files; from pathlib import Path; install_agent_files(Path.cwd())"
+```
+
+Opt out by deleting `AGENTS.md` — no subcommand other than `flash init` (or an explicit `install_agent_files(...)`) recreates it.
 
 ## CLI
 
@@ -140,8 +154,8 @@ print(job.output)
 Endpoint(
     name="endpoint-name",                  # required (unless id= set)
     id=None,                               # connect to existing endpoint
-    gpu=GpuGroup.AMPERE_80,               # single GPU type (default: ANY)
-    gpu=[GpuGroup.ADA_24, GpuGroup.AMPERE_80],  # or list for auto-select by supply
+    gpu=GpuGroup.AMPERE_80,               # GpuGroup tier or GpuType pinned model (default: GpuGroup.ANY)
+    gpu=[GpuGroup.ADA_24, GpuGroup.AMPERE_80],  # or list (either type) for auto-select by supply
     cpu=CpuInstanceType.CPU5C_4_8,        # CPU type (mutually exclusive with gpu)
     workers=5,                             # shorthand for (0, 5)
     workers=(1, 5),                        # explicit (min, max)
@@ -165,6 +179,7 @@ Endpoint(
 ```
 
 - `gpu=` and `cpu=` are mutually exclusive
+- `gpu=` accepts a `GpuGroup`, a `GpuType`, or a list of either (see GPU Types below)
 - `workers=5` means `(0, 5)`. Default is `(0, 1)`
 - `max_concurrency` -- requests handled concurrently per worker (default 1). Raise it for I/O-bound LB routes so one worker serves multiple requests
 - `idle_timeout` default is **60 seconds**
@@ -202,7 +217,11 @@ print(job.id, job.output, job.error, job.done)
 await job.cancel()
 ```
 
-## GPU Types (GpuGroup)
+## GPU Types
+
+`gpu=` accepts a `GpuGroup` (a supply pool by VRAM tier), a `GpuType` (a pinned GPU model), or a list of either. `GpuGroup` picks the cheapest available GPU within a tier; `GpuType` pins a specific model.
+
+### GpuGroup (supply pool)
 
 | Enum | GPU | VRAM |
 |------|-----|------|
@@ -218,6 +237,19 @@ await job.cancel()
 | `HOPPER_141` | H200 | 141GB |
 | `BLACKWELL_96` | RTX PRO 6000 Blackwell | 96GB |
 | `BLACKWELL_180` | B200 | 180GB |
+
+### GpuType (pinned model)
+
+Pin an exact GPU model. Members include `NVIDIA_GEFORCE_RTX_4090`, `NVIDIA_GEFORCE_RTX_5090`, `NVIDIA_RTX_6000_ADA_GENERATION`, `NVIDIA_H100_80GB_HBM3`, `NVIDIA_A100_80GB_PCIe`, `NVIDIA_A100_SXM4_80GB`, `NVIDIA_H200`, `NVIDIA_B200`, the `NVIDIA_RTX_PRO_6000_BLACKWELL_*` editions (Server / Workstation / Max-Q), and the Ampere/Ada RTX A-series models (`NVIDIA_RTX_A4000`, `A4500`, `A5000`, `A6000`, `NVIDIA_L4`, `NVIDIA_A40`, `NVIDIA_GEFORCE_RTX_3090`, `NVIDIA_RTX_4000_ADA_GENERATION`, `NVIDIA_RTX_2000_ADA_GENERATION`).
+
+```python
+from runpod_flash import Endpoint, GpuType
+
+@Endpoint(name="pinned", gpu=GpuType.NVIDIA_GEFORCE_RTX_4090, dependencies=["torch"])
+async def run(data):
+    import torch
+    return {"gpu": torch.cuda.get_device_name(0)}
+```
 
 ## CPU Types (CpuInstanceType)
 
