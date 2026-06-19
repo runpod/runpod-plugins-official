@@ -6,12 +6,14 @@ user-invocable: true
 
 # Runpod Flash
 
-Write code locally, test with `flash run` (dev server at localhost:8888), and flash automatically provisions and deploys to remote GPUs/CPUs in the cloud. `Endpoint` handles everything.
+Write code locally, test with `flash dev` (dev server at localhost:8888), and flash automatically provisions and deploys to remote GPUs/CPUs in the cloud. `Endpoint` handles everything.
 
 ## Setup
 
 ```bash
-pip install runpod-flash                 # requires Python >=3.10
+pip install runpod-flash                 # requires Python >=3.10,<3.14
+# or: uv tool install runpod-flash       # install as a standalone uv tool
+# or: npx skills add runpod/skills       # add the Flash skill to an agent project
 
 # auth option 1: browser-based login (saves token locally)
 flash login
@@ -19,26 +21,39 @@ flash login
 # auth option 2: API key via environment variable
 export RUNPOD_API_KEY=your_key
 
-flash init my-project                    # scaffold a new project in ./my-project
+flash init my-project                    # scaffold a new project in ./my-project (writes AGENTS.md + CLAUDE.md)
+flash update                             # update the CLI to the latest version
+flash update --version 1.16.0            # pin a specific version (-V also works)
 ```
 
 ## CLI
 
+`flash dev` is the canonical dev-server command (`flash run` still works as a hidden alias).
+
 ```bash
-flash run                                # start local dev server at localhost:8888
-flash run --auto-provision               # same, but pre-provision endpoints (no cold start)
-flash build                              # package artifact for deployment (500MB limit)
-flash build --exclude pkg1,pkg2          # exclude packages from build
+flash dev                                # start local dev server at localhost:8888
+flash dev --auto-provision               # same, but pre-provision endpoints (no cold start)
+flash dev --port 9000 --host 0.0.0.0     # custom port/host; --reload/--no-reload toggles autoreload
+flash build                              # package artifact for deployment (1500MB limit)
+flash build --exclude pkg1,pkg2          # exclude additional packages (torch is auto-excluded)
+flash build --no-deps                    # skip transitive deps; --python-version 3.11 / --output name.tar.gz
 flash deploy                             # build + deploy (auto-selects env if only one)
 flash deploy --env staging               # build + deploy to "staging" environment
 flash deploy --app my-app --env prod     # deploy a specific app to an environment
 flash deploy --preview                   # build + launch local preview in Docker
+flash deploy --no-deps --python-version 3.11  # same build flags apply to deploy
 flash env list                           # list deployment environments
 flash env create staging                 # create "staging" environment
 flash env get staging                    # show environment details + resources
 flash env delete staging                 # delete environment + tear down resources
+flash app list                           # list flash apps in your account
+flash app create my-app                  # create a flash app
+flash app get my-app                     # show an app's environments + builds
+flash app delete my-app                  # delete an app and all its resources
 flash undeploy list                      # list all active endpoints
 flash undeploy my-endpoint               # remove a specific endpoint
+flash undeploy --all                     # remove all endpoints (--interactive/-i to pick, --force/-f to skip prompts)
+flash undeploy --cleanup-stale           # remove endpoints whose code no longer exists locally
 ```
 
 ## Endpoint: Three Modes
