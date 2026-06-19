@@ -11,12 +11,9 @@ Write code locally, test with `flash dev` (dev server at localhost:8888), and fl
 ## Setup
 
 ```bash
-# install the CLI (uv is preferred; pip is a fallback) — requires Python 3.10-3.13
+# install the CLI — requires Python 3.10-3.13
 uv tool install runpod-flash
 pip install runpod-flash
-
-# optional: add the Flash skill to an AI coding-agent project
-npx skills add runpod/skills
 
 # auth option 1: browser-based login (saves token locally)
 flash login
@@ -33,15 +30,7 @@ flash update                             # update the CLI to the latest version
 flash update --version 1.16.0            # pin a specific version (-V also works)
 ```
 
-### Coding agent integration
-
-`flash init` writes an `AGENTS.md` (CLI-first rules for AI coding tools) at the project root, plus a `CLAUDE.md` symlink to it. Existing `AGENTS.md`/`CLAUDE.md` files are left untouched. For projects already past `flash init`, install the agent files manually:
-
-```bash
-python -c "from runpod_flash.rules import install_agent_files; from pathlib import Path; install_agent_files(Path.cwd())"
-```
-
-Opt out by deleting `AGENTS.md` — no subcommand other than `flash init` (or an explicit `install_agent_files(...)`) recreates it.
+`flash init` writes `AGENTS.md` (+ a `CLAUDE.md` symlink). To add them to an existing project: `python -c "from runpod_flash.rules import install_agent_files; from pathlib import Path; install_agent_files(Path.cwd())"`.
 
 ## CLI
 
