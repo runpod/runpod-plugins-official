@@ -246,7 +246,7 @@ Pin an exact GPU model. Members include `NVIDIA_GEFORCE_RTX_4090`, `NVIDIA_GEFOR
 from runpod_flash import Endpoint, GpuType
 
 @Endpoint(name="pinned", gpu=GpuType.NVIDIA_GEFORCE_RTX_4090, dependencies=["torch"])
-async def run(data):
+async def report_gpu(data):
     import torch
     return {"gpu": torch.cuda.get_device_name(0)}
 ```
