@@ -11,9 +11,12 @@ Write code locally, test with `flash dev` (dev server at localhost:8888), and fl
 ## Setup
 
 ```bash
-pip install runpod-flash                 # requires Python >=3.10,<3.14
-# or: uv tool install runpod-flash       # install as a standalone uv tool
-# or: npx skills add runpod/skills       # add the Flash skill to an agent project
+# install the CLI (uv is preferred; pip is a fallback) — requires Python 3.10-3.13
+uv tool install runpod-flash
+pip install runpod-flash
+
+# optional: add the Flash skill to an AI coding-agent project
+npx skills add runpod/skills
 
 # auth option 1: browser-based login (saves token locally)
 flash login
@@ -48,14 +51,11 @@ Opt out by deleting `AGENTS.md` — no subcommand other than `flash init` (or an
 flash dev                                # start local dev server at localhost:8888
 flash dev --auto-provision               # same, but pre-provision endpoints (no cold start)
 flash dev --port 9000 --host 0.0.0.0     # custom port/host; --reload/--no-reload toggles autoreload
-flash build                              # package artifact for deployment (1500MB limit)
-flash build --exclude pkg1,pkg2          # exclude additional packages (torch is auto-excluded)
-flash build --no-deps                    # skip transitive deps; --python-version 3.11 / --output name.tar.gz
 flash deploy                             # build + deploy (auto-selects env if only one)
 flash deploy --env staging               # build + deploy to "staging" environment
 flash deploy --app my-app --env prod     # deploy a specific app to an environment
 flash deploy --preview                   # build + launch local preview in Docker
-flash deploy --no-deps --python-version 3.11  # same build flags apply to deploy
+flash deploy --no-deps --python-version 3.11  # build flags below also apply to deploy
 flash env list                           # list deployment environments
 flash env create staging                 # create "staging" environment
 flash env get staging                    # show environment details + resources
@@ -68,6 +68,10 @@ flash undeploy list                      # list all active endpoints
 flash undeploy my-endpoint               # remove a specific endpoint
 flash undeploy --all                     # remove all endpoints (--interactive/-i to pick, --force/-f to skip prompts)
 flash undeploy --cleanup-stale           # remove endpoints whose code no longer exists locally
+
+# `flash build` is build-only (no deploy) — mainly for debugging the artifact; `flash deploy` builds for you
+flash build                              # package the artifact without deploying (1500MB limit; torch auto-excluded)
+flash build --no-deps                    # build flags: --no-deps, --exclude pkg1,pkg2, --output name.tar.gz, --python-version 3.11
 ```
 
 ## Endpoint: Three Modes
@@ -154,8 +158,7 @@ print(job.output)
 Endpoint(
     name="endpoint-name",                  # required (unless id= set)
     id=None,                               # connect to existing endpoint
-    gpu=GpuGroup.AMPERE_80,               # GpuGroup tier or GpuType pinned model (default: GpuGroup.ANY)
-    gpu=[GpuGroup.ADA_24, GpuGroup.AMPERE_80],  # or list (either type) for auto-select by supply
+    gpu=GpuGroup.AMPERE_80,               # GpuGroup tier, GpuType model, or list of either (default: GpuGroup.ANY)
     cpu=CpuInstanceType.CPU5C_4_8,        # CPU type (mutually exclusive with gpu)
     workers=5,                             # shorthand for (0, 5)
     workers=(1, 5),                        # explicit (min, max)
@@ -166,7 +169,7 @@ Endpoint(
     image="org/image:tag",                 # pre-built Docker image (client mode)
     env={"KEY": "val"},                    # environment variables
     volume=NetworkVolume(...),             # persistent storage
-    datacenter=DataCenter.US_CA_2,         # pin to datacenter(s) (default: all)
+    datacenter=DataCenter.US_CA_2,         # DataCenter | list | str (default: None)
     gpu_count=1,                           # GPUs per worker
     template=PodTemplate(containerDiskInGb=100),
     flashboot=True,                        # fast cold starts
@@ -185,7 +188,7 @@ Endpoint(
 - `idle_timeout` default is **60 seconds**
 - `flashboot=True` (default) -- enables fast cold starts via snapshot restore
 - `gpu_count` -- GPUs per worker (default 1), use >1 for multi-GPU models
-- `datacenter` -- a `DataCenter` enum, list, or string; defaults to all for GPU endpoints
+- `datacenter` -- a `DataCenter` enum, list, or string; defaults to `None` (unset)
 - `scaler_type` -- defaults to `QUEUE_DELAY` for queue-based endpoints and `REQUEST_COUNT` for load-balanced endpoints; pass `ServerlessScalerType.QUEUE_DELAY` or `REQUEST_COUNT` to override
 - `DataCenter`, `CudaVersion`, and `ServerlessScalerType` are importable from `runpod_flash`
 
