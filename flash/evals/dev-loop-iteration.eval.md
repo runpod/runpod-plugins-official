@@ -1,36 +1,59 @@
-# Iterate on a flash GPU handler with live remote logs
+# Iterate on a flash GPU handler against a live remote worker
+
+> **LIVE eval.** This runs against real Runpod infrastructure — it provisions a real
+> worker and incurs cost. It is graded on what actually happened at runtime, not on what
+> the agent says it would do.
+
+## Setup
+
+- Requires `RUNPOD_API_KEY` in the environment (flash CLI authenticated, v1.17.0+).
+- Copy the fixture to a scratch dir so the graded fix does not mutate the committed
+  fixture: `cp -r flash/evals/fixtures/dev-loop /tmp/dev-loop-eval && cd /tmp/dev-loop-eval`
+  (or `git checkout flash/evals/fixtures/dev-loop` afterward).
+- The fixture's `/predict` handler references a module-level `VOL` constant, which does not
+  ship to the remote worker — it fails at runtime until moved into the function body.
 
 ## Prompt
 
-I'm building an image-to-3D endpoint with runpod-flash and need to iterate on my GPU
-handler fast — testing each change against a real GPU worker and watching the logs. My
-handler works when I `flash deploy` it, but I want a tighter loop than re-deploying every
-time. It also just failed with `NameError: name 'VOL' is not defined`, where `VOL` is a
-constant I defined at the top of the module. How should I run this, and why is `VOL`
-failing?
+Use the runpod-flash project in this directory (an image-to-3D style endpoint). The
+`/predict` route fails when it actually runs on a worker. Iterate against a **real** remote
+worker: start the dev loop, send a request, read the worker's logs, fix whatever is broken,
+and confirm a successful JSON response. I don't want to re-deploy on every change.
 
 ## Expected behavior
 
-The agent should:
+The agent should actually execute (not merely describe) the following:
 
-1. Recommend `flash dev` (not repeated `flash deploy`) as the iteration loop
-2. Explain that `flash dev` runs the function on a **remote** GPU/CPU worker (not locally)
-   while hot-reloading on save and streaming the worker's logs live
-3. Run the dev server as a **background** process (it is long-running / blocking) and read
-   its captured log output to see the remote worker's logs
-4. Explain the `NameError`: only the function body ships to the worker, so the
-   module-level `VOL` constant does not exist remotely — fix by moving it inside the
-   function body
-5. Note that `flash deploy` imports the whole module so it can mask this, while `flash dev`
-   surfaces it
+1. Recommend and use `flash dev` (not repeated `flash deploy`) for the loop, and run it as a
+   **background** process so it does not block the session.
+2. Determine the dev server's **actual** URL from its startup log rather than assuming
+   `localhost:8888` (flash bumps the port if 8888 is taken).
+3. Send a real request to the correct **file-namespaced** route (`main.py` → `/main/predict`),
+   which provisions and dispatches to the remote worker.
+4. Read the captured dev-server log to observe the **real** error from the worker.
+5. Diagnose it: only the function body ships, so module-level `VOL` is undefined remotely.
+   Fix by moving `VOL` inside the handler and rely on hot-reload (no redeploy).
+6. Re-send the request and confirm a real successful response.
+7. Undeploy everything it provisioned.
 
 ## Assertions
 
-- Recommends `flash dev` for the iteration loop and does NOT recommend repeated `flash deploy` for iteration
-- States that `flash dev` executes the function on a REMOTE worker, not on the local machine
-- Mentions hot-reload on save AND live/streamed worker logs
-- Runs `flash dev` as a background / non-blocking process (does NOT run it as a plain blocking command)
-- Reads the dev server's log output (file or BashOutput) to inspect the remote worker logs
-- Diagnoses the `NameError` as the module-level `VOL` not shipping to the worker (only the function body ships)
-- Fixes it by moving `VOL` inside the decorated function body
-- Notes that `flash deploy` can mask this bug while `flash dev` surfaces it
+- Runs `flash dev` as a background / non-blocking process (does NOT run it as a plain
+  blocking command and hang)
+- Determines the actual host:port from the dev-server output (does NOT hardcode `8888` when
+  it was bumped)
+- Sends the request to the file-namespaced route (`/main/predict`), not the bare `/predict`
+- Observes the **verbatim** runtime error `NameError: name 'VOL' is not defined` in the
+  worker's streamed logs (it is reported from the live run, not guessed)
+- Fixes the bug by moving `VOL` into the function body and re-tests via hot-reload, without
+  running `flash deploy`
+- Obtains a real **HTTP 200** whose body contains `"ok": true` (e.g.
+  `{"ok":true,"vol":"/runpod-volume/models","echo":...}`)
+- Runs `flash undeploy --all --force` (or equivalent) and confirms no endpoints remain
+
+## Cleanup
+
+- `flash undeploy --all --force` must report the provisioned endpoint deleted, and
+  `flash undeploy list` must show no endpoints.
+- The agent must only stop processes/ports it started.
+- Restore the fixture if it was edited in place: `git checkout flash/evals/fixtures/dev-loop`.
