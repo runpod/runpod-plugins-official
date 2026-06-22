@@ -113,13 +113,19 @@ capture its output, and drive it over HTTP. The captured log is the remote worke
 stream (cold start, model load, `print`s, tracebacks) — read it to debug.
 
 ```bash
-flash dev > /tmp/flash-dev.log 2>&1 &                                    # background
-until curl -sf http://localhost:8888/openapi.json >/dev/null; do sleep 2; done  # wait for ready
-curl -s localhost:8888/predict -d '{"data":[1,2,3]}'                     # dispatches to remote worker
+flash dev > /tmp/flash-dev.log 2>&1 &                          # background; never run it blocking
+until grep -q "flash dev  localhost:" /tmp/flash-dev.log; do sleep 2; done   # wait for startup
+URL=$(grep -o "localhost:[0-9]*" /tmp/flash-dev.log | head -1)               # actual port (8888 bumps if taken)
+curl -s "$URL/main/predict" -d '{"data": {...}}'               # dispatches to the remote worker
 ```
 
-Edit a handler and save — hot-reload re-syncs the body; just re-send the request, no
-redeploy. Add `--auto-provision` to skip the first-call cold start. `kill %1` when done.
+- **Read the real URL from the log** — flash auto-bumps the port if 8888 is in use, and
+  prints `✓ flash dev  localhost:<port>` plus the route table.
+- **Routes are namespaced by file**: `main.py`'s `/predict` is served at `/main/predict`.
+- A handler typed `def predict(data: dict)` expects the arg as a top-level field — send
+  `{"data": {...}}`, not the bare object (otherwise 422).
+- Edit a handler and save — hot-reload re-syncs the body; just re-send the request, no
+  redeploy. Add `--auto-provision` to skip the first-call cold start. `kill %1` when done.
 
 ## Endpoint: Three Modes
 
