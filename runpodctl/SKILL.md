@@ -125,14 +125,15 @@ runpodctl serverless get <endpoint-id>                # Get endpoint details
 runpodctl serverless create --name "x" --template-id "tpl_abc"  # Create from template
 runpodctl serverless create --name "x" --hub-id <listing-id>    # Create from hub repo
 runpodctl serverless create --hub-id <id> --env MODEL_NAME=my-model  # Override hub env defaults
-runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --model-reference https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main  # Attach & cache a HF model (template + GPU only)
+runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --model-reference https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main  # Attach & cache a HF model (template or hub, GPU only)
+runpodctl serverless create --hub-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --model-reference https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main  # Attach a model on a hub deploy
 runpodctl serverless update <endpoint-id> --workers-max 5       # Update endpoint
 runpodctl serverless delete <endpoint-id>             # Delete endpoint
 ```
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
-**Model cache (`--model-reference`):** Attach a Hugging Face model to the endpoint by full URL with a ref, e.g. `https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main` (the trailing `:main` is the branch/tag/revision). Runpod caches the model on the host in the default Hugging Face cache directory (`/runpod-volume/huggingface-cache/hub/`), so the worker loads it directly — no need to bake the model into the image or attach a network volume. The flag is repeatable, so you can attach multiple models, and uses the standard HF cache path, so anything that already reads the Hugging Face cache (Transformers, vLLM, etc.) picks it up automatically. Only valid with `--template-id` (not `--hub-id`) and `--compute-type GPU`. Requires runpodctl v2.4.0+.
+**Model cache (`--model-reference`):** Attach a Hugging Face model to the endpoint by full URL with a ref, e.g. `https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main` (the trailing `:main` is the branch/tag/revision). Runpod caches the model on the host in the default Hugging Face cache directory (`/runpod-volume/huggingface-cache/hub/`), so the worker loads it directly — no need to bake the model into the image or attach a network volume. The flag is repeatable, so you can attach multiple models, and uses the standard HF cache path, so anything that already reads the Hugging Face cache (Transformers, vLLM, etc.) picks it up automatically. Works with both `--template-id` and `--hub-id`, but only with `--compute-type GPU`. Requires runpodctl v2.4.0+.
 
 For exact serverless flags, run `runpodctl serverless <action> --help`.
 
