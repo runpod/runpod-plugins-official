@@ -6,7 +6,7 @@ user-invocable: true
 
 # Runpod Flash
 
-Write code locally, test with `flash dev` (dev server at localhost:8888), and flash automatically provisions and deploys to remote GPUs/CPUs in the cloud. `Endpoint` handles everything.
+Write code locally, iterate with `flash dev` — it runs your functions on remote Runpod GPUs/CPUs with hot-reload and live worker logs — then `flash deploy` to ship. `Endpoint` handles provisioning.
 
 ## Setup
 
@@ -17,17 +17,24 @@ pip install runpod-flash
 
 # auth option 1: browser-based login (saves token locally)
 flash login
-flash login --no-open                    # headless: print URL instead of opening a browser
-flash login --timeout 300                # max seconds to wait for browser auth (default 600)
+# headless: print URL instead of opening a browser
+flash login --no-open
+# max seconds to wait for browser auth (default 600)
+flash login --timeout 300
 
 # auth option 2: API key via environment variable
 export RUNPOD_API_KEY=your_key
 
-flash init my-project                    # scaffold a new project in ./my-project (writes AGENTS.md + CLAUDE.md)
-flash init .                             # scaffold in the current directory
-flash init my-project --force            # overwrite existing files (-f)
-flash update                             # update the CLI to the latest version
-flash update --version 1.16.0            # pin a specific version (-V also works)
+# scaffold a new project in ./my-project (writes AGENTS.md + CLAUDE.md)
+flash init my-project
+# scaffold in the current directory
+flash init .
+# overwrite existing files (-f)
+flash init my-project --force
+# update the CLI to the latest version
+flash update
+# pin a specific version (-V also works)
+flash update --version 1.16.0
 ```
 
 `flash init` writes `AGENTS.md` (+ a `CLAUDE.md` symlink). To add them to an existing project: `python -c "from runpod_flash.rules import install_agent_files; from pathlib import Path; install_agent_files(Path.cwd())"`.
@@ -37,31 +44,96 @@ flash update --version 1.16.0            # pin a specific version (-V also works
 `flash dev` is the canonical dev-server command (`flash run` still works as a hidden alias).
 
 ```bash
-flash dev                                # start local dev server at localhost:8888
-flash dev --auto-provision               # same, but pre-provision endpoints (no cold start)
-flash dev --port 9000 --host 0.0.0.0     # custom port/host; --reload/--no-reload toggles autoreload
-flash deploy                             # build + deploy (auto-selects env if only one)
-flash deploy --env staging               # build + deploy to "staging" environment
-flash deploy --app my-app --env prod     # deploy a specific app to an environment
-flash deploy --preview                   # build + launch local preview in Docker
-flash deploy --no-deps --python-version 3.11  # build flags below also apply to deploy
-flash env list                           # list deployment environments
-flash env create staging                 # create "staging" environment
-flash env get staging                    # show environment details + resources
-flash env delete staging                 # delete environment + tear down resources
-flash app list                           # list flash apps in your account
-flash app create my-app                  # create a flash app
-flash app get my-app                     # show an app's environments + builds
-flash app delete my-app                  # delete an app and all its resources
-flash undeploy list                      # list all active endpoints
-flash undeploy my-endpoint               # remove a specific endpoint
-flash undeploy --all                     # remove all endpoints (--interactive/-i to pick, --force/-f to skip prompts)
-flash undeploy --cleanup-stale           # remove endpoints whose code no longer exists locally
+# local server at :8888, but functions run on REMOTE GPU/CPU workers;
+# hot-reloads on save and streams the worker's logs live to your terminal
+flash dev
+# same, but pre-provision endpoints (no cold start on first call)
+flash dev --auto-provision
+# custom port/host; --reload/--no-reload toggles autoreload
+flash dev --port 9000 --host 0.0.0.0
+# build + deploy (auto-selects env if only one)
+flash deploy
+# build + deploy to "staging" environment
+flash deploy --env staging
+# deploy a specific app to an environment
+flash deploy --app my-app --env prod
+# build + launch local preview in Docker
+flash deploy --preview
+# build flags below also apply to deploy
+flash deploy --no-deps --python-version 3.11
+# list deployment environments
+flash env list
+# create "staging" environment
+flash env create staging
+# show environment details + resources
+flash env get staging
+# delete environment + tear down resources
+flash env delete staging
+# list flash apps in your account
+flash app list
+# create a flash app
+flash app create my-app
+# show an app's environments + builds
+flash app get my-app
+# delete an app and all its resources
+flash app delete my-app
+# list all active endpoints
+flash undeploy list
+# remove a specific endpoint
+flash undeploy my-endpoint
+# remove all endpoints (--interactive/-i to pick, --force/-f to skip prompts)
+flash undeploy --all
+# remove endpoints whose code no longer exists locally
+flash undeploy --cleanup-stale
 
-# `flash build` is build-only (no deploy) — mainly for debugging the artifact; `flash deploy` builds for you
-flash build                              # package the artifact without deploying (1500MB limit; torch auto-excluded)
-flash build --no-deps                    # build flags: --no-deps, --exclude pkg1,pkg2, --output name.tar.gz, --python-version 3.11
+# build-only (no deploy) — mainly for debugging the artifact; `flash deploy` builds for you
+# package the artifact without deploying (1500MB limit; torch auto-excluded)
+flash build
+# build flags: --no-deps, --exclude pkg1,pkg2, --output name.tar.gz, --python-version 3.11
+flash build --no-deps
 ```
+
+## Dev vs Deploy
+
+- `flash dev` — **iterate.** Local server at `:8888`, but your decorated functions
+  execute on **remote GPU/CPU workers**. Hot-reloads on save and **streams the worker's
+  logs live** to the terminal. No build/upload/deploy wait — use this the whole time you
+  develop.
+- `flash deploy` — **ship.** Builds an artifact and deploys a stable endpoint. Slow
+  (build + upload + provision); only do this once the code works under `flash dev`.
+
+`flash dev` ships **only the function body** to the worker, so a `NameError` for a
+module-level name surfaces immediately here. `flash deploy` imports the whole module and
+can mask that bug (see Gotcha #1). Develop against `flash dev` and you catch it first.
+
+## Autonomous Dev Loop (for agents)
+
+`flash dev` is a long-running foreground server — never call it as a blocking command or
+it hangs the session. Run it in the background, capture its output, and drive it with
+HTTP. This is how an agent iterates without a human watching:
+
+```bash
+# 1. start the dev server in the BACKGROUND, tee logs to a file you can read
+flash dev > /tmp/flash-dev.log 2>&1 &
+# 2. wait until the local server answers (poll the port, don't guess)
+until curl -sf http://localhost:8888/openapi.json >/dev/null 2>&1; do sleep 2; done
+# 3. call your route — this dispatches to the remote worker
+curl -s -X POST http://localhost:8888/predict -H 'content-type: application/json' -d '{"data":[1,2,3]}'
+# 4. read the REMOTE worker's live logs (cold start, model load, prints, tracebacks)
+cat /tmp/flash-dev.log
+```
+
+- Edit a handler and **save** — hot-reload re-syncs the function body automatically; just
+  re-send the request. No restart, no redeploy.
+- The remote worker's stdout/stderr (model download, CUDA init, your `print`s, full
+  tracebacks) appears in `/tmp/flash-dev.log`. **Read that file to debug** — it's the
+  live log stream the issue is about, not a local execution trace.
+- Queue-based functions are exposed by the dev server too; use `--auto-provision` to skip
+  the first-call cold start.
+- When done, stop the server: `kill %1` (or kill the background PID).
+
+In Claude Code, run step 1 with `run_in_background: true` and read the log via BashOutput
+instead of a temp file.
 
 ## Endpoint: Three Modes
 
@@ -300,7 +372,7 @@ results = await asyncio.gather(compute(a), compute(b), compute(c))
 
 ## Gotchas
 
-1. **Imports outside function** -- most common error. Everything inside the decorated function.
+1. **Only the function body ships to the worker** -- most common error. Put imports *and* any module-level constants/helpers the function uses *inside* the decorated body. `flash deploy` imports the whole module so module globals happen to work; `flash dev` ships just the body, so a module-level name raises `NameError`. A handler that works deployed can break under dev — fix it by moving everything inside.
 2. **Forgetting await** -- all decorated functions and client methods need `await`.
 3. **Missing dependencies** -- must list in `dependencies=[]`.
 4. **gpu/cpu are exclusive** -- pick one per Endpoint.
