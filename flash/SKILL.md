@@ -106,34 +106,20 @@ flash build --no-deps
 module-level name surfaces immediately here. `flash deploy` imports the whole module and
 can mask that bug (see Gotcha #1). Develop against `flash dev` and you catch it first.
 
-## Autonomous Dev Loop (for agents)
+## Autonomous Dev Loop
 
-`flash dev` is a long-running foreground server — never call it as a blocking command or
-it hangs the session. Run it in the background, capture its output, and drive it with
-HTTP. This is how an agent iterates without a human watching:
+`flash dev` is a long-running server — run it in the background (don't block on it),
+capture its output, and drive it over HTTP. The captured log is the remote worker's live
+stream (cold start, model load, `print`s, tracebacks) — read it to debug.
 
 ```bash
-# 1. start the dev server in the BACKGROUND, tee logs to a file you can read
-flash dev > /tmp/flash-dev.log 2>&1 &
-# 2. wait until the local server answers (poll the port, don't guess)
-until curl -sf http://localhost:8888/openapi.json >/dev/null 2>&1; do sleep 2; done
-# 3. call your route — this dispatches to the remote worker
-curl -s -X POST http://localhost:8888/predict -H 'content-type: application/json' -d '{"data":[1,2,3]}'
-# 4. read the REMOTE worker's live logs (cold start, model load, prints, tracebacks)
-cat /tmp/flash-dev.log
+flash dev > /tmp/flash-dev.log 2>&1 &                                    # background
+until curl -sf http://localhost:8888/openapi.json >/dev/null; do sleep 2; done  # wait for ready
+curl -s localhost:8888/predict -d '{"data":[1,2,3]}'                     # dispatches to remote worker
 ```
 
-- Edit a handler and **save** — hot-reload re-syncs the function body automatically; just
-  re-send the request. No restart, no redeploy.
-- The remote worker's stdout/stderr (model download, CUDA init, your `print`s, full
-  tracebacks) appears in `/tmp/flash-dev.log`. **Read that file to debug** — it's the
-  live log stream the issue is about, not a local execution trace.
-- Queue-based functions are exposed by the dev server too; use `--auto-provision` to skip
-  the first-call cold start.
-- When done, stop the server: `kill %1` (or kill the background PID).
-
-In Claude Code, run step 1 with `run_in_background: true` and read the log via BashOutput
-instead of a temp file.
+Edit a handler and save — hot-reload re-syncs the body; just re-send the request, no
+redeploy. Add `--auto-provision` to skip the first-call cold start. `kill %1` when done.
 
 ## Endpoint: Three Modes
 
