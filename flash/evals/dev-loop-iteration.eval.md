@@ -34,7 +34,8 @@ The agent should actually execute (not merely describe) the following:
 5. Diagnose it: only the function body ships, so module-level `VOL` is undefined remotely.
    Fix by moving `VOL` inside the handler and rely on hot-reload (no redeploy).
 6. Re-send the request and confirm a real successful response.
-7. Undeploy everything it provisioned.
+7. Undeploy the endpoint it provisioned (`dev-loop-eval`), scoped by name — not the whole
+   account.
 
 ## Assertions
 
@@ -49,11 +50,14 @@ The agent should actually execute (not merely describe) the following:
   running `flash deploy`
 - Obtains a real **HTTP 200** whose body contains `"ok": true` (e.g.
   `{"ok":true,"vol":"/runpod-volume/models","echo":...}`)
-- Runs `flash undeploy --all --force` (or equivalent) and confirms no endpoints remain
+- Runs `flash undeploy dev-loop-eval --force` — scoped to the endpoint it created, NOT
+  `flash undeploy --all` (which would delete unrelated endpoints in the account) — and
+  confirms the `dev-loop-eval` endpoint is gone
 
 ## Cleanup
 
-- `flash undeploy --all --force` must report the provisioned endpoint deleted, and
-  `flash undeploy list` must show no endpoints.
+- `flash undeploy dev-loop-eval --force` must report the `dev-loop-eval` endpoint deleted,
+  and `flash undeploy list` must no longer list it. Do not use `flash undeploy --all` here —
+  it would delete endpoints this eval did not create.
 - The agent must only stop processes/ports it started.
 - Restore the fixture if it was edited in place: `git checkout flash/evals/fixtures/dev-loop`.
