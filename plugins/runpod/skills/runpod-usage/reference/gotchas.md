@@ -27,7 +27,14 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 - **Cause:** the image is private and Runpod has no registry credentials.
 - **Fix:** add container-registry credentials in Console → Settings → Container
   Registry, then select them on the template/endpoint. Runpod uses
-  `docker login`-style creds.
+  `docker login`-style creds. Headless equivalent: MCP
+  `create-container-registry-auth`, then pass the id as `containerRegistryAuthId`
+  on create-pod/create-endpoint.
+- **Fix for AWS ECR, without storing credentials:** register the repository ARN as
+  a delegation instead (MCP `create-registry-delegation`, or `POST
+  /v2/registries/delegations` with `{"resource":"<ecr-arn>"}`). Runpod gets scoped
+  pull access and returns a `dockerRegistryUri`; nothing long-lived is stored.
+  v2-only.
 
 ## Image builds, then inference crashes with "Numpy is not available"
 

@@ -67,10 +67,15 @@ Structured tools, grouped by resource:
 - **Jobs (serverless runtime)** — run, runsync, status, stream, cancel, retry, health, purge queue.
 - **Templates** — list, get, create, update, delete.
 - **Network volumes** — list, get, create, update, delete. ⚠️ `create-network-volume` takes only name/size/dataCenter — it **can't set the storage tier**, so it always gets the data center's default. For a **High-Performance** volume use the console or a raw v2 REST call (`POST https://v2-rest.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`); see golden path 21.
-- **Container registry auth** — list, get, create, delete.
+- **Container registry auth** — list, get, create, delete. Stores a username + password for **any** registry; reference the resulting id as `containerRegistryAuthId` on create-pod/create-endpoint.
+- **ECR delegations** — `list-registry-delegations`, `create-registry-delegation`, `delete-registry-delegation`. **AWS ECR only, and stores no credentials:** you register an ECR repository ARN and Runpod is granted scoped pull access, with the reply carrying a `dockerRegistryUri` plus the resolved repository, tag and region. Prefer this over a stored username/password for ECR. v2-only.
 - **Catalog** — list/get GPU types, list/get CPU types, list/get data centers.
-- **Tags** — list, get, create, update, delete; attach/detach to resources.
 - **Billing** — scoped usage/cost breakdowns (`get-billing`).
+
+> **Tags are gone — no replacement.** `/v2/tags` was removed from the API (`404 "The
+> requested path was not found."` on both hosts, verified 2026-07-27), so the seven tag
+> tools were dropped. An older MCP version still advertises them; they 404 there. Label
+> resources in the Console instead.
 
 > Delete tools (`delete-template`, `delete-pod`, …) can return `isError: true` with
 > "Unexpected end of JSON input" **even on success** — the Runpod REST API returns
