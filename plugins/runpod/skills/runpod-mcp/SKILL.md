@@ -66,7 +66,10 @@ use `runpodctl serverless create --compute-type CPU` for those.
 Structured tools, grouped by resource:
 
 - **Pods** — list, get, create, update, start, stop, restart, delete, stream logs.
-- **Serverless endpoints** — list, get, create, update, delete; list workers; list releases; stream worker logs. To pin a specific GPU **SKU** on an existing endpoint use `set-endpoint-gpus`; `create-endpoint`/`update-endpoint` expose only `gpuPoolIds` and can't express a SKU (`deploy-hub-repo` can pin one at deploy time via `gpuIds` exclusions).
+- **Serverless endpoints** — list, get, create, update, delete; list workers; list releases; stream worker logs.
+  - `create-endpoint` takes `endpointType: QUEUE` (default) or `LOAD_BALANCER` — see golden path 14. The routing type is fixed at creation; `update-endpoint` cannot change it.
+  - Read an endpoint's invoke URLs from `requestUrls` on the get/list reply instead of assembling them.
+  - To pin a specific GPU **SKU** on an existing endpoint use `set-endpoint-gpus`; `create-endpoint`/`update-endpoint` expose only `gpuPoolIds` and can't express a SKU (`deploy-hub-repo` can pin one at deploy time via `gpuIds` exclusions).
 - **Jobs (serverless runtime)** — run, runsync, status, stream, cancel, retry, health, purge queue.
 - **Hub** — `list-hub-repos` (public catalog of prebuilt Serverless workers and Pod templates: vLLM, ComfyUI, …) and `deploy-hub-repo`, which deploys a repo's listed release as an endpoint — the same as clicking Deploy on the Hub.
 - **Public endpoints** — `list-public-endpoints`: managed pay-per-use model APIs (text/image/video/audio) that need no deployment. Call the returned endpointId with `run-endpoint`/`runsync-endpoint`.

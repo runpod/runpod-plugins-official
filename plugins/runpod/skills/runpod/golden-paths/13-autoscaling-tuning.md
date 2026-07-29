@@ -68,8 +68,35 @@ Both are set the same way; the difference is *when* a worker gets added.
 | `--scale-by delay --scale-threshold 4` | `QUEUE_DELAY` | `4` |
 
 > runpodctl **v2.3** removed the older `--scaler-type REQUEST_COUNT / --scaler-value`
-> flags — use `--scale-by` + `--scale-threshold`. (The REST/GraphQL fields are still named
-> `scalerType`/`scalerValue`.)
+> flags — use `--scale-by` + `--scale-threshold`. (In **v1** REST and GraphQL the stored
+> fields are still named `scalerType`/`scalerValue`.)
+
+**On v2 REST the same two knobs are shaped differently.** `GET /v2/serverless/<id>` returns
+a scaler-specific object instead of a shared `value`, and the idle timeout sits under
+`workers`:
+
+| Meaning | v1 REST / GraphQL | v2 REST |
+| --- | --- | --- |
+| aggressive, on in-flight requests | `scalerType: REQUEST_COUNT`, `scalerValue: 1` | `scaling: {type: "REQUEST_COUNT", requestCount: 1}` |
+| lazy, on queue wait | `scalerType: QUEUE_DELAY`, `scalerValue: 4` | `scaling: {type: "QUEUE_DELAY", queueDelay: 4}` |
+| idle scale-down | `idleTimeout: 5` | `workers: {…, idleTimeout: 5}` |
+
+`queueDelay` is seconds and accepts fractions (min `0.5`); `requestCount` is an integer
+(min `1`); `idleTimeout` is `1`–`3600` and on a queue-based endpoint scaling on
+`requestCount` it is **rejected on create and update** — not silently ignored.
+
+You only need the right-hand column when calling **v2 REST by hand**. Neither CLI makes you
+write it, but for different reasons, and the distinction matters:
+
+- **runpodctl** never talks to v2 REST at all — `serverless create` goes through GraphQL
+  `saveEndpoint` and `serverless update` through v1 REST, both of which take the flat
+  `scalerType`/`scalerValue`/`idleTimeout` natively. Note `--scale-threshold` is an integer
+  with a floor of 1, so runpodctl **cannot express a fractional `queueDelay`** like `0.5`;
+  use v2 REST or the Console for that.
+- **The Runpod MCP server** keeps the flat `scalerType`/`scalerValue` parameters and maps them
+  onto the nested v2 body for you. A server old enough to predate the reshape sends the flat
+  shape straight through and gets a 422 on both `create-endpoint` and `update-endpoint`; the
+  tell is a `create-endpoint` with no `endpointType` parameter.
 
 ## Walkthrough (verified commands)
 
@@ -119,6 +146,12 @@ runpodctl serverless create --template-id <template-id> --name gp13-reqcount \
 { "id": "<endpoint-id>", "scalerType": "REQUEST_COUNT", "scalerValue": 1,
   "idleTimeout": 5, "workersMax": 3, "flashboot": true }
 ```
+
+> ⚠️ **Don't translate this exact config to v2 REST.** It works here because runpodctl creates
+> through GraphQL, which accepts `REQUEST_COUNT` alongside `idleTimeout` on a queue endpoint.
+> v2 REST **rejects** that pair — `idleTimeout` is "not applicable to queue-based endpoints
+> scaling on `requestCount`". On v2, either scale a queue endpoint on `queueDelay` and keep
+> `idleTimeout`, or scale on `requestCount` and drop it.
 
 ### 3. Fire a burst and WATCH `/health`
 ```bash
@@ -182,7 +215,8 @@ A warm `/runsync` confirms jobs complete cleanly throughout:
 - **runpodctl v2.3 flags changed.** Use `--scale-by requests|delay` + `--scale-threshold N`
   on both `serverless create` and `serverless update`. The old
   `--scaler-type REQUEST_COUNT` / `--scaler-value` flags were removed; passing the enum
-  values won't work. (Stored fields are still `scalerType`/`scalerValue` in REST/GraphQL.)
+  values won't work. (Stored fields are still `scalerType`/`scalerValue` in **v1** REST and
+  GraphQL; v2 REST nests them per scaler — see the mapping table above.)
 - **Reconfigure without redeploying.** `runpodctl serverless update <id> --scale-by …
   --scale-threshold … --workers-max … --idle-timeout …` changes scaling on a live endpoint;
   no new template/endpoint needed.

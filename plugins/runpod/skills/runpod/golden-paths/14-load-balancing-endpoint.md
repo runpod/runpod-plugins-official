@@ -9,8 +9,8 @@ API** (no Console, no flash).
 and `GET /ping`, `POST /echo`, `GET /stats` all returned `200` at
 `https://<ENDPOINT_ID>.api.runpod.ai/<path>` with request state persisting on the worker.
 **Lane(s):** custom Docker image + `runpodctl template create` + **GraphQL `saveEndpoint`
-(`type: "LB"`)** + plain HTTP invocation. (flash covers LB code-first; this is the
-image/API way.)
+(`type: "LB"`)** or **v2 REST / Runpod MCP (`LOAD_BALANCER`)** + plain HTTP invocation.
+(flash covers LB code-first; this is the image/API way.)
 
 ## When to use this
 Reach for a load-balancing endpoint instead of the queue/handler model when you need:
@@ -57,9 +57,10 @@ enforces bearer auth (`Authorization: Bearer <RUNPOD_API_KEY>`) at the edge befo
 ## Prerequisites
 - `RUNPOD_API_KEY` exported; Docker running; a Docker Hub (or other) registry login.
 - `runpodctl` (any recent version — used only for `template create`).
-- The **endpoint type is set via GraphQL `saveEndpoint`** (`type: "LB"`). As of this writing
-  neither the REST `POST /v1/endpoints` body nor `runpodctl serverless create` exposes an
-  endpoint-type field, so the LB flag is only reachable via GraphQL (or the Console).
+- The endpoint type is set by **v2 REST** (`"type": "LOAD_BALANCER"` on `POST /v2/serverless`)
+  or by **GraphQL `saveEndpoint`** (`type: "LB"`). Neither the **v1** REST
+  `POST /v1/endpoints` body nor `runpodctl serverless create` exposes an endpoint-type field,
+  so those two can't produce a load balancer.
 
 ## Walkthrough (verified commands)
 
@@ -123,10 +124,45 @@ runpodctl template create --name gp14-lb-tmpl2 --serverless \
 # → template id, e.g. <template-id>
 ```
 
-### 3. Create the endpoint as `type: "LB"` (GraphQL)
-The only headless switch for the load-balancing type is the GraphQL `saveEndpoint` `type`
-field (`QB` = queue-based default, `LB` = load balancing). Use a browser `User-Agent`
-(Cloudflare) and pass the api key in the query string:
+### 3. Create the endpoint as a load balancer
+
+Two headless routes. Prefer **a** — v2 REST is the current shape on both the production
+and dev hosts (verified 2026-07-29: both serve a byte-identical OpenAPI spec).
+
+**a. v2 REST / Runpod MCP (preferred).** v2 REST takes `"type": "LOAD_BALANCER"` on
+`POST /v2/serverless`. Load balancers have no queue, so the scaler must be
+`REQUEST_COUNT` — the spec forbids `QUEUE_DELAY` for this type **on create**. Read the
+invoke URL from the reply's `requestUrls.base` rather than assembling it:
+
+```bash
+curl -s -X POST https://v2-rest.runpod.io/v2/serverless \
+  -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"gp14-lb-ep","image":"<your-registry>/gp14-lb:v1","type":"LOAD_BALANCER",
+       "gpu":{"pools":["ADA_24"],"count":1},"disk":5,"ports":["5000/http"],
+       "env":{"PORT":"5000","PORT_HEALTH":"5000"},
+       "workers":{"min":0,"max":1,"idleTimeout":5},
+       "scaling":{"type":"REQUEST_COUNT","requestCount":4}}'
+# → {"id":"<endpoint-id>","type":"LOAD_BALANCER",
+#    "requestUrls":{"base":"https://<endpoint-id>.api.runpod.ai",
+#                   "health":"https://<endpoint-id>.api.runpod.ai/ping"}, ...}
+```
+
+This is image-based (no template needed), so step 2 is optional on this route. `type` is
+**required** on create (the spec lists it alongside `name`/`image`/`gpu`/`scaling`) and
+**fixed** afterwards — `UpdateEndpointRequest` has no `type` field, so no PATCH can change
+it.
+
+> **Via the Runpod MCP server:** `create-endpoint` takes `endpointType: "LOAD_BALANCER"` and
+> rejects `scalerType: QUEUE_DELAY` for it client-side, before spending a round trip — the
+> shortest path when MCP is connected.
+>
+> If your server's `create-endpoint` has **no `endpointType` parameter**, it predates the v2
+> serverless reshape and will 422 against production on any endpoint create or update. Upgrade
+> it, or use the raw v2 REST call above meanwhile.
+
+**b. GraphQL `saveEndpoint`.** The `type` field takes `QB`
+(queue-based, the default) or `LB`. Use a browser `User-Agent` (Cloudflare) and pass the
+api key in the query string:
 
 ```bash
 curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_API_KEY" \
@@ -140,6 +176,11 @@ curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_API_KEY" \
 `gpuIds` is required by `saveEndpoint` (tiers: `AMPERE_16`/`AMPERE_24`/`ADA_24`/`AMPERE_48`/
 `ADA_48_PRO`/`AMPERE_80`/`ADA_80_PRO`). `workersMin: 0` = scale-to-zero. Confirm the type
 stuck: the mutation echoes `"type": "LB"`.
+
+GraphQL still accepts `scalerType: "QUEUE_DELAY"` on an `LB` endpoint (it is the legacy
+flat scaler field and is not validated against the type here). It is not meaningful — a
+load balancer has no queue to measure — and the v2 REST route above rejects the same
+combination, so prefer `scalerType: "REQUEST_COUNT"` even on this route.
 
 > **See also:** [17 — WebSocket worker](17-serverless-websocket.md) applies this same
 > `type: "LB"` substrate to a WebSocket server — start here to understand the LB base path,
@@ -182,11 +223,13 @@ you're talking to the worker's own long-lived process directly, not a stateless 
   The fix that worked here: expose the exact port on the template (`--ports "5000/http"`)
   **and** set **both** `PORT` and `PORT_HEALTH` env vars to it. Relying on the documented
   `PORT` default of `80` alone was not sufficient in practice — set them explicitly.
-- **`type: "LB"` is GraphQL-only (headless).** REST `EndpointCreateInput` and
-  `runpodctl serverless create` have no endpoint-type field, so you can't flip an endpoint to
-  load-balancing through them — use `saveEndpoint` (or the Console's **Endpoint Type →
-  Load Balancer**). A queue-based worker image called on an LB path — or vice versa —
-  returns `{"error":"not allowed for QB API"}`.
+- **The type is set at creation, by v2 REST or GraphQL only.** v2 REST takes
+  `"type": "LOAD_BALANCER"`; GraphQL `saveEndpoint` takes `type: "LB"`. **v1** REST
+  `EndpointCreateInput` and `runpodctl serverless create` have no endpoint-type field. There is
+  no way to *flip* an existing endpoint either way — `UpdateEndpointRequest` has no `type`
+  field at all, so create it right or recreate it (or use the Console's **Endpoint Type →
+  Load Balancer** at creation). A queue-based worker image called on an LB path — or vice
+  versa — returns `{"error":"not allowed for QB API"}`.
 - **Two URLs, don't mix them.** LB is invoked at `https://<ID>.api.runpod.ai/<path>`; the
   queue API lives at `https://api.runpod.ai/v2/<ID>/run`. The `/health` worker-count endpoint
   (`.../v2/<ID>/health`) still works for LB endpoints and is the cleanest readiness signal.
@@ -219,9 +262,11 @@ runpodctl serverless list          # confirm the endpoint is gone
 Kept image: `<your-registry>/gp14-lb:v1` (the tiny stdlib LB worker above).
 
 ## Skill gaps folded back
-- The load-balancing endpoint **type is only settable headlessly via GraphQL `saveEndpoint`
-  `type: "LB"`** — REST endpoint-create and `runpodctl serverless create` have no type field.
-  Skills that create endpoints should note this when a custom-HTTP/LB endpoint is wanted.
+- The load-balancing endpoint type is settable headlessly two ways: **v2 REST**
+  (`"type": "LOAD_BALANCER"`) or **GraphQL `saveEndpoint`** (`type: "LB"`). **v1** REST
+  endpoint-create and `runpodctl serverless create` have no type field, and no API can change
+  the type after creation. Skills that create endpoints should note this when a custom-HTTP/LB
+  endpoint is wanted.
 - **Setting `PORT_HEALTH` (and exposing the port) explicitly is effectively required**, not
   optional — a worker that binds the app port but leaves `PORT_HEALTH` at its documented
   default failed to become `ready`. Treat "expose the port + set `PORT` + set `PORT_HEALTH`"
