@@ -6,6 +6,14 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.1](https://github.com/runpod/runpod-plugins-official/compare/v1.1.0...v1.1.1) (2026-07-29)
+
+
+### Documentation
+
+* **runpod:** cover LOAD_BALANCER endpoints and the v2 scaling shape ([#38](https://github.com/runpod/runpod-plugins-official/issues/38)) ([d060d4e](https://github.com/runpod/runpod-plugins-official/commit/d060d4ea6a316941cf364995a9c2c3be267c79d9))
+* **runpod:** drop tags from the MCP tool surface, add ECR delegations ([#39](https://github.com/runpod/runpod-plugins-official/issues/39)) ([92a8996](https://github.com/runpod/runpod-plugins-official/commit/92a89969c6409a80ddf1fb0b56a90320d3ae44b2))
+
 ## [1.1.0](https://github.com/runpod/runpod-plugins-official/compare/v1.0.0...v1.1.0) (2026-07-17)
 
 

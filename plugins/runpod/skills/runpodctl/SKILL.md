@@ -10,7 +10,7 @@ allowed-tools: Bash(runpodctl:*)
 compatibility: Linux, macOS
 metadata:
   author: runpod
-  version: "1.1.0" # x-release-please-version
+  version: "1.1.1" # x-release-please-version
 license: Apache-2.0
 ---
 
