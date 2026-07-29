@@ -4,11 +4,12 @@
 pod / serverless endpoint. (Provisioning only — no perf benchmarking.)
 
 **Status:** DOCUMENTED — launch paths verified against `runpodctl … --help`, the v1 REST +
-v2 REST OpenAPI specs, and the `runpod/runpod-mcp` source (2026-07-16). Not a full live run:
-a high-performance volume requires either a ⚡ data center in the console or a raw **v2 REST**
-call — `runpodctl` and the hosted MCP tool can't request the tier (see Skill gaps).
+v2 REST OpenAPI specs, and the `runpod/runpod-mcp` source (2026-07-29). Not a full live run:
+a high-performance volume needs the MCP `create-network-volume` tool's `volumeType`, a raw
+**v2 REST** call, or a ⚡ data center in the console — `runpodctl` has no tier flag (see
+Skill gaps).
 
-**Lane(s):** runpodctl (standard create + attach) · Runpod **REST v2** / console (high-performance) · runpod-mcp (attach only)
+**Lane(s):** runpod-mcp or Runpod **REST v2** (either tier) · console (⚡ toggle) · runpodctl (standard create + attach)
 
 ## When to use
 
@@ -74,7 +75,7 @@ runpodctl serverless create --name my-ep --template-id <id> --network-volume-id 
 ## Gotchas
 
 - **Tier is immutable** — you can't convert standard ↔ high-performance; create a new volume and copy the data (S3 API / `runpodctl`).
-- **CLI + MCP can't request high-performance** — only the v2 REST `type` field or the console can.
+- **`runpodctl` can't request high-performance** — it has no tier flag. Use the MCP tool's `volumeType`, the v2 REST `type` field, or the console.
 - **Per-DC pinning** — a volume lives in one data center and compute must run there. For multi-region serverless, attach one volume per DC (`--network-volume-ids`); data does **not** auto-sync.
 - **Small files / S3 API** — over the S3 access path, listing/syncing >10k files or >10 GB degrades, and single-object `PUT` caps at 500 MB (use multipart above).
 - **Concurrent writes** — don't write the same volume from multiple workers at once (corruption).
@@ -86,4 +87,4 @@ runpodctl serverless create --name my-ep --template-id <id> --network-volume-id 
 
 ## Skill gaps
 
-- No tier control outside the console/v2-REST: `runpodctl network-volume create` has no `--type` flag, and the hosted `runpod-mcp` `create-network-volume` tool doesn't forward the v2 `type` field. Worth an upstream request — add `--type` to `runpodctl` and a `type` param to the MCP tool — so agents can provision high-performance without the console.
+- `runpodctl network-volume create` has no `--type` flag, so the CLI still can't pick a tier. Worth an upstream request. The MCP gap here is closed: `create-network-volume` forwards `volumeType` as the v2 `type` field as of `@runpod/mcp-server` 3.0.0.

@@ -52,9 +52,12 @@ printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol
 # → serverInfo.version e.g. "3.0.0 [RUNPOD_REST_VERSION=v2]"  (verified 2026-07-29)
 ```
 
-The MCP server drives Runpod's **REST v2** internally (`RUNPOD_REST_VERSION=v2`), so it
-handles infra correctly where the **public `rest.runpod.io/v1`** control API is buggy —
-notably CPU serverless endpoints (see the runpodctl skill).
+The MCP server drives Runpod's **REST v2** internally (`RUNPOD_REST_VERSION=v2`), so most
+tools avoid the buggy **public `rest.runpod.io/v1`** control API. Two exceptions worth
+knowing: the Hub, public-endpoint and `set-endpoint-gpus` tools go through GraphQL (so they
+work under either REST version), and **CPU serverless endpoints are not creatable through
+MCP** — v2 has no CPU-endpoint concept at all (`create-endpoint` requires `gpuPoolIds`), so
+use `runpodctl serverless create --compute-type CPU` for those.
 
 **Prefer MCP or `runpodctl` over hand-rolled `rest.runpod.io/v1` calls for creating endpoints.**
 
@@ -63,7 +66,7 @@ notably CPU serverless endpoints (see the runpodctl skill).
 Structured tools, grouped by resource:
 
 - **Pods** — list, get, create, update, start, stop, restart, delete, stream logs.
-- **Serverless endpoints** — list, get, create, update, delete; list workers; list releases; stream worker logs. `set-endpoint-gpus` is the only way to pin a specific GPU **SKU** — `create-endpoint`/`update-endpoint` can't express it.
+- **Serverless endpoints** — list, get, create, update, delete; list workers; list releases; stream worker logs. To pin a specific GPU **SKU** on an existing endpoint use `set-endpoint-gpus`; `create-endpoint`/`update-endpoint` expose only `gpuPoolIds` and can't express a SKU (`deploy-hub-repo` can pin one at deploy time via `gpuIds` exclusions).
 - **Jobs (serverless runtime)** — run, runsync, status, stream, cancel, retry, health, purge queue.
 - **Hub** — `list-hub-repos` (public catalog of prebuilt Serverless workers and Pod templates: vLLM, ComfyUI, …) and `deploy-hub-repo`, which deploys a repo's listed release as an endpoint — the same as clicking Deploy on the Hub.
 - **Public endpoints** — `list-public-endpoints`: managed pay-per-use model APIs (text/image/video/audio) that need no deployment. Call the returned endpointId with `run-endpoint`/`runsync-endpoint`.
@@ -90,12 +93,13 @@ Structured tools, grouped by resource:
   serverless job call the server exposes. Cap large job/log output to a file.
 - **Use runpodctl instead** for: **`send`/`receive`** file transfer, **SSH** key
   management, **`doctor`** setup, **model cache** — or any shell-only agent, or
-  when the user wants a reproducible command. (Hub is no longer on this list —
-  MCP has `list-hub-repos` and `deploy-hub-repo`.)
-- **Hand pod creation to runpodctl** when it needs a **multi-GPU priority list**.
-  MCP's v2 create-pod takes a single GPU type; extra `gpuTypeIds` are dropped with
-  a `_warning`. Template-based and CPU pods do **not** need runpodctl — `create-pod`
-  takes `templateId` (with `imageName` then optional) and `computeType: "CPU"`.
+  when the user wants a reproducible command.
+- **Hand pod creation to runpodctl** for a **multi-GPU priority list** (MCP's v2
+  create-pod takes one GPU type; extra `gpuTypeIds` are dropped with a `_warning`
+  on success), or for a **template + CPU** pod together — `create-pod` rejects that
+  combination, since a template deploy is GPU-and-v2-only. Each alone is fine in
+  MCP: `templateId` (v2-only, `imageName` then optional, and each field you pass
+  replaces the template's whole value rather than merging) or `computeType: "CPU"`.
 - **Not this lane:** writing/deploying your own Python (→ flash); downloading
   models or building/pushing images (→ companion-clis).
 

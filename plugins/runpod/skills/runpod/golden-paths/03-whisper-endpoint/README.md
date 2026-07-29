@@ -15,9 +15,9 @@ Whisper is a request/response inference API → **serverless** (invoked via
 and the serverless specialization in
 [../../../runpod-usage/reference/endpoint-workflows.md](../../../runpod-usage/reference/endpoint-workflows.md).
 
-The least-fragile way to stand up a *known* worker is the **Runpod Hub**, deployed
-with **runpodctl** (the router rule: "Deploy from the Hub → runpodctl; MCP has no
-Hub tools"). A ready Hub worker means no handler code, no
+The least-fragile way to stand up a *known* worker is the **Runpod Hub**. This walkthrough
+uses **runpodctl** (`serverless create --hub-id …`); with the MCP server connected,
+`deploy-hub-repo` does the same thing in one tool call. A ready Hub worker means no handler code, no
 `docker build --platform=linux/amd64`, no registry auth, no cloudpickle/import
 gotchas — just `serverless create --hub-id …`. That's why **Variant A (Hub) is the
 default**.

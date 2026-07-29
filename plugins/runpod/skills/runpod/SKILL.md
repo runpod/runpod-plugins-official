@@ -89,8 +89,9 @@ Capability matrix (pick the preferred lane per operation):
 | --- | --- | --- |
 | List/get anything; start/stop/restart/delete a pod; simple CRUD on endpoints, templates, volumes, registries; catalog; billing | **runpod-mcp** if connected, else runpodctl | Simple structured ops — MCP is typed and convenient |
 | Create a **simple** pod (one image + one GPU) | **runpod-mcp** if connected, else runpodctl | Both handle it |
-| Create a pod **from a template**, a **CPU** pod, or with a **multi-GPU priority list** | **runpodctl** | MCP's v2 create-pod has no `templateId`, requires an image, and narrows to a single GPU type |
-| Deploy from the **Hub** | **runpodctl** | MCP has no Hub tools |
+| Create a pod **from a template** or a **CPU** pod | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` (v2-only) and `computeType: "CPU"` |
+| Create a pod with a **multi-GPU priority list**, or **template + CPU together** | **runpodctl** | MCP narrows to one GPU type, and rejects a template deploy for a CPU pod |
+| Deploy from the **Hub** | **runpod-mcp** if connected, else runpodctl | MCP has `list-hub-repos` + `deploy-hub-repo` |
 | **File transfer** (`send`/`receive`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
 | Invoke a serverless job (`run`/`runsync`/status/stream) | **runpod-mcp** if connected, else runpodctl | MCP has first-class job tools |
 
