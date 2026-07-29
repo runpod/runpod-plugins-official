@@ -38,9 +38,10 @@ runpodctl network-volume create --name std-vol --size 50 --data-center-id US-KS-
 
 ### High-performance network volume
 
-`runpodctl` (v1) and the hosted MCP `create-network-volume` tool only send
-`name`/`size`/`dataCenter`, so they get the data center's **default** tier — neither can
-request high-performance. Two ways to get it:
+The MCP `create-network-volume` tool takes `volumeType` (`STANDARD` |
+`HIGH_PERFORMANCE`), so it can request high-performance directly — prefer it when MCP is
+connected. `runpodctl` (v1) still sends only `name`/`size`/`dataCenter`, so it gets the
+data center's **default** tier. Without MCP, two ways to get it:
 
 **A. Runpod REST v2 (`type: HIGH_PERFORMANCE`)** — the programmatic path:
 

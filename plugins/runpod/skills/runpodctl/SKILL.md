@@ -170,8 +170,8 @@ For exact network volume flags, run `runpodctl network-volume <action> --help`.
 > **No storage-tier flag.** `create` provisions the data center's **default** tier — there's
 > no `--type`. To get a **High-Performance** volume, use the console (a ⚡ data center's toggle)
 > or a raw **v2 REST** call (`POST https://v2-rest.runpod.io/v2/network-volumes` with
-> `"type":"HIGH_PERFORMANCE"`). The MCP `create-network-volume` tool can't set it either. Tier
-> is immutable after creation. Launch details: golden path [21](../runpod/golden-paths/21-storage-tiers.md).
+> `"type":"HIGH_PERFORMANCE"`) — or the MCP `create-network-volume` tool, which takes
+> `volumeType` (`STANDARD` | `HIGH_PERFORMANCE`). Tier is immutable after creation. Launch details: golden path [21](../runpod/golden-paths/21-storage-tiers.md).
 
 ### Models (Model Repository)
 
