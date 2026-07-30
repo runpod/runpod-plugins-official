@@ -3,6 +3,9 @@
 Live `runpodctl <resource> <action> --help` is always authoritative for exact flags. This
 is the fuller menu (the SKILL keeps the 80% essentials); use it for the long-tail flags.
 
+Output shapes, error codes and env vars are in
+[output-and-errors.md](output-and-errors.md).
+
 ## Pods
 
 ```bash
@@ -110,7 +113,7 @@ runpodctl registry delete <registry-id>               # Delete registry auth
 
 ```bash
 runpodctl user                                        # Account info and balance (alias: me)
-runpodctl gpu list                                    # List available GPUs
+runpodctl gpu list                                    # List available GPUs (+ $/hr per cloud + dataCenterAvailability[])
 runpodctl gpu list --include-unavailable              # Include unavailable GPUs
 runpodctl datacenter list                             # List datacenters (alias: dc)
 runpodctl billing pods                                # Pod billing history

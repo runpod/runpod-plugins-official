@@ -76,10 +76,15 @@ usually beats two 40 GB cards for a model that fits.
 
 ## Step 5: availability and multi-GPU selection
 
-Note: the CLI (`runpodctl gpu list`) does **not** report `$/hr`, so an agent can't
-read "cheapest" from it — pick the **smallest tier that fits** the workload (lower
-tiers are generally cheaper) and check per-region stock with `runpodctl datacenter
-list` before creating. Prices are on the Runpod pricing page / Console.
+`runpodctl gpu list` reports on-demand `securePricePerHr` / `communityPricePerHr` per
+GPU (explicitly `null` when that cloud doesn't offer it) plus a
+`dataCenterAvailability[]` breakdown, so read cost and per-region stock straight from
+it rather than assuming a lower tier is cheaper. Top-level `stockStatus` is only the
+best status across DCs — use the per-DC breakdown when placement matters (`runpodctl
+datacenter list` gives the same view from the DC side). Two scope limits: those are **pod
+on-demand** rates (serverless bills per request-second), and the per-DC breakdown doesn't
+say *which cloud* has the stock, so cost and placement are two separate reads rather than
+one ranked list.
 
 GPU supply fluctuates by tier and region. To avoid throttling:
 

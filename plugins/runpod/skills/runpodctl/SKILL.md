@@ -68,6 +68,53 @@ runpodctl <resource> <action> --help
 
 Before using unfamiliar commands, inspect live help first. Do not rely on this skill as an exhaustive flag reference.
 
+**What live help does *not* cover:** output shapes, error codes, and exit-code behavior. `--help` lists flags; it never shows you what a failure looks like. For those, use [reference/output-and-errors.md](reference/output-and-errors.md) — and when in doubt, **probe the binary**: run the command wrong on purpose (`runpodctl serverless get nope`) and read the JSON it emits. Every doc is a snapshot, this skill included; the binary in front of you wins.
+
+## Output & errors
+
+Data is **JSON on stdout** (`--output=yaml` is the only alternative — there is no table
+format; anything else silently returns JSON). A failure from the resource commands is a
+single flat JSON object on **stderr** plus a **non-zero exit**:
+
+```jsonc
+{"error":"failed to get endpoint: endpoint not found","code":"not_found","status":404}
+```
+
+**Branch on `code`, never on `status` or the message.** `status` is there only when the
+failure arrived on a non-2xx response — GraphQL reports a missing resource as HTTP 200 +
+null data, so `if status == 404` misses every GraphQL not-found.
+
+| `code` | what to do |
+| --- | --- |
+| `network_error` | **retry with backoff** — the only code meaning "couldn't reach the API" |
+| `rate_limited` `server_error` | **retry with backoff** — 429/5xx from the API |
+| `usage_error` `cli_error` `bad_request` `not_found` `conflict` | don't retry, fix the input |
+| `no_credentials` | no key set: `export RUNPOD_API_KEY=…` or `runpodctl doctor` |
+| `unauthorized` `forbidden` | a key **is** set but is wrong/expired or lacks access — don't retry, don't re-prompt for a missing key |
+| anything else | treat as fatal, surface `error` verbatim — the API can pass through its own code |
+
+**runpodctl never retries internally**; nothing backs off for you.
+
+- **`not_found` always means the API lacks the resource**, never a mistyped local path
+  (that's `cli_error`).
+- **`cli_error` is a mixed bucket:** local environment problems *and* invocation mistakes
+  the command validates itself (e.g. `ssh remove-key` with neither `--name` nor
+  `--fingerprint`). Only cobra-enforced required flags are `usage_error`.
+- **`usage_error`** = unknown command/flag, bad args, missing cobra-required flag; usage
+  text follows the JSON. Runtime errors no longer print usage.
+- **Non-empty stderr does not mean failure** — deprecation `warning:` and `note:` lines go
+  to stderr on success too. Gate on the exit code, then parse stderr.
+
+Coded errors, the serverless `urls` object and GPU pricing all need **runpodctl ≥ v2.8.0**.
+Older binaries emit `{"error":"…"}` with **no `code` and no `status`** — still JSON-shaped,
+so a `switch (err.code)` silently gets `undefined` rather than failing loudly. **Gate on
+`code` being present**, not on JSON-vs-plaintext; `runpodctl version` is unreliable for
+this (plaintext, and a source build reports a placeholder version).
+
+Full code table, the surfaces that still print plaintext (`exec`, legacy `pod`
+commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
+**[reference/output-and-errors.md](reference/output-and-errors.md)**.
+
 ## Decision Rules
 
 - Use Hub when the user wants a known deployable app or worker such as vLLM, ComfyUI, Whisper, or a Runpod-maintained repo.
@@ -128,6 +175,12 @@ runpodctl serverless create --hub-id <id> --gpu-id "NVIDIA GeForce RTX 4090" \
   --model-reference https://huggingface.co/<org>/<model>:main   # attach & host-cache a HF model (GPU only)
 runpodctl serverless update <endpoint-id> --workers-max 5
 ```
+
+**Invoke URLs come back with the endpoint.** `create`/`get`/`list`/`update` include a
+`urls` object (`run`, `runsync`, `health`), so a freshly created endpoint is callable
+without a second lookup — read them instead of assembling the URL yourself. They're
+built from `RUNPOD_INVOKE_URL` (default `https://api.runpod.ai/v2`), which
+`RUNPOD_API_URL`/`RUNPOD_GRAPHQL_URL` do **not** move: [reference/output-and-errors.md](reference/output-and-errors.md#serverless-invoke-urls).
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
@@ -195,10 +248,20 @@ runpodctl model remove --name "my-model" --owner <owner>     # Remove a model
 
 ```bash
 runpodctl user                                       # account info + balance (alias: me)
-runpodctl gpu list                                   # available GPUs (+ --include-unavailable)
+runpodctl gpu list                                   # available GPUs + $/hr + per-DC stock (+ --include-unavailable)
 runpodctl datacenter list                            # datacenters (alias: dc)
 runpodctl ssh info <pod-id>                          # SSH connection details (command + key; NOT an interactive session)
 ```
+
+**`gpu list` carries pricing and placement data** — `securePricePerHr` /
+`communityPricePerHr` (explicitly `null` when that cloud doesn't offer the GPU) and a
+`dataCenterAvailability[]` breakdown. Read the breakdown, not just top-level
+`stockStatus` (which is only the *best* status across DCs), when a create has to
+schedule in a specific DC — and pass `--include-unavailable`, since the default listing
+hides no-stock GPUs and can omit one that has stock only in the DC you want. The prices
+are **pod on-demand** rates. Shape, stock-value vocabulary and the `"none"` vs
+omitted-key sentinel:
+[reference/output-and-errors.md](reference/output-and-errors.md#gpu-pricing-and-per-data-center-availability).
 
 `ssh info` gives connection details, not a session — if interactive SSH isn't available, run `ssh user@host "command"`. **Registry auth, `billing` history, and SSH key management** (`ssh add-key`/`remove-key`) are in [reference/command-reference.md](reference/command-reference.md).
 
@@ -240,6 +303,10 @@ https://api.runpod.ai/v2/<endpoint-id>/runsync    # Sync request
 https://api.runpod.ai/v2/<endpoint-id>/health     # Health check
 https://api.runpod.ai/v2/<endpoint-id>/status/<job-id>  # Job status
 ```
+
+`serverless create`/`get`/`list`/`update` already return `run`/`runsync`/`health` in a
+`urls` object — prefer those over hand-assembling, since a non-default
+`RUNPOD_INVOKE_URL` changes the base. Only `status/<job-id>` has to be built by hand.
 
 ## Source & docs
 
