@@ -12,7 +12,7 @@
       "displayName": "Runpod (Official)",
       "description": "Official Runpod skills and MCP server: a router plus lanes (runpodctl, flash, companion CLIs, conceptual usage) that bundles the hosted Runpod MCP server.",
       "source": "./plugins/runpod",
-      "category": "Infrastructure",
+      "category": "deployment",
       "skills": [
         "./skills/runpod",
         "./skills/runpod-mcp",
