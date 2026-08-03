@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.2](https://github.com/runpod/runpod-plugins-official/compare/v1.1.1...v1.1.2) (2026-08-03)
+
+
+### Documentation
+
+* **runpodctl:** document coded json errors, invoke urls, gpu pricing ([#41](https://github.com/runpod/runpod-plugins-official/issues/41)) ([dbdaaf4](https://github.com/runpod/runpod-plugins-official/commit/dbdaaf45a4deb450c52af3c68c8e0aebe1230bfa))
+
 ## [1.1.1](https://github.com/runpod/runpod-plugins-official/compare/v1.1.0...v1.1.1) (2026-07-29)
 
 
