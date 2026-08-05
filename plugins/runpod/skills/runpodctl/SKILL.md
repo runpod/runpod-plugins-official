@@ -128,7 +128,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
 - Do not pass GPU flags when creating CPU pods. Check `runpodctl pod create --help` for the current valid flag set.
-- **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept** and its id is in the error object's `id` field — so a wait that gives up never silently leaks a billed resource, but you do have to clean it up.
+- **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
 - Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` **at creation** (they can't be added to a running pod without a reset), then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
 - Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
@@ -158,13 +158,10 @@ runpodctl pod create --image <img> --gpu-id <id> --wait                      # b
 runpodctl pod {start|stop|restart|reset|update|delete} <pod-id>              # lifecycle (delete aliases: rm/remove)
 ```
 
-**Read `runtimeStatus`, not `desiredStatus`, to decide whether a pod is usable** (v2.9.0+).
-`desiredStatus: RUNNING` only means the platform intends it to run — it says that while the
-image is still being pulled. `runtimeStatus` is one of `running`, `initializing`, `stopped`,
-`terminated`, `unknown`, with a `runtimeStatusReason` token when there is more to say, and
-`uptimeSeconds` is present only while the container is actually up. Two edges worth knowing:
-`--status` filters `desiredStatus` only (`--status initializing` matches nothing), and
-`unknown` means "the lookup failed", not "the pod is down".
+**Read `runtimeStatus`, not `desiredStatus`, to decide whether a pod is usable** (v2.9.0+):
+`desiredStatus: RUNNING` says that while the image is still pulling. Field meanings, reason
+tokens, and two edges (`--status` filters `desiredStatus` only; `unknown` = lookup failed, not
+pod down) → [reference/command-reference.md](reference/command-reference.md#pod-status-fields).
 
 ### Hub
 
@@ -205,21 +202,14 @@ runpodctl serverless status <endpoint-id> <job-id>                    # check a 
 runpodctl serverless health <endpoint-id>                             # worker + job counts
 ```
 
-- **The payload is the handler payload, not the whole envelope.** It is sent as
-  `{"input": <your json>}`, must be a json object, and is parsed + size-checked locally, so a
-  quoting mistake or an over-limit body fails as `usage_error` before anything uploads.
-- **stdout is always the job payload — even for a `FAILED` job**, because the worker's own
-  error is the useful artifact. Progress notes and error objects go to stderr, so
-  `... 2>/dev/null | jq` sees exactly one json object.
+- **Pass only the handler payload** — the cli wraps it as `{"input": <your json>}` itself, so
+  pasting a whole curl envelope double-wraps it.
 - **`timeout` means the cli stopped waiting, not that the endpoint broke.** When the message
   names a `serverless status` command the job is still running server-side — poll it, do
-  **not** re-invoke (that buys a second job). When it doesn't, nothing is running and a retry
-  is fine.
-- Exit codes: `0` when the job `COMPLETED` (and when `--no-wait`/`--wait 0` submitted it),
-  `1` when the request fails, the wait budget runs out (`timeout`), or the job ends
-  `FAILED`/`CANCELLED`/`TIMED_OUT` (`job_failed`).
-- `run` submits on `/run` and polls `/status` — never `/runsync`, which is not actually
-  synchronous and whose results expire after 1 minute (30 for `/run`).
+  **not** re-invoke (that buys a second job).
+
+Payload rules, the stdout/stderr split, exit codes and why `/runsync` is never used →
+[reference/command-reference.md](reference/command-reference.md#invoking-an-endpoint-v290).
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
@@ -336,10 +326,9 @@ Example: `https://abc123xyz-8888.proxy.runpod.net`
 
 ### Serverless URLs
 
-Prefer `runpodctl serverless run|status|health` (above) over calling these by hand — same api,
-with auth, local payload validation, bounded polling and machine-readable errors already
-handled. Reach for the raw urls when you need something the commands do not cover (streaming,
-the OpenAI-compatible route, or handing a user a copy-paste `curl`):
+Prefer `runpodctl serverless run|status|health` (above) — same api, with auth, validation and
+bounded polling handled. Use the raw urls for what the commands don't cover: streaming, the
+OpenAI-compatible route, or a copy-paste `curl` for a user.
 
 ```
 https://api.runpod.ai/v2/<endpoint-id>/run        # Async request
