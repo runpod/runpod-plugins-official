@@ -190,7 +190,7 @@ no `code`:
 | situation | output |
 | --- | --- |
 | connectable | `{"id","name","ssh_command","ip","port","ssh_key":{…}}` on stdout, exit 0 — note **snake_case**, unlike the camelCase everywhere else in the CLI. A `"setup":"runpodctl doctor"` key appears when the local key needs fixing |
-| pod exists, not connectable | `{"error":"pod not ready: <reason>","id":…,"name":…,"status":…}` on **stdout**, exit **0**, no `code`. Here `status` is the pod's desired status, *not* an HTTP status. **v2.9.0+** appends the reason (image still pulling, port 22 not published, pod stopped, …) — an exact-match `=== "pod not ready"` broke on that release, a prefix match did not |
+| pod exists, not connectable | `{"error":"pod not ready: <reason>","id":…,"name":…,"status":…}` on **stdout**, exit **0**, no `code`. Here `status` is the pod's desired status, *not* an HTTP status. **v2.9.0+** appends a reason when it has one (image still pulling, port 22 not published, pod stopped, …) and falls back to the bare `"pod not ready"` when it doesn't — so an exact-match `=== "pod not ready"` started failing intermittently on that release; a prefix match did not |
 | no such pod | `{"error":"pod 'x' not found","code":"not_found"}` on stderr, exit 1 |
 
 So: check the exit code, then check for an `error` key even on stdout.
