@@ -24,7 +24,34 @@ runpodctl pod restart <pod-id>                        # Restart pod
 runpodctl pod reset <pod-id>                          # Reset pod
 runpodctl pod update <pod-id> --name "new"            # Update pod
 runpodctl pod delete <pod-id>                         # Delete pod (aliases: rm, remove)
+runpodctl pod create --image <img> --gpu-id <id> --wait                  # wait until ssh answers (v2.9.0+)
+runpodctl pod create --image <img> --gpu-id <id> --wait --wait-timeout 3m # give up sooner than the 10m default
 ```
+
+### Waiting for readiness (`--wait`, v2.9.0+)
+
+| | detail |
+| --- | --- |
+| ready means | the pod's **public port 22** accepts a tcp connection *and* answers with an ssh protocol banner. No key, no handshake — it proves sshd is up, not that your key is installed. Port 22 merely appearing in `runtime.ports` is not enough: prod allocates that port even for images that run no sshd |
+| timeout | `--wait-timeout` accepts `90s`, `10m`, `1h`, `2d`; default `10m` |
+| output | progress on **stderr** every ~15s; stdout stays exactly one json object, in the `pod get` shape (so it includes the live `ssh` block, unlike a plain create) |
+| on failure | the pod is **not** deleted — exit is non-zero, code `wait_timeout` (or `wait_interrupted` on ctrl-c), and the error object carries the pod id in `id` plus the delete command. A second ctrl-c always exits |
+| refuses | `--ssh=false` (there would be nothing to wait for) |
+| warns, still waits | `--compute-type CPU` (cpu pods are created over rest, which cannot request Runpod-managed ssh, so only an image that starts its own sshd becomes reachable) and `--cloud-type COMMUNITY` without `--public-ip` (community cloud only maps a public ssh port on a machine that has a public ip) |
+
+### Pod status fields
+
+`pod get` and `pod list` report both (v2.9.0+):
+
+| field | meaning |
+| --- | --- |
+| `desiredStatus` | what the platform intends: `RUNNING`, `EXITED`. Says `RUNNING` while the image is still pulling |
+| `runtimeStatus` | what is actually happening: `running`, `initializing` (no container reported yet — pull/create/boot), `stopped`, `terminated`, `unknown` (the runtime lookup failed or was not made — **not** "the pod is down") |
+| `runtimeStatusReason` | stable token when there is more to say, e.g. `awaiting_container`, `stopped_by_user`, `stopped_by_runpod`, `terminated_outbid`, `runtime_unavailable` |
+| `uptimeSeconds` | present only while the container is up; omitted otherwise (it used to be a constant `0`) |
+| `lastStatusChange` | the backend's raw free-text note, carried so a phrasing the cli does not tokenise still reaches you |
+
+`--status` filters **`desiredStatus` only** — `--status initializing` silently matches nothing.
 
 ## Hub
 
@@ -55,7 +82,37 @@ runpodctl serverless create --compute-type CPU --template-id <id> --instance-id 
 runpodctl serverless create --template-id <t> --network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>  # Multi-DC (v2.4.0+)
 runpodctl serverless update <endpoint-id> --workers-max 5       # Update endpoint
 runpodctl serverless delete <endpoint-id>             # Delete endpoint
+runpodctl serverless create --template-id <id> --workers-min 1 --wait  # wait for a ready worker (v2.9.0+)
 ```
+
+### Invoking an endpoint (v2.9.0+)
+
+```bash
+runpodctl serverless run <endpoint-id> --input '{"prompt":"hi"}'   # submit + wait for the result
+runpodctl serverless run <endpoint-id> --input-file payload.json   # payload from a file ("-" = stdin)
+runpodctl serverless run <endpoint-id> --input '{}' --wait 15m     # wait budget (default 5m; 0 = do not wait)
+runpodctl serverless run <endpoint-id> --input '{}' --no-wait      # submit only (same as --wait 0)
+runpodctl serverless status <endpoint-id> <job-id>                 # poll a job submitted earlier
+runpodctl serverless health <endpoint-id>                          # worker + job counts
+```
+
+| | detail |
+| --- | --- |
+| payload | the **handler** payload, sent as `{"input": <your json>}`. Must be a json object; parsed and size-checked locally (the api's `/run` body limit is 10 MiB), so quoting mistakes and oversized bodies fail as `usage_error` before the upload |
+| `--input` vs `--input-file` | mutually exclusive; one is required. `-` reads stdin either way. A payload with its own top-level `input` key gets a warning — that is usually a whole curl envelope pasted in, which arrives double-wrapped |
+| stdout | always the job payload, including a `FAILED` job's `error`, and the last payload seen when the wait ran out. Printed byte-faithfully (handler keys are not renamed or re-typed) |
+| stderr | progress notes and the error object — never job data |
+| exit codes | `0` when `COMPLETED`, and when `--no-wait`/`--wait 0` submitted successfully. `1` on request failure, on wait-budget exhaustion (`timeout`), or on `FAILED`/`CANCELLED`/`TIMED_OUT` (`job_failed`) |
+| two budgets | `--wait` bounds the whole job; the shared `timeout` config key (30s) bounds one api call. A call inside a wait is clamped to what is left, never below 1s |
+| `/run`, never `/runsync` | `/runsync` is not synchronous: the connection is released after ~90s with the job still running, no job id exists until it answers (so a slow response strands a billed, unpollable job), and a `sync-` job's result expires after 1 minute vs 30 for `/run` |
+
+### Error codes worth branching on
+
+`timeout`, `job_failed`, `wait_timeout` and `wait_interrupted` are the codes these commands
+add, and `not_found` gains a nuance during a wait. They live with every other code in
+[output-and-errors.md](output-and-errors.md#codes) — including which are safe to retry, which
+mean work outlived the cli, and the `id` field that names a resource a failed wait left
+behind.
 
 ## Templates (alias: tpl)
 

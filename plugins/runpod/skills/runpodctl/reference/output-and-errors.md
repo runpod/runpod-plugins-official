@@ -49,6 +49,7 @@ Errors go to **stderr** as a single flat JSON object, and the exit code is
 | `error` | human-readable message, unwrapped on the REST path. A GraphQL HTTP failure whose body has no extractable message falls back to the **raw body**, which can itself be JSON — so never parse this field, either way |
 | `code` | stable, lowercase, present on every JSON error (see [plaintext gaps](#plaintext-gaps)) |
 | `status` | HTTP status — only when the failure arrived on a **non-2xx** response (REST *or* GraphQL) |
+| `id` | **v2.9.0+**, only on a failure that left a **created, billing resource** behind — a `create --wait` that timed out or was interrupted. Read it instead of regexing the message: it is the id you need to clean up |
 
 **Branch on `code`, never on `status` or the message text.** `status` is absent whenever
 the API answered HTTP 200 with empty data, which is how GraphQL reports a missing
@@ -70,12 +71,15 @@ failures carry a code too, not just API responses.
 | code | meaning |
 | --- | --- |
 | `usage_error` | unknown command, unknown flag, bad/wrong-count args, or a **cobra-required** flag left out. Usage text prints after the JSON |
-| `not_found` | the **API** does not have the resource |
+| `not_found` | the **API** does not have the resource. During a `create --wait` it can also mean one that *was* created has gone, or never became visible — so check for an `id` field before concluding nothing exists |
 | `bad_request` (400) `unauthorized` (401) `forbidden` (403) `conflict` (409) `rate_limited` (429) `server_error` (5xx) `api_error` | derived from the REST status |
 | `graphql_error` | a GraphQL call failed: an `errors` array in a 200 body, **or** a non-2xx response from the GraphQL endpoint (that form also carries `status`) |
 | `no_credentials` | no API key configured at all — set `RUNPOD_API_KEY` or run `runpodctl doctor` |
 | `network_error` | the API could not be reached at all — DNS, connection refused, TLS, timeout |
 | `cli_error` | anything else local: config, environment, and validation the command does itself |
+| `timeout` | **v2.9.0+.** The CLI stopped waiting — two outcomes sharing one code, told apart by the message. If it names a `serverless status` command, the **job is still running server-side**: poll it, never re-invoke (that buys a second job). Otherwise a single API call ran out of time and nothing is running, so a retry is fine |
+| `job_failed` | **v2.9.0+.** A serverless job reached a terminal status other than `COMPLETED` (`FAILED`/`CANCELLED`/`TIMED_OUT`). The request itself succeeded — the job payload, including the worker's own `error`, is still on **stdout** |
+| `wait_timeout` `wait_interrupted` | **v2.9.0+.** A `create --wait` gave up (budget) or was cancelled (ctrl-c / SIGTERM). The resource **was created and still bills**; its id is in the `id` field above |
 
 Treat this as **the set the CLI generates, not an exhaustive list** — an explicit code
 from the API is passed through lowercased, so a code outside the table can arrive from
@@ -91,7 +95,14 @@ wrapper does is all that happens.
   when `status` is 5xx). A transient `graphql_error` is possible too but indistinguishable
   from a permanent one, so cap those attempts tightly.
 - **Never retry:** `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`,
-  `no_credentials`, `unauthorized`, `forbidden`.
+  `no_credentials`, `unauthorized`, `forbidden`, `job_failed` (the job ran and failed —
+  re-running is a new job, not a retry).
+- **Never retry the *command*, but do follow up:** `timeout` and
+  `wait_timeout`/`wait_interrupted` all mean work or a resource outlived the CLI. Re-running
+  the same command creates a **second** job or a **second** billed resource. Poll instead
+  (`serverless status`, `pod get`), or clean up using the `id` field. The one exception is a
+  `timeout` whose message does **not** name a follow-up command: that was a single API call
+  timing out with nothing left running, so it is safe to retry.
 
 Two invariants make that safe to encode:
 
@@ -99,8 +110,10 @@ Two invariants make that safe to encode:
   `--model-path`) is `cli_error`, so `not_found` never means "you typed a path wrong".
 - **`network_error` is the only code the CLI assigns to mean "couldn't reach the API"**,
   detected structurally. Deliberately *not* `network_error`: a malformed `RUNPOD_API_URL`
-  and a local wait loop timing out (e.g. `--wait-for-hash`) are both `cli_error`, so a
-  retry loop never fires for something a retry cannot fix.
+  is `cli_error`, so a retry loop never fires for something a retry cannot fix. A local wait
+  loop timing out used to land here too — as of **v2.9.0** `model add --wait-for-hash`
+  reports `timeout` instead of `cli_error` (same exit code, same message text), so a handler
+  switching on `code` needs that branch.
 
 ### Auth failures are two different codes
 
@@ -177,17 +190,24 @@ no `code`:
 | situation | output |
 | --- | --- |
 | connectable | `{"id","name","ssh_command","ip","port","ssh_key":{…}}` on stdout, exit 0 — note **snake_case**, unlike the camelCase everywhere else in the CLI. A `"setup":"runpodctl doctor"` key appears when the local key needs fixing |
-| pod exists, not connectable | `{"error":"pod not ready","id":…,"name":…,"status":…}` on **stdout**, exit **0**, no `code`. Here `status` is the pod's desired status, *not* an HTTP status |
+| pod exists, not connectable | `{"error":"pod not ready: <reason>","id":…,"name":…,"status":…}` on **stdout**, exit **0**, no `code`. Here `status` is the pod's desired status, *not* an HTTP status. **v2.9.0+** appends the reason (image still pulling, port 22 not published, pod stopped, …) — an exact-match `=== "pod not ready"` broke on that release, a prefix match did not |
 | no such pod | `{"error":"pod 'x' not found","code":"not_found"}` on stderr, exit 1 |
 
 So: check the exit code, then check for an `error` key even on stdout.
 
 "Not ready" fires whenever the pod has no **public port 22**, which is not the same thing
-as "still booting". A pod whose image never starts an sshd reports
-`{"error":"pod not ready","status":"RUNNING"}` indefinitely — verified by creating a
-`ubuntu:22.04` CPU pod and polling for ~70 s at `status: RUNNING` throughout. So **bound
-any SSH readiness loop** and don't treat `RUNNING` as "SSH is coming"; if it never arrives,
-the image is the problem, not the wait.
+as "still booting". A pod whose image never starts an sshd reports not-ready indefinitely —
+verified by creating a `ubuntu:22.04` CPU pod and polling for ~70 s at `status: RUNNING`
+throughout. So **bound any SSH readiness loop** and don't treat `RUNNING` as "SSH is
+coming"; if it never arrives, the image is the problem, not the wait.
+
+Two v2.9.0 changes make this easier to get right: `pod create --wait` does the bounded
+readiness loop for you (and proves an ssh *banner*, not just a published port), and
+`runtimeStatus` on `pod get`/`pod list` distinguishes `initializing` from `running` so you
+no longer have to infer it from `desiredStatus`. Also **v2.9.0+**: a **stopped** pod no
+longer returns an `ssh_command` at all (it used to hand back one built from stale runtime
+ports that could never connect), and it drops out of `ssh connect`'s `connections` list,
+which is now `[]` rather than `null` when nothing is reachable.
 
 So a parser should tolerate a non-JSON line on stderr from those, and must not rely on
 the exit code for `exec` or `project`. Prefer the non-legacy equivalents: `pod
@@ -199,6 +219,7 @@ instead of `exec`.
 | variable | default | what it sets |
 | --- | --- | --- |
 | `RUNPOD_API_KEY` | — | API key. Also settable via `runpodctl doctor` or `~/.runpod/config.toml` (`apikey`) |
+| `TIMEOUT` | `30s` | per-API-call deadline — **no `RUNPOD_` prefix** (the CLI reads env vars unprefixed, so this one looks nothing like the others). Exceeding it is `code: "timeout"`. Also settable as a top-level `timeout` in `~/.runpod/config.toml` — it must sit **above** any `[section]` header, or it becomes `section.timeout` and is silently ignored. Distinct from `--wait`, which bounds a whole job or readiness wait rather than one call |
 | `RUNPOD_API_URL` | `https://rest.runpod.io/v1` | REST control plane (config key `restApiUrl`) |
 | `RUNPOD_GRAPHQL_URL` | `https://api.runpod.io/graphql` | GraphQL control plane (config key `apiUrl`) |
 | `RUNPOD_INVOKE_URL` | `https://api.runpod.ai/v2` | base for the invoke URLs reported by `serverless create`/`get`/`list`/`update` (config key `invokeUrl`) |
