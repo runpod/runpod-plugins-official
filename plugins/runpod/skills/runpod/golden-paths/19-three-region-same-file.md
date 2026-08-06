@@ -317,5 +317,3 @@ pullable tag; it costs nothing.
   field) is worth folding into
   [endpoint-workflows.md](../../runpod-usage/reference/endpoint-workflows.md) alongside
   the multi-volume version note from 10.
-</content>
-</invoke>
