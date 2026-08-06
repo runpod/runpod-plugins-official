@@ -66,6 +66,12 @@ resource — so `if (status === 404)` misses every GraphQL not-found:
 output sink fills in a fallback when there isn't one — so local validation and transport
 failures carry a code too, not just API responses.
 
+**`timeout` is the one documented exception**, because two outcomes share it and only the
+message separates them (see the [codes table](#codes)). A handler that reads only `code` is
+still correct: treat `timeout` as never-retry and poll instead. Reading the message can
+upgrade that to "safe to retry" for the single-API-call case, but skipping it costs you
+nothing except an unnecessary poll — whereas retrying on the wrong one buys a second job.
+
 ### Codes
 
 | code | meaning |
