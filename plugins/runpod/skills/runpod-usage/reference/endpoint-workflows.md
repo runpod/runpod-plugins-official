@@ -43,9 +43,14 @@ Prefer an **actively-maintained** worker on a **broad, high-availability GPU poo
 — don't pin a scarce large tier a small model doesn't need. If deployed workers go
 `ready` but jobs sit `IN_QUEUE` with `inProgress: 0`, the image is broken /
 mis-dispatching — **switch workers, don't wait it out.** (There's no first-class
-serverless worker-log command; diagnose via `/health` worker counts.)
+serverless worker-log command; diagnose via `/health` worker counts — `runpodctl serverless health <id>` reads them for you, v2.9.0+, and the MCP lane can stream worker logs.)
 
 ## 3. Invoke
+
+The raw protocol is below because it is what you hand a user for copy-paste, and what a
+non-Runpod client speaks. If you are driving it yourself, the tool lanes wrap it:
+`runpodctl serverless run <id> --input '{...}'` (v2.9.0+) does submit-and-poll with auth,
+local payload validation and bounded waiting; the MCP lane has typed job tools.
 
 ```bash
 # warm / small payloads (sync, 60s window):

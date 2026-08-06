@@ -128,6 +128,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
 - Do not pass GPU flags when creating CPU pods. Check `runpodctl pod create --help` for the current valid flag set.
+- **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
 - Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` **at creation** (they can't be added to a running pod without a reset), then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
 - Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
@@ -139,7 +140,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 
 - **Scale-to-zero billing:** serverless endpoints scale to zero with `--workers-min 0` (the default) — no GPU billing while idle, only per request-second; this is the right cost posture for a request/response API.
 - **Broken-image tell:** if deployed workers go `ready` but jobs sit `IN_QUEUE` with `inProgress: 0`, the image is broken/mis-dispatching — the fix is to switch to a different worker rather than wait it out.
-- **Diagnosing it:** there's no first-class serverless worker-log command, so diagnosis relies on `/health` worker counts.
+- **Diagnosing it:** read the worker/job counts with `runpodctl serverless health <endpoint-id>` (v2.9.0+) — no hand-built curl needed. runpodctl still has no worker-*log* command; the MCP lane does (`stream worker logs`).
 
 ## Commands
 
@@ -149,12 +150,18 @@ Essentials below. **Full flag menu → [reference/command-reference.md](referenc
 
 ```bash
 runpodctl pod list                                   # running pods (+ --all / --status / --since / --created-after)
-runpodctl pod get <pod-id>                           # details incl. SSH info
+runpodctl pod get <pod-id>                           # details incl. SSH info + runtimeStatus
 runpodctl pod create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090"   # from template
 runpodctl pod create --image <img> --gpu-id "NVIDIA GeForce RTX 4090"        # from image
 runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (lowercase `cpu`; serverless uses `CPU`)
+runpodctl pod create --image <img> --gpu-id <id> --wait                      # block until ssh answers, then print the pod (v2.9.0+)
 runpodctl pod {start|stop|restart|reset|update|delete} <pod-id>              # lifecycle (delete aliases: rm/remove)
 ```
+
+**Read `runtimeStatus`, not `desiredStatus`, to decide whether a pod is usable** (v2.9.0+):
+`desiredStatus: RUNNING` says that while the image is still pulling. Field meanings, reason
+tokens, and two edges (`--status` filters `desiredStatus` only; `unknown` = lookup failed, not
+pod down) → [reference/command-reference.md](reference/command-reference.md#pod-status-fields).
 
 ### Hub
 
@@ -174,6 +181,7 @@ runpodctl serverless create --name "x" --hub-id <listing-id>    # from hub (+ --
 runpodctl serverless create --hub-id <id> --gpu-id "NVIDIA GeForce RTX 4090" \
   --model-reference https://huggingface.co/<org>/<model>:main   # attach & host-cache a HF model (GPU only)
 runpodctl serverless update <endpoint-id> --workers-max 5
+runpodctl serverless create --template-id <id> --workers-min 1 --wait          # block until a worker is ready (v2.9.0+)
 ```
 
 **Invoke URLs come back with the endpoint.** `create`/`get`/`list`/`update` include a
@@ -181,6 +189,27 @@ runpodctl serverless update <endpoint-id> --workers-max 5
 without a second lookup — read them instead of assembling the URL yourself. They're
 built from `RUNPOD_INVOKE_URL` (default `https://api.runpod.ai/v2`), which
 `RUNPOD_API_URL`/`RUNPOD_GRAPHQL_URL` do **not** move: [reference/output-and-errors.md](reference/output-and-errors.md#serverless-invoke-urls).
+
+**Invoking an endpoint** (v2.9.0+) — first-class commands, so an agent does not hand-build a
+curl request or manage a bearer token:
+
+```bash
+runpodctl serverless run <endpoint-id> --input '{"prompt":"hello"}'   # submit and wait for the result
+runpodctl serverless run <endpoint-id> --input-file payload.json      # same, payload from a file ("-" = stdin)
+runpodctl serverless run <endpoint-id> --input '{}' --wait 15m        # longer budget (default 5m)
+runpodctl serverless run <endpoint-id> --input '{}' --no-wait         # submit, print the queued job, exit 0
+runpodctl serverless status <endpoint-id> <job-id>                    # check a job submitted earlier
+runpodctl serverless health <endpoint-id>                             # worker + job counts
+```
+
+- **Pass only the handler payload** — the cli wraps it as `{"input": <your json>}` itself, so
+  pasting a whole curl envelope double-wraps it.
+- **`timeout` means the cli stopped waiting, not that the endpoint broke.** When the message
+  names a `serverless status` command the job is still running server-side — poll it, do
+  **not** re-invoke (that buys a second job).
+
+Payload rules, the stdout/stderr split, exit codes and why `/runsync` is never used →
+[reference/command-reference.md](reference/command-reference.md#invoking-an-endpoint-v290).
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
@@ -296,6 +325,10 @@ https://<pod-id>-<port>.proxy.runpod.net
 Example: `https://abc123xyz-8888.proxy.runpod.net`
 
 ### Serverless URLs
+
+Prefer `runpodctl serverless run|status|health` (above) — same api, with auth, validation and
+bounded polling handled. Use the raw urls for what the commands don't cover: streaming, the
+OpenAI-compatible route, or a copy-paste `curl` for a user.
 
 ```
 https://api.runpod.ai/v2/<endpoint-id>/run        # Async request

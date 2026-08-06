@@ -89,8 +89,11 @@ works).
 - **Broken Hub worker: `ready` but jobs never run.** A worker showing `ready` while
   jobs sit `IN_QUEUE` with `inProgress: 0` is a broken/mis-dispatching image (or
   workers `throttled` on a scarce GPU pool). **Switch workers, don't wait it out.**
-  There's no first-class serverless worker-log command in runpodctl/REST v1 —
-  diagnose via the endpoint `/health` worker counts. (Details in Variant A.)
+  Diagnose via the endpoint `/health` worker counts — `runpodctl serverless health <id>`
+  reads them for you (v2.9.0+). For the worker's own logs you need the MCP
+  `stream-worker-logs` tool, the v2 REST logs path, or the Console Workers tab:
+  there's no serverless worker-log command in runpodctl and no worker-log path on
+  REST v1. (Details in Variant A.)
 - **Delete returns 204, not JSON.** A DELETE / MCP `delete-*` may report an error
   like "Unexpected end of JSON input" because the REST API returns **204 No
   Content** (no body to parse). Treat it as success; confirm with a follow-up
