@@ -15,6 +15,12 @@ Use the faster, non-persistent layers deliberately, not by default: container /
 ephemeral disk for throwaway scratch, and pod volume disk when a single pod's data
 doesn't need to outlive it. When in doubt, choose the network volume.
 
+**One exception: model weights for GPU serverless.** If the model is on HuggingFace,
+the host-side cache beats a volume — faster cold starts, no download billing, and no
+data-center pin narrowing your GPU availability. See
+[Getting a model to the worker](#getting-a-model-to-the-worker) below; the default
+above is about datasets, checkpoints, and everything else worth keeping.
+
 ## The three layers
 
 ### Container / ephemeral disk
@@ -67,8 +73,10 @@ runpodctl). **Do not write to one volume from multiple workers concurrently** �
 
 ## Getting a model to the worker
 
-Three ways to make a model available; choose by size, privacy, and how often it
-changes.
+Four ways to make a model available; choose by size, privacy, and how often it
+changes. On HuggingFace and running GPU serverless → **cached model**; your own
+artifact → **Model Repository** (or a volume if you want to manage the files
+yourself); need a reproducible image → **bake**.
 
 | Option | How | Best when |
 | --- | --- | --- |

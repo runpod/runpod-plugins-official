@@ -36,11 +36,55 @@ pod vs serverless → prefer a prebuilt template/Hub worker over from-scratch �
 provision → verify with a real request ("Running" ≠ "ready") → deliver → cost-guard
 + teardown.** See [`skills/runpod-usage/reference/development-loop.md`](skills/runpod-usage/reference/development-loop.md).
 
-The [`skills/runpod/golden-paths/`](skills/runpod/golden-paths/) folder holds
-worked, end-to-end reference tasks (Ollama, ComfyUI, Whisper, …) — acceptance
-scenarios, not installed skills (they have no `SKILL.md`, so agents don't load
-them). They live under the `runpod` router skill that indexes them, so they
-travel with it on a single-skill install.
+## Golden paths — check these first
+
+**Before improvising a deployment, look for a golden path that already covers it.**
+[`skills/runpod/golden-paths/`](skills/runpod/golden-paths/README.md) holds worked,
+end-to-end reference tasks — Ollama and ComfyUI on pods, a Whisper endpoint,
+fine-tune → serve, network-volume handoffs, autoscaling, streaming, webhooks,
+host-cached HF models, and observability, among others. Nearly all are
+**live-verified**: someone ran the whole thing on real infrastructure and pasted back
+the actual output, including the parts that went wrong. The index marks the status of
+each.
+
+They are worth the detour because they encode the failure modes you would otherwise
+hit yourself — the "Running ≠ ready" trap, data-center pinning, cold-start costs,
+and cleanup. Point your agent at one directly:
+
+> "Follow golden path 20 to deploy this HuggingFace model."
+
+They are acceptance scenarios, not installed skills (no `SKILL.md`, so agents don't
+auto-load them), and they live under the `runpod` router skill that indexes them, so
+they travel with it on a single-skill install.
+
+## Getting a model onto a worker
+
+If the model is **on HuggingFace, and you are deploying GPU serverless**, prefer
+Runpod's host-side model cache over a network volume:
+
+```bash
+runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" \
+  --model-reference https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main
+```
+
+Runpod caches the weights on the host, so workers start on machines that already
+hold the model — cold starts drop to seconds and **you are not billed for download
+time**. Weights land in the standard HF cache layout
+(`/runpod-volume/huggingface-cache/hub/`), so Transformers, vLLM, and anything else
+that reads that cache picks them up with no handler changes. A network volume, by
+contrast, is **pinned to one data center**, which narrows the GPU availability you
+can schedule against.
+
+Reach for the other options deliberately: a **network volume** when you want direct
+filesystem control or are sharing large files across workers, the **Model
+Repository** (`runpodctl model add`) for your own artifacts that aren't on
+HuggingFace, and **baking into the image** when you need a fully reproducible build.
+Caching is GPU-only and needs `runpodctl` ≥ v2.4.0.
+
+Full comparison and commands:
+[`runpodctl/reference/model-caching.md`](skills/runpodctl/reference/model-caching.md).
+Worked example: golden path
+[20 — host-cached HF model endpoint](skills/runpod/golden-paths/20-model-caching-endpoint.md).
 
 ## Setup
 
