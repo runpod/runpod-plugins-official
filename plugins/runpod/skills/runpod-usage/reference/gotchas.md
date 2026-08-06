@@ -154,8 +154,10 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
   scarce GPU pool the model doesn't need.
 - **Fix:** switch to a different (maintained) Hub worker on a **broad, high-
   availability GPU pool** — don't wait it out. Diagnose via the endpoint `/health`
-  worker counts (there's no first-class serverless worker-log command in runpodctl/
-  REST v1; the MCP server does expose `stream-pod-logs`/worker log streaming).
+  worker counts — `runpodctl serverless health <id>` reads them for you (v2.9.0+) —
+  and then read the worker logs. There is no serverless worker-log command in
+  runpodctl and no worker-log path on REST v1; use the MCP `stream-worker-logs`
+  tool, the v2 REST logs path, or the Console Workers tab.
 
 ## Serverless job goes `IN_PROGRESS` then times out
 
