@@ -28,7 +28,7 @@ plugins/runpod/                   THE plugin
   gemini-extension.json           Gemini manifest
   .mcp.json                       hosted Runpod MCP server config
   README.md  CHANGELOG.md
-  skills/                         the six skills (below)
+  skills/                         the seven skills (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
 hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links
 .github/workflows/validate.yml    runs the hooks on PRs
@@ -48,6 +48,8 @@ skills/flash/             write & deploy your own code on Runpod serverless (@re
 skills/companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
 skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a tool
   reference/*.md          detailed topics, loaded on demand
+skills/runpod-migrate/    migrate a codebase from GraphQL / REST v1 to REST v2
+  scripts/                the API-version inventory scanner
 ```
 
 **runpod-mcp and runpodctl overlap** — both drive the same Runpod REST API for the

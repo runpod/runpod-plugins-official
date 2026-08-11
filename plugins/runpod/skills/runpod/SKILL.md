@@ -26,6 +26,7 @@ the right lane and hands off. Read the matching skill's `SKILL.md` next.
 | **flash** | **Write Python** that runs on Runpod serverless — `@remote`/`@Endpoint` functions, `flash dev` hot-reload, `flash deploy`. Code-first, not infra management. |
 | **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
+| **runpod-migrate** | **Move existing code** off the GraphQL API or REST v1 onto REST v2 — inventory which parts use which version, rewrite call sites, flag breaking changes. Edits the user's code; does not manage infra. |
 
 ## First run — check auth before the first infra action
 
@@ -64,7 +65,11 @@ before any CLI-only step. Missing a CLI? `curl -sSL https://cli.runpod.net | bas
 2. **Write/iterate/ship your own code on Runpod GPUs** → **flash**.
 3. **Produce an artifact** (download a model, build+push an image, create a repo
    release, sync data to a volume) → **companion-clis**.
-4. **Manage infrastructure** (create/list/update/delete pods, endpoints,
+4. **Migrate existing code between Runpod API versions** — "move us to REST v2",
+   "which Runpod API is this repo on?", "what breaks if we upgrade?" →
+   **runpod-migrate**. (Calling the API to *do* something is a different job; that
+   is the infra lanes below.)
+5. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
    - Capability only the CLI has — **Hub, `send`/`receive`, SSH keys, `doctor`,
      model cache** → **runpodctl**.

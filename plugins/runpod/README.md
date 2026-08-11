@@ -4,7 +4,7 @@ One entrypoint for AI agents to manage GPU workloads on Runpod — pods, serverl
 endpoints, jobs, templates, and volumes — via the Runpod MCP server, `runpodctl`,
 and `flash`, with conceptual guidance and worked golden paths.
 
-This plugin bundles six skills, the hosted Runpod MCP server config
+This plugin bundles seven skills, the hosted Runpod MCP server config
 ([`.mcp.json`](.mcp.json)), and reference material.
 
 ## Which skill?
@@ -20,6 +20,7 @@ lane below. If you already know the lane, go straight to it.
 | [`flash`](skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless — `@remote`/`@Endpoint`, `flash dev`, `flash deploy`. |
 | [`companion-clis`](skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf` (models), `docker` (images), `gh` (repos/releases), `aws` (S3 to volumes). |
 | [`runpod-usage`](skills/runpod-usage/SKILL.md) | **Concepts** — how pods/serverless work, building containers, storage, GPU selection, gotchas. |
+| [`runpod-migrate`](skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2 — inventory, rewrite, flag breaking changes. |
 
 **runpod-mcp vs runpodctl:** both drive the same Runpod API for the same infra
 CRUD. Prefer `runpod-mcp` when its tools are connected in your session; use
@@ -80,6 +81,7 @@ skills/
   flash/             write & deploy your own code (@remote)
   companion-clis/    hf / gh / docker / aws prerequisites
   runpod-usage/      concepts + reference/*.md
+  runpod-migrate/    GraphQL / REST v1 -> REST v2 migration + inventory scanner
 .mcp.json            hosted Runpod MCP server config
 ```
 

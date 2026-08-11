@@ -19,7 +19,8 @@
         "./skills/runpodctl",
         "./skills/flash",
         "./skills/runpod-usage",
-        "./skills/companion-clis"
+        "./skills/companion-clis",
+        "./skills/runpod-migrate"
       ]
     }
   ]
