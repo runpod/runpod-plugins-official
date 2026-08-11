@@ -183,39 +183,26 @@ development loop, and setup. Worked end-to-end examples live in
 
 ## Ask for it by name
 
-Plain English works — the router picks the lane. But for anything bigger than a
-one-liner, **name the skill _and_ point at the worked examples**. That single
-extra clause is usually the difference between a plausible plan and one built on
-commands that were actually run against a real account.
+Plain English works for one-off actions. For anything you're **designing**, add one
+clause — *"and look at the examples first"*:
 
-Why it matters: skills auto-load from their description, but the
+- *"Use the Runpod plugin skills and look at the examples. I want to build a speech
+  translator: audio in, translated text out. Plan it out."*
+- *"Use the runpod-migrate skill to move this repo from GraphQL to REST v2. Show me
+  the inventory before you change anything."*
+- *"Use the Runpod skills and check the examples — deploy this handler to serverless."*
+- *"Use the Runpod skills — cheapest GPU that fits a 13B model?"*
+- *"Use the Runpod skills and check the examples — my endpoint returns `IN_QUEUE` forever."*
+
+You don't need to know which example applies; the agent picks. Worth adding either
+way: *"show me the plan before you change anything"* and *"verify it with a real
+request"* ("Running" is not "ready").
+
+**Why the extra clause helps.** Skills auto-load from their description, but the
 [golden paths](plugins/runpod/skills/runpod/golden-paths/) deliberately have **no
-`SKILL.md`** — agents never load them on their own. The per-skill `reference/*.md`
-files are progressive-disclosure too: opened only when the agent has a reason.
-Naming them *is* the reason.
-
-| You want to… | Say something like | What it makes the agent read |
-| --- | --- | --- |
-| **Plan a new service** (say, a speech translator) | *"Use the runpod plugin skill and read the golden paths before planning. I want to build a speech translator: audio in, translated text out. Which path is closest, and what would you change?"* | [golden paths index](plugins/runpod/skills/runpod/golden-paths/README.md) → [03 whisper endpoint](plugins/runpod/skills/runpod/golden-paths/03-whisper-endpoint/README.md), [05 model → endpoint](plugins/runpod/skills/runpod/golden-paths/05-model-to-endpoint-pipeline.md), [12 streaming](plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming.md) |
-| **Migrate off GraphQL / REST v1** | *"Use the runpod-migrate skill. Inventory this repo first and show me the table before changing anything, then check the reference mappings as you go."* | [`runpod-migrate`](plugins/runpod/skills/runpod-migrate/SKILL.md) → [breaking-changes](plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md), [rest-v1-to-v2](plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md), [graphql-to-v2](plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md) |
-| **Deploy code you already have** | *"Use the flash skill and follow the custom serverless dev loop golden path to deploy this handler."* | [`flash`](plugins/runpod/skills/flash/SKILL.md) → [09 dev loop](plugins/runpod/skills/runpod/golden-paths/09-custom-serverless-dev-loop/README.md), [patterns](plugins/runpod/skills/flash/reference/patterns.md) |
-| **Choose a GPU / control spend** | *"Use runpod-usage and check the GPU selection reference — cheapest GPU that fits a 13B model at reasonable latency?"* | [gpu-selection](plugins/runpod/skills/runpod-usage/reference/gpu-selection.md), [storage](plugins/runpod/skills/runpod-usage/reference/storage.md) |
-| **Debug something already running** | *"Use the runpod skills and follow the monitor-and-debug golden path — my endpoint returns IN_QUEUE forever."* | [15 monitor & debug](plugins/runpod/skills/runpod/golden-paths/15-monitor-and-debug.md), [gotchas](plugins/runpod/skills/runpod-usage/reference/gotchas.md) |
-| **Cut cold starts / tune scaling** | *"Use the runpod skills and read the model-caching and autoscaling golden paths before you change my endpoint config."* | [20 model caching](plugins/runpod/skills/runpod/golden-paths/20-model-caching-endpoint.md), [13 autoscaling](plugins/runpod/skills/runpod/golden-paths/13-autoscaling-tuning.md), [25 bake vs mount](plugins/runpod/skills/runpod/golden-paths/25-bake-vs-mount/README.md) |
-
-### The pattern
-
-Any of the above is the same three parts — reuse it for whatever you're building:
-
-> **[name the skill]** + **[tell it to read the examples first]** + **[your actual task]**
-
-Two phrases worth keeping in the habit:
-
-- *"…show me the plan before you change anything"* — makes the agent surface its
-  inventory or design while it's still cheap to redirect.
-- *"…and verify it with a real request"* — "Running" is not "ready", and the
-  [development loop](plugins/runpod/skills/runpod-usage/reference/development-loop.md)
-  treats that check as part of the job rather than an afterthought.
+`SKILL.md`**, so agents never load them on their own — and each skill's
+`reference/*.md` opens only on demand. Asking is what pulls them in, and they're
+where the commands that were actually run against a real account live.
 
 ## Repository layout
 
