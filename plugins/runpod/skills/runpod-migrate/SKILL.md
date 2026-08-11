@@ -38,11 +38,13 @@ Moves a codebase off the **GraphQL API** (`api.runpod.io/graphql`) and **REST v1
 - **The catalog is not frozen in the spec.** v1 hardcoded GPU and datacenter IDs as
   enums, so new hardware needed a spec release. v2 takes open strings and you discover
   values from `/v2/catalog`.
-- **Mistakes fail loudly, and correctly.** v2 sets `additionalProperties: false`, so a
-  half-finished migration 422s with the offending fields listed by name instead of
-  silently ignoring them. Errors are structured (`{title, status, detail, errors[]}`)
-  with honest status codes — the same bad-image request that v1 answered with a
-  `500 {"error": "..."}` is a `422` in v2, so retry logic stops retrying user errors.
+- **Mistakes fail loudly, and correctly.** Every v2 request body rejects unknown fields
+  (via `additionalProperties: false`, or `unevaluatedProperties: false` on the composed
+  Create/Update schemas), so a half-finished migration 422s with the offending fields
+  listed by name instead of silently ignoring them. Errors are structured
+  (`{title, status, detail, errors[]}`) with honest status codes — a bad image tag that
+  v1 answered with `500 {"error": "..."}` is a `422` in v2, so retry logic stops
+  retrying user errors.
 
 Full list, mapped to what the user's code already does: **[reference/unlocks.md](reference/unlocks.md)**.
 
@@ -70,11 +72,29 @@ so you do not touch it.
 
 ### 1. Inventory — never migrate what you have not counted
 
+The scanner ships **beside this file**, in the installed skill directory — not in the
+user's repo. Resolve its path first; your working directory is their project:
+
 ```bash
-python3 scripts/rp_api_inventory.py . > runpod-api-inventory.md
-python3 scripts/rp_api_inventory.py . --json > runpod-api-inventory.json   # if you want to drive edits from it
-python3 scripts/rp_api_inventory.py . --scope rest                          # REST-only migrations
+# 1. Claude Code plugin installs expose the plugin root:
+SCAN="$CLAUDE_PLUGIN_ROOT/skills/runpod-migrate/scripts/rp_api_inventory.py"
+# 2. Otherwise substitute the directory you loaded this SKILL.md from — you know it:
+[ -f "$SCAN" ] || SCAN="<directory containing this SKILL.md>/scripts/rp_api_inventory.py"
+# 3. Last resort, search the usual install roots:
+[ -f "$SCAN" ] || SCAN=$(find ~/.claude ~/.agents ~/.codex ~/.config -name rp_api_inventory.py 2>/dev/null | head -1)
+python3 "$SCAN" --help >/dev/null || echo "scanner not found — resolve it before continuing"
 ```
+
+Then, from the root of the user's repo:
+
+```bash
+python3 "$SCAN" . > runpod-api-inventory.md
+python3 "$SCAN" . --json > runpod-api-inventory.json   # if you want to drive edits from it
+python3 "$SCAN" . --scope rest                          # REST-only migrations
+```
+
+`runpod-api-inventory.md` lands in the user's repo — mention it, and remove it or
+gitignore it before you hand the migration back.
 
 Stdlib-only Python, no install. It reports every call site bucketed by generation —
 GraphQL, REST v1, v1/GraphQL **field names**, REST v2 **already**, serverless job API,
@@ -165,7 +185,7 @@ Static review is not enough; v2's validator is strict and its errors are precise
 Re-run the scanner to prove the call sites are gone, then exercise the real paths:
 
 ```bash
-python3 scripts/rp_api_inventory.py . --scope rest --fail-on-legacy   # exit 1 if v1 remains
+python3 "$SCAN" . --scope rest --fail-on-legacy   # exit 1 if v1 remains
 ```
 
 Legacy code you kept **on purpose** — a `RUNPOD_API_V1` rollback branch, or a GraphQL

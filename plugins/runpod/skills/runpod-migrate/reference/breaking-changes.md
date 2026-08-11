@@ -108,7 +108,24 @@ that has gone to `ERROR` unless you add that branch.
 fails schema validation, so this one is mostly loud — but any code that *reads* env back
 and iterates `for e in env: e["key"]` breaks quietly on the map.
 
-### 9. `cloudType: ALL` is gone (GraphQL only)
+### 9. `stockStatus` → `availability` also flipped case (GraphQL only)
+
+GraphQL's `lowestPrice.stockStatus` returns **`High` / `Medium` / `Low` / `None`**.
+v2's `availability` returns **`HIGH` / `MEDIUM` / `LOW` / `NONE`**.
+
+A lookup carried across verbatim — `RANK = {"High": 0, "Medium": 1, …}` or
+`if stock == "High"` — stops matching every value and silently falls through to its
+default branch. No error, no exception; capacity logic just quietly stops working.
+
+### 10. `mounts` cannot be PATCHed the way `volumeInGb` could
+
+v1 accepted a PATCH containing `volumeInGb` or `volumeMountPath` alone. v2 fixes the
+mount kind at create, rejects `volumeId` changes and mount-clearing with `400`, and
+requires every mount entry to carry its full schema (`422` otherwise). Migration code
+that resizes or remounts storage in place needs rethinking, not translating — full table
+in [rest-v1-to-v2.md](rest-v1-to-v2.md#pods--request-body).
+
+### 11. `cloudType: ALL` is gone (GraphQL only)
 
 v2 `cloud` is `SECURE` or `COMMUNITY`. Code that asked for `ALL` to widen capacity must
 now pick one, or try one and fall back.
@@ -169,10 +186,10 @@ instead of the top-level `availability`.
 | Message | What it actually means |
 | --- | --- |
 | `additional properties 'X' not allowed` | leftover v1/GraphQL field named `X` — rename or drop it |
-| `missing property 'X'` | v2 requires `X` (`name`, `image`, endpoint `type`, endpoint `scaling`) |
+| `missing property 'X'` | v2 requires `X`. Pod create: `name`, `image`. Endpoint create: `name`, `image`, **`gpu`**, `type`, `scaling` — `gpu` is the one most often lost in a `gpuTypeIds` → `gpu.pools` rewrite. |
 | `value must be one of '…'` | enum tightened (`action`, `flashboot`, `category`, `cloud`) |
 | `missing property 'image'` **plus** `additional properties 'gpu', 'name', 'scaling', 'type' not allowed` — where those fields are obviously valid | **Look at the missing one only.** A missing required field knocks the body out of its schema branch, and the validator then reports every valid field as unexpected. Add the missing field and the rest of the noise disappears. |
-| `400` with prose listing valid values | a resource-level constraint, not schema — e.g. a datacenter that does not support network volumes. The message enumerates the ones that do. |
+| `4xx` with prose instead of a schema path | a resource-level constraint, not schema validation — e.g. a datacenter that does not support network volumes (`400`, and the message enumerates the ones that do), or a container image that is not on the registry (`422`). Read the prose; there is no `$.field` to fix. |
 | `500 {"error": "…"}` | you are still talking to **v1** — v2 never uses that envelope |
 
 That last row is a useful tell during a partial migration: the error *shape* tells you

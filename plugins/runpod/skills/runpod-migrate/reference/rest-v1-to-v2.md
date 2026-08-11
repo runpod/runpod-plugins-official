@@ -92,11 +92,32 @@ Billing responses also changed shape: v1 returned a bare array of records; v2 re
 `mounts.persistent` and `mounts.network` are **mutually exclusive** (`400` if both).
 `mounts.network[].path` is **required** — v2 has no `/workspace` default.
 
+⚠ **`mounts.persistent` is deprecated in v2**, and a literal `volumeInGb` →
+`mounts.persistent` translation inherits that. It is host-local storage pinned to one
+machine — *data does not survive a host failure* — it is disallowed on CPU pods, and
+`size` has a 10 GB floor. For anything the user cannot recreate, migrate `volumeInGb` to
+a **network volume** (`mounts.network`) instead and say why you changed the shape.
+
+**`mounts` is far less malleable on PATCH than v1's `volumeInGb`/`volumeMountPath` were.**
+v1 let you PATCH either field alone; v2 enforces:
+
+| PATCH attempt | Result |
+| --- | --- |
+| omit `mounts`, or send `{}` | existing mount unchanged |
+| `network: []` to clear mounts | `400` — clearing is unsupported |
+| add a mount kind not present at create (incl. any mount on a mountless pod) | `400` — kind is fixed at create |
+| change a network mount's `volumeId` | `400` — immutable |
+| partial entry (e.g. `path` without `size`/`volumeId`) | `422` — every entry needs its full schema |
+
 Dropped from pod create with no v2 equivalent: `computeType` (implied by `gpu` vs `cpu`),
 `templateId`, `interruptible`, `locked` (PATCH only), `gpuTypePriority`,
 `dataCenterPriority`, `cpuFlavorPriority`, `countryCodes`, `supportPublicIp`,
 `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`,
-`minDiskBandwidthMBps`, `allowedCudaVersions`, `minCudaVersion`, `volumeEncrypted`.
+`minDiskBandwidthMBps`, `allowedCudaVersions`.
+
+(`minCudaVersion` was never a v1 *pod* create field — it is a v1 **endpoint** create
+field, and survives in v2 only as a `/v2/catalog/gpus` availability filter.
+`volumeEncrypted` was a v1 Pod **response** field, not an input.)
 
 CPU pods: `computeType: "CPU"` + `cpuFlavorIds: [...]` + `vcpuCount` becomes
 `cpu: {"id": "cpu3c", "vcpuCount": 2}`. Send `gpu` **or** `cpu`, never both.
@@ -147,7 +168,7 @@ valid pool. Resolve it at runtime — never hardcode the table, it grows:
 ```bash
 curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
   'https://api.runpod.io/v2/catalog/gpus?include=AVAILABILITY' \
-| python3 -c 'import json,sys; [print(f"{g[\"pool\"]:<16} {g[\"id\"]}") for g in json.load(sys.stdin)["gpus"] if g["pool"]]'
+| python3 -c 'import json,sys; [print(g["pool"].ljust(16), g["id"]) for g in json.load(sys.stdin)["gpus"] if g["pool"]]'
 ```
 
 Endpoint responses now carry **`requestUrls`** — `run`, `runSync`, `status`, `stream`,
@@ -171,7 +192,7 @@ cannot create or update a CPU endpoint.
 | `containerRegistryAuthId` | `registry` |
 | `isServerless` | `serverless` |
 | `isPublic` | `public` |
-| `category` (string) | `category` (enum `CPU`/`NVIDIA`/`AMD`) |
+| `category` | `category` — unchanged (already `CPU`/`NVIDIA`/`AMD`, default `NVIDIA`, in v1) |
 | `readme`, `earned`, `isRunpod`, `runtimeInMin` | **gone** |
 
 Templates are still worth keeping as a config preset — but v2 pods and endpoints do not

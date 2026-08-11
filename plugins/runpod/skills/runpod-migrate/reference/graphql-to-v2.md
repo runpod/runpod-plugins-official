@@ -7,7 +7,12 @@ the header. If the code passes the key in the query string, that moves into a he
 which is also the security upgrade (keys stop landing in URLs, logs, and referrers).
 
 GraphQL schema reference: <https://graphql-spec.runpod.io/> (introspection is disabled in
-production, so use that page, not `__schema`).
+production, so use that page, not `__schema`). **That page is incomplete** — it omits
+`saveEndpoint`, `deleteEndpoint`, `saveTemplate`, `deleteTemplate`, `secretCreate`,
+`secretDelete`, and the network-volume mutations, all of which are real and in use. For
+anything missing there, the worked examples in the Runpod docs
+(`docs.runpod.io` → SDKs → GraphQL) are the better source. Do not conclude an operation
+does not exist just because that page omits it.
 
 ## Operation map
 
@@ -121,7 +126,7 @@ non-obvious change in a GraphQL template workflow.
 | `memoryInGb` | `memory` |
 | `secureCloud` / `communityCloud` | `secure` / `community` |
 | `lowestPrice(input:{gpuCount, secureCloud}).uninterruptablePrice` | `price.secure` / `price.community` |
-| `lowestPrice(…).stockStatus` | `availability`: `NONE`/`LOW`/`MEDIUM`/`HIGH` |
+| `lowestPrice(…).stockStatus` — `High`/`Medium`/`Low`/`None` | `availability` — **`HIGH`/`MEDIUM`/`LOW`/`NONE`**. ⚠ The case flips. A `{"High": 0, …}` rank table or `== "High"` comparison carried over stops matching *silently*. |
 | `lowestPrice(…).minimumBidPrice` | gone with spot pods |
 | — | `dataCenters[].availability` — per-datacenter, new |
 | — | `pool` — the serverless pool this GPU belongs to |

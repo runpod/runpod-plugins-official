@@ -25,6 +25,11 @@ Per `runpod-migrate/SKILL.md`:
 
 ## Assertions
 
+- **Resolves the scanner's path before running it.** The script ships in the installed
+  skill directory, not in the user's repo; the agent's working directory is the repo.
+  Running `python3 scripts/rp_api_inventory.py .` verbatim is a `No such file or
+  directory` failure, and the agent must not respond to that by abandoning the inventory
+  and falling back to ad-hoc grep.
 - Inventory is produced and shown before any file edit.
 - `scripts/submit_job.py` is left byte-for-byte unchanged and is explicitly called out
   as out of scope.
