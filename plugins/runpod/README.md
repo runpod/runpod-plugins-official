@@ -55,13 +55,32 @@ uses the "Sign in with Runpod" OAuth flow, so no key is stored on disk (see
 
 ## Usage
 
-Ask your AI agent:
+For one-off actions, just ask — the router picks the lane:
 
 - "Create a pod with an RTX 4090"
 - "Deploy a serverless endpoint from this image"
 - "Which GPU should I use for a 13B model?"
 - "Write an `@remote` function and run it on a GPU"
 - "Download a model, containerize it, and deploy it"
+
+For anything you're **designing** rather than executing, name the skill and send
+the agent to the worked material first. The golden paths carry no `SKILL.md`, so
+they are never auto-loaded, and `reference/*.md` opens only on demand — asking is
+what pulls them in:
+
+- "Use the runpod plugin skill and read the golden paths before planning. I want to
+  build a speech translator — which path is closest, and what would you change?"
+- "Use the runpod-migrate skill. Inventory this repo and show me the table before
+  changing anything, then check the reference mappings as you go."
+- "Use the flash skill and follow the custom serverless dev loop golden path to
+  deploy this handler."
+- "Use runpod-usage and check the GPU selection reference before you pick hardware."
+
+The shape is always **[skill] + [read the examples first] + [your task]**. Adding
+*"show me the plan before you change anything"* and *"verify it with a real
+request"* is worth the keystrokes — see
+[`skills/runpod-usage/reference/development-loop.md`](skills/runpod-usage/reference/development-loop.md).
+The full prompt table is in the [repo README](../../README.md#ask-for-it-by-name).
 
 ## URLs
 
