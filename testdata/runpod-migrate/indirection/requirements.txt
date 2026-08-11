@@ -1,0 +1,2 @@
+runpod==1.6.2
+requests>=2.31

@@ -1,0 +1,3 @@
+runpod:
+  base_url: https://rest.runpod.io/v1
+  timeout: 30
