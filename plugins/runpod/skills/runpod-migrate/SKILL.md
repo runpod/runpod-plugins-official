@@ -211,7 +211,7 @@ Two markers, and they mean different things — do not reach for the wrong one:
 | Marker | Use it for |
 | --- | --- |
 | `rp-migrate: keep-v1` | legacy code kept **on purpose** — a `RUNPOD_API_V1` rollback branch, or a GraphQL call with no v2 equivalent. Reported under *kept on purpose*. |
-| `rp-migrate: ignore` | a **false positive** on code that is already correct. Says "this isn't legacy", not "this is legacy I'm keeping". |
+| `rp-migrate: ignore` | a **false positive** on code that is already correct. Says "this isn't legacy", not "this is legacy I'm keeping". Reported under *marked false positives*. |
 
 Both accept `line`, `start`/`end` region, or `file` scope, and both drop out of the plan
 and out of `--fail-on-legacy`. Using `keep-v1` to silence a false positive records a lie

@@ -14,12 +14,18 @@ Standard library only, no install step:
 
 Exit codes: 0 clean, 1 legacy usage found with --fail-on-legacy, 2 bad usage.
 
-Legacy code kept on purpose (a RUNPOD_API_V1 rollback path, or a GraphQL call with no
-v2 equivalent) can be marked so it stays out of the plan and out of --fail-on-legacy:
+Two markers keep a hit out of the plan and out of --fail-on-legacy. They mean
+opposite things and the report keeps them apart, so pick the accurate one:
 
-    # rp-migrate: keep-v1              this line
-    # rp-migrate: keep-v1 start / end  the region between them
-    # rp-migrate: keep-v1 file         the whole file
+    # rp-migrate: keep-v1    legacy left behind on purpose — a RUNPOD_API_V1
+                             rollback path, or a GraphQL call with no v2 equivalent
+    # rp-migrate: ignore     a false positive on code that is already correct
+
+Each takes three scopes:
+
+    # rp-migrate: <marker>              this line
+    # rp-migrate: <marker> start / end  the region between them
+    # rp-migrate: <marker> file         the whole file
 """
 
 from __future__ import annotations
@@ -217,33 +223,57 @@ def md_cell(s: str) -> str:
     return s.replace("|", "\\|").replace("\n", " ")
 
 
-# Suppression markers. A migration that ships a `RUNPOD_API_V1=1` rollback path, or
-# that must keep a GraphQL-only call (myself/secrets/spot), deliberately leaves legacy
-# code behind — mark it so the report separates "still to do" from "kept on purpose"
-# and --fail-on-legacy stays usable.
+# Suppression markers. Both keep a hit out of the plan and out of --fail-on-legacy,
+# but they say opposite things and the report must not conflate them:
 #
-#   rp-migrate: keep-v1 file            anywhere in a file  -> whole file is intentional
-#   rp-migrate: keep-v1 start / end     bracket a region
-#   rp-migrate: ignore                  on the matching line
-MARK_FILE = re.compile(r"rp-migrate:\s*keep-v1\s+file")
-MARK_START = re.compile(r"rp-migrate:\s*keep-v1\s+start")
-MARK_END = re.compile(r"rp-migrate:\s*keep-v1\s+end")
-MARK_LINE = re.compile(r"rp-migrate:\s*(ignore|keep-v1)\b(?!\s+(file|start|end))")
+#   keep-v1  legacy code left behind on purpose — a `RUNPOD_API_V1=1` rollback path,
+#            or a GraphQL-only call (myself/secrets/spot) with no v2 equivalent.
+#   ignore   not legacy at all — a false positive on code that is already correct.
+#
+# Reporting an `ignore` as `keep-v1` would claim the migration deliberately left v1
+# behind when it left none, which is the exact lie the skill warns against.
+#
+# Each accepts three scopes:
+#   rp-migrate: <marker> file           anywhere in a file  -> whole file
+#   rp-migrate: <marker> start / end    bracket a region
+#   rp-migrate: <marker>                the matching line
+MARKERS = ("keep-v1", "ignore")
+MARK_FILE = {m: re.compile(rf"rp-migrate:\s*{m}\s+file") for m in MARKERS}
+MARK_START = {m: re.compile(rf"rp-migrate:\s*{m}\s+start") for m in MARKERS}
+MARK_END = {m: re.compile(rf"rp-migrate:\s*{m}\s+end") for m in MARKERS}
+MARK_LINE = {m: re.compile(rf"rp-migrate:\s*{m}\b(?!\s+(file|start|end))") for m in MARKERS}
 
 
-def intentional_lines(text: str) -> tuple[bool, set[int]]:
-    """Return (whole_file_marked, set of line numbers marked intentional)."""
-    if MARK_FILE.search(text):
-        return True, set()
-    marked, inside = set(), False
+def intentional_lines(text: str) -> tuple[str | None, dict[int, str]]:
+    """
+    Return (whole_file_marker, {line number: marker}).
+
+    `keep-v1` wins over `ignore` when both cover the same line, because claiming
+    legacy was kept on purpose is the safer error: it leaves the hit visible as
+    legacy rather than dismissing it as a false positive.
+    """
+    for marker in MARKERS:
+        if MARK_FILE[marker].search(text):
+            return marker, {}
+
+    marked: dict[int, str] = {}
+    inside: set[str] = set()
+
     for lineno, line in enumerate(text.splitlines(), 1):
-        if MARK_START.search(line):
-            inside = True
-        if inside or MARK_LINE.search(line):
-            marked.add(lineno)
-        if MARK_END.search(line):
-            inside = False
-    return False, marked
+        for marker in MARKERS:
+            if MARK_START[marker].search(line):
+                inside.add(marker)
+
+        for marker in MARKERS:
+            if marker in inside or MARK_LINE[marker].search(line):
+                # MARKERS is ordered keep-v1 first, so it wins a tie.
+                marked.setdefault(lineno, marker)
+
+        for marker in MARKERS:
+            if MARK_END[marker].search(line):
+                inside.discard(marker)
+
+    return None, marked
 
 SKIP_DIRS = {
     ".git", "node_modules", ".venv", "venv", "env", "__pycache__", "dist", "build",
@@ -292,7 +322,7 @@ def scan_file(path: str, root: str):
         return []
 
     rel = os.path.relpath(path, root)
-    whole_file, marked = intentional_lines(text)
+    whole_file_marker, marked = intentional_lines(text)
     ext = os.path.splitext(path)[1].lower()
     is_doc = ext in PROSE_SUFFIXES
     is_py = ext in {".py", ".pyi"}
@@ -338,7 +368,9 @@ def scan_file(path: str, root: str):
                 "match": m.group(0)[:80],
                 "note": note,
                 "text": line.strip()[:200],
-                "intentional": whole_file or lineno in marked,
+                # Which marker, not just whether one was present: the two mean
+                # opposite things and the report keeps them apart.
+                "marker": whole_file_marker or marked.get(lineno),
             })
     return hits
 
@@ -393,9 +425,10 @@ def render_markdown(hits, root, scope):
     out.append("")
 
     legacy_files = sorted({h["file"] for h in hits
-                           if h["generation"] in LEGACY and not h["intentional"] and not h["prose"]})
-    kept = [h for h in hits if h["generation"] in LEGACY and h["intentional"]]
-    prose_hits = [h for h in hits if h["generation"] in LEGACY and h["prose"] and not h["intentional"]]
+                           if h["generation"] in LEGACY and not h["marker"] and not h["prose"]})
+    kept = [h for h in hits if h["generation"] in LEGACY and h["marker"] == "keep-v1"]
+    ignored = [h for h in hits if h["generation"] in LEGACY and h["marker"] == "ignore"]
+    prose_hits = [h for h in hits if h["generation"] in LEGACY and h["prose"] and not h["marker"]]
     v2_files = sorted(files_by_gen.get("v2", []))
     mixed = sorted(set(legacy_files) & set(v2_files))
 
@@ -411,9 +444,16 @@ def render_markdown(hits, root, scope):
         )
     if kept:
         out.append(
-            f"- **{len(kept)} legacy call site(s) are marked intentional** "
-            f"(`rp-migrate: keep-v1`) in {len(sorted({h['file'] for h in kept}))} file(s) — "
+            f"- **{len(kept)} legacy call site(s) are kept on purpose** "
+            f"(`rp-migrate: keep-v1`) in {len({h['file'] for h in kept})} file(s) — "
             "rollback paths or GraphQL-only calls. Excluded from the plan and from `--fail-on-legacy`."
+        )
+    if ignored:
+        out.append(
+            f"- **{len(ignored)} hit(s) are marked false positives** "
+            f"(`rp-migrate: ignore`) in {len({h['file'] for h in ignored})} file(s) — "
+            "code that is already correct, not legacy being retained. Excluded from the plan "
+            "and from `--fail-on-legacy`."
         )
     if v2_files:
         out.append(f"- **{len(v2_files)} file(s) are already on REST v2** — leave them alone.")
@@ -438,14 +478,19 @@ def render_markdown(hits, root, scope):
         out.append("| --- | --- | --- |")
         for h in rows:
             notes = md_cell("<br>".join(h["notes"]))
-            keep = " _(kept on purpose)_" if h["intentional"] else (" _(comment/doc)_" if h["prose"] else "")
+            if h["marker"] == "keep-v1":
+                keep = " _(kept on purpose)_"
+            elif h["marker"] == "ignore":
+                keep = " _(false positive)_"
+            else:
+                keep = " _(comment/doc)_" if h["prose"] else ""
             out.append(f"| `{h['file']}:{h['line']}`{keep} | `{md_cell(h['matches'][0])}` | {notes} |")
         out.append("")
 
     if legacy_files:
         out.append("## Migration order\n")
         counts = Counter(h["file"] for h in hits
-                         if h["generation"] in LEGACY and not h["intentional"] and not h["prose"])
+                         if h["generation"] in LEGACY and not h["marker"] and not h["prose"])
         out.append("Fewest call sites first — each file is one reviewable commit.\n")
         for f, n in sorted(counts.items(), key=lambda kv: (kv[1], kv[0])):
             out.append(f"1. `{f}` — {n} call site(s)")
@@ -480,7 +525,7 @@ def main(argv=None):
     hits = dedupe(hits)
 
     scoped = {"rest": {"v1", "v1-field"}, "graphql": {"graphql"}}.get(args.scope, LEGACY)
-    in_plan = [h for h in hits if h["generation"] in scoped and not h["intentional"] and not h["prose"]]
+    in_plan = [h for h in hits if h["generation"] in scoped and not h["marker"] and not h["prose"]]
 
     if args.json:
         print(json.dumps({
@@ -488,7 +533,10 @@ def main(argv=None):
             "scope": args.scope,
             "counts": dict(Counter(h["generation"] for h in hits)),
             "files_needing_migration": sorted({h["file"] for h in in_plan}),
-            "intentional_legacy": sorted({h["file"] for h in hits if h["intentional"] and h["generation"] in LEGACY}),
+            "kept_on_purpose": sorted({h["file"] for h in hits
+                                       if h["marker"] == "keep-v1" and h["generation"] in LEGACY}),
+            "marked_false_positive": sorted({h["file"] for h in hits
+                                             if h["marker"] == "ignore" and h["generation"] in LEGACY}),
             "prose_only": sorted({h["file"] for h in hits if h["prose"] and h["generation"] in LEGACY}),
             "already_v2": sorted({h["file"] for h in hits if h["generation"] == "v2"}),
             "job_api_leave_alone": sorted({h["file"] for h in hits if h["generation"] == JOB_API}),

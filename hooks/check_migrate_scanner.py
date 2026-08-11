@@ -82,7 +82,7 @@ def main() -> int:
     check("endpoints.py is fully migrated and no longer planned",
           "gpu_farm/endpoints.py" not in plan, f"got {sorted(plan)}")
     check("rp-migrate:keep-v1 rollback code is excluded from the plan",
-          "gpu_farm/runpod_client.py" in d["intentional_legacy"])
+          "gpu_farm/runpod_client.py" in d["kept_on_purpose"])
     # Unmarked v1 branches still surface: marking is opt-in, not automatic.
     check("unmarked v1 branches are still reported",
           "gpu_farm/runpod_client.py" in plan)
@@ -118,6 +118,38 @@ def main() -> int:
           exit_code("correct-v2", "--fail-on-legacy") == 0)
     check("--fail-on-legacy exits 1 when v1 remains",
           exit_code("v1-graphql-mixed", "--fail-on-legacy") == 1)
+
+    # ---- 5. the two suppression markers must not be conflated ------------
+    # `keep-v1` says "this is legacy I am keeping"; `ignore` says "this is not
+    # legacy at all". The scanner once stored only *whether* a line was marked
+    # and then reported every mark as keep-v1, so a fully migrated repo was
+    # described as deliberately retaining v1 — the exact claim SKILL.md warns
+    # against. `ignore` also silently did nothing at file and region scope.
+    print("markers")
+    d = scan("markers")
+    kept = set(d["kept_on_purpose"])
+    fp = set(d["marked_false_positive"])
+    check("keep-v1 marks land in kept_on_purpose, at line and file scope",
+          kept == {"rollback.py", "whole_file_keep.py"}, f"got {sorted(kept)}")
+    check("ignore marks land in marked_false_positive, at line and file scope",
+          fp == {"false_positive.py", "whole_file_ignore.py"}, f"got {sorted(fp)}")
+    check("the two markers never describe the same file", not (kept & fp),
+          f"overlap: {sorted(kept & fp)}")
+    check("neither marker leaves work in the plan",
+          d["files_needing_migration"] == [], f"got {d['files_needing_migration']}")
+    check("--fail-on-legacy exits 0 when every hit is marked",
+          exit_code("markers", "--fail-on-legacy") == 0)
+
+    report = subprocess.run(
+        [sys.executable, str(SCANNER), str(CORPORA / "markers")],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    check("the report never labels an ignore-marked row 'kept on purpose'",
+          all("_(kept on purpose)_" not in line
+              for line in report.splitlines()
+              if line.startswith(("| `false_positive.py", "| `whole_file_ignore.py"))))
+    check("the verdict counts false positives separately from retained v1",
+          "marked false positives" in report and "kept on purpose" in report)
 
     print()
     if failures:
