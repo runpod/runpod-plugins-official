@@ -34,7 +34,9 @@ does not exist just because that page omits it.
 | `gpuTypes` / `gpuTypes(input: {id})` | `GET /v2/catalog/gpus?include=AVAILABILITY` |
 | `cpuTypes` | `GET /v2/catalog/cpus?include=AVAILABILITY` |
 | `saveRegistryAuth(input:)` | `POST /v2/registries` |
-| network volume mutations | `/v2/network-volumes` |
+| `createNetworkVolume(input:)` | `POST /v2/network-volumes` |
+| `updateNetworkVolume(input:)` | `PATCH /v2/network-volumes/{id}` |
+| `deleteNetworkVolume(input:)` | `DELETE /v2/network-volumes/{id}` |
 
 `saveEndpoint` is an upsert keyed on `id`; REST splits that into POST and PATCH. If the
 code branches on "did I pass an id", that branch becomes the method choice.

@@ -48,7 +48,7 @@ a filter you forget to port returns *everything* with a `200`. Filter in your ow
 | — | `GET /v2/serverless/{id}/releases` | new |
 | — | `GET /v2/serverless/{id}/workers/{workerId}/logs` | new: SSE |
 | `POST|GET /templates`, `…/{id}` | `…/v2/templates` | `/update` alias gone |
-| `…/networkvolumes` | **`…/v2/network-volumes`** | hyphenated. `/v2/networkvolumes` is a `404`. |
+| `…/networkvolumes` | **`…/v2/network-volumes`** | hyphenated. `/v2/networkvolumes` is a `404`. `POST …/{id}/update` alias gone — use PATCH. |
 | `…/containerregistryauth` | `…/v2/registries` | |
 | — | `/v2/registries/delegations` | new: ECR delegation |
 | — | `/v2/catalog/gpus`, `/cpus`, `/datacenters` | new: v1 had no catalog |
