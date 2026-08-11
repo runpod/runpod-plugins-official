@@ -44,7 +44,16 @@ from collections import Counter, defaultdict
 # --------------------------------------------------------------------------
 
 # A line that already carries a v2 marker is v2 code, whatever else it contains.
-V2_CONTEXT = r"/v2/|V2_BASE|api\.runpod\.io/v2|v2_base|V2_URL"
+# Structural markers only — do NOT list guessed variable names here. Real code holds
+# the base URL in a constant whose name we cannot predict; those are derived per file
+# by BASE_ASSIGN below, which is honest where a hardcoded name list is wishful.
+V2_CONTEXT = r"/v2/|api\.runpod\.io/v2"
+
+# `IDENT = "...api.runpod.io/v2..."` — captures whatever the file calls its base URL,
+# so `f"{BASE}/pods"` eleven lines later is recognized as v2 rather than reported as a
+# leftover v1 path. Without this, a correctly migrated file fails --fail-on-legacy.
+BASE_ASSIGN_V2 = re.compile(r"""(\w+)\s*[:=]\s*[fr]?['"`][^'"`]*api\.runpod\.io/v2""")
+BASE_ASSIGN_V1 = re.compile(r"""(\w+)\s*[:=]\s*[fr]?['"`][^'"`]*rest\.runpod\.io/v1""")
 
 JOB_API = "job-api"  # api.runpod.ai/v2/<endpointId>/run — NOT the control plane
 
@@ -152,9 +161,40 @@ SIGNALS: list[tuple[str, str, str, str]] = [
 ]
 
 COMPILED = [
-    (s[0], s[1], re.compile(s[2]), s[3], re.compile(s[4]) if len(s) > 4 else None)
+    (s[0], s[1], re.compile(s[2]), s[3],
+     re.compile(s[4]) if len(s) > 4 else None,
+     len(s) > 4 and s[4] == V2_CONTEXT)   # does this signal defer to v2 context?
     for s in SIGNALS
 ]
+
+
+def comment_index(line: str) -> int:
+    """Index where a trailing comment starts, or -1. Quote-aware, so a `#` or `//`
+    inside a string literal (a URL fragment, say) is not mistaken for a comment.
+
+    Needed because the skill's own house style annotates migrations inline —
+    `"image": image,  # was imageName` — and a whole-line-only comment test scores
+    that as a live v1 field, which makes --fail-on-legacy fail on correct code."""
+    quote = None
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if quote:
+            if c == "\\":
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+        elif c in "\"'`":
+            quote = c
+        elif c == "#":
+            return i
+        elif c == "/" and line[i + 1:i + 2] == "/" and line[i - 1:i] != ":":
+            return i   # `//` comment, but never the `//` in `https://`
+        elif c == "-" and line[i + 1:i + 2] == "-" and line[:i].strip() == "":
+            return i
+        i += 1
+    return -1
 
 # Lines that are prose about the API rather than calls to it — comments and docs.
 # Still reported (commented-out v1 code is worth seeing) but kept out of the plan.
@@ -257,6 +297,14 @@ def scan_file(path: str, root: str):
     is_doc = ext in PROSE_SUFFIXES
     is_py = ext in {".py", ".pyi"}
     in_docstring = False
+
+    # Whatever this file calls its v2 base URL counts as v2 context anywhere in it.
+    # A name bound to a v1 base URL is deliberately NOT added — those lines are v1.
+    v2_names = set(BASE_ASSIGN_V2.findall(text)) - set(BASE_ASSIGN_V1.findall(text))
+    file_v2_ctx = (
+        re.compile(r"\b(" + "|".join(re.escape(n) for n in sorted(v2_names)) + r")\b")
+        if v2_names else None
+    )
     hits = []
     for lineno, line in enumerate(text.splitlines(), 1):
         if len(line) > 2000:
@@ -268,13 +316,19 @@ def scan_file(path: str, root: str):
                 docstring_line = True          # the delimiter line itself is prose
                 if quotes % 2:                 # odd count flips the state
                     in_docstring = not in_docstring
-        prose = is_doc or docstring_line or bool(COMMENT_START.match(line))
-        for gen, res, rx, note, unless in COMPILED:
+        cmt = comment_index(line)
+        whole_line_comment = is_doc or docstring_line or bool(COMMENT_START.match(line))
+        for gen, res, rx, note, unless, defers_to_v2 in COMPILED:
             m = rx.search(line)
             if not m:
                 continue
             if unless and unless.search(line):
                 continue
+            if defers_to_v2 and file_v2_ctx and file_v2_ctx.search(line):
+                continue   # e.g. f"{BASE}/pods" where BASE is this file's v2 base URL
+            # A hit after a `#` / `//` is an annotation about the migration, not a
+            # call site — report it, but keep it out of the plan.
+            prose = whole_line_comment or (cmt != -1 and m.start() > cmt)
             hits.append({
                 "prose": prose,
                 "file": rel,

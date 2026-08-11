@@ -20,43 +20,34 @@ license: Apache-2.0
 Moves a codebase off the **GraphQL API** (`api.runpod.io/graphql`) and **REST v1**
 (`rest.runpod.io/v1`) onto **REST v2** (`api.runpod.io/v2`).
 
-**Why the user should want this** — lead with these, they are the payoff, not trivia:
+**The payoff, in one line each** — you deliver these to the user at step 6, matched to
+their actual code. Don't recite them now:
 
-- **You can see stock before you rent.** `GET /v2/catalog/gpus?include=AVAILABILITY`
-  returns a per-datacenter availability level for every GPU. v1 had no catalog at all;
-  GraphQL had `lowestPrice.stockStatus` one GPU at a time. Capacity retry loops stop
-  being blind.
-- **Endpoints hand you their own job URLs.** `endpoint.requestUrls.run` — no more
-  string-concatenating `api.runpod.ai/v2/<id>/run`.
-- **Real pod lifecycle states.** `PROVISIONING → STARTING → RUNNING → EXITED/ERROR`,
-  plus an `actions` list of the transitions that are legal right now. v1's
-  `desiredStatus` had three values and could not express "still coming up" or "failed",
-  so wait-loops had to time out instead of failing fast.
-- **Live worker/rollout visibility.** Per-worker status, an `isStale` flag during a
-  rolling update, a `summary` histogram, and endpoint release history with a diff.
-- **Streaming logs over SSE** for pods and workers, instead of polling.
-- **The catalog is not frozen in the spec.** v1 hardcoded GPU and datacenter IDs as
-  enums, so new hardware needed a spec release. v2 takes open strings and you discover
-  values from `/v2/catalog`.
-- **Mistakes fail loudly, and correctly.** Every v2 request body rejects unknown fields
-  (via `additionalProperties: false`, or `unevaluatedProperties: false` on the composed
-  Create/Update schemas), so a half-finished migration 422s with the offending fields
-  listed by name instead of silently ignoring them. Errors are structured
-  (`{title, status, detail, errors[]}`) with honest status codes — a bad image tag that
-  v1 answered with `500 {"error": "..."}` is a `422` in v2, so retry logic stops
-  retrying user errors.
+- **See stock before you rent** — `GET /v2/catalog/gpus?include=AVAILABILITY`. v1 had no
+  catalog at all, so every capacity retry loop was blind.
+- **Endpoints return their own job URLs** — `requestUrls.run`, no more string-building.
+- **Real lifecycle states** — `PROVISIONING`/`STARTING`/`ERROR` and an `actions` list, so
+  wait-loops fail fast instead of timing out.
+- **Mistakes fail loudly** — unknown request fields are rejected by name, with structured
+  errors and honest status codes.
 
-Full list, mapped to what the user's code already does: **[reference/unlocks.md](reference/unlocks.md)**.
+The full set, organized as *if their code does X → v2 offers Y*:
+**[reference/unlocks.md](reference/unlocks.md)** — open it at step 6.
 
 ## Before you touch any code
 
-**Ask for scope if it is not already clear** — it changes the plan materially:
+**Infer the scope, state it, and move** — do not open with a questionnaire:
 
 | The user says | Scope |
 | --- | --- |
 | "migrate to v2" / nothing specific | `all` — REST v1 **and** GraphQL |
 | "just the REST stuff", "leave GraphQL alone" | `rest` — REST v1 only |
 | "get us off GraphQL" | `graphql` — GraphQL only |
+
+The table resolves every phrasing, so scope is not the thing to interrupt for. Say which
+row you matched and carry on. **The question that does need asking comes later** — at
+step 3, when the inventory shows the code depends on a capability v2 removed. That one
+is a real fork and you cannot answer it for them.
 
 Some things **have no v2 equivalent and must stay on GraphQL regardless of scope**:
 account/billing identity (`myself`), secrets, spot/interruptible pods, cluster
@@ -152,19 +143,40 @@ they are afraid of:
 
 ### 3. Plan, split into required vs cleanup
 
-Write the plan down before editing, and keep the two buckets separate all the way
-through to the final summary:
+Write the plan down before editing, and keep these buckets separate all the way through
+to the final summary:
 
 - **Required** — it does not work on v2 without this.
 - **Cleanup** — it works either way, but v2 lets you delete code (hand-built job URLs,
   hand-rolled availability retry, polling loops that can now be SSE).
+- **Decisions the user must make** — the code depends on something v2 removed outright:
+  spot/interruptible pods, savings plans, `dockerEntrypoint`, placement constraints
+  (`minRAMPerGPU`, `countryCodes`, …), CUDA pinning, pod `reset`. See
+  [breaking-changes.md](reference/breaking-changes.md) Class 3.
+
+**Stop and ask before writing code in that third bucket.** There is no correct
+translation — the options are accept the behavior change, keep that call on v1/GraphQL,
+or redesign around it, and only the user can pick. Dropping the field with a `# no v2
+equivalent` comment is the failure mode this bucket exists to prevent: it silently
+changes what their infrastructure does. If the bucket is empty, say so — that is
+reassuring and takes one line.
 
 ### 4. Migrate, one file per commit
 
-Work in the scanner's suggested order (fewest call sites first). Per file:
+Work in the scanner's suggested order (fewest call sites first) — **with one override:
+if several call sites share a transport helper, migrate the helper first**, whatever its
+count. The scanner orders by call-site count and cannot see imports, so it will happily
+put a consumer ahead of the module it imports its client from. Migrating a consumer
+first means writing against an interface you are about to change.
+
+Per file:
 
 - Map paths and fields with **[reference/rest-v1-to-v2.md](reference/rest-v1-to-v2.md)**
   or **[reference/graphql-to-v2.md](reference/graphql-to-v2.md)**.
+- **`gpuTypeIds` + `gpuTypePriority` means you are writing new code, not renaming
+  fields.** v2 takes one GPU type, so the server-side fallback becomes a client-side
+  loop over the catalog. Working implementation:
+  [breaking-changes.md → Replacing the GPU fallback list](reference/breaking-changes.md#replacing-the-gpu-fallback-list).
 - **Always request availability on catalog reads.** Any `GET /v2/catalog/gpus`,
   `/catalog/cpus`, or `/catalog/datacenters` this migration introduces gets
   `include=AVAILABILITY` (`GPU_AVAILABILITY`/`CPU_AVAILABILITY` for datacenters).
@@ -173,7 +185,11 @@ Work in the scanner's suggested order (fewest call sites first). Per file:
 - Offer the **rollback flag** (`RUNPOD_API_V1=1`) while v2 is new to them:
   **[reference/rollback-flag.md](reference/rollback-flag.md)**. Worth it for a service
   in production; skip it for a one-off script.
-- Never change behavior and API version in the same commit.
+- **Never change behavior and API version in the same commit** — including the
+  improvements v2 makes possible. Failing fast on `status == "ERROR"` instead of timing
+  out is a genuine win and it belongs in the *next* commit; folding it into the
+  migration commit means a rollback has to give up both. Land those in the **cleanup**
+  bucket, separately.
 
 A full before/after of a real client — pod create with GPU fallback, endpoint create
 without `templateId`, GraphQL dashboard — is in
@@ -188,11 +204,25 @@ Re-run the scanner to prove the call sites are gone, then exercise the real path
 python3 "$SCAN" . --scope rest --fail-on-legacy   # exit 1 if v1 remains
 ```
 
-Legacy code you kept **on purpose** — a `RUNPOD_API_V1` rollback branch, or a GraphQL
-call with no v2 equivalent — gets a `# rp-migrate: keep-v1` marker (line, `start`/`end`
-region, or `file`). It stays visible in the report under *kept on purpose* but drops out
-of the plan, so `--fail-on-legacy` stays meaningful and can go in CI. Markers are also
-how you find the rollback code again when it is time to delete it.
+Two markers, and they mean different things — do not reach for the wrong one:
+
+| Marker | Use it for |
+| --- | --- |
+| `rp-migrate: keep-v1` | legacy code kept **on purpose** — a `RUNPOD_API_V1` rollback branch, or a GraphQL call with no v2 equivalent. Reported under *kept on purpose*. |
+| `rp-migrate: ignore` | a **false positive** on code that is already correct. Says "this isn't legacy", not "this is legacy I'm keeping". |
+
+Both accept `line`, `start`/`end` region, or `file` scope, and both drop out of the plan
+and out of `--fail-on-legacy`. Using `keep-v1` to silence a false positive records a lie
+in the report — reach for `ignore` there.
+
+**Where the gate can still be wrong.** The same blind spots from step 1 invert after a
+migration: before, they hide v1 code; after, they can flag correct v2 code. The scanner
+handles the two common cases — trailing `# was imageName` annotations, and a base URL
+held in a constant (`f"{BASE}/pods"` where `BASE` is a v2 URL defined anywhere in the
+file). Beyond those — a base URL imported from another module, or built at runtime from
+config — it can still misread correct code as legacy. Read the flagged lines before
+believing the exit code, and mark true false positives with `ignore` rather than
+weakening the gate.
 
 - **Reads** are free — list pods, endpoints, volumes, catalog. Confirm you unwrap the
   new envelope (`{"pods": [...]}`, not a bare array).

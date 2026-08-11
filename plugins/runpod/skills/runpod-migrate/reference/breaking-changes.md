@@ -125,7 +125,27 @@ requires every mount entry to carry its full schema (`422` otherwise). Migration
 that resizes or remounts storage in place needs rethinking, not translating — full table
 in [rest-v1-to-v2.md](rest-v1-to-v2.md#pods--request-body).
 
-### 11. `cloudType: ALL` is gone (GraphQL only)
+### 11. `dockerStartCmd` → `args` collapses an argv array into one string
+
+v1 took `["bash", "-lc", "python /app/render.py"]` — a real argv, where element
+boundaries are explicit. v2's `args` is a single string. A naive `" ".join(...)` gives:
+
+```
+bash -lc python /app/render.py
+```
+
+which runs `python` **as the `-lc` script text** with `/app/render.py` as `$0` — not the
+command that was intended. The container starts, so there is no `422` and no crash at
+create time; it just does the wrong thing at runtime.
+
+Quote any element that was a unit: `bash -lc 'python /app/render.py'`. Anything
+containing a space, a quote, or a shell metacharacter needs the same treatment. Argv
+arrays whose elements are all bare words join safely.
+
+Related: v1's separate `dockerEntrypoint` override has no v2 field at all, so an image
+that relied on overriding ENTRYPOINT *and* CMD independently cannot be expressed.
+
+### 12. `cloudType: ALL` is gone (GraphQL only)
 
 v2 `cloud` is `SECURE` or `COMMUNITY`. Code that asked for `ALL` to widen capacity must
 now pick one, or try one and fall back.
@@ -169,12 +189,22 @@ cat = session.get(f"{V2}/catalog/gpus",
                           "count": 1, "cloud": "SECURE"}).json()["gpus"]
 stock = {g["id"]: g.get("availability", "NONE") for g in cat}
 
+last = None
 for gpu_id in sorted(PREFERENCE, key=lambda g: RANK[stock.get(g, "NONE")]):
     r = session.post(f"{V2}/pods", json={**body, "gpu": {"id": gpu_id, "count": 1}})
     if r.status_code == 201:
         return r.json()
-raise RuntimeError(f"no GPU available from {PREFERENCE}")
+    # 422 is a bad *body*, not scarce capacity — the next GPU will fail identically.
+    # During a migration this is the likeliest failure, so surface it immediately
+    # instead of walking the list and blaming availability.
+    if r.status_code == 422:
+        raise RuntimeError(f"request rejected, not a capacity problem: {r.text}")
+    last = f"{gpu_id}: {r.status_code} {r.text[:200]}"
+raise RuntimeError(f"no GPU available from {PREFERENCE} — last error: {last}")
 ```
+
+Keep the response body in the error. A bare "no GPU available" during a migration sends
+people hunting for capacity when the real cause is usually a field they missed.
 
 For per-datacenter placement, read `dataCenters[].availability` off the same response
 instead of the top-level `availability`.

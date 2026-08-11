@@ -67,6 +67,21 @@ Billing responses also changed shape: v1 returned a bare array of records; v2 re
 (e.g. `?bucketSize=day&lastN=30`) as an alternative to `startTime`/`endTime`. v1's
 `grouping` parameter is gone — v2 emits one record per resource per bucket.
 
+**The money field was renamed too: `amount` → `totalAmount`.** Records now break the
+figure down (`gpuAmount`, `cpuAmount`, `diskAmount`, `feeAmount`, `totalAmount`), and
+`metadata.totals` carries the same shape across the whole window. Porting
+`sum(r["amount"] for r in resp.json())` to v2 without this is a `KeyError` — noisy, but
+easy to miss because it sits one line away from the far quieter `/billing/endpoints`
+trap above.
+
+```python
+# v1
+total = sum(r["amount"] for r in resp.json())
+# v2 — per record, or just read the precomputed total
+total = sum(r["totalAmount"] for r in resp.json()["records"])
+total = resp.json()["metadata"]["totals"]["totalAmount"]
+```
+
 ## Pods — request body
 
 ```jsonc
@@ -188,6 +203,7 @@ cannot create or update a CPU endpoint.
 | `imageName` | `image` |
 | `containerDiskInGb` | `disk` |
 | `volumeInGb` / `volumeMountPath` | `mounts.persistent.{size,path}` (no `network` on templates — `422`) |
+| `volumeInGb: 0` | **omit `mounts` entirely.** Zero meant "no volume" in v1; `{"size": 0}` is invalid in v2 (10 GB floor) and there is no `path` to supply. |
 | `dockerStartCmd` / `dockerEntrypoint` | `args` (string) |
 | `containerRegistryAuthId` | `registry` |
 | `isServerless` | `serverless` |
