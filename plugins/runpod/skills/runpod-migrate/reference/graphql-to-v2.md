@@ -73,6 +73,58 @@ say so in the summary rather than leaving the user to wonder if you missed somet
 | `startSsh`, `startJupyter` | removed — express these through `ports` / `args` / the image |
 | `templateId` | removed — inline the template's container fields |
 
+A full conversion, showing the four shape changes that a field-by-field rename misses —
+comma-string ports become an array, the env pair-list becomes a map, `dockerArgs`
+becomes `args`, and the whole thing stops being a string template:
+
+```js
+// ── before (GraphQL) ──────────────────────────────────────────────────────
+await gql(`
+  mutation {
+    podFindAndDeployOnDemand(input: {
+      cloudType: SECURE,
+      gpuTypeId: "NVIDIA RTX A6000",
+      gpuCount: 1,
+      name: "${name}",
+      imageName: "${image}",
+      containerDiskInGb: 40,
+      volumeInGb: 40,
+      volumeMountPath: "/workspace",
+      minVcpuCount: 8,
+      minMemoryInGb: 32,
+      ports: "8888/http,22/tcp",
+      dockerArgs: "",
+      env: [{ key: "JUPYTER_PASSWORD", value: "${pw}" }]
+    }) { id imageName machineId machine { podHostId } }
+  }
+`);
+
+// ── after (REST v2) ───────────────────────────────────────────────────────
+const res = await fetch("https://api.runpod.io/v2/pods", {
+  method: "POST",
+  headers: { Authorization: `Bearer ${process.env.RUNPOD_API_KEY}`,
+             "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name,
+    image,
+    cloud: "SECURE",
+    gpu: { id: "NVIDIA RTX A6000", count: 1 },
+    disk: 40,
+    mounts: { persistent: { size: 40, path: "/workspace" } },
+    ports: ["8888/http", "22/tcp"],          // array, not a comma string
+    env: { JUPYTER_PASSWORD: pw },           // map, not [{key, value}]
+    // minVcpuCount / minMemoryInGb: removed, GPU type sizes the host
+    // dockerArgs: "" -> omit `args` entirely rather than sending ""
+  }),
+});
+if (!res.ok) { const e = await res.json(); throw new Error(`${e.status} ${e.title}: ${e.detail}`); }
+const pod = await res.json();   // pod.id, pod.status, pod.cost — no machineId
+```
+
+Also note the interpolation disappears. GraphQL forced string-building, so a value
+containing a quote could break the query; v2 takes real JSON and `JSON.stringify`
+escapes for you.
+
 Response fields: `desiredStatus` → `status`, `costPerHr` → `cost`,
 `machineId` / `machine { podHostId }` → gone (`dataCenterId` remains),
 `runtime.uptimeInSeconds` → `runtime.uptime`,

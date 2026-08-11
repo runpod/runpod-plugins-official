@@ -134,8 +134,93 @@ Dropped from pod create with no v2 equivalent: `computeType` (implied by `gpu` v
 field, and survives in v2 only as a `/v2/catalog/gpus` availability filter.
 `volumeEncrypted` was a v1 Pod **response** field, not an input.)
 
-CPU pods: `computeType: "CPU"` + `cpuFlavorIds: [...]` + `vcpuCount` becomes
-`cpu: {"id": "cpu3c", "vcpuCount": 2}`. Send `gpu` **or** `cpu`, never both.
+### CPU pods
+
+`computeType: "CPU"` + `cpuFlavorIds: [...]` + `vcpuCount` becomes one `cpu` object.
+Send `gpu` **or** `cpu`, never both.
+
+```jsonc
+// v1                                    // v2
+{                                        {
+  "name": "ingest-worker",                 "name": "ingest-worker",
+  "imageName": "python:3.11-slim",         "image": "python:3.11-slim",
+  "computeType": "CPU",                    // implied by using `cpu` instead of `gpu`
+  "cpuFlavorIds": ["cpu3c", "cpu5c"],      "cpu": {"id": "cpu3c", "vcpuCount": 2},
+  "cpuFlavorPriority": "availability",     // no fallback list — loop client-side
+  "vcpuCount": 2,
+  "containerDiskInGb": 20,                 "disk": 20
+  "volumeInGb": 20,                        // mounts.persistent is DISALLOWED on CPU
+  "volumeMountPath": "/workspace"          // pods — use mounts.network instead
+}                                        }
+```
+
+Two CPU-only traps beyond the rename:
+
+- **`mounts.persistent` is rejected on CPU pods.** A literal `volumeInGb` translation
+  fails. Persist to a network volume instead.
+- **`vcpuCount` must be a power of two** and within the flavor's `vcpu.min`..`vcpu.max`.
+
+Valid flavor IDs and their vCPU ranges come from the catalog — never hardcode them:
+
+```bash
+curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  'https://api.runpod.io/v2/catalog/cpus?include=AVAILABILITY' \
+| python3 -c 'import json,sys; [print(c["id"].ljust(10), c["vcpu"], c["availability"]) for c in json.load(sys.stdin)["cpus"]]'
+```
+
+### Pod lifecycle actions
+
+Four separate v1 endpoints collapse into one, with the verb in the body:
+
+```python
+# v1 — one path per verb
+SESSION.post(f"{V1}/pods/{pod_id}/stop")
+SESSION.post(f"{V1}/pods/{pod_id}/start")
+SESSION.post(f"{V1}/pods/{pod_id}/restart")
+SESSION.post(f"{V1}/pods/{pod_id}/reset")      # no v2 equivalent
+
+# v2 — one path, action in the body, returns the updated pod
+SESSION.post(f"{V2}/pods/{pod_id}/action", json={"action": "stop"})
+SESSION.post(f"{V2}/pods/{pod_id}/action", json={"action": "start"})
+SESSION.post(f"{V2}/pods/{pod_id}/action", json={"action": "restart"})
+SESSION.delete(f"{V2}/pods/{pod_id}")          # "terminate" is also a valid action
+```
+
+The old paths are `404`, and `{"action": "reset"}` is a `422` listing the four legal
+values. Before acting, `pod["actions"]` tells you which transitions are legal *right
+now* — v1 had no equivalent, so code guessed and handled the error.
+
+### The same create in curl
+
+For codebases that aren't Python, the minimal shape:
+
+```bash
+# v1
+curl -X POST https://rest.runpod.io/v1/pods \
+  -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"trainer","imageName":"runpod/pytorch:latest","gpuTypeIds":["NVIDIA GeForce RTX 4090"],
+       "gpuCount":1,"containerDiskInGb":50,"volumeInGb":20,"volumeMountPath":"/workspace"}'
+
+# v2
+curl -X POST https://api.runpod.io/v2/pods \
+  -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"trainer","image":"runpod/pytorch:latest",
+       "gpu":{"id":"NVIDIA GeForce RTX 4090","count":1},"disk":50,
+       "mounts":{"persistent":{"size":20,"path":"/workspace"}}}'
+```
+
+### Listing pods
+
+```python
+# v1 — server-side filters, bare array
+pods = SESSION.get(f"{V1}/pods", params={"computeType": "GPU",
+                                         "desiredStatus": "RUNNING"}).json()
+
+# v2 — envelope, and the filters are yours. Unknown params are IGNORED, not
+# rejected, so a filter you forget to port silently returns everything.
+pods = [p for p in SESSION.get(f"{V2}/pods").json()["pods"]
+        if p["status"] == "RUNNING" and p.get("gpu")]
+```
 
 ## Pods — response
 
@@ -228,8 +313,105 @@ to it.
 `400` and **the error message lists the datacenters that do**. Check
 `GET /v2/catalog/datacenters` → `networkVolumeTypes` first.
 
+Three changes land at once here — the hyphenated path, the `dataCenterId` → `dataCenter`
+field, and the response envelope:
+
+```python
+# ── v1 ────────────────────────────────────────────────────────────────────
+def ensure_volume(name, size_gb, dc):
+    for vol in SESSION.get(f"{V1}/networkvolumes").json():        # bare array
+        if vol["name"] == name:
+            return vol
+    return SESSION.post(f"{V1}/networkvolumes",
+                        json={"name": name, "size": size_gb,
+                              "dataCenterId": dc}).json()
+
+# ── v2 ────────────────────────────────────────────────────────────────────
+def ensure_volume(name, size_gb, dc):
+    listing = SESSION.get(f"{V2}/network-volumes").json()["networkVolumes"]  # envelope
+    for vol in listing:
+        if vol["name"] == name:
+            return vol
+    return SESSION.post(f"{V2}/network-volumes",
+                        json={"name": name, "size": size_gb,
+                              "dataCenter": dc,            # renamed
+                              "type": "HIGH_PERFORMANCE"}  # new, optional, immutable
+                        ).json()
+```
+
+`/v2/networkvolumes` (unhyphenated) is a `404`, and `dataCenterId` is a `422` — so both
+of those fail loudly. The envelope is the quiet one: `for vol in resp.json()` iterates
+the dict's *keys* instead of raising.
+
+**Attaching a volume to a pod** changed shape as well, and `path` is now mandatory:
+
+```python
+# v1 — one field, mount path implied (/workspace by default)
+body["networkVolumeId"] = vol["id"]
+
+# v2 — an array of mounts, each needing an explicit path
+body["mounts"] = {"network": [{"volumeId": vol["id"], "path": "/workspace"}]}
+```
+
 ## Container registry auth → registries
 
 `POST /v2/registries` `{name, username, password}` → `{id, name}`. Credentials are
 write-only in both versions. Deleting is rejected if a pod is using it; templates that
 reference it silently drop to `registry: null` instead of blocking the delete.
+
+The request body is unchanged — only the path, the list envelope, and the field that
+references the credential from a pod or template:
+
+```python
+# ── v1 ────────────────────────────────────────────────────────────────────
+auth = SESSION.post(f"{V1}/containerregistryauth",
+                    json={"name": "dockerhub", "username": u, "password": p}).json()
+all_auths = SESSION.get(f"{V1}/containerregistryauth").json()          # bare array
+pod_body["containerRegistryAuthId"] = auth["id"]
+
+# ── v2 ────────────────────────────────────────────────────────────────────
+auth = SESSION.post(f"{V2}/registries",
+                    json={"name": "dockerhub", "username": u, "password": p}).json()
+all_auths = SESSION.get(f"{V2}/registries").json()["registries"]        # envelope
+pod_body["registry"] = auth["id"]                                       # renamed
+```
+
+## Templates — a worked pair
+
+The endpoint example above spreads a template into a create body. Standalone, the
+template itself converts like this:
+
+```python
+# ── v1 ────────────────────────────────────────────────────────────────────
+tpl = SESSION.post(f"{V1}/templates", json={
+    "name": "sdxl-worker",
+    "imageName": "org/worker:v3",
+    "containerDiskInGb": 20,
+    "volumeInGb": 40,
+    "volumeMountPath": "/workspace",
+    "dockerStartCmd": ["python", "-u", "handler.py"],
+    "env": {"MODEL_ID": "stabilityai/sdxl-turbo"},
+    "ports": ["8888/http"],
+    "isServerless": True,
+    "isPublic": False,
+    "readme": "## SDXL worker",
+}).json()
+
+# ── v2 ────────────────────────────────────────────────────────────────────
+tpl = SESSION.post(f"{V2}/templates", json={
+    "name": "sdxl-worker",
+    "image": "org/worker:v3",
+    "disk": 20,
+    "mounts": {"persistent": {"size": 40, "path": "/workspace"}},
+    "args": "python -u handler.py",     # one string; quote any element with spaces
+    "env": {"MODEL_ID": "stabilityai/sdxl-turbo"},
+    "ports": ["8888/http"],
+    "serverless": True,
+    "public": False,
+    "category": "NVIDIA",               # same enum and default as v1
+    # "readme" has no v2 field — drop it, or keep the text in your own repo
+}).json()
+```
+
+Templates accept only `mounts.persistent`; a `network` key is a `422`. And v2 refuses to
+delete a template while a pod references it or an endpoint is bound to it.
