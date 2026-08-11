@@ -58,9 +58,11 @@ a filter you forget to port returns *everything* with a `200`. Filter in your ow
 | — | `GET /v2/billing`, `/v2/billing/clusters` | new |
 
 ⚠ **`/billing/endpoints` is the trap.** In v1 it meant *serverless* spend. In v2 that is
-`/v2/billing/serverless`; `/v2/billing/endpoints` exists but bills **Runpod public
-endpoints**, a different product. Both return `200`. Nothing errors — the numbers are
-just wrong.
+`/v2/billing/serverless`; `/v2/billing/endpoints` still exists but reports spend on
+**[Runpod public endpoints](../../runpod/golden-paths/11-public-endpoints.md)**, a
+different product. Both return `200` and both are correct — v2 just answers a different
+question under the same path, so an unchanged call quietly reports the wrong product's
+total (`0`, if you run no public endpoints).
 
 Billing responses also changed shape: v1 returned a bare array of records; v2 returns
 `{"records": [...], "metadata": {"query", "recordCount", "totals"}}`, and adds `lastN`

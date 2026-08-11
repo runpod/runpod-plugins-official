@@ -52,11 +52,14 @@ FlashBoot off, and the symptom is slower cold starts, not an error.
 
 | Path | v1 | v2 |
 | --- | --- | --- |
-| `/billing/endpoints` | **serverless** spend | **Runpod public endpoints** spend |
+| `/billing/endpoints` | **serverless** spend | **[Runpod public endpoints](../../runpod/golden-paths/11-public-endpoints.md)** spend |
 | `/billing/serverless` | — | serverless spend |
 
-Both return `200`. Nothing errors. The dashboard just shows the wrong number — usually
-`0`, which reads as "we spent nothing" rather than "wrong endpoint".
+Both return `200` and neither is broken — v2's `/billing/endpoints` reports public
+endpoint spend accurately. The problem is that it answers a question you did not ask.
+Carry the path across unchanged and you get a correct total for the wrong product, and
+if you use no public endpoints that total is `0` — which reads as "we spent nothing on
+serverless" rather than "this is not the serverless route any more".
 
 ### 3. `ports` lost its default
 

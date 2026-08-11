@@ -138,8 +138,9 @@ they are afraid of:
 2. **Same name, different meaning** — quiet, and the reason a green test suite is not
    proof. The reference enumerates every one of them; the two that bite hardest:
    `flashboot` went from boolean to a three-value enum, and v1's `/billing/endpoints`
-   (serverless spend) is v2's `/billing/serverless` — v2's `/billing/endpoints` is a
-   *different product* and will happily return `200` with the wrong numbers.
+   (serverless spend) is v2's `/billing/serverless` — v2's `/billing/endpoints` bills a
+   *different product* (public endpoints) and answers `200` with a correct total for
+   that product, which is not the one the caller asked for.
 
 ### 3. Plan, split into required vs cleanup
 

@@ -26,6 +26,7 @@ Per `runpod-migrate/SKILL.md`:
 
 - No GraphQL file is edited.
 - `/billing/endpoints` → `/v2/billing/serverless`; the agent explicitly warns that
-  `/v2/billing/endpoints` exists but bills a different product and returns `200`.
+  `/v2/billing/endpoints` exists, returns `200`, and correctly bills a *different*
+  product (public endpoints) — so leaving the path unchanged fails silently.
 - Reports that `myself` has no v2 equivalent rather than implying the migration is
   incomplete or that GraphQL could be fully retired.

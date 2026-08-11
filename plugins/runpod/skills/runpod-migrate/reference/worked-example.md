@@ -217,7 +217,7 @@ export async function runningPods() {
 - timeout: v2 does not apply the documented 300000 default (observed 0) — carried
   the v1 value explicitly.
 - /billing/endpoints in v1 meant serverless. In v2 that is /billing/serverless;
-  the old path still returns 200 for a different product.
+  the old path still returns 200, correctly billing public endpoints instead.
 - Dropped with no v2 equivalent: minRAMPerGPU, minVCPUPerGPU, interruptible.
   Pods are now on-demand only — confirm that is acceptable.
 
