@@ -172,7 +172,9 @@ first means writing against an interface you are about to change.
 Per file:
 
 - Map paths and fields with **[reference/rest-v1-to-v2.md](reference/rest-v1-to-v2.md)**
-  or **[reference/graphql-to-v2.md](reference/graphql-to-v2.md)**.
+  or **[reference/graphql-to-v2.md](reference/graphql-to-v2.md)**. If a field isn't in
+  the tables, or the API disagrees with them, check the spec directly —
+  [Ground truth](#ground-truth-check-the-spec-yourself).
 - **`gpuTypeIds` + `gpuTypePriority` means you are writing new code, not renaming
   fields.** v2 takes one GPU type, so the server-side fallback becomes a client-side
   loop over the catalog. Working implementation:
@@ -260,6 +262,65 @@ already know from the session, and name where v2 changes it. "Your `wait_until_r
 loop times out on failed pods; v2's `ERROR` status lets it fail in seconds" beats "v2 has
 richer status values". [reference/unlocks.md](reference/unlocks.md) is organized as
 *if the code does X → v2 offers Y* for exactly this.
+
+## Ground truth: check the spec yourself
+
+The mapping tables in `reference/` were verified against the live API on **2026-08-10**.
+v2 is actively developed, so treat them as a fast path, not as the authority. Both specs
+are public and need no auth:
+
+```bash
+curl -s https://api.runpod.io/v2/openapi.json  -o /tmp/rp-v2.json
+curl -s https://rest.runpod.io/v1/openapi.json -o /tmp/rp-v1.json
+```
+
+**What a request body actually accepts, and what is required** (`*`). Worth running
+before writing any create call — it resolves `allOf` composition, which a naive read of
+the raw JSON misses:
+
+```bash
+python3 - CreateEndpointRequest <<'PY'
+import json, sys
+S = json.load(open("/tmp/rp-v2.json"))["components"]["schemas"]
+def merge(n, acc=None):
+    acc = acc if acc is not None else {"props": {}, "req": set()}
+    if "$ref" in n: return merge(S[n["$ref"].split("/")[-1]], acc)
+    for sub in n.get("allOf", []): merge(sub, acc)
+    acc["props"].update(n.get("properties", {})); acc["req"].update(n.get("required", []))
+    return acc
+def kind(v):
+    if "$ref" in v: return v["$ref"].split("/")[-1]
+    if "allOf" in v: return kind(v["allOf"][0])
+    return v.get("type", "?")
+m = merge(S[sys.argv[1]])
+for k, v in sorted(m["props"].items()):
+    print(f"  {'*' if k in m['req'] else ' '} {k:16} {kind(v)}")
+PY
+```
+
+Swap the argument for `CreatePodRequest`, `UpdatePodRequest`, `CreateTemplateRequest`,
+`CreateNetworkVolumeRequest`, … **Which schemas mention a field** — useful when a `422`
+names something you cannot place:
+
+```bash
+python3 -c 'import json,sys; S=json.load(open("/tmp/rp-v2.json"))["components"]["schemas"]; [print(" ",n) for n,s in S.items() if sys.argv[1] in json.dumps(s)]' flashboot
+```
+
+### Precedence when sources disagree
+
+**observed live behavior > the spec > these tables.** The spec is not always right, and
+the reference docs say so where it is known to be wrong — `timeout` is documented to
+default to `300000` ms but comes back `0`. If you hit a case where the running API
+contradicts the spec, trust the API, and **say so in your summary** so the user knows a
+documented default cannot be relied on.
+
+If you find a mapping in `reference/` that no longer matches the spec, fix the call and
+flag the drift — the tables carry a verification date precisely so staleness is
+detectable rather than silent.
+
+For GraphQL there is no machine-readable schema (introspection is disabled), so that
+side cannot be checked this way — see the caveat in
+[reference/graphql-to-v2.md](reference/graphql-to-v2.md).
 
 ## Tooling notes
 
