@@ -22,6 +22,9 @@ lane below. If you already know the lane, go straight to it.
 | [`runpod-usage`](skills/runpod-usage/SKILL.md) | **Concepts** — how pods/serverless work, building containers, storage, GPU selection, gotchas. |
 | [`runpod-migrate`](skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2 — inventory, rewrite, flag breaking changes. |
 
+The migration flow also has a slash command: **`/runpod:migrate [scope] [path]`**
+runs the `runpod-migrate` workflow directly, e.g. `/runpod:migrate rest src/`.
+
 **runpod-mcp vs runpodctl:** both drive the same Runpod API for the same infra
 CRUD. Prefer `runpod-mcp` when its tools are connected in your session; use
 `runpodctl` for the terminal, Hub, file transfer, SSH, or `doctor`.
