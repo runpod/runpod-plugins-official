@@ -265,27 +265,46 @@ pod = session.post(f"{V2}/pods", json={**body, "dataCenterIds": allowed}).json()
 Let the filter do the country-to-data-center mapping. Data center IDs look like `EU-FR-1`,
 so the country appears to be a parseable prefix; do not parse it, the list changes.
 
-**Then check where it actually landed.** v2 documents `dataCenterIds` as *preferred*
-data centers for placement, and the spec does not say whether that is a hard restriction
-or a hint the scheduler may override under capacity pressure. That distinction is the
-whole point when the requirement is data residency, so verify rather than assume:
+**`dataCenterIds` is enforced, despite the wording.** The v2 spec describes it as
+*preferred* data centers, which reads like a hint the scheduler may override. It is not.
+Verified 2026-08-18 against the live API: an RTX 4090 requested in `["US-KS-2","US-IL-1"]`
+— two data centers where that GPU is not offered — was **refused**, not relocated,
+while the same request naming `EU-RO-1` succeeded. The scheduler will not place you
+outside the list to satisfy capacity. That makes it a usable basis for a data residency
+requirement.
 
-```python
-if pod["dataCenterId"] not in allowed:
-    session.post(f"{V2}/pods/{pod['id']}/action", json={"action": "terminate"})
-    raise RuntimeError(f"placed in {pod['dataCenterId']}, outside {allowed}")
+**But the refusal looks like a capacity problem, not a placement one:**
+
+```
+400 {"detail": "There are no longer any instances available with the requested
+     specifications. Please refresh and try again.", "status": 400}
 ```
 
-That check is worth keeping in production code, not just during the migration. It costs
-one comparison and it converts an unverified guarantee into an enforced one.
+Nothing in that message mentions data centers. Over-narrow the list — one country, one
+scarce GPU type — and you get a message that sends people hunting for stock when the
+real fix is widening `dataCenterIds` or picking a different GPU. During a migration this
+is the second-likeliest failure after a bad body, so name it in the error you raise:
+
+```python
+if r.status_code == 400 and allowed:
+    raise RuntimeError(
+        f"no capacity for {gpu_id} within {allowed} — widen the country list, "
+        f"pick another GPU type, or drop the restriction. Original: {r.text}")
+```
 
 **What to actually ask the user.** This still belongs in the stop-and-ask bucket, but the
 question is narrower than "what should I do here": *was the country restriction a
-preference or a compliance requirement?* A preference is satisfied by the code above. A
-requirement needs the post-create check too, and probably a conversation about which data
-centers are acceptable by name — `GET /v2/catalog/datacenters` reports a `compliance`
-array (`GDPR`, `ISO_IEC_27001`, `SOC_2_TYPE_2`, …) that is a better basis for that list
-than a country code.
+preference or a compliance requirement?* Both are satisfied by the code above, since the
+restriction is enforced — what differs is the fallback. A preference can widen the
+country list when capacity runs out; a compliance requirement must fail closed instead,
+which is the opposite reflex to the GPU-fallback loop above and worth writing explicitly
+into the code rather than leaving to whoever edits it next.
+
+For a compliance requirement, also raise `GET /v2/catalog/datacenters`: it reports a
+`compliance` array per data center (`GDPR`, `ISO_IEC_27001`, `SOC_2_TYPE_2`, `HIPAA`),
+which is a sounder basis for the allowed list than a country code. Country and
+certification are not the same question, and the user may have been approximating the
+second with the first because v1 gave them no other way to say it.
 
 The other placement constraints — `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`,
 `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` — have no equivalent recipe.
