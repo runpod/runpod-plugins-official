@@ -55,6 +55,17 @@ from collections import Counter, defaultdict
 # by BASE_ASSIGN below, which is honest where a hardcoded name list is wishful.
 V2_CONTEXT = r"/v2/|api\.runpod\.io/v2"
 
+# Resource names that are also ordinary code identifiers (`networkvolumes`,
+# `containerregistryauth`) match inside package declarations, imports and module
+# paths, which are not call sites. `github.com/acme/app/internal/networkvolumes`
+# even carries the leading `/` that otherwise distinguishes a real path. Suppress
+# the whole line in those positions rather than trying to spot the name itself:
+# a language keyword at line start, or a VCS-style module path anywhere.
+DECLARATION = (
+    r"^\s*(package|import|from|use|require|mod|namespace|using)\b"
+    r"|\b(github|gitlab|bitbucket|golang\.org|gopkg\.in)\.?[a-z]*/"
+)
+
 # `IDENT = "...api.runpod.io/v2..."` — captures whatever the file calls its base URL,
 # so `f"{BASE}/pods"` eleven lines later is recognized as v2 rather than reported as a
 # leftover v1 path. Without this, a correctly migrated file fails --fail-on-legacy.
@@ -82,9 +93,9 @@ SIGNALS: list[tuple[str, str, str, str]] = [
     ("graphql", "serverless", r"\bdeleteEndpoint\b", "→ DELETE /v2/serverless/{id}"),
     ("graphql", "template", r"\bsaveTemplate\b", "→ POST /v2/templates or PATCH /v2/templates/{id}"),
     ("graphql", "template", r"\bdeleteTemplate\b", "→ DELETE /v2/templates/{id} — note v2 deletes by ID, GraphQL deleted by NAME."),
-    ("graphql", "catalog", r"\bgpuTypes\b", "→ GET /v2/catalog/gpus?include=AVAILABILITY"),
-    ("graphql", "catalog", r"\bcpuTypes\b", "→ GET /v2/catalog/cpus?include=AVAILABILITY"),
-    ("graphql", "catalog", r"\blowestPrice\s*\(", "→ GET /v2/catalog/gpus?include=AVAILABILITY (price + availability in one call)"),
+    ("graphql", "catalog", r"\bgpuTypes\b", "→ GET /v2/catalog/gpus?include=AVAILABILITY&product=POD (product is REQUIRED with include; 400 without it. Use product=SERVERLESS when picking a GPU for an endpoint.)"),
+    ("graphql", "catalog", r"\bcpuTypes\b", "→ GET /v2/catalog/cpus?include=AVAILABILITY&product=POD (product is REQUIRED with include; 400 without it)"),
+    ("graphql", "catalog", r"\blowestPrice\s*\(", "→ GET /v2/catalog/gpus?include=AVAILABILITY&product=POD (price + availability in one call; product is REQUIRED with include, 400 without it)"),
     ("graphql", "volume", r"\b(createNetworkVolume|updateNetworkVolume|deleteNetworkVolume)\b", "→ /v2/network-volumes"),
     ("graphql", "registry", r"\bsaveRegistryAuth\b", "→ POST /v2/registries"),
     ("graphql", "user", r"\bmyself\s*\{[^}]*\b(pods|endpoints)\b", "`myself { pods }` → GET /v2/pods; `myself { endpoints }` → GET /v2/serverless"),
@@ -98,8 +109,14 @@ SIGNALS: list[tuple[str, str, str, str]] = [
     # opposite of a v1 call site.
     ("v1", "pod", r"/pods\b(?!/[a-z]*\{)", "v1 /pods → /v2/pods (response is now {\"pods\": [...]}, not a bare array)", V2_CONTEXT),
     ("v1", "serverless", r"/endpoints\b", "v1 /endpoints → /v2/serverless", V2_CONTEXT),
-    ("v1", "volume", r"\bnetworkvolumes\b", "v1 /networkvolumes → /v2/network-volumes (hyphenated)", r"network-volumes"),
-    ("v1", "registry", r"\bcontainerregistryauth\b", "v1 /containerregistryauth → /v2/registries"),
+    # Both of these need a leading `/`, for the same reason `/pods` does. `networkvolumes`
+    # and `containerregistryauth` are ordinary identifiers: Go packages, Python modules,
+    # import paths, directory names. Matching the bare token flagged every one of them,
+    # which made `--fail-on-legacy` fail on codebases that were already fully v2 — the one
+    # thing that flag must never do. V2_CONTEXT then suppresses `/v2/...` lines, so the
+    # correct hyphenated path and `/v2/billing/networkvolumes` do not report as v1.
+    ("v1", "volume", r"/networkvolumes\b", "v1 /networkvolumes → /v2/network-volumes (hyphenated)", V2_CONTEXT + r"|network-volumes|" + DECLARATION),
+    ("v1", "registry", r"/containerregistryauth\b", "v1 /containerregistryauth → /v2/registries", V2_CONTEXT + r"|" + DECLARATION),
     ("v1", "pod", r"/pods/[^'\"`\s]*/(start|stop|restart|reset)\b", "→ POST /v2/pods/{id}/action with {\"action\": \"start|stop|restart\"}. v1 `reset` has no direct v2 action.", V2_CONTEXT),
     ("v1", "any", r"/(pods|endpoints|templates|networkvolumes)/[^'\"`\s]*/update\b", "v1 POST .../update alias is gone. Use PATCH on the resource.", V2_CONTEXT),
     ("v1", "billing", r"/billing/(pods|endpoints|networkvolumes)\b", "→ /v2/billing/{pods,serverless,endpoints,network-volumes} — note v1 /billing/endpoints (serverless) is v2 /billing/serverless, and v2 /billing/network-volumes is hyphenated.", V2_CONTEXT),
@@ -120,7 +137,7 @@ SIGNALS: list[tuple[str, str, str, str]] = [
     ("v1-field", "pod", r"\b(cpuFlavorIds|vcpuCount)\b", "→ `cpu.id` / `cpu.vcpuCount`"),
     ("v1-field", "pod", r"\b(gpuTypePriority|dataCenterPriority|cpuFlavorPriority)\b", "Removed in v2. Order/fallback is now client-side — see breaking-changes.md."),
     ("v1-field", "pod", r"\b(minRAMPerGPU|minVCPUPerGPU|minDownloadMbps|minUploadMbps|minDiskBandwidthMBps|supportPublicIp|volumeEncrypted|interruptible)\b", "Removed in v2 — no equivalent. Drop it or stay on v1/GraphQL for this call."),
-    ("v1-field", "pod", r"\bcountryCodes\b", "No create-time equivalent, but there IS a migration: filter /v2/catalog/gpus?include=AVAILABILITY&countryCodes=.. to get the matching data centers, then pass their IDs as dataCenterIds on create. dataCenterIds is enforced (verified 2026-08-18) despite the spec calling it `preferred`, so it is a sound basis for data residency. Over-narrow it and the create fails 400 `no instances available`, with no mention of data centers. Working code: breaking-changes.md -> Replacing countryCodes."),
+    ("v1-field", "pod", r"\bcountryCodes\b", "No create-time equivalent, but there IS a migration: filter /v2/catalog/gpus?include=AVAILABILITY&product=POD&countryCodes=.. to get the matching data centers, then pass their IDs as dataCenterIds on create. dataCenterIds is enforced (verified 2026-08-18) despite the spec calling it `preferred`, so it is a sound basis for data residency. Over-narrow it and the create fails 400 `no instances available`, with no mention of data centers. Working code: breaking-changes.md -> Replacing countryCodes."),
     ("v1-field", "pod", r"\b(allowedCudaVersions|minCudaVersion)\b", "Moved, not removed → `gpu.allowedCudaVersions` / `gpu.minCudaVersion` on pod and endpoint create. Nested under `gpu` so they are unrepresentable on a CPU workload; left at the top level they 422. A non-empty allowedCudaVersions and minCudaVersion are mutually exclusive (400).", r"\bgpu\s*[.\[]|[\"']gpu[\"']\s*:"),
     ("v1-field", "serverless", r"\bworkers(Min|Max)\b", "→ `workers.min` / `workers.max`"),
     ("v1-field", "serverless", r"\bidleTimeout\b", "→ `workers.idleTimeout`", r"\bworkers\b"),
@@ -276,10 +293,16 @@ def intentional_lines(text: str) -> tuple[str | None, dict[int, str]]:
 
     return None, marked
 
+# Directories whose contents are not the user's source. `.claude` matters more than it
+# looks: agent worktrees under `.claude/worktrees/` are full copies of the repo, so
+# scanning one repo with six worktrees reports every finding six or seven times. This
+# skill ships as a Claude Code plugin, which makes its users exactly the people who have
+# that directory. Measured on one real repo: 10,763 hits reported, 1,821 real.
 SKIP_DIRS = {
     ".git", "node_modules", ".venv", "venv", "env", "__pycache__", "dist", "build",
     ".next", ".nuxt", "target", "vendor", ".terraform", ".mypy_cache", ".pytest_cache",
     ".tox", "site-packages", ".gradle", "coverage", ".idea", ".vscode",
+    ".claude", ".worktrees", ".cache", ".ruff_cache", ".pnpm-store", "bower_components",
 }
 SKIP_SUFFIXES = {
     ".lock", ".min.js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",

@@ -55,6 +55,16 @@ def fetch_live() -> Path:
     return tmp
 
 
+# `?include=AVAILABILITY&product=POD` in a documented URL. Query parameters were the
+# blind spot that let the docs teach a call that 400s in 17 places while this check
+# stayed green: paths were verified, everything after the `?` was not.
+QUERY_CALL = re.compile(r"(/v2/[A-Za-z0-9/_{}.-]*)\?([A-Za-z0-9_]+=[^\s`'\")]*)")
+# Spec descriptions state co-requirements in prose: "Required with include=AVAILABILITY".
+# Deriving the pairs from that text rather than hardcoding them means a new requirement
+# starts being enforced as soon as the spec documents it.
+REQUIRED_WITH = re.compile(r"[Rr]equired with[ `]+([A-Za-z0-9_]+)=([A-Za-z0-9_]+)")
+
+
 def normalise(path: str) -> str:
     """Collapse param names so {id} and {podId} compare equal."""
     path = re.sub(r"\{[^}]+\}", "{}", path.rstrip("/"))
@@ -69,6 +79,44 @@ def load_spec(p: Path):
             if method.upper() in METHODS:
                 ops[normalise(raw)].add(method.upper())
     return ops, doc
+
+
+def load_query_params(doc):
+    """path -> {param: description}, plus the derived required-with pairs."""
+    params = doc.get("components", {}).get("parameters", {})
+    per_path, pairs = {}, {}
+    for raw, item in (doc.get("paths") or {}).items():
+        known = {}
+        for method, op in item.items():
+            if not isinstance(op, dict):
+                continue
+            for prm in op.get("parameters", []) or []:
+                if "$ref" in prm:
+                    prm = params.get(prm["$ref"].split("/")[-1], {})
+                if prm.get("in") == "query" and prm.get("name"):
+                    desc = prm.get("description", "") or ""
+                    known[prm["name"]] = desc
+                    m = REQUIRED_WITH.search(desc)
+                    if m:
+                        pairs[(normalise(raw), m.group(1), m.group(2))] = prm["name"]
+        per_path[normalise(raw)] = known
+    return per_path, pairs
+
+
+def extract_query_calls(skill_dir: Path):
+    """(npath, {param: value}) -> [locations] for every documented URL with a query."""
+    calls = collections.defaultdict(list)
+    for f in sorted(skill_dir.rglob("*.md")):
+        for lineno, line in enumerate(f.read_text().splitlines(), 1):
+            for path, query in QUERY_CALL.findall(line):
+                kv = {}
+                for part in query.split("&"):
+                    if "=" in part:
+                        k, v = part.split("=", 1)
+                        kv[k] = v
+                key = (normalise(path), tuple(sorted(kv.items())))
+                calls[key].append(f"{f.relative_to(skill_dir)}:{lineno}")
+    return calls
 
 
 def extract_claims(skill_dir: Path):
@@ -134,6 +182,38 @@ def main() -> int:
                 print(f"         {l}")
         print()
 
+    # ---- query parameters -------------------------------------------------
+    qp_per_path, required_pairs = load_query_params(doc)
+    calls = extract_query_calls(a.skill)
+    bad_param, missing_pair = [], []
+    for (npath, kv), locs in sorted(calls.items()):
+        known = qp_per_path.get(npath)
+        if known is None:
+            continue  # unknown path already reported above
+        sent = dict(kv)
+        for name in sent:
+            if name not in known:
+                bad_param.append((npath, name, sorted(known), locs))
+        for (ppath, trigger, value), needed in required_pairs.items():
+            if ppath == npath and sent.get(trigger) == value and needed not in sent:
+                missing_pair.append((npath, f"{trigger}={value}", needed, locs))
+
+    if bad_param:
+        print(f"## QUERY PARAM NOT ON THAT PATH ({len(bad_param)})")
+        for npath, name, known, locs in bad_param:
+            print(f"  {npath}?{name}=...   spec allows: {', '.join(known) or '(none)'}")
+            for l in locs:
+                print(f"         {l}")
+        print()
+    if missing_pair:
+        print(f"## REQUIRED COMPANION PARAM MISSING ({len(missing_pair)})")
+        print("   The spec marks these required together \u2014 the documented call is a 400.")
+        for npath, trigger, needed, locs in missing_pair:
+            print(f"  {npath}?{trigger}   requires: {needed}")
+            for l in locs:
+                print(f"         {l}")
+        print()
+
     bad_bare = [(p, locs) for p, locs in sorted(bare.items())
                 if p not in ops and p not in EXPECTED_ABSENT]
     if bad_bare:
@@ -162,9 +242,11 @@ def main() -> int:
 
     total = len(claims) + len(bare)
     ok = total - len(bad_path) - len(bad_method) - len(bad_bare) - len(EXPECTED_ABSENT)
-    print(f"verified {ok}/{total} claims  "
-          f"({len(bad_path) + len(bad_bare)} unknown path, {len(bad_method)} wrong method)")
-    return 1 if (bad_path or bad_method or bad_bare or stale_allow) else 0
+    print(f"verified {ok}/{total} claims and {len(calls)} query-bearing calls  "
+          f"({len(bad_path) + len(bad_bare)} unknown path, {len(bad_method)} wrong method, "
+          f"{len(bad_param)} unknown param, {len(missing_pair)} missing companion)")
+    return 1 if (bad_path or bad_method or bad_bare or stale_allow
+                 or bad_param or missing_pair) else 0
 
 
 if __name__ == "__main__":

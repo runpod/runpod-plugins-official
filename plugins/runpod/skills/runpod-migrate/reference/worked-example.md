@@ -131,7 +131,8 @@ CONTAINER = {"image": image, "disk": 20, "args": "python -u handler.py",
              "env": {"MODEL_ID": "stabilityai/sdxl-turbo"}}
 
 # "NVIDIA GeForce RTX 4090" is not a pool — resolve it, never hardcode.
-gpus = SESSION.get(f"{V2_BASE}/catalog/gpus", params={"include": "AVAILABILITY"}).json()["gpus"]
+gpus = SESSION.get(f"{V2_BASE}/catalog/gpus",
+                   params={"include": "AVAILABILITY", "product": "SERVERLESS"}).json()["gpus"]
 pool = next(g["pool"] for g in gpus if g["id"] == "NVIDIA GeForce RTX 4090")   # -> "ADA_24"
 
 endpoint = SESSION.post(f"{V2_BASE}/serverless", json={
@@ -184,7 +185,7 @@ export async function accountSummary() {
 
 // N per-GPU lowestPrice queries -> one catalog call
 export async function gpuPrices() {
-  const r = await fetch(`${V2}/catalog/gpus?include=AVAILABILITY`, { headers });
+  const r = await fetch(`${V2}/catalog/gpus?include=AVAILABILITY&product=POD`, { headers });
   return (await r.json()).gpus;   // price.secure, availability, dataCenters[].availability
 }
 
@@ -231,7 +232,7 @@ export async function runningPods() {
 - dashboard/capacity.js accountSummary() — myself { email, clientBalance }.
 
 ## Unlocks: what you can build now
-- Your renderer retries pod creation blind. /v2/catalog/gpus?include=AVAILABILITY
+- Your renderer retries pod creation blind. /v2/catalog/gpus?include=AVAILABILITY&product=POD
   returns stock per GPU per datacenter, so it can pick a GPU that exists instead of
   discovering capacity by failing.
 - Worker health during a rollout: /v2/serverless/{id}/workers gives a status

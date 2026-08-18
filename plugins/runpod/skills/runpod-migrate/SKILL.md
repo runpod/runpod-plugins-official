@@ -23,7 +23,7 @@ Moves a codebase off the **GraphQL API** (`api.runpod.io/graphql`) and **REST v1
 **The payoff, in one line each** — you deliver these to the user at step 6, matched to
 their actual code. Don't recite them now:
 
-- **See stock before you rent** — `GET /v2/catalog/gpus?include=AVAILABILITY`. v1 had no
+- **See stock before you rent** — `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD`. v1 had no
   catalog at all, so every capacity retry loop was blind.
 - **Endpoints return their own job URLs** — `requestUrls.run`, no more string-building.
 - **Real lifecycle states** — `PROVISIONING`/`STARTING`/`ERROR` and an `actions` list, so
@@ -195,11 +195,22 @@ Per file:
   [breaking-changes.md → Replacing the GPU fallback list](reference/breaking-changes.md#replacing-the-gpu-fallback-list-pods-only).
   **Endpoints need no loop** — `gpu.pools` is already a list and workers land on
   whichever listed pool has capacity.
-- **Always request availability on catalog reads.** Any `GET /v2/catalog/gpus`,
-  `/catalog/cpus`, or `/catalog/datacenters` this migration introduces gets
-  `include=AVAILABILITY` (`GPU_AVAILABILITY`/`CPU_AVAILABILITY` for datacenters).
-  Availability is the top-of-mind question for every Runpod user and the call costs the
-  same. Do not omit it because the current code did not ask for it — v1 could not.
+- **Always request availability on catalog reads — with `product`.** Any
+  `GET /v2/catalog/gpus`, `/catalog/cpus`, or `/catalog/datacenters` this migration
+  introduces gets `include=AVAILABILITY` (`GPU_AVAILABILITY`/`CPU_AVAILABILITY` for
+  datacenters). Availability is the top-of-mind question for every Runpod user and the
+  call costs the same. Do not omit it because the current code did not ask for it — v1
+  could not.
+
+  **`include=AVAILABILITY` alone is a `400`.** On `/catalog/gpus` and `/catalog/cpus`,
+  `product` is required with it and invalid without it — `400` either way. There is no
+  default, deliberately: the same GPU can be scarce for `POD` and plentiful for
+  `SERVERLESS`, so the context has to be stated. Pick the one matching what you are
+  creating (`POD`, `SERVERLESS`, or `CLUSTER`; CPUs take `POD` or `SERVERLESS`):
+
+  ```
+  GET /v2/catalog/gpus?include=AVAILABILITY&product=POD
+  ```
 - Offer the **rollback flag** (`RUNPOD_API_V1=1`) while v2 is new to them:
   **[reference/rollback-flag.md](reference/rollback-flag.md)**. Worth it for a service
   in production; skip it for a one-off script.

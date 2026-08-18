@@ -31,8 +31,8 @@ does not exist just because that page omits it.
 | `deleteEndpoint(id:)` | `DELETE /v2/serverless/{id}` |
 | `saveTemplate(input:)` | `POST /v2/templates` / `PATCH /v2/templates/{id}` |
 | `deleteTemplate(templateName:)` | `DELETE /v2/templates/{id}` — **by ID, not name** |
-| `gpuTypes` / `gpuTypes(input: {id})` | `GET /v2/catalog/gpus?include=AVAILABILITY` |
-| `cpuTypes` | `GET /v2/catalog/cpus?include=AVAILABILITY` |
+| `gpuTypes` / `gpuTypes(input: {id})` | `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` — `product` is **required** with `include` (`400` without it); use `SERVERLESS` when sizing an endpoint |
+| `cpuTypes` | `GET /v2/catalog/cpus?include=AVAILABILITY&product=POD` — same required pairing |
 | `saveRegistryAuth(input:)` | `POST /v2/registries` |
 | `createNetworkVolume(input:)` | `POST /v2/network-volumes` |
 | `updateNetworkVolume(input:)` | `PATCH /v2/network-volumes/{id}` |
@@ -186,7 +186,7 @@ non-obvious change in a GraphQL template workflow.
 | — | `pool` — the serverless pool this GPU belongs to |
 | — | `maxCount.{secure,community}`, `manufacturer` |
 
-One `GET /v2/catalog/gpus?include=AVAILABILITY` replaces the N per-GPU `lowestPrice`
+One `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` replaces the N per-GPU `lowestPrice`
 queries a capacity loop used to make.
 
 ## Error handling

@@ -26,14 +26,19 @@ Per `runpod-migrate/SKILL.md` and `reference/breaking-changes.md`:
    `mounts.persistent.{size,path}`.
 2. Recognizes that v2's `gpu.id` takes **one** GPU type, so the `gpuTypeIds` +
    `gpuTypePriority: availability` behavior must be rebuilt client-side as a loop.
-3. That loop reads `GET /v2/catalog/gpus` **with `include=AVAILABILITY`** and orders the
-   preference list by the returned availability level — the include is not optional, it
-   is the default for every catalog call this skill writes.
+3. That loop reads `GET /v2/catalog/gpus` **with `include=AVAILABILITY&product=POD`** and
+   orders the preference list by the returned availability level. The include is not
+   optional — it is the default for every catalog call this skill writes — and `product`
+   is not optional either: the API rejects `include=AVAILABILITY` without it. `POD` is
+   the right context here because the code creates pods.
 4. Flags the removal in the summary rather than silently dropping to a single GPU type.
 
 ## Assertions
 
 - Emits `include=AVAILABILITY` on the catalog request.
+- **Pairs it with `product=POD`.** `include=AVAILABILITY` alone is a `400`, so an answer
+  that omits `product` has written a call that cannot run. Asserted separately from the
+  include so this eval cannot pass code that 400s.
 - Produces a fallback loop over the original preference list; does NOT quietly reduce it
   to `gpu: {"id": "NVIDIA GeForce RTX 4090"}` with the other type discarded.
 - Uses `mounts.persistent` with an explicit `path` (no reliance on a `/workspace`

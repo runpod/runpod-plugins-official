@@ -158,6 +158,26 @@ def main() -> int:
     check("the verdict counts false positives separately from retained v1",
           "marked false positives" in report and "kept on purpose" in report)
 
+    # ---- 6. traversal: skipped directories must be invisible --------------
+    # Two mutations survived an audit at 089816f — emptying SKIP_DIRS, and removing
+    # the traversal filter outright — because no corpus contained a single skipped
+    # directory, so nothing asserted exclusion at all. That gap is why `.claude`
+    # was missing from SKIP_DIRS: not a bad decision, an unobservable one. Agent
+    # worktrees under `.claude/` are full repo copies, so on a real repo this
+    # inflated 1,821 real findings into 10,763 reported ones.
+    print("skipped-dirs")
+    d = scan("skipped-dirs")
+    blob = json.dumps(d)
+    leaks = [name for name in (".claude", "node_modules", ".venv", ".git/",
+                               "vendor", "__pycache__", "dist/", "legacy.py")
+             if name in blob]
+    check("no skipped directory appears anywhere in the report", not leaks,
+          f"leaked {leaks}")
+    check("the one real source file is still seen",
+          d["already_v2"] == ["app/client.py"], f"got {d.get('already_v2')}")
+    check("a repo whose only v1 code is inside skipped dirs passes --fail-on-legacy",
+          exit_code("skipped-dirs", "--fail-on-legacy") == 0)
+
     print()
     if failures:
         print(f"scanner regression check FAILED ({len(failures)}):", file=sys.stderr)

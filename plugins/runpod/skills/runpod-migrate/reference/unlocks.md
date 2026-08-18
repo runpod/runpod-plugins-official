@@ -13,7 +13,7 @@ annoying. "The capacity retries you added last month can become one catalog call
 
 | If their code does this… | v2 offers | Why they will care |
 | --- | --- | --- |
-| Retries pod creation across GPU types until one works; sleeps and retries on capacity errors | `GET /v2/catalog/gpus?include=AVAILABILITY` → `availability` per GPU **and** per datacenter | Stop renting blind. Check stock, then ask for the one that has it. This is the #1 thing users say they want. |
+| Retries pod creation across GPU types until one works; sleeps and retries on capacity errors | `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` → `availability` per GPU **and** per datacenter | Stop renting blind. Check stock, then ask for the one that has it. This is the #1 thing users say they want. |
 | Hardcodes a GPU or datacenter list in a constant | catalog endpoints return the live set | v1 froze IDs as spec enums, so new hardware needed a spec release. There are datacenters live today that do not exist in the v1 enum. |
 | Builds `https://api.runpod.ai/v2/{id}/run` by string concatenation | `endpoint.requestUrls.{run,runSync,status,stream,cancel,retry,purgeQueue,health}` | Delete the URL-building helper and its tests. |
 | Polls pod status in a loop with a timeout | `status` includes `PROVISIONING`/`STARTING`/`ERROR`, plus `actions[]` | Fail in seconds on a broken pod instead of waiting out a 10-minute timeout. Distinguish "still coming up" from "stuck". |

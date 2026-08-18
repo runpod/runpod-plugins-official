@@ -174,7 +174,7 @@ Valid flavor IDs and their vCPU ranges come from the catalog — never hardcode 
 
 ```bash
 curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  'https://api.runpod.io/v2/catalog/cpus?include=AVAILABILITY' \
+  'https://api.runpod.io/v2/catalog/cpus?include=AVAILABILITY&product=POD' \
 | python3 -c 'import json,sys; [print(c["id"].ljust(10), c["vcpu"], c["availability"]) for c in json.load(sys.stdin)["cpus"]]'
 ```
 
@@ -279,7 +279,7 @@ valid pool. Resolve it at runtime — never hardcode the table, it grows:
 
 ```bash
 curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  'https://api.runpod.io/v2/catalog/gpus?include=AVAILABILITY' \
+  'https://api.runpod.io/v2/catalog/gpus?include=AVAILABILITY&product=SERVERLESS' \
 | python3 -c 'import json,sys; [print(g["pool"].ljust(16), g["id"]) for g in json.load(sys.stdin)["gpus"] if g["pool"]]'
 ```
 
