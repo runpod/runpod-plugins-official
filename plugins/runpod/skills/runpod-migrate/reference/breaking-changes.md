@@ -194,7 +194,7 @@ or the behavior changes. Decide with the user; do not silently drop them.
 | **Spot / interruptible pods** | `interruptible: true`, `podRentInterruptable`, `podBidResume` | none |
 | **Savings plans** | `Pod.savingsPlans`, `adjustedCostPerHr` | not exposed |
 | **Pod `reset`** | `POST /pods/{id}/reset` | `422` — actions are `start`/`stop`/`restart`/`terminate` |
-| **Placement constraints** | `countryCodes`, `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` | no create-time equivalent. `countryCodes` survives only as a `/v2/catalog/gpus?include=AVAILABILITY` **read** filter — useful for choosing where to deploy, but it cannot constrain the create itself. |
+| **Placement constraints** | `countryCodes`, `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` | no create-time equivalent. `countryCodes` is the one with a rebuild: catalog filter → `dataCenterIds` → verify where it landed, [below](#replacing-countrycodes-and-the-rest-of-the-placement-constraints). The rest have no v2 filter at all. |
 | **Entrypoint override** | `dockerEntrypoint` (array) separate from `dockerStartCmd` | only `args` (one string) |
 | **Server-side list filters / expansions** | `?desiredStatus=`, `?includeMachine=`, … | filter client-side |
 | **Host machine identity** | `machineId`, `machine { podHostId }` | only `dataCenterId` |
@@ -239,6 +239,58 @@ people hunting for capacity when the real cause is usually a field they missed.
 
 For per-datacenter placement, read `dataCenters[].availability` off the same response
 instead of the top-level `availability`.
+
+### Replacing `countryCodes` (and the rest of the placement constraints)
+
+There **is** a migration here — say so rather than leaving the user with "removed."
+`countryCodes` was one field on create, enforced by the scheduler. In v2 it becomes a
+lookup plus an explicit data center list:
+
+```python
+# v1: one call, the server enforced it
+session.post(f"{V1}/pods", json={**body, "countryCodes": ["FR", "DE"]})
+
+# v2: ask which data centers are in those countries, then name them
+cat = session.get(f"{V2}/catalog/gpus", params={
+    "include": "AVAILABILITY", "countryCodes": "FR,DE", "product": "POD",
+}).json()["gpus"]
+
+allowed = sorted({dc["id"] for g in cat for dc in g.get("dataCenters", [])})
+if not allowed:
+    raise RuntimeError("no data centers in FR,DE with capacity for this GPU type")
+
+pod = session.post(f"{V2}/pods", json={**body, "dataCenterIds": allowed}).json()
+```
+
+Let the filter do the country-to-data-center mapping. Data center IDs look like `EU-FR-1`,
+so the country appears to be a parseable prefix; do not parse it, the list changes.
+
+**Then check where it actually landed.** v2 documents `dataCenterIds` as *preferred*
+data centers for placement, and the spec does not say whether that is a hard restriction
+or a hint the scheduler may override under capacity pressure. That distinction is the
+whole point when the requirement is data residency, so verify rather than assume:
+
+```python
+if pod["dataCenterId"] not in allowed:
+    session.post(f"{V2}/pods/{pod['id']}/action", json={"action": "terminate"})
+    raise RuntimeError(f"placed in {pod['dataCenterId']}, outside {allowed}")
+```
+
+That check is worth keeping in production code, not just during the migration. It costs
+one comparison and it converts an unverified guarantee into an enforced one.
+
+**What to actually ask the user.** This still belongs in the stop-and-ask bucket, but the
+question is narrower than "what should I do here": *was the country restriction a
+preference or a compliance requirement?* A preference is satisfied by the code above. A
+requirement needs the post-create check too, and probably a conversation about which data
+centers are acceptable by name — `GET /v2/catalog/datacenters` reports a `compliance`
+array (`GDPR`, `ISO_IEC_27001`, `SOC_2_TYPE_2`, …) that is a better basis for that list
+than a country code.
+
+The other placement constraints — `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`,
+`minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` — have no equivalent recipe.
+There is no v2 filter for them, so those really are accept-the-change, stay-on-v1, or
+redesign.
 
 ---
 

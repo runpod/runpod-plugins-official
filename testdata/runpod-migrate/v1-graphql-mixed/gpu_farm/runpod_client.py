@@ -39,6 +39,7 @@ def create_render_pod(name: str, image: str, volume_id: str | None = None) -> di
         "dockerStartCmd": ["bash", "-lc", "python /app/render.py"],
         "minRAMPerGPU": 16,
         "minVCPUPerGPU": 4,
+        "countryCodes": ["US", "CA"],
         "dataCenterIds": ["US-KS-2", "US-IL-1"],
         "interruptible": False,
     }

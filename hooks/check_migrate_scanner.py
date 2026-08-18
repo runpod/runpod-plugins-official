@@ -74,6 +74,13 @@ def main() -> int:
           "scripts/submit_job.py" in d["job_api_leave_alone"])
     check("the already-v2 file is recognized, not re-migrated",
           "ops/volumes_v2.py" in d["already_v2"] and "ops/volumes_v2.py" not in plan)
+    # countryCodes has no create-time equivalent but does have a rebuild, and the
+    # advice used to stop at "Removed in v2 — no equivalent." A dead-end message
+    # here is what pushes an agent into keeping a v1 call the user could migrate,
+    # so the recipe must survive in the scanner output, not only in the docs.
+    country = [h for h in json.dumps(d).split('", "') if "countryCodes=" in h]
+    check("countryCodes advice names the dataCenterIds rebuild, not just the removal",
+          any("dataCenterIds" in h for h in country), f"got {country}")
 
     # ---- 2. the same repo after migration --------------------------------
     print("migrated-v2")

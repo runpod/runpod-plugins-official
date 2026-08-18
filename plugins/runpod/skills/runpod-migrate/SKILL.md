@@ -152,17 +152,28 @@ to the final summary:
   hand-rolled availability retry, polling loops that can now be SSE).
 - **Decisions the user must make** — the code depends on something v2 removed outright:
   spot/interruptible pods, savings plans, `dockerEntrypoint`, placement constraints
-  (`minRAMPerGPU`, `countryCodes`, …), pod `reset`, per-pod GPU fallback. See
+  (`countryCodes`, `minRAMPerGPU`, …), pod `reset`, per-pod GPU fallback. See
   [breaking-changes.md](reference/breaking-changes.md) Class 3 — and check it rather
   than working from memory, because things leave this bucket as v2 grows. CUDA pinning,
   `templateId` and CPU endpoint writes all used to be here and are not any more.
 
-**Stop and ask before writing code in that third bucket.** There is no correct
-translation — the options are accept the behavior change, keep that call on v1/GraphQL,
-or redesign around it, and only the user can pick. Dropping the field with a `# no v2
-equivalent` comment is the failure mode this bucket exists to prevent: it silently
-changes what their infrastructure does. If the bucket is empty, say so — that is
-reassuring and takes one line.
+**Stop and ask before writing code in that third bucket** — but bring the replacement
+with you. Some of these have a working rebuild and some genuinely have nothing, and the
+difference decides what you are asking. Where a rebuild exists (`countryCodes` →
+[catalog filter + `dataCenterIds` + a placement
+assert](reference/breaking-changes.md#replacing-countrycodes-and-the-rest-of-the-placement-constraints),
+per-pod GPU fallback → [an availability-ordered
+loop](reference/breaking-changes.md#replacing-the-gpu-fallback-list-pods-only)), show it
+and ask the one question that changes it — for `countryCodes`, whether the restriction
+was a preference or a compliance requirement. Where nothing exists, the options are
+accept the behavior change, keep that call on v1/GraphQL, or redesign around it, and only
+the user can pick.
+
+Either way, do not present a removal as a dead end when a rebuild exists — that pushes
+the user into keeping a v1 call they did not need to keep. And never drop the field with
+a `# no v2 equivalent` comment: that is the failure mode this bucket exists to prevent,
+because it silently changes what their infrastructure does. If the bucket is empty, say
+so — that is reassuring and takes one line.
 
 ### 4. Migrate, one file per commit
 
