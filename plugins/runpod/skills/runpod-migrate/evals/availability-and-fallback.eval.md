@@ -40,3 +40,7 @@ Per `runpod-migrate/SKILL.md` and `reference/breaking-changes.md`:
   default, which v2 does not have).
 - Does NOT invent a v2 `gpuTypeIds`, `gpuTypePriority`, or `gpuCount` field — all three
   would 422.
+- Scopes the client-side loop to **pods**. If the same code is asked about an endpoint,
+  the answer is `gpu.pools` with the preference list mapped to pool IDs — `pools` is a
+  list and v2 places workers on whichever listed pool has capacity, so writing a retry
+  loop around an endpoint create is rebuilding something v2 did not remove.

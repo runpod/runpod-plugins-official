@@ -54,7 +54,7 @@ a filter you forget to port returns *everything* with a `200`. Filter in your ow
 | — | `/v2/catalog/gpus`, `/cpus`, `/datacenters` | new: v1 had no catalog |
 | `GET /billing/pods` | `GET /v2/billing/pods` | |
 | `GET /billing/endpoints` | **`GET /v2/billing/serverless`** | ⚠ see below |
-| `GET /billing/networkvolumes` | `GET /v2/billing/networkvolumes` | |
+| `GET /billing/networkvolumes` | **`GET /v2/billing/network-volumes`** | hyphenated, like the resource path |
 | — | `GET /v2/billing`, `/v2/billing/clusters` | new |
 
 ⚠ **`/billing/endpoints` is the trap.** In v1 it meant *serverless* spend. In v2 that is
@@ -127,14 +127,22 @@ v1 let you PATCH either field alone; v2 enforces:
 | partial entry (e.g. `path` without `size`/`volumeId`) | `422` — every entry needs its full schema |
 
 Dropped from pod create with no v2 equivalent: `computeType` (implied by `gpu` vs `cpu`),
-`templateId`, `interruptible`, `locked` (PATCH only), `gpuTypePriority`,
-`dataCenterPriority`, `cpuFlavorPriority`, `countryCodes`, `supportPublicIp`,
-`minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`,
-`minDiskBandwidthMBps`, `allowedCudaVersions`.
+`interruptible`, `locked` (PATCH only), `gpuTypePriority`, `dataCenterPriority`,
+`cpuFlavorPriority`, `countryCodes`, `supportPublicIp`, `minRAMPerGPU`, `minVCPUPerGPU`,
+`minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`.
+
+**Moved, not dropped** — do not delete these:
+
+| v1 pod create | v2 |
+| --- | --- |
+| `allowedCudaVersions` | `gpu.allowedCudaVersions` (GPU pods only — a CPU pod has no `gpu` block, and ignores a template's constraint) |
+| `templateId` | `templateId`, still accepted — but resolved once at create time, with no link retained. See [breaking-changes.md Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone). |
 
 (`minCudaVersion` was never a v1 *pod* create field — it is a v1 **endpoint** create
-field, and survives in v2 only as a `/v2/catalog/gpus` availability filter.
-`volumeEncrypted` was a v1 Pod **response** field, not an input.)
+field, and in v2 it is `gpu.minCudaVersion` on both. It is mutually exclusive with a
+non-empty `allowedCudaVersions` (`400` if both are sent). `countryCodes` survives only as
+a `/v2/catalog/gpus` read filter, not a create-time constraint. `volumeEncrypted` was a
+v1 Pod **response** field, not an input.)
 
 ### CPU pods
 
@@ -247,7 +255,9 @@ pods = [p for p in SESSION.get(f"{V2}/pods").json()["pods"]
 // v1                                    // v2
 {                                        {
   "name": "sdxl",                          "name": "sdxl",
-  "templateId": "tpl123",                  // ⚠ REJECTED (422). Inline the container fields:
+  "templateId": "tpl123",                  "templateId": "tpl123",         // ⚠ still accepted, but
+                                           //   resolved once — template edits no longer
+                                           //   reach the endpoint. Or inline the fields:
                                            "image": "org/worker:tag", "disk": 20,
                                            "env": {...}, "args": "python -u handler.py",
                                            "type": "QUEUE",                // required, new
@@ -277,11 +287,17 @@ Endpoint responses now carry **`requestUrls`** — `run`, `runSync`, `status`, `
 `cancel`, `retry`, `purgeQueue`, `health` for `QUEUE` endpoints, or `base` + `health` for
 `LOAD_BALANCER`. Delete any code that builds `https://api.runpod.ai/v2/<id>/run` by hand.
 
-Other endpoint response changes: `templateId`/`template` gone (config is inline),
-`workers[]` (full pod objects) → `GET /v2/serverless/{id}/workers`, `version` →
-`GET /v2/serverless/{id}/releases`, `scalerType`/`scalerValue` → `scaling`,
-`computeType` → presence of `gpu` vs `cpu`. CPU serverless is **read-only** in v2 — you
-cannot create or update a CPU endpoint.
+Other endpoint response changes: `templateId`/`template` gone from the **response** (the
+config is inline, even when you created from a template), `workers[]` (full pod objects) →
+`GET /v2/serverless/{id}/workers`, `version` → `GET /v2/serverless/{id}/releases`,
+`scalerType`/`scalerValue` → `scaling`, `computeType` → presence of `gpu` vs `cpu`.
+
+CPU endpoints are writable in v2: send `cpu` instead of `gpu`, as a list of eligible
+`{id, vcpuCount}` configurations (flavor IDs from `GET /v2/catalog/cpus`; `vcpuCount` must
+be a power of two and valid for the flavor). Memory is derived from the flavor's catalog
+RAM multiplier. Exact duplicate configurations are rejected, though the same flavor may
+be listed at different vCPU counts. Note the CUDA constraints live under `gpu`
+specifically so they are unrepresentable here.
 
 ## Templates
 

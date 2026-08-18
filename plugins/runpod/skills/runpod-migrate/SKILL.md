@@ -152,8 +152,10 @@ to the final summary:
   hand-rolled availability retry, polling loops that can now be SSE).
 - **Decisions the user must make** — the code depends on something v2 removed outright:
   spot/interruptible pods, savings plans, `dockerEntrypoint`, placement constraints
-  (`minRAMPerGPU`, `countryCodes`, …), CUDA pinning, pod `reset`. See
-  [breaking-changes.md](reference/breaking-changes.md) Class 3.
+  (`minRAMPerGPU`, `countryCodes`, …), pod `reset`, per-pod GPU fallback. See
+  [breaking-changes.md](reference/breaking-changes.md) Class 3 — and check it rather
+  than working from memory, because things leave this bucket as v2 grows. CUDA pinning,
+  `templateId` and CPU endpoint writes all used to be here and are not any more.
 
 **Stop and ask before writing code in that third bucket.** There is no correct
 translation — the options are accept the behavior change, keep that call on v1/GraphQL,
@@ -176,10 +178,12 @@ Per file:
   or **[reference/graphql-to-v2.md](reference/graphql-to-v2.md)**. If a field isn't in
   the tables, or the API disagrees with them, check the spec directly —
   [Ground truth](#ground-truth-check-the-spec-yourself).
-- **`gpuTypeIds` + `gpuTypePriority` means you are writing new code, not renaming
-  fields.** v2 takes one GPU type, so the server-side fallback becomes a client-side
-  loop over the catalog. Working implementation:
-  [breaking-changes.md → Replacing the GPU fallback list](reference/breaking-changes.md#replacing-the-gpu-fallback-list).
+- **`gpuTypeIds` + `gpuTypePriority` on a *pod* means you are writing new code, not
+  renaming fields.** A v2 pod takes one GPU type, so the server-side fallback becomes a
+  client-side loop over the catalog. Working implementation:
+  [breaking-changes.md → Replacing the GPU fallback list](reference/breaking-changes.md#replacing-the-gpu-fallback-list-pods-only).
+  **Endpoints need no loop** — `gpu.pools` is already a list and workers land on
+  whichever listed pool has capacity.
 - **Always request availability on catalog reads.** Any `GET /v2/catalog/gpus`,
   `/catalog/cpus`, or `/catalog/datacenters` this migration introduces gets
   `include=AVAILABILITY` (`GPU_AVAILABILITY`/`CPU_AVAILABILITY` for datacenters).
@@ -195,7 +199,7 @@ Per file:
   bucket, separately.
 
 A full before/after of a real client — pod create with GPU fallback, endpoint create
-without `templateId`, GraphQL dashboard — is in
+with the container config inlined, GraphQL dashboard — is in
 **[reference/worked-example.md](reference/worked-example.md)**.
 
 ### 5. Verify against the live API

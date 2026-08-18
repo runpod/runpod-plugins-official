@@ -71,9 +71,9 @@ say so in the summary rather than leaving the user to wonder if you missed somet
 | `env: [{key,value}]` | `env: {"KEY": "value"}` (map) |
 | `cloudType: SECURE \| COMMUNITY` | `cloud` — **`ALL` is gone**, pick one |
 | `minVcpuCount`, `minMemoryInGb` | removed — GPU pods size RAM/vCPU from the GPU type |
-| `allowedCudaVersions` | removed from create; survives only as a catalog availability filter |
+| `allowedCudaVersions` | `gpu.allowedCudaVersions` — moved under `gpu`, not removed (GPU pods only). Mutually exclusive with a non-empty `gpu.minCudaVersion`. |
 | `startSsh`, `startJupyter` | removed — express these through `ports` / `args` / the image |
-| `templateId` | removed — inline the template's container fields |
+| `templateId` | `templateId` — still accepted, but resolved once with no link retained ([Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone)) |
 
 A full conversion, showing the four shape changes that a field-by-field rename misses —
 comma-string ports become an array, the env pair-list becomes a map, `dockerArgs`
@@ -144,7 +144,7 @@ Response fields: `desiredStatus` → `status`, `costPerHr` → `cost`,
 | `scalerType` + `scalerValue` | `scaling: {"type": "QUEUE_DELAY", "queueDelay": N}` or `{"type": "REQUEST_COUNT", "requestCount": N}` |
 | `flashBootType: FLASHBOOT` | `flashboot: "FLASHBOOT"` (string, same values: `OFF`/`FLASHBOOT`/`PRIORITY_FLASHBOOT`) |
 | `locations: "US"` (region/country string) | `dataCenterIds: ["US-KS-2", …]` — explicit IDs |
-| `templateId` | removed — inline `image`/`disk`/`env`/`args` |
+| `templateId` | `templateId` — still accepted, but resolved once with no link retained ([Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone)) |
 | `networkVolumeId` | `networkVolumes: ["vol1"]` |
 | — | `type: "QUEUE" \| "LOAD_BALANCER"` — **required on create** |
 | `executionTimeoutMs` | `timeout` (still ms) |

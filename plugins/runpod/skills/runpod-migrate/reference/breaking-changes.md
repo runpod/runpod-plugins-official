@@ -3,8 +3,12 @@
 Three classes, in increasing order of how much they should worry you.
 
 Everything here was checked against the live API (`api.runpod.io/v2`, verified
-2026-08-10). Where the published spec and the running service disagree, the observed
+2026-08-18). Where the published spec and the running service disagree, the observed
 behavior is what is written down — and called out as such.
+
+The path claims and the Class-3 table are also checked mechanically against the live
+spec by `hooks/check_migrate_tables.py` and `hooks/check_migrate_class3.py`, so a row
+that goes stale fails CI rather than waiting to be re-read.
 
 ---
 
@@ -26,7 +30,14 @@ bodies are right. Full tables: [rest-v1-to-v2.md](rest-v1-to-v2.md) ·
 [graphql-to-v2.md](graphql-to-v2.md).
 
 Renamed **paths** are just as loud — `/v2/networkvolumes` is a `404`; the correct path is
-`/v2/network-volumes`.
+`/v2/network-volumes`. Same for `/v2/billing/network-volumes`.
+
+**Moved is not removed.** The CUDA constraints are the case to watch: v1's top-level
+`allowedCudaVersions` / `minCudaVersion` are now `gpu.allowedCudaVersions` and
+`gpu.minCudaVersion` on both pod and endpoint create, deliberately nested so they are
+unrepresentable on a CPU workload. Left at the top level they are a `422`; assumed
+deleted, you drop a constraint the user still has. A non-empty `allowedCudaVersions` and
+`minCudaVersion` are mutually exclusive (`400` if both are sent).
 
 The exception to "loud" is **query parameters**: `GET /v2/pods` ignores unknown ones. A
 v1 filter you forget to port (`?desiredStatus=RUNNING`) does not error — it returns every
@@ -153,6 +164,23 @@ that relied on overriding ENTRYPOINT *and* CMD independently cannot be expressed
 v2 `cloud` is `SECURE` or `COMMUNITY`. Code that asked for `ALL` to widen capacity must
 now pick one, or try one and fall back.
 
+### 13. `templateId` still works, but the link is gone
+
+`templateId` is accepted on pod and endpoint **create** and **update**, so the field
+carries across unchanged and nothing errors. What changed is what it means: v2 resolves
+the template once, at request time, into the same container fields you could have spread
+into the body yourself. Explicit body fields win over the template's, except `env`, which
+merges per key with body values winning.
+
+The consequence is the quiet one: **later edits to the template do not reach the
+resource.** Code that edited a template to roll out a new image to existing pods or
+endpoints silently stops rolling anything out. A pod's `template` response field stays
+`null`, and endpoint responses have no `template`/`templateId` at all, so nothing in the
+response reveals the template it came from either.
+
+Two smaller edges, both `422`: a serverless template on a pod create, or a pod template
+on an endpoint create. An unknown or inaccessible ID is a `404`.
+
 ---
 
 ## Class 3 — Capability removed: no v2 equivalent at any price
@@ -162,26 +190,26 @@ or the behavior changes. Decide with the user; do not silently drop them.
 
 | Capability | v1 / GraphQL | Status in v2 |
 | --- | --- | --- |
-| **GPU fallback list** | `gpuTypeIds: [a, b, c]` + `gpuTypePriority: availability` | `gpu.id` is a single type. Move the loop into your code — see below. |
+| **GPU fallback list (pods)** | `gpuTypeIds: [a, b, c]` + `gpuTypePriority: availability` | a **pod**'s `gpu.id` is a single type. Move the loop into your code — see below. Endpoints keep multi-target placement: `gpu.pools` is a list and workers land on whichever listed pool has capacity, so no loop is needed there. |
 | **Spot / interruptible pods** | `interruptible: true`, `podRentInterruptable`, `podBidResume` | none |
 | **Savings plans** | `Pod.savingsPlans`, `adjustedCostPerHr` | not exposed |
 | **Pod `reset`** | `POST /pods/{id}/reset` | `422` — actions are `start`/`stop`/`restart`/`terminate` |
-| **Placement constraints** | `countryCodes`, `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` | none |
-| **CUDA version pinning** | `allowedCudaVersions`, `minCudaVersion` on create | create-time pinning is gone; `minCudaVersion` survives only as a `/v2/catalog/gpus` availability filter |
+| **Placement constraints** | `countryCodes`, `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` | no create-time equivalent. `countryCodes` survives only as a `/v2/catalog/gpus?include=AVAILABILITY` **read** filter — useful for choosing where to deploy, but it cannot constrain the create itself. |
 | **Entrypoint override** | `dockerEntrypoint` (array) separate from `dockerStartCmd` | only `args` (one string) |
-| **Create from template ID** | `templateId` on pod/endpoint create | `422`. Fetch the template, spread its fields. |
 | **Server-side list filters / expansions** | `?desiredStatus=`, `?includeMachine=`, … | filter client-side |
 | **Host machine identity** | `machineId`, `machine { podHostId }` | only `dataCenterId` |
-| **CPU serverless writes** | create/update CPU endpoints | read-only |
 | **Account identity / balance** | `myself { email clientBalance currentSpendPerHr }` | no v2 route — keep GraphQL |
 | **Secrets** | `secretCreate` / `secretDelete` | no v2 route — keep GraphQL |
 | **Volume encryption flag** | `volumeEncrypted` | not exposed |
 
-### Replacing the GPU fallback list
+### Replacing the GPU fallback list (pods only)
 
-The one removal that needs real code. v1 walked `gpuTypeIds` server-side; v2 rents one
-type. The replacement is *better* than what it replaces, because v2 will tell you the
-stock level first — v1 made you guess:
+The one removal that needs real code. v1 walked `gpuTypeIds` server-side; a v2 **pod**
+rents one type. The replacement is *better* than what it replaces, because v2 will tell
+you the stock level first — v1 made you guess:
+
+For **endpoints**, do not write this loop. `gpu.pools` already takes a list and workers
+are placed on whichever pool has capacity; narrow a pool with `gpu.excludedTypes`.
 
 ```python
 PREFERENCE = ["NVIDIA GeForce RTX 4090", "NVIDIA RTX A5000", "NVIDIA L40S"]
@@ -219,7 +247,7 @@ instead of the top-level `availability`.
 | Message | What it actually means |
 | --- | --- |
 | `additional properties 'X' not allowed` | leftover v1/GraphQL field named `X` — rename or drop it |
-| `missing property 'X'` | v2 requires `X`. Pod create: `name`, `image`. Endpoint create: `name`, `image`, **`gpu`**, `type`, `scaling` — `gpu` is the one most often lost in a `gpuTypeIds` → `gpu.pools` rewrite. |
+| `missing property 'X'` | v2 requires `X`. Schema-required: pod create `name`; endpoint create `name`, `type`, `scaling`. `image` is not schema-required because `templateId` can supply it — a create with neither fails, so treat "`image` or `templateId`" as the real requirement. `gpu` is the field most often lost in a `gpuTypeIds` → `gpu.pools` rewrite. |
 | `value must be one of '…'` | enum tightened (`action`, `flashboot`, `category`, `cloud`) |
 | `missing property 'image'` **plus** `additional properties 'gpu', 'name', 'scaling', 'type' not allowed` — where those fields are obviously valid | **Look at the missing one only.** A missing required field knocks the body out of its schema branch, and the validator then reports every valid field as unexpected. Add the missing field and the rest of the noise disappears. |
 | `4xx` with prose instead of a schema path | a resource-level constraint, not schema validation — e.g. a datacenter that does not support network volumes (`400`, and the message enumerates the ones that do), or a container image that is not on the registry (`422`). Read the prose; there is no `$.field` to fix. |

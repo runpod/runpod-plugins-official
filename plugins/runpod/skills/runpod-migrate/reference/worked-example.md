@@ -107,7 +107,7 @@ pods = SESSION.get(f"{V2_BASE}/pods").json()["pods"]
 [p for p in pods if p["status"] == "RUNNING" and p.get("gpu")]
 ```
 
-## Step 3 — the endpoint, which loses `templateId`
+## Step 3 — the endpoint, where `templateId` stops meaning a link
 
 ```python
 # ── before (v1): create template, reference it by id ──────────────────────
@@ -146,8 +146,13 @@ endpoint = SESSION.post(f"{V2_BASE}/serverless", json={
 }).json()
 ```
 
-A template is still worth keeping as a config preset — you just spread its fields instead
-of passing its ID.
+`templateId` is still a legal v2 field, so the shortest possible migration keeps it. This
+example inlines the container config instead, for a reason worth stating to the user: v2
+resolves a template **once**, at request time, and retains no link to it. If anything in
+this codebase edited a template to roll a new image out to existing endpoints, passing
+`templateId` across unchanged leaves that rollout silently doing nothing. Inlining makes
+the config's real source visible in the code. See
+[breaking-changes.md Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone).
 
 Two deletions fall out of this file for free:
 
@@ -201,9 +206,10 @@ export async function runningPods() {
 - gpu_farm/runpod_client.py — pod create rewritten (image/disk/gpu/mounts); the
   gpuTypeIds fallback became an availability-ordered loop; list filtering moved
   client-side; start/stop now POST /action.
-- gpu_farm/endpoints.py — endpoint create no longer takes templateId (422); GPU
-  named by pool ADA_24; scaling/workers nested; flashboot is an enum; billing
-  moved to /billing/serverless.
+- gpu_farm/endpoints.py — container config inlined instead of templateId (still
+  legal, but v2 resolves it once and keeps no link); GPU named by pool ADA_24;
+  scaling/workers nested; flashboot is an enum; billing moved to
+  /billing/serverless.
 - dashboard/provision.js — 4 GraphQL pod mutations → REST v2.
 - dashboard/capacity.js — gpuTypes/saveEndpoint/deleteEndpoint → REST v2.
 
