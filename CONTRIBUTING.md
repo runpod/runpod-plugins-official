@@ -128,6 +128,8 @@ python3 hooks/check_versions.py            # all manifests declare the same vers
 python3 hooks/check_runpod_branding.py     # "Runpod" casing
 python3 hooks/check_links.py               # relative Markdown links resolve
 python3 hooks/check_migrate_scanner.py     # runpod-migrate scanner vs. its corpora
+python3 hooks/check_migrate_tables.py      # runpod-migrate path claims vs. the spec
+python3 hooks/check_migrate_class3.py      # runpod-migrate Class-3 table vs. the spec
 ```
 
 Then smoke-test the two install paths on your branch:

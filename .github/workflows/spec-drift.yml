@@ -1,0 +1,31 @@
+name: spec-drift
+
+# The two checks in `validate` run against a vendored spec snapshot, so they gate what
+# a PR changed and nothing else. This job runs the same checks against the *live* API,
+# which is the only way to notice that v2 moved under us. It is deliberately separate
+# and non-blocking: an upstream spec change is real news, but it is not a reason to
+# fail an unrelated PR.
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Refresh the vendored snapshot from the live spec
+        run: |
+          curl -sSf https://api.runpod.io/v2/openapi.json \
+            -o testdata/runpod-migrate/v2-openapi.json
+      - name: Report snapshot drift
+        run: git --no-pager diff --stat -- testdata/runpod-migrate/v2-openapi.json
+      - name: Path tables vs. live spec
+        run: python3 hooks/check_migrate_tables.py --live
+      - name: Class-3 table vs. live spec
+        run: python3 hooks/check_migrate_class3.py --live

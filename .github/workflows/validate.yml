@@ -23,3 +23,7 @@ jobs:
         run: python3 hooks/check_links.py
       - name: Check runpod-migrate scanner against its corpora
         run: python3 hooks/check_migrate_scanner.py
+      - name: Check runpod-migrate path tables against the spec snapshot
+        run: python3 hooks/check_migrate_tables.py
+      - name: Check runpod-migrate Class-3 table against the spec snapshot
+        run: python3 hooks/check_migrate_class3.py

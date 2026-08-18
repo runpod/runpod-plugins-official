@@ -30,9 +30,11 @@ plugins/runpod/                   THE plugin
   README.md  CHANGELOG.md
   skills/                         the seven skills (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
-hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_migrate_scanner
+hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_migrate_scanner / check_migrate_tables / check_migrate_class3
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
+testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
 .github/workflows/validate.yml    runs the hooks on PRs
+.github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API
 ```
 
 ## Architecture: a router + lanes
@@ -117,11 +119,18 @@ editing the repo. Each is its own checkable rule.
    add a corpus under `testdata/runpod-migrate/` plus an assertion for any new behavior.
    Every existing assertion corresponds to a defect that actually shipped — do not
    delete one to make the build green.
-8. **Releases** —
+8. **runpod-migrate's factual claims about v2** — the reference tables assert concrete
+   paths, and the Class-3 table asserts that capabilities are *absent*. Both are checked
+   against `testdata/runpod-migrate/v2-openapi.json` by `check_migrate_tables.py` and
+   `check_migrate_class3.py`. When a check fails, fix the doc; refresh the snapshot only
+   when v2 genuinely changed, and re-read the affected rows when you do. A wrong Class-3
+   row is worse than a wrong rename: SKILL.md tells the agent to stop and ask the user
+   about those, so it buys an interruption over a decision that does not exist.
+9. **Releases** —
    - Never hand-bump versions; release-please cuts the release (see `CONTRIBUTING.md` →
      Cutting a release).
    - Use Conventional Commits.
-9. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
+10. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
    move long tables and deep explanations into `reference/*.md` linked from the body.
 
 ## Conventions
