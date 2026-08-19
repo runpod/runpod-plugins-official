@@ -116,6 +116,25 @@ behind.
 `model add` supports upload sessions, versioning, metadata, and private-source credentials.
 Concepts: [model-caching.md](model-caching.md); flags: `runpodctl model add --help`.
 
+## Registry credentials
+
+Prefer `registry create --password-stdin` for scripts so the credential does not enter the
+process table or shell history. A secret already held in an environment variable can be piped
+without expanding its value into the runpodctl argument list:
+
+```bash
+printenv REGISTRY_TOKEN | runpodctl registry create --name "x" --username "u" --password-stdin
+```
+
+Redirecting a credential file to `--password-stdin` also works, including multi-line
+credentials such as a GCR service-account JSON key. The command strips one trailing line
+ending but preserves leading, inner, and other trailing whitespace.
+
+`--password` remains supported for compatibility, but places the credential in `argv`.
+When neither password flag is present and stdin is a terminal, runpodctl prompts without
+echo. With non-terminal stdin and no password source it returns `usage_error` instead of
+blocking; `--password` and `--password-stdin` are mutually exclusive.
+
 ## SSH
 
 `ssh info <pod-id>` returns **connection details, not an interactive session** — and it has
