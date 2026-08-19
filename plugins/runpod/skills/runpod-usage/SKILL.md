@@ -19,6 +19,11 @@ Background knowledge for making the right choice before you act. This skill runs
 nothing — once you know what to do, execute with **runpod-mcp**/**runpodctl**
 (infra), **flash** (your own code), or **companion-clis** (models/images/data).
 
+**This skill explains; the golden paths demonstrate.** When the question is really "how do I
+do X" rather than "how does X work", the verified end-to-end example is the faster answer —
+[runpod/golden-paths/README.md](../runpod/golden-paths/README.md). Read the concept here, then
+follow the path.
+
 Read the one reference file that matches the question:
 
 | Question | Read |

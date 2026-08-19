@@ -22,6 +22,13 @@ are authoritative for the command surface** — this skill is the mental model, 
 rules, and the gotchas that help output does not carry. Confirm the installed version with
 `pip show runpod-flash` before concluding a subcommand or flag is unavailable.
 
+**Worked examples first for anything multi-step.** Flash appears in verified end-to-end
+paths — [03 variant B (whisper endpoint via flash)](../runpod/golden-paths/03-whisper-endpoint/variant-b-flash.md)
+and [08 (fine-tune → serve)](../runpod/golden-paths/08-finetune-to-serverless.md); the full
+index is [runpod/golden-paths/README.md](../runpod/golden-paths/README.md). Open the matching
+path before planning a deploy — it carries the ordering and the cost cleanup this skill only
+summarizes.
+
 **Load on demand — this skill keeps the mental model + gotchas inline; details live in [`reference/`](reference/):**
 
 | Need | Read |

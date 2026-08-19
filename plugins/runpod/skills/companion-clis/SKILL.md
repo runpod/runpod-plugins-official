@@ -22,6 +22,12 @@ Four CLIs commonly needed alongside Runpod. Each has its own **credentials + com
 
 Each requires credentials before use. Read the per-tool reference for auth steps and commands; install is a separate one-time `<cli>-setup.md`.
 
+These CLIs are usually one step inside a larger job. For the whole job the verified example is
+in [runpod/golden-paths/README.md](../runpod/golden-paths/README.md) — baking vs mounting a
+model ([25](../runpod/golden-paths/25-bake-vs-mount/README.md)), building a minimal image
+([22](../runpod/golden-paths/22-minimal-pod-image/README.md)), or moving data to a network
+volume ([07](../runpod/golden-paths/07-network-volume-handoff.md)).
+
 These are third-party CLIs on their own release trains, so **`<cli> --help` is authoritative
 for flags and subcommands** — the references here cover the Runpod-specific usage and the
 traps, not the tool's full surface. Check `--help` before reporting that one of them cannot do

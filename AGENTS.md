@@ -74,7 +74,7 @@ whenever the agent is shell-only). Consult the matrix there; don't rely on this 
 - `compatibility`, `metadata` (author, version), `license`.
 
 The body is markdown the agent consumes, following **progressive disclosure** (see Contributor
-rule 8): the `SKILL.md` body stays small and long tables / deep explanations live in
+rule 11): the `SKILL.md` body stays small and long tables / deep explanations live in
 `reference/*.md` that the body links to and the agent opens only when needed.
 
 ## Golden paths & evals
@@ -105,13 +105,21 @@ editing the repo. Each is its own checkable rule.
    - When it changes, update `skills/runpod/SKILL.md`, `skills/runpod-mcp/SKILL.md`, and
      `skills/runpodctl/SKILL.md` in the same change.
    - State the rule only in `skills/runpod/SKILL.md`; do not restate it elsewhere.
-5. **Golden paths** —
+5. **Golden paths** — they are **step 0 of routing, not an appendix**.
+   `skills/runpod/SKILL.md` tells an agent to match the task against the golden-paths
+   index *before* picking a lane whenever the task spans more than one resource or lane,
+   provisions something billable, is shaped like "get X running", or warrants a multi-step
+   plan. Keep that true, and keep the file conventions:
+   - When you add or rename a path, add its row to **both** the router's "Want to…" table
+     in `skills/runpod/SKILL.md` and the `golden-paths/README.md` table.
+   - Every lane's `SKILL.md` links back to `golden-paths/README.md`. A new lane needs one.
+   - Do not widen the trigger to "always read an example first" — a single read or single
+     CRUD call should route straight to the lane. `consult-golden-path-first.eval.md`
+     asserts both directions, so widening it breaks that eval on purpose.
    - Single approach → one file `NN-name.md`. Multiple variants → a folder
      `NN-name/` with a `README.md` (goal, "which variant?", shared schema/gotchas/cost)
      plus one `variant-*.md` per approach.
    - Every golden-path doc follows the section template listed under *Golden paths & evals*.
-   - When adding or splitting a path, update the `golden-paths/README.md` table in the
-     same change.
    - The per-path verification status is authoritative in `golden-paths/README.md`'s Status
      column; do not restate it in AGENTS.md (it drifts).
 6. **Evals** — add or update an `evals/*.eval.md` when you add or change routing/behavior.

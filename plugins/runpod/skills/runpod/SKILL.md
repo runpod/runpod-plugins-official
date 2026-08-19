@@ -4,8 +4,10 @@ description: >-
   Start here for any Runpod task — running GPU/CPU pods, deploying serverless
   endpoints, templates, network volumes, building images, or understanding how
   Runpod works. Routes the request to the right Runpod skill (runpod-mcp,
-  runpodctl, flash, companion-clis, or runpod-usage). Use when it is unclear
-  which Runpod skill applies.
+  runpodctl, flash, companion-clis, or runpod-usage) and indexes 25 verified
+  end-to-end worked examples (golden paths) to follow instead of re-deriving a
+  multi-step task. Use when it is unclear which Runpod skill applies, and for any
+  multi-step or provisioning task even when the lane is obvious.
 metadata:
   author: runpod
   version: "1.2.0" # x-release-please-version
@@ -15,7 +17,9 @@ license: Apache-2.0
 # Runpod (router)
 
 The entrypoint for the Runpod skills. This skill does no work itself — it picks
-the right lane and hands off. Read the matching skill's `SKILL.md` next.
+the right lane and hands off. For a multi-step or provisioning task, check the
+[worked examples](#worked-examples-golden-paths) first and let the matching one pick
+the lane; otherwise read the matching skill's `SKILL.md` next.
 
 ## The lanes
 
@@ -78,6 +82,24 @@ before any CLI-only step. Missing a CLI? `curl -sSL https://cli.runpod.net | bas
 [`runpod-usage/reference/getting-started.md`](../runpod-usage/reference/getting-started.md).
 
 ## How to route
+
+**0. Does a worked example already cover this?** For anything beyond a single call,
+check [the golden-paths index](#worked-examples-golden-paths) *before* picking a lane —
+a matching path already names the lane(s), the flags, the ordering, and the traps, so
+routing becomes reading rather than re-deriving. Check it when **any** of these is true:
+
+- the task needs **more than one resource** (image + template + endpoint, pod + volume,
+  multi-region, …) or **more than one lane**
+- it **provisions something billable**, or the user's ask is shaped like *"get X running /
+  deployed / working"*
+- it involves **storage, networking, autoscaling, streaming, or debugging a live resource** —
+  the areas where the non-obvious ordering is the whole difficulty
+- you are about to write a **multi-step plan** for it
+
+Skip step 0 for a single read or a single CRUD call ("list my pods", "stop pod X",
+"what GPUs are available") — go straight to the lane. **A matching golden path outranks
+this router's lane table**: it was verified end to end on a real account, so where the two
+disagree, follow the path and treat the difference as a bug worth reporting.
 
 1. **Conceptual question, or an unmade design choice** (serverless vs pod? which
    GPU? bake the model or mount a volume?) → read **runpod-usage** first, then
@@ -146,10 +168,16 @@ It branches to two sub-loops:
 
 ## Worked examples (golden paths)
 
-**Two dozen** end-to-end scenarios (nearly all **live-verified**) live in
-[`./golden-paths/README.md`](./golden-paths/README.md) — the yardstick for "can
-an agent finish the job", with real commands + observed output to copy from. When a
-task matches one, **open its golden path first** instead of re-deriving it:
+This is **step 0 of routing**, not an appendix. Two dozen end-to-end scenarios
+(nearly all **live-verified on a real account**) live in
+[`./golden-paths/README.md`](./golden-paths/README.md), with the real commands and the
+observed output to copy from — plus a Gotchas and a Cost & cleanup section each, which
+is the part that is expensive to rediscover.
+
+**Match the task to a row below and open that path before you plan or call anything.**
+A partial match is still worth opening: the closest path's ordering and gotchas usually
+transfer even when the model, GPU, or region does not. Only fall through to the lane
+tables above when nothing here is close.
 
 | Want to… | Golden path |
 | --- | --- |
@@ -163,6 +191,7 @@ task matches one, **open its golden path first** instead of re-deriving it:
 | **Custom serverless when flash isn't enough** (dual-mode image dev loop) | [09](./golden-paths/09-custom-serverless-dev-loop/README.md) |
 | Build a minimal image for a target (pod vs serverless queue) | [22 (pod)](./golden-paths/22-minimal-pod-image/README.md), [23 (queue)](./golden-paths/23-minimal-queue-image/README.md); concepts in [building-images](../runpod-usage/reference/building-images.md) |
 | Decide what to bake into the image vs mount on a network volume | [25 — bake vs mount](./golden-paths/25-bake-vs-mount/README.md) |
+| Pick a network-volume **storage tier** (standard vs high-performance) | [21 — storage tiers](./golden-paths/21-storage-tiers.md) |
 | **High availability / multi-region** serverless (multi-volume + data sync) | [10](./golden-paths/10-multi-region-ha-serverless.md), [19 (3-region)](./golden-paths/19-three-region-same-file.md) |
 | Stream output incrementally (`/stream`) | [12](./golden-paths/12-serverless-streaming.md) |
 | Tune autoscaling / raise per-worker throughput | [13 (autoscaling)](./golden-paths/13-autoscaling-tuning.md), [18 (concurrency)](./golden-paths/18-concurrent-handler.md) |

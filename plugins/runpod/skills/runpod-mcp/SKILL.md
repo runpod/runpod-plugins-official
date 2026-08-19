@@ -23,6 +23,12 @@ so an MCP-capable agent can manage infrastructure without shelling out. It is th
 same Runpod REST API that `runpodctl` uses — pick MCP when its tools are
 connected (typed params, structured errors, no shell quoting).
 
+**For a multi-step job, read the worked example before calling tools.** Tool calls are easy
+to issue and easy to issue in the wrong order — the verified end-to-end sequences live in
+[runpod/golden-paths/README.md](../runpod/golden-paths/README.md) (image → template →
+endpoint, pod → volume → serverless, multi-region, autoscaling, monitoring). This skill
+covers what each tool does; the paths cover what order to do them in and what it costs.
+
 ## Connect
 
 Connect the hosted server with **your API key as a Bearer header** if you also use runpodctl/flash — that one key auths the MCP *and* the CLIs (the 80% path):
