@@ -25,10 +25,28 @@ runpodctl pod list                    # json (default)
 runpodctl pod list --output=yaml      # yaml — the only alternative
 ```
 
-**There is no table format** — `json` and `yaml` are the only values, matched
-**case-sensitively**. An unrecognized value is not an error; it silently falls back to
-JSON, so `--output=table` *and* `--output=YAML` both return JSON. Pass lowercase `yaml` or
-don't pass the flag.
+**There is no table format** — `json` and `yaml` are the only values. As of **v2.10.0** an
+unrecognized value is a hard error before any API call, and matching is
+**case-insensitive**:
+
+```jsonc
+// runpodctl gpu list --output=table   (v2.10.0+)
+{"error":"invalid --output \"table\": supported formats are json and yaml","code":"usage_error"}
+// exit 1, usage text on stderr
+```
+
+```bash
+runpodctl gpu list --output=YAML      # v2.10.0+: real YAML (case is ignored)
+```
+
+⚠️ **This inverted in v2.10.0, so a handler has to know which binary it is on.** Through
+**v2.9.0** the flag was matched *case-sensitively* and anything unrecognized fell back to
+JSON **silently** — `--output=table` and `--output=YAML` both returned JSON, and the only
+safe advice was "pass lowercase `yaml` or don't pass the flag". That silence is how a table
+format the CLI never had ended up documented in the first place. On v2.10.0+ the same
+`--output=table` exits **1** with `usage_error`, so code that passed a defensive
+`--output=json` is fine but code passing anything else now fails loudly instead of
+degrading.
 
 (The legacy `get pod` / `get cloud` commands print a human table on stdout and ignore
 `--output` entirely — see [plaintext gaps](#plaintext-gaps).) Some commands print a human table on stdout regardless — the legacy
@@ -186,8 +204,8 @@ no `code`:
 | surface | shape |
 | --- | --- |
 | legacy `get`/`create`/`remove`/`start`/`stop pod`, `create`/`remove pods`, `get cloud` | `Error: <msg>` on stderr, exit 1 — including the missing-key case, which carries the same message as `no_credentials` but no JSON and no `code`. Success prints a human **table** on stdout, not JSON |
-| `exec` (hidden, deprecated) | progress on **stdout**, error plaintext on stderr, **exit 0**; polls up to **5 minutes** for the pod's SSH info before giving up |
-| `project` (hidden) | prints errors to **stdout** and exits **0** |
+| `exec` (hidden, deprecated) | **v2.10.0+:** joined the JSON error shape — flat JSON with a `code` on stderr and a **non-zero** exit. Through v2.9.0 it printed the error as plaintext and still exited **0**, so a caller that trusted the exit code saw a silent success. Either way: progress on **stdout**, and it polls up to **5 minutes** for the pod's SSH info before giving up |
+| `project` (hidden) | prints errors to **stdout** and exits **0** — the last surface where the exit code cannot be trusted |
 
 ### Parsing `ssh info`
 
@@ -216,9 +234,9 @@ ports that could never connect), and it drops out of `ssh connect`'s `connection
 which is now `[]` rather than `null` when nothing is reachable.
 
 So a parser should tolerate a non-JSON line on stderr from those, and must not rely on
-the exit code for `exec` or `project`. Prefer the non-legacy equivalents: `pod
-get`/`pod create`/`pod delete`, and `ssh info <pod-id>` + your own `ssh` invocation
-instead of `exec`.
+the exit code for `project` (nor for `exec` before v2.10.0). Prefer the non-legacy
+equivalents: `pod get`/`pod create`/`pod delete`, and `ssh info <pod-id>` + your own `ssh`
+invocation instead of `exec`.
 
 ## Environment variables
 

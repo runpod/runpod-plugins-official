@@ -46,4 +46,8 @@ The agent should:
 - Reads errors from stderr and does NOT expect error JSON on stdout
 - Does NOT claim `status` is always present
 - Does NOT tell the user to parse plaintext for `pod`/`serverless`/`template`/`model`
-  commands (only the legacy `pod` paths, `exec` and `project` still print plaintext)
+  commands (on v2.10.0+ only the legacy `pod` paths and `project` still print plaintext —
+  `exec` joined the coded-JSON shape and now exits non-zero, so an assertion that names
+  `exec` as a plaintext surface is stale)
+- Does NOT pass `--output` anything but `json`/`yaml`: on v2.10.0+ an unrecognized value is
+  a `usage_error` with exit 1, where v2.9.0 silently returned JSON
