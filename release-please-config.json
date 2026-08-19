@@ -25,6 +25,7 @@
         { "type": "json", "path": ".claude-plugin/marketplace.json", "jsonpath": "$.version" },
         "plugins/runpod/skills/runpod/SKILL.md",
         "plugins/runpod/skills/runpod-mcp/SKILL.md",
+        "plugins/runpod/skills/runpod-migrate/SKILL.md",
         "plugins/runpod/skills/runpodctl/SKILL.md",
         "plugins/runpod/skills/flash/SKILL.md",
         "plugins/runpod/skills/companion-clis/SKILL.md",

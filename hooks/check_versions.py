@@ -34,6 +34,26 @@ for skill in sorted(ROOT.glob("plugins/runpod/skills/*/SKILL.md")):
     m = _VER_RE.search(skill.read_text())
     seen[str(skill.relative_to(ROOT))] = m.group(1) if m else None
 
+# A skill release-please does not know about never gets bumped, so the next
+# release PR fails this check instead of the PR that added the skill. Catch it
+# where it is cheap to fix.
+config = json.loads((ROOT / "release-please-config.json").read_text())
+registered = {
+    entry if isinstance(entry, str) else entry["path"]
+    for entry in config["packages"]["."]["extra-files"]
+}
+unregistered = sorted(
+    str(skill.relative_to(ROOT))
+    for skill in ROOT.glob("plugins/runpod/skills/*/SKILL.md")
+    if str(skill.relative_to(ROOT)) not in registered
+)
+if unregistered:
+    print("version check FAILED — skills missing from release-please-config.json:")
+    for f in unregistered:
+        print(f"  {f}")
+    print("Add each to packages['.'].extra-files, or release-please will not bump it.")
+    sys.exit(1)
+
 vals = set(seen.values())
 if None in vals or len(vals) != 1:
     print("version check FAILED — versions disagree:")
