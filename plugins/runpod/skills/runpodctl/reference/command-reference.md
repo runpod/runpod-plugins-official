@@ -1,32 +1,26 @@
-# runpodctl — full command reference
+# runpodctl — behavior reference
 
-Live `runpodctl <resource> <action> --help` is always authoritative for exact flags. This
-is the fuller menu (the SKILL keeps the 80% essentials); use it for the long-tail flags.
+**This file does not list flags.** `runpodctl <resource> <action> --help` does, it is always
+current, and it ships with the binary in front of you:
 
+```bash
+runpodctl --help                          # resources
+runpodctl <resource> --help               # actions + aliases
+runpodctl <resource> <action> --help      # exact flags, defaults, examples
+runpodctl help <resource> <action>        # same, and traverses aliases (`pod remove`) that --help does not
+runpodctl version                         # which surface you actually have
+```
+
+What lives here instead is the part `--help` never tells you: **what a flag means when it
+succeeds, what "ready" is defined as, which field to trust, and what a failure looks like.**
 Output shapes, error codes and env vars are in
 [output-and-errors.md](output-and-errors.md).
 
-## Pods
+> Two `--help` gotchas: cobra does **not** traverse aliases for `--help`, so `pod remove --help`
+> answers `unknown command` even though `pod remove <id>` works — use `runpodctl help pod remove`.
+> And the deprecated `get pod` / `get cloud` paths are hidden from `--help` but still live.
 
-```bash
-runpodctl pod list                                    # List running pods (default, like docker ps)
-runpodctl pod list --all                              # List all pods including exited
-runpodctl pod list --status exited                    # Filter by status (RUNNING, EXITED, etc.)
-runpodctl pod list --since 24h                        # Pods created within last 24 hours
-runpodctl pod list --created-after 2025-01-15         # Pods created after date
-runpodctl pod get <pod-id>                            # Get pod details (includes SSH info)
-runpodctl pod create --template-id runpod-torch-v21 --gpu-id "NVIDIA GeForce RTX 4090"  # From template
-runpodctl pod create --image "runpod/pytorch:..." --gpu-id "NVIDIA GeForce RTX 4090"    # From image
-runpodctl pod create --compute-type cpu --image ubuntu:22.04  # CPU pod (lowercase `cpu`)
-runpodctl pod start <pod-id>                          # Start stopped pod
-runpodctl pod stop <pod-id>                           # Stop running pod
-runpodctl pod restart <pod-id>                        # Restart pod
-runpodctl pod reset <pod-id>                          # Reset pod
-runpodctl pod update <pod-id> --name "new"            # Update pod
-runpodctl pod delete <pod-id>                         # Delete pod (aliases: rm, remove)
-runpodctl pod create --image <img> --gpu-id <id> --wait                  # wait until ssh answers (v2.9.0+)
-runpodctl pod create --image <img> --gpu-id <id> --wait --wait-timeout 3m # give up sooner than the 10m default
-```
+## Pods
 
 ### Waiting for readiness (`--wait`, v2.9.0+)
 
@@ -50,51 +44,23 @@ runpodctl pod create --image <img> --gpu-id <id> --wait --wait-timeout 3m # give
 | `runtimeStatusReason` | stable token when there is more to say, e.g. `awaiting_container`, `stopped_by_user`, `stopped_by_runpod`, `terminated_outbid`, `runtime_unavailable` |
 | `uptimeSeconds` | present only while the container is up; omitted otherwise (it used to be a constant `0`) |
 | `lastStatusChange` | the backend's raw free-text note, carried so a phrasing the cli does not tokenise still reaches you |
+| `networkVolumeId` | **v2.10.0+:** always present when the pod has a volume attached, with or without `--include-network-volume`; `--include-network-volume` additionally fills the full `networkVolume` object. On **v2.9.0 and earlier both were dropped on deserialization** and read back `null` even when a volume was attached — so a pre-v2.10.0 binary cannot be used to check whether a pod has one |
 
 `--status` filters **`desiredStatus` only** — `--status initializing` silently matches nothing.
 
-## Hub
+### Reading pod logs (`pod logs`, v2.10.0+)
 
-```bash
-runpodctl hub list                                    # Top 10 by stars
-runpodctl hub list --type SERVERLESS                  # Only serverless repos
-runpodctl hub list --type POD                         # Only pod repos
-runpodctl hub list --category ai --limit 20           # Filter by category
-runpodctl hub list --order-by deploys                 # Order by deploys
-runpodctl hub list --owner runpod-workers             # Filter by repo owner
-runpodctl hub search vllm                             # Search for "vllm"
-runpodctl hub search whisper --type SERVERLESS        # Search serverless repos
-runpodctl hub get <listing-id>                        # Get by listing id
-runpodctl hub get runpod-workers/worker-vllm          # Get by owner/name
-```
+| | detail |
+| --- | --- |
+| output | **json lines**, one `{source,line,ts}` object per line — pipe straight to `jq`, no SSE frame parsing |
+| `--source` | `container` (your workload's stdout/stderr), `system` (the platform narrating image pull, container create, start), or `both` (default) |
+| termination | without `--follow` it replays history and **exits on its own** once lines stop arriving (`--max-wait`, default `5s`, bounds the wait). With `--follow` it streams until interrupted and reconnects itself if the connection drops |
+| history | `--tail 0-5000` (default 100; `0` = live only), or `--since 30m|2h|7d|<rfc3339>`, which overrides `--tail` |
+| what to read it for | a stalled deploy is a `system` story — repeated pull progress, or a `create container` that never reaches `start` |
 
 ## Serverless (alias: sls)
 
-```bash
-runpodctl serverless list                             # List all endpoints
-runpodctl serverless get <endpoint-id>                # Get endpoint details
-runpodctl serverless create --name "x" --template-id "tpl_abc"  # Create from template
-runpodctl serverless create --name "x" --hub-id <listing-id>    # Create from hub repo
-runpodctl serverless create --hub-id <id> --env MODEL_NAME=my-model  # Override hub env defaults
-runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --model-reference https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main  # Attach & cache a HF model (GPU only)
-runpodctl serverless create --hub-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --model-reference https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main       # Same, on a hub deploy
-runpodctl serverless create --compute-type CPU --template-id <id> --instance-id cpu3g-4-16  # CPU endpoint (uppercase `CPU`)
-runpodctl serverless create --template-id <t> --network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>  # Multi-DC (v2.4.0+)
-runpodctl serverless update <endpoint-id> --workers-max 5       # Update endpoint
-runpodctl serverless delete <endpoint-id>             # Delete endpoint
-runpodctl serverless create --template-id <id> --workers-min 1 --wait  # wait for a ready worker (v2.9.0+)
-```
-
-### Invoking an endpoint (v2.9.0+)
-
-```bash
-runpodctl serverless run <endpoint-id> --input '{"prompt":"hi"}'   # submit + wait for the result
-runpodctl serverless run <endpoint-id> --input-file payload.json   # payload from a file ("-" = stdin)
-runpodctl serverless run <endpoint-id> --input '{}' --wait 15m     # wait budget (default 5m; 0 = do not wait)
-runpodctl serverless run <endpoint-id> --input '{}' --no-wait      # submit only (same as --wait 0)
-runpodctl serverless status <endpoint-id> <job-id>                 # poll a job submitted earlier
-runpodctl serverless health <endpoint-id>                          # worker + job counts
-```
+### Invoking an endpoint (`serverless run`, v2.9.0+)
 
 | | detail |
 | --- | --- |
@@ -106,6 +72,37 @@ runpodctl serverless health <endpoint-id>                          # worker + jo
 | two budgets | `--wait` bounds the whole job; the shared `timeout` config key (30s) bounds one api call. A call inside a wait is clamped to what is left, never below 1s |
 | `/run`, never `/runsync` | `/runsync` is not synchronous: the connection is released after ~90s with the job still running, no job id exists until it answers (so a slow response strands a billed, unpollable job), and a `sync-` job's result expires after 1 minute vs 30 for `/run` |
 
+`serverless status <endpoint-id> <job-id>` polls a job submitted earlier; `serverless health
+<endpoint-id>` returns worker + job counts.
+
+### Reading worker logs (`serverless logs`, v2.10.0+)
+
+Same flags and semantics as `pod logs` above, plus:
+
+| | detail |
+| --- | --- |
+| output | `{source,line,ts,workerId}` — the extra `workerId` is what makes the no-`--worker` form usable |
+| `--worker` | optional. **Omit it and the command resolves the endpoint's workers itself** and reads all of them at once, tagging each line. With `--follow` it also picks up workers that appear mid-run, so an endpoint scaling up does not need the command re-run |
+| what to read it for | the crash loop: repeated `system` `start container` lines with **no** `container` output means the container exits before the handler runs, which leaves jobs sitting in the queue with nothing wrong with capacity |
+
+### Endpoint update and zero values
+
+`serverless update` sends **zero values** as of **v2.10.0** (`--workers-min 0`,
+`--idle-timeout 0`, `--workers-max 0`, `--scaler-value 0`). On **v2.9.0 and earlier those were
+silently dropped** from the request, so resetting a dev endpoint back to scale-to-zero looked
+like it applied and the endpoint kept billing. On an older binary verify with `serverless get
+<id>`, or `PATCH https://rest.runpod.io/v1/endpoints/<id>` with an explicit `{"workersMin":0}`.
+
+`serverless update` has **no `--gpu-id` flag** — change an existing endpoint's GPU pool with
+that same `PATCH` and `{"gpuTypeIds":[...]}`.
+
+**Multi-DC** (`--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>`) needs
+**runpodctl ≥ v2.4.0**; data does not sync between volumes automatically — golden path
+[10](../../runpod/golden-paths/10-multi-region-ha-serverless.md).
+
+⚠️ `serverless get --include-workers` returns raw v1 worker records **including
+`RUNPOD_AI_API_KEY`/`RUNPOD_ENDPOINT_SECRET` in `env`** — don't paste its output into a ticket.
+
 ### Error codes worth branching on
 
 `timeout`, `job_failed`, `wait_timeout` and `wait_interrupted` are the codes these commands
@@ -114,89 +111,23 @@ add, and `not_found` gains a nuance during a wait. They live with every other co
 mean work outlived the cli, and the `id` field that names a resource a failed wait left
 behind.
 
-## Templates (alias: tpl)
+## Models
 
-```bash
-runpodctl template list                               # Official + community (first 10)
-runpodctl template list --type official               # All official templates
-runpodctl template list --type community              # Community templates (first 10)
-runpodctl template list --type user                   # Your own templates
-runpodctl template list --all                         # Everything including user
-runpodctl template list --limit 50                    # Show 50 templates
-runpodctl template search pytorch                     # Search for "pytorch" templates
-runpodctl template search comfyui --limit 5           # Search, limit to 5 results
-runpodctl template search vllm --type official        # Search only official
-runpodctl template get <template-id>                  # Get template details (README, env, ports)
-runpodctl template create --name "x" --image "img"    # Create template
-runpodctl template create --name "x" --image "img" --serverless  # Create serverless template
-runpodctl template update <template-id> --name "new"  # Update template
-runpodctl template delete <template-id>               # Delete template
-```
-
-## Network Volumes (alias: nv)
-
-```bash
-runpodctl network-volume list                         # List all volumes
-runpodctl network-volume get <volume-id>              # Get volume details
-runpodctl network-volume create --name "x" --size 100 --data-center-id "US-GA-1"  # Create volume
-runpodctl network-volume update <volume-id> --name "new"  # Update volume
-runpodctl network-volume delete <volume-id>           # Delete volume
-```
-
-## Models (Model Repository)
-
-```bash
-runpodctl model list                                  # List your models
-runpodctl model list --all                            # List all models (not just yours)
-runpodctl model list --name "llama"                   # Filter by name
-runpodctl model list --provider "meta"                # Filter by provider
-runpodctl model add --name "my-model" --model-path ./model   # Upload a local model dir (multipart)
-runpodctl model remove --name "my-model" --owner <owner>     # Remove a model
-```
-
-`model add` supports upload sessions, versioning, metadata, and private-source credentials —
-see live `runpodctl model add --help`. Concepts: [model-caching.md](model-caching.md).
-
-## Registry (alias: reg)
-
-```bash
-runpodctl registry list                               # List registry auths
-runpodctl registry get <registry-id>                  # Get registry auth
-runpodctl registry create --name "x" --username "u" --password "p"  # Create registry auth
-runpodctl registry delete <registry-id>               # Delete registry auth
-```
-
-## Info
-
-```bash
-runpodctl user                                        # Account info and balance (alias: me)
-runpodctl gpu list                                    # List available GPUs (+ $/hr per cloud + dataCenterAvailability[])
-runpodctl gpu list --include-unavailable              # Include unavailable GPUs
-runpodctl datacenter list                             # List datacenters (alias: dc)
-runpodctl billing pods                                # Pod billing history
-runpodctl billing serverless                          # Serverless billing history
-runpodctl billing network-volume                      # Volume billing history
-```
+`model add` supports upload sessions, versioning, metadata, and private-source credentials.
+Concepts: [model-caching.md](model-caching.md); flags: `runpodctl model add --help`.
 
 ## SSH
 
-```bash
-runpodctl ssh info <pod-id>                           # Get SSH info (command + key, does not connect)
-runpodctl ssh list-keys                               # List SSH keys
-runpodctl ssh add-key                                 # Add SSH key
-runpodctl ssh remove-key --name <name>                # Remove key by name
-runpodctl ssh remove-key --fingerprint <fp>           # Remove key by fingerprint (disambiguate shared names)
-```
+`ssh info <pod-id>` returns **connection details, not an interactive session** — and it has
+three output shapes, only one of which is an error. That table is in
+[output-and-errors.md](output-and-errors.md#parsing-ssh-info); read it before writing a
+readiness loop. If interactive SSH isn't available, execute remotely via
+`ssh user@host "command"`.
 
-`ssh info` returns connection details, not an interactive session. If interactive SSH isn't
-available, execute remotely via `ssh user@host "command"`.
+`ssh remove-key` takes `--name` **or** `--fingerprint`; use the fingerprint to disambiguate
+keys that share a name.
 
 ## File Transfer
-
-```bash
-runpodctl send <path>                                 # Send file/dir — prints a one-time code
-runpodctl receive <code>                              # Receive using that code (positional, no --code flag)
-```
 
 `send`/`receive` do encrypted, incremental, compressed transfer — don't pre-tar or
 pre-compress the source. **Agent flow (one side sends, the other receives):**
@@ -205,18 +136,30 @@ pre-compress the source. **Agent flow (one side sends, the other receives):**
    `send` then blocks until the receiver connects — so capture that first line as it streams
    (background the process, tee to a log) rather than waiting for exit.
 2. On the other machine (use `runpodctl ssh` into the pod/host if needed) run `receive <code>`
-   with that exact code. Each `send` mints a **fresh** code — never reuse or invent one.
+   with that exact code — positional, there is no `--code` flag. Each `send` mints a **fresh**
+   code — never reuse or invent one.
 3. Both processes must exit `0`. On failure, re-run `send` and use its **new** first-line code.
 
 To push local files to a pod: get `ssh info <pod-id>`, start `send` locally (capture the
 code), then `ssh` to the pod and run `receive <code>` there. For large/library-style data, a
 network volume or the S3 API is often simpler than `send`/`receive`.
 
-## Utilities
+## Hub, templates, volumes, registry, info, utilities
+
+Plain CRUD plus filters — `--help` is complete and this file would only go stale restating it:
 
 ```bash
-runpodctl doctor                                      # Diagnose and fix CLI issues (interactive)
-runpodctl update                                      # Update CLI to latest
-runpodctl version                                     # Show version
-runpodctl completion                                  # Auto-detect shell and install completion
+runpodctl hub --help              # list/search/get; --type, --category, --owner, --order-by
+runpodctl template --help         # list/search/get/create/update/delete; --type official|community|user
+runpodctl network-volume --help   # list/get/create/update/delete
+runpodctl registry --help         # list/get/create/delete
+runpodctl gpu list --help         # + $/hr per cloud and dataCenterAvailability[]
+runpodctl datacenter list --help  # alias: dc
+runpodctl billing --help          # pods / serverless / network-volume
+runpodctl user --help             # account + balance (alias: me)
+runpodctl doctor                  # interactive: diagnose and fix cli issues
+runpodctl completion              # auto-detect shell and install completion
 ```
+
+Which of these to reach for, and the traps that are not flags (Hub worker selection, CPU
+endpoints, template-vs-image, cost guards) are in the [SKILL.md](../SKILL.md) decision rules.

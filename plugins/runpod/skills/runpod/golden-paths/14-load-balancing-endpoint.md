@@ -263,8 +263,8 @@ Kept image: `<your-registry>/gp14-lb:v1` (the tiny stdlib LB worker above).
 
 ## Skill gaps folded back
 - The load-balancing endpoint type is settable headlessly two ways: **v2 REST**
-  (`"type": "LOAD_BALANCER"`) or **GraphQL `saveEndpoint`** (`type: "LB"`). **v1** REST
-  endpoint-create and `runpodctl serverless create` have no type field, and no API can change
+  (`"type": "LOAD_BALANCER"`) or **GraphQL `saveEndpoint`** (`type: "LB"`). The **v1** REST
+  endpoint-create call and `runpodctl serverless create` have no type field, and no API can change
   the type after creation. Skills that create endpoints should note this when a custom-HTTP/LB
   endpoint is wanted.
 - **Setting `PORT_HEALTH` (and exposing the port) explicitly is effectively required**, not
