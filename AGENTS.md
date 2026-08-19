@@ -87,7 +87,9 @@ rule 11): the `SKILL.md` body stays small and long tables / deep explanations li
 - Each golden-path doc uses one section template: Goal · Status · Lane(s) → When to
   use → Prerequisites → Walkthrough → Verify → Gotchas → Cost & cleanup → skill gaps.
 - Each skill's `evals/*.eval.md` are regression scenarios (Prompt / Expected
-  behavior / Assertions).
+  behavior / Assertions). **They are not executed** — no runner exists in this repo and CI
+  does not read them. They are specifications to hand-check a model against and to review
+  when behavior changes; treat "an eval covers it" as documentation, not coverage.
 
 ## Contributor rules
 
@@ -115,7 +117,10 @@ editing the repo. Each is its own checkable rule.
    - Every lane's `SKILL.md` links back to `golden-paths/README.md`. A new lane needs one.
    - Do not widen the trigger to "always read an example first" — a single read or single
      CRUD call should route straight to the lane. `consult-golden-path-first.eval.md`
-     asserts both directions, so widening it breaks that eval on purpose.
+     documents both directions and is the scenario to re-read before changing the trigger.
+     Note that **nothing executes `evals/*.eval.md`** — there is no runner in this repo, so
+     they are review scenarios and hand-check fixtures, not a gate. Do not describe them as
+     enforcing anything.
    - Single approach → one file `NN-name.md`. Multiple variants → a folder
      `NN-name/` with a `README.md` (goal, "which variant?", shared schema/gotchas/cost)
      plus one `variant-*.md` per approach.
