@@ -17,6 +17,11 @@ license: Apache-2.0
 
 Write code locally, iterate with `flash dev` — it runs your functions on remote Runpod GPUs/CPUs with hot-reload and live worker logs — then `flash deploy` to ship. `Endpoint` handles provisioning.
 
+`runpod-flash` releases on its own cadence, so **`flash --help` and `flash <command> --help`
+are authoritative for the command surface** — this skill is the mental model, the decision
+rules, and the gotchas that help output does not carry. Confirm the installed version with
+`pip show runpod-flash` before concluding a subcommand or flag is unavailable.
+
 **Load on demand — this skill keeps the mental model + gotchas inline; details live in [`reference/`](reference/):**
 
 | Need | Read |

@@ -22,6 +22,11 @@ Four CLIs commonly needed alongside Runpod. Each has its own **credentials + com
 
 Each requires credentials before use. Read the per-tool reference for auth steps and commands; install is a separate one-time `<cli>-setup.md`.
 
+These are third-party CLIs on their own release trains, so **`<cli> --help` is authoritative
+for flags and subcommands** — the references here cover the Runpod-specific usage and the
+traps, not the tool's full surface. Check `--help` before reporting that one of them cannot do
+something.
+
 ## Windows: Install WSL2 First
 
 If you are on Windows, install WSL2 before proceeding — it gives you the native Linux environment all these CLIs target. In PowerShell as Administrator, then restart:
