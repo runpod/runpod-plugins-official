@@ -6,6 +6,18 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.0](https://github.com/runpod/runpod-plugins-official/compare/v1.1.2...v1.2.0) (2026-08-19)
+
+
+### Features
+
+* **runpod-migrate:** GraphQL / REST v1 → REST v2 migration skill ([#46](https://github.com/runpod/runpod-plugins-official/issues/46)) ([d0c4a7b](https://github.com/runpod/runpod-plugins-official/commit/d0c4a7b2a1d7ae30e5429392603fd2d13abf120b))
+
+
+### Bug Fixes
+
+* **release:** register runpod-migrate with release-please ([#48](https://github.com/runpod/runpod-plugins-official/issues/48)) ([c8a96d2](https://github.com/runpod/runpod-plugins-official/commit/c8a96d202147be02ba98e5427e496a2c4879ed37))
+
 ## [1.1.2](https://github.com/runpod/runpod-plugins-official/compare/v1.1.1...v1.1.2) (2026-08-03)
 
 

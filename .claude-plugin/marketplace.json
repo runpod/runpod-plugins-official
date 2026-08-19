@@ -1,7 +1,7 @@
 {
   "name": "runpod",
   "description": "Official Runpod agent skills and MCP server — run Runpod tasks (pods, serverless, templates, volumes) with runpodctl and flash, plus conceptual guidance and worked golden paths.",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "owner": {
     "name": "Runpod",
     "email": "team@runpod.io"
