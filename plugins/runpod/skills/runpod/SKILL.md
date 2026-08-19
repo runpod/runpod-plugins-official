@@ -28,6 +28,26 @@ the right lane and hands off. Read the matching skill's `SKILL.md` next.
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
 | **runpod-migrate** | **Move existing code** off the GraphQL API or REST v1 onto REST v2 — inventory which parts use which version, rewrite call sites, flag breaking changes. Edits the user's code; does not manage infra. |
 
+## These skills are a snapshot; the tools are the source of truth
+
+Every lane below wraps something that ships on its own release train and moves faster than
+this repo. So route with these skills, but **take capability and syntax from the tool in front
+of you**:
+
+| Lane | Ask it directly |
+| --- | --- |
+| runpodctl | `runpodctl --help`, `runpodctl <resource> <action> --help`, `runpodctl version`. For failure shapes, run a command wrong on purpose and read the JSON |
+| runpod-mcp | your client's tool list (`/mcp` in Claude Code) — each tool carries its own parameter descriptions |
+| flash | `flash --help`, and the deploy/dev output |
+| companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
+| REST v2 | the live spec at `https://api.runpod.io/v2/openapi.json` |
+
+**Never tell a user a tool cannot do something without checking first.** A missing capability
+is the claim most likely to be out of date here, and it is the one a reader has no reason to
+reverify — it has already gone stale twice (runpodctl v2.9.0 added `serverless health`, v2.10.0
+added `pod logs`/`serverless logs`). If a limit still holds, name the version it holds for
+rather than saying "cannot".
+
 ## First run — check auth before the first infra action
 
 Infra tasks (pods, endpoints, jobs, volumes) need a working control plane — the **Runpod MCP**

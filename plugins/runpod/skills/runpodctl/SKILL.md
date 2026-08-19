@@ -145,7 +145,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 
 ## Commands
 
-Essentials below. **Full flag menu → [reference/command-reference.md](reference/command-reference.md)** (pods lifecycle, hub/template filters, registry auth, billing, SSH key management); live `runpodctl <resource> <action> --help` is authoritative for exact flags.
+Essentials below. **For flags, ask the binary** — `runpodctl <resource> <action> --help`, which is current by construction. [reference/command-reference.md](reference/command-reference.md) holds the part `--help` cannot answer: what a flag *means* when it succeeds, which field to trust, and what a failure looks like.
 
 ### Pods
 
