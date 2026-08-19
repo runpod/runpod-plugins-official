@@ -21,6 +21,8 @@ jobs:
         run: python3 hooks/check_runpod_branding.py
       - name: Check Markdown links
         run: python3 hooks/check_links.py
+      - name: Check CLI absence claims against the vendored runpodctl surface
+        run: python3 hooks/check_cli_absence_claims.py
       - name: Check runpod-migrate scanner against its corpora
         run: python3 hooks/check_migrate_scanner.py
       - name: Check runpod-migrate path tables against the spec snapshot

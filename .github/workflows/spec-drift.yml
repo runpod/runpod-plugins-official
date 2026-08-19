@@ -1,10 +1,13 @@
 name: spec-drift
 
-# The two checks in `validate` run against a vendored spec snapshot, so they gate what
-# a PR changed and nothing else. This job runs the same checks against the *live* API,
-# which is the only way to notice that v2 moved under us. It is deliberately separate
-# and non-blocking: an upstream spec change is real news, but it is not a reason to
-# fail an unrelated PR.
+# The snapshot-backed checks in `validate` gate what a PR changed and nothing else.
+# This job runs the same checks against the *live* API and the latest runpodctl
+# release, which is the only way to notice that upstream moved under us. It is
+# deliberately separate and non-blocking: an upstream change is real news, but it is
+# not a reason to fail an unrelated PR.
+#
+# The runpodctl half exists because a release has twice falsified "the CLI cannot do
+# X" claims in the skills (v2.9.0 -> `serverless health`, v2.10.0 -> `serverless logs`).
 
 on:
   schedule:
@@ -29,3 +32,5 @@ jobs:
         run: python3 hooks/check_migrate_tables.py --live
       - name: Class-3 table vs. live spec
         run: python3 hooks/check_migrate_class3.py --live
+      - name: CLI absence claims vs. the latest runpodctl release
+        run: python3 hooks/check_cli_absence_claims.py --live

@@ -30,11 +30,13 @@ plugins/runpod/                   THE plugin
   README.md  CHANGELOG.md
   skills/                         the seven skills (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
-hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_migrate_scanner / check_migrate_tables / check_migrate_class3
+hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
+                                  gen_cli_surface.py regenerates the runpodctl snapshot
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
+testdata/runpodctl/command-surface.json   vendored runpodctl command surface the absence check gates against
 .github/workflows/validate.yml    runs the hooks on PRs
-.github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API
+.github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API + the latest runpodctl release
 ```
 
 ## Architecture: a router + lanes
@@ -126,11 +128,26 @@ editing the repo. Each is its own checkable rule.
    when v2 genuinely changed, and re-read the affected rows when you do. A wrong Class-3
    row is worse than a wrong rename: SKILL.md tells the agent to stop and ask the user
    about those, so it buys an interruption over a decision that does not exist.
-9. **Releases** —
+9. **Never claim a tool cannot do something without checking.** "runpodctl has no X
+   command", "only MCP can Y", "there's no first-class Z" — these are assertions of
+   **absence**, and they are the claims that rot silently. The `--help`-is-authoritative
+   rule does not protect them: there is no flag to look up, so nobody reverifies, and the
+   sentence reads as authoritative until the release that adds the command.
+   - `hooks/check_cli_absence_claims.py` gates every such claim against
+     `testdata/runpodctl/command-surface.json`. When runpodctl releases, run
+     `python3 hooks/gen_cli_surface.py`, then fix whatever the check reports.
+   - Prefer a positive claim ("read them with `serverless logs`") or silence. If an absence
+     claim is genuinely load-bearing, give it a **version floor** ("needs ≥ v2.10.0") rather
+     than an open-ended "cannot", and add it to the check's `ALLOW` list with a reason.
+   - **An eval asserting a false negative is the worst case** — it trains the wrong behavior
+     in rather than merely misinforming a reader. This has already happened twice: v2.9.0
+     added `serverless health` and v2.10.0 added `serverless logs`/`pod logs`, each
+     falsifying claims the skills stated as fact.
+10. **Releases** —
    - Never hand-bump versions; release-please cuts the release (see `CONTRIBUTING.md` →
      Cutting a release).
    - Use Conventional Commits.
-10. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
+11. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
    move long tables and deep explanations into `reference/*.md` linked from the body.
 
 ## Conventions

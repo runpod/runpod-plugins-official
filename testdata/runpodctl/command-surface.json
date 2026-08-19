@@ -1,0 +1,726 @@
+{
+  "_comment": "Vendored runpodctl command surface. Regenerate with hooks/gen_cli_surface.py against a released binary. Gates hooks/check_cli_absence_claims.py.",
+  "commands": {
+    "billing": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "billing network-volume": {
+      "aliases": [
+        "network-volume",
+        "nv"
+      ],
+      "flags": [
+        "--bucket-size",
+        "--end-time",
+        "--help",
+        "--output",
+        "--start-time"
+      ]
+    },
+    "billing pods": {
+      "aliases": [],
+      "flags": [
+        "--bucket-size",
+        "--end-time",
+        "--gpu-id",
+        "--grouping",
+        "--help",
+        "--output",
+        "--pod-id",
+        "--start-time"
+      ]
+    },
+    "billing serverless": {
+      "aliases": [
+        "serverless",
+        "sls",
+        "endpoints"
+      ],
+      "flags": [
+        "--bucket-size",
+        "--end-time",
+        "--endpoint-id",
+        "--gpu-id",
+        "--grouping",
+        "--help",
+        "--output",
+        "--start-time"
+      ]
+    },
+    "datacenter": {
+      "aliases": [
+        "datacenter",
+        "dc",
+        "datacenters"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "datacenter list": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "doctor": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "gpu": {
+      "aliases": [
+        "gpu",
+        "gpus"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "gpu list": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--include-unavailable",
+        "--output"
+      ]
+    },
+    "hub": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "hub get": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "hub list": {
+      "aliases": [],
+      "flags": [
+        "--category",
+        "--help",
+        "--limit",
+        "--offset",
+        "--order-by",
+        "--order-dir",
+        "--output",
+        "--owner",
+        "--type"
+      ]
+    },
+    "hub search": {
+      "aliases": [],
+      "flags": [
+        "--category",
+        "--help",
+        "--limit",
+        "--offset",
+        "--order-by",
+        "--order-dir",
+        "--output",
+        "--owner",
+        "--type"
+      ]
+    },
+    "model": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "model add": {
+      "aliases": [],
+      "flags": [
+        "--content-type",
+        "--create-upload",
+        "--credential-reference",
+        "--credential-type",
+        "--file-name",
+        "--file-size",
+        "--hash-timeout",
+        "--help",
+        "--huggingface-model",
+        "--metadata",
+        "--model-path",
+        "--model-status",
+        "--name",
+        "--output",
+        "--owner",
+        "--part-size",
+        "--verbose",
+        "--wait-for-hash"
+      ]
+    },
+    "model list": {
+      "aliases": [
+        "list",
+        "ls"
+      ],
+      "flags": [
+        "--help",
+        "--name",
+        "--output",
+        "--provider"
+      ]
+    },
+    "model remove": {
+      "aliases": [
+        "remove",
+        "rm",
+        "delete"
+      ],
+      "flags": [
+        "--hash",
+        "--help",
+        "--name",
+        "--output",
+        "--owner",
+        "--version"
+      ]
+    },
+    "network-volume": {
+      "aliases": [
+        "network-volume",
+        "nv"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "network-volume create": {
+      "aliases": [],
+      "flags": [
+        "--data-center-id",
+        "--help",
+        "--name",
+        "--output",
+        "--size"
+      ]
+    },
+    "network-volume delete": {
+      "aliases": [
+        "delete",
+        "rm",
+        "remove"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "network-volume get": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "network-volume list": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "network-volume update": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--name",
+        "--output",
+        "--size"
+      ]
+    },
+    "pod": {
+      "aliases": [
+        "pod",
+        "pods"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "pod create": {
+      "aliases": [],
+      "flags": [
+        "--cloud-type",
+        "--compliance",
+        "--compute-type",
+        "--container-disk-in-gb",
+        "--country-code",
+        "--data-center-ids",
+        "--docker-args",
+        "--env",
+        "--global-networking",
+        "--gpu-count",
+        "--gpu-id",
+        "--help",
+        "--image",
+        "--min-cuda-version",
+        "--name",
+        "--network-volume-id",
+        "--output",
+        "--ports",
+        "--public-ip",
+        "--registry-auth-id",
+        "--ssh",
+        "--stop-after",
+        "--template-id",
+        "--terminate-after",
+        "--type",
+        "--volume-in-gb",
+        "--volume-mount-path",
+        "--wait",
+        "--wait-timeout"
+      ]
+    },
+    "pod delete": {
+      "aliases": [
+        "delete",
+        "rm",
+        "remove"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "pod get": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--include-machine",
+        "--include-network-volume",
+        "--output"
+      ]
+    },
+    "pod list": {
+      "aliases": [],
+      "flags": [
+        "--all",
+        "--compute-type",
+        "--created-after",
+        "--help",
+        "--name",
+        "--output",
+        "--since",
+        "--status"
+      ]
+    },
+    "pod logs": {
+      "aliases": [],
+      "flags": [
+        "--follow",
+        "--help",
+        "--max-wait",
+        "--output",
+        "--since",
+        "--source",
+        "--tail"
+      ]
+    },
+    "pod reset": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "pod restart": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "pod start": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "pod stop": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "pod update": {
+      "aliases": [],
+      "flags": [
+        "--container-disk-in-gb",
+        "--env",
+        "--help",
+        "--image",
+        "--name",
+        "--output",
+        "--ports",
+        "--volume-in-gb",
+        "--volume-mount-path"
+      ]
+    },
+    "receive": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "registry": {
+      "aliases": [
+        "registry",
+        "reg"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "registry create": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--name",
+        "--output",
+        "--password",
+        "--username"
+      ]
+    },
+    "registry delete": {
+      "aliases": [
+        "delete",
+        "rm",
+        "remove"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "registry get": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "registry list": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "send": {
+      "aliases": [],
+      "flags": [
+        "--code",
+        "--help",
+        "--output"
+      ]
+    },
+    "serverless": {
+      "aliases": [
+        "serverless",
+        "sls"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "serverless create": {
+      "aliases": [],
+      "flags": [
+        "--compute-type",
+        "--data-center-ids",
+        "--env",
+        "--execution-timeout",
+        "--flash-boot",
+        "--gpu-count",
+        "--gpu-id",
+        "--help",
+        "--hub-id",
+        "--idle-timeout",
+        "--instance-id",
+        "--min-cuda-version",
+        "--model-reference",
+        "--name",
+        "--network-volume-id",
+        "--network-volume-ids",
+        "--output",
+        "--scale-by",
+        "--scale-threshold",
+        "--template-id",
+        "--wait",
+        "--wait-timeout",
+        "--workers-max",
+        "--workers-min"
+      ]
+    },
+    "serverless delete": {
+      "aliases": [
+        "delete",
+        "rm",
+        "remove"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "serverless get": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--include-template",
+        "--include-workers",
+        "--output"
+      ]
+    },
+    "serverless health": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "serverless list": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--include-template",
+        "--include-workers",
+        "--output"
+      ]
+    },
+    "serverless logs": {
+      "aliases": [],
+      "flags": [
+        "--follow",
+        "--help",
+        "--max-wait",
+        "--output",
+        "--since",
+        "--source",
+        "--tail",
+        "--worker"
+      ]
+    },
+    "serverless run": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--input",
+        "--input-file",
+        "--no-wait",
+        "--output",
+        "--wait"
+      ]
+    },
+    "serverless status": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--no-wait",
+        "--output",
+        "--wait"
+      ]
+    },
+    "serverless update": {
+      "aliases": [],
+      "flags": [
+        "--clear-models",
+        "--help",
+        "--idle-timeout",
+        "--model-reference",
+        "--name",
+        "--output",
+        "--scale-by",
+        "--scale-threshold",
+        "--template-id",
+        "--workers-max",
+        "--workers-min"
+      ]
+    },
+    "ssh": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "ssh add-key": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--key",
+        "--key-file",
+        "--output"
+      ]
+    },
+    "ssh info": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output",
+        "--verbose"
+      ]
+    },
+    "ssh list-keys": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "ssh remove-key": {
+      "aliases": [],
+      "flags": [
+        "--fingerprint",
+        "--help",
+        "--name",
+        "--output"
+      ]
+    },
+    "template": {
+      "aliases": [
+        "template",
+        "tpl",
+        "templates"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "template create": {
+      "aliases": [],
+      "flags": [
+        "--container-disk-in-gb",
+        "--docker-entrypoint",
+        "--docker-start-cmd",
+        "--env",
+        "--help",
+        "--image",
+        "--name",
+        "--output",
+        "--port-labels",
+        "--ports",
+        "--readme",
+        "--registry-auth-id",
+        "--serverless",
+        "--volume-in-gb",
+        "--volume-mount-path"
+      ]
+    },
+    "template delete": {
+      "aliases": [
+        "delete",
+        "rm",
+        "remove"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "template get": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "template list": {
+      "aliases": [],
+      "flags": [
+        "--all",
+        "--help",
+        "--limit",
+        "--offset",
+        "--output",
+        "--type"
+      ]
+    },
+    "template search": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--limit",
+        "--offset",
+        "--output",
+        "--type"
+      ]
+    },
+    "template update": {
+      "aliases": [],
+      "flags": [
+        "--container-disk-in-gb",
+        "--env",
+        "--help",
+        "--image",
+        "--name",
+        "--output",
+        "--port-labels",
+        "--ports",
+        "--readme",
+        "--registry-auth-id"
+      ]
+    },
+    "update": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "user": {
+      "aliases": [
+        "user",
+        "account",
+        "me"
+      ],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
+    "version": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    }
+  },
+  "hidden_commands": [
+    "get pod",
+    "get cloud",
+    "create pod",
+    "remove pod",
+    "exec",
+    "project",
+    "config"
+  ],
+  "version": "runpodctl 2.10.0-fc93344"
+}
