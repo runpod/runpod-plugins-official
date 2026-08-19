@@ -121,6 +121,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
   - **Picking a worker:** prefer a **first-party or well-adopted, recently-released** worker on a **broad, high-availability GPU pool**. Observable signals via `runpodctl hub list`: `--owner runpod-workers` (first-party), `--order-by releasedAt`/`updatedAt` (recency), `--order-by deploys`/`stars` (adoption). Don't pin a scarce large-GPU tier a small model doesn't need.
 - **"Active worker" = minimum workers, not maximum.** If a user asks for an "active worker," they mean `--workers-min 1` (keep one worker always warm → no cold start), **not** `--workers-max 1` (that only caps the ceiling). A warm min-1 worker is ideal for development/iteration.
 - ⚠️ **A min-1 worker bills continuously, even while idle** (it defeats scale-to-zero). When you set `--workers-min 1` for dev, you **must** set it back to `--workers-min 0` (or delete the endpoint) when done — otherwise it quietly runs up cost.
+  - **Needs runpodctl ≥ v2.10.0.** On earlier binaries `--workers-min 0` and `--idle-timeout 0` were **silently dropped** from the update request (`omitempty` ate the zero), so the reset looked like it applied and the endpoint kept billing. Check `runpodctl version`; on an older binary confirm with `serverless get <id>` and fall back to `PATCH https://rest.runpod.io/v1/endpoints/<id>` with an explicit `{"workersMin":0}`.
 - `serverless update` has **no `--gpu-id` flag**. To change an existing endpoint's GPU pool, call `PATCH https://rest.runpod.io/v1/endpoints/<id>` with `{"gpuTypeIds":[...]}` directly.
 - **CPU serverless endpoints:** always create them with `runpodctl serverless create --compute-type CPU` — **not** the MCP server, whose v2 `create-endpoint` requires `gpuPoolIds` and has no CPU concept. **Never** use the public control REST `POST https://rest.runpod.io/v1/endpoints` with `"computeType":"CPU"` — it silently provisions a **GPU** endpoint instead (verified evidence in the Serverless command section below).
 - Use templates when the user already has a template ID, wants reusable image/config defaults, or needs lower-level control than Hub.
@@ -140,7 +141,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 
 - **Scale-to-zero billing:** serverless endpoints scale to zero with `--workers-min 0` (the default) — no GPU billing while idle, only per request-second; this is the right cost posture for a request/response API.
 - **Broken-image tell:** if deployed workers go `ready` but jobs sit `IN_QUEUE` with `inProgress: 0`, the image is broken/mis-dispatching — the fix is to switch to a different worker rather than wait it out.
-- **Diagnosing it:** read the worker/job counts with `runpodctl serverless health <endpoint-id>` (v2.9.0+) — no hand-built curl needed. runpodctl still has no worker-*log* command; the MCP lane does (`stream worker logs`).
+- **Diagnosing it:** read the worker/job counts with `runpodctl serverless health <endpoint-id>` (v2.9.0+), then read what the workers actually printed with `runpodctl serverless logs <endpoint-id>` (v2.10.0+) — no hand-built curl needed. Repeated `system` "start container" lines with no `container` output means the container exits before the handler runs.
 
 ## Commands
 
@@ -156,7 +157,14 @@ runpodctl pod create --image <img> --gpu-id "NVIDIA GeForce RTX 4090"        # f
 runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (lowercase `cpu`; serverless uses `CPU`)
 runpodctl pod create --image <img> --gpu-id <id> --wait                      # block until ssh answers, then print the pod (v2.9.0+)
 runpodctl pod {start|stop|restart|reset|update|delete} <pod-id>              # lifecycle (delete aliases: rm/remove)
+runpodctl pod logs <pod-id>                          # recent container+system logs, json lines (v2.10.0+)
+runpodctl pod logs <pod-id> --follow                 # keep streaming, reconnects on its own
+runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image pull / create / start
 ```
+
+**A stalled deploy shows up in `--source system`** (v2.10.0+): repeated pull progress, or a
+`create container` that never reaches `start`. Use `--source container` for your workload's own
+output. Each line is one `{source,line,ts}` object, so pipe it straight to `jq`.
 
 **Read `runtimeStatus`, not `desiredStatus`, to decide whether a pod is usable** (v2.9.0+):
 `desiredStatus: RUNNING` says that while the image is still pulling. Field meanings, reason
@@ -190,6 +198,21 @@ without a second lookup — read them instead of assembling the URL yourself. Th
 built from `RUNPOD_INVOKE_URL` (default `https://api.runpod.ai/v2`), which
 `RUNPOD_API_URL`/`RUNPOD_GRAPHQL_URL` do **not** move: [reference/output-and-errors.md](reference/output-and-errors.md#serverless-invoke-urls).
 
+**Reading worker logs** (v2.10.0+) — also first-class, so worker output no longer requires the
+MCP lane or a hand-built SSE read:
+
+```bash
+runpodctl serverless logs <endpoint-id>                       # every worker's recent logs, json lines
+runpodctl serverless logs <endpoint-id> --worker <worker-id>  # just one worker
+runpodctl serverless logs <endpoint-id> --follow              # picks up workers that scale up mid-follow
+runpodctl serverless logs <endpoint-id> --since 1h --source system   # why a worker will not start
+```
+
+Logs belong to a **worker**, not the endpoint, so without `--worker` this reads them all at once and
+tags each line with its `workerId`. **The crash-loop tell:** repeated `system` "start container" lines
+with no `container` output means the container exits before the handler runs — jobs then sit in the
+queue with nothing wrong with capacity.
+
 **Invoking an endpoint** (v2.9.0+) — first-class commands, so an agent does not hand-build a
 curl request or manage a bearer token:
 
@@ -209,7 +232,7 @@ runpodctl serverless health <endpoint-id>                             # worker +
   **not** re-invoke (that buys a second job).
 
 Payload rules, the stdout/stderr split, exit codes and why `/runsync` is never used →
-[reference/command-reference.md](reference/command-reference.md#invoking-an-endpoint-v290).
+[reference/command-reference.md](reference/command-reference.md#invoking-an-endpoint-serverless-run-v290).
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 

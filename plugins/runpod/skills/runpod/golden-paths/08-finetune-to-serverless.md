@@ -224,6 +224,7 @@ scale-to-zero (`workers=(0,1)`), ~$0 idle. Keep the volume only while iterating.
   `input` (flash SKILL gotcha "Request body shape").
 - **Load the model once** in the class `__init__`, not per request (flash SKILL gotcha).
 - **PEP 668** on the training pod: `pip install --break-system-packages …` (`on-pod-setup.md`).
-- **Diagnosis:** if the endpoint job times out, pull worker logs with the MCP
-  `stream-worker-logs` before assuming a broken worker — it's usually a payload/handler issue.
+- **Diagnosis:** if the endpoint job times out, pull worker logs before assuming a broken
+  worker — it's usually a payload/handler issue. `runpodctl serverless logs <id> --source
+  container` (v2.10.0+) or MCP `stream-worker-logs`.
 - **Same DC** for volume + pod + endpoint (the volume is DC-pinned).

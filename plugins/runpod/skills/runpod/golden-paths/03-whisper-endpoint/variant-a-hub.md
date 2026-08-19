@@ -99,11 +99,13 @@ curl -s https://api.runpod.ai/v2/<endpoint-id>/status/<job-id> \
 
 - **Not all Hub workers work.** A `ready` worker with jobs stuck `IN_QUEUE` /
   `inProgress: 0` is a broken image — switch, don't wait (see the picking lesson).
-- **No first-class serverless worker-log access** from runpodctl / REST v1 / GraphQL
-  introspection (all dead ends on this run). Diagnosis relied on the endpoint
-  `/health` worker counts. A `runpodctl serverless logs <endpoint-id>` would have
-  made the broken-worker call much faster. (The MCP server does expose
-  `stream-pod-logs`/worker log streaming if it's connected.)
+- **Worker logs were the missing signal on this run** — at the time runpodctl had no
+  worker-log command, REST v1 has no worker-log path, and GraphQL introspection was a
+  dead end, so diagnosis relied on the endpoint `/health` worker counts alone.
+  **Fixed upstream:** `runpodctl serverless logs <endpoint-id>` shipped in v2.10.0 and
+  is now the fast way to make the broken-worker call — `--source system` showing
+  repeated `start container` with no `container` output is the crash-loop tell this run
+  had to infer. (MCP `stream-worker-logs` does the same when it's connected.)
 - **`serverless update` has no `--gpu-id` flag.** To change an existing endpoint's
   GPU pool you must `PATCH https://rest.runpod.io/v1/endpoints/<id>` with
   `{"gpuTypeIds":[...]}`. (To *override* the pool at create time, pass `--gpu-id` on

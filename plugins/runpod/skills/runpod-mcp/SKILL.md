@@ -67,6 +67,7 @@ Structured tools, grouped by resource:
 
 - **Pods** — list, get, create, update, start, stop, restart, delete, stream logs.
 - **Serverless endpoints** — list, get, create, update, delete; list workers; list releases; stream worker logs.
+  - **Logs are no longer an MCP-only capability** — runpodctl grew `pod logs` and `serverless logs` in v2.10.0. MCP still returns already-parsed, bounded frames, which is the easier shape inside an agent; reach for the CLI when you are shell-only or want `--follow`. Job *output* streaming (`stream-job`) remains MCP-only.
   - `create-endpoint` takes `endpointType: QUEUE` (default) or `LOAD_BALANCER` — see golden path 14. The routing type is fixed at creation; `update-endpoint` cannot change it.
   - Read an endpoint's invoke URLs from `requestUrls` on the get/list reply instead of assembling them.
   - To pin a specific GPU **SKU** on an existing endpoint use `set-endpoint-gpus`; `create-endpoint`/`update-endpoint` expose only `gpuPoolIds` and can't express a SKU (`deploy-hub-repo` can pin one at deploy time via `gpuIds` exclusions).

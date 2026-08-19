@@ -70,7 +70,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 12 | [Serverless streaming (`/stream`)](12-serverless-streaming.md) | serverless | generator handler + `/stream` | ✅ live-verified |
 | 13 | [Autoscaling tuning](13-autoscaling-tuning.md) | serverless / scaling | runpodctl + scaler config (queue-delay / request-count) | ✅ live-verified |
 | 14 | [Load-balancing endpoint (non-flash)](14-load-balancing-endpoint.md) | serverless / LB | GraphQL `saveEndpoint type:"LB"` + HTTP-server worker | ✅ live-verified |
-| 15 | [Monitor & debug / observability](15-monitor-and-debug.md) | serverless / ops | `runpodctl serverless health`/`status` (or `/health` + `/status`) + worker logs (v2 / MCP) + config-change events | ✅ live-verified |
+| 15 | [Monitor & debug / observability](15-monitor-and-debug.md) | serverless / ops | `runpodctl serverless health`/`status`/`logs` (or `/health` + `/status` + v2 REST / MCP worker logs) + config-change events | ✅ live-verified |
 | 16 | [Serverless webhooks](16-serverless-webhooks.md) | serverless | `webhook` field on `/run` (push vs poll) | ✅ live-verified |
 | 17 | [Serverless WebSocket worker](17-serverless-websocket.md) | serverless / LB | `worker-lb-websocket` + `wss://<ep>.api.runpod.ai/ws` | ✅ live-verified |
 | 18 | [Concurrent handler (per-worker concurrency)](18-concurrent-handler.md) | serverless / throughput | async `concurrency_modifier` | ✅ live-verified |

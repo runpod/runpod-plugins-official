@@ -42,8 +42,11 @@ single-DC pin on a scarce GPU leaves workers `throttled` and jobs stuck `IN_QUEU
 Prefer an **actively-maintained** worker on a **broad, high-availability GPU pool**
 — don't pin a scarce large tier a small model doesn't need. If deployed workers go
 `ready` but jobs sit `IN_QUEUE` with `inProgress: 0`, the image is broken /
-mis-dispatching — **switch workers, don't wait it out.** (There's no first-class
-serverless worker-log command; diagnose via `/health` worker counts — `runpodctl serverless health <id>` reads them for you, v2.9.0+, and the MCP lane can stream worker logs.)
+mis-dispatching — **switch workers, don't wait it out.** (Confirm it before switching:
+`runpodctl serverless health <id>` for the counts (v2.9.0+) and `runpodctl serverless logs
+<id> --source system` for the cause (v2.10.0+) — repeated `start container` with no
+`container` output is a crash loop, not a capacity problem. MCP `stream-worker-logs` reads
+the same logs.)
 
 ## 3. Invoke
 

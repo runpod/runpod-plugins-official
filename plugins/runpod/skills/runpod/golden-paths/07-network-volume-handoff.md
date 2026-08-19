@@ -128,8 +128,9 @@ loaded — and the real errors:
 
 **Fix:** handler takes `**kwargs` (or params matching the input keys) **and** invoke with a
 non-empty `input`. Lesson: with no worker-log visibility a job-reject is indistinguishable
-from a broken worker — get the logs (MCP `stream-worker-logs`) before assuming the worker is
-bad.
+from a broken worker — get the logs before assuming the worker is bad. This run used MCP
+`stream-worker-logs`, which was the only option at the time; since runpodctl v2.10.0
+`runpodctl serverless logs <id> --source container` reads the same stream from a shell.
 
 ## Cost & cleanup
 ```bash
