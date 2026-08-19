@@ -44,7 +44,7 @@ Output shapes, error codes and env vars are in
 | `runtimeStatusReason` | stable token when there is more to say, e.g. `awaiting_container`, `stopped_by_user`, `stopped_by_runpod`, `terminated_outbid`, `runtime_unavailable` |
 | `uptimeSeconds` | present only while the container is up; omitted otherwise (it used to be a constant `0`) |
 | `lastStatusChange` | the backend's raw free-text note, carried so a phrasing the cli does not tokenise still reaches you |
-| `networkVolumeId` | **v2.10.0+:** always present when the pod has a volume attached, with or without `--include-network-volume`; `--include-network-volume` additionally fills the full `networkVolume` object. On **v2.9.0 and earlier both were dropped on deserialization** and read back `null` even when a volume was attached — so a pre-v2.10.0 binary cannot be used to check whether a pod has one |
+| `networkVolumeId` / `networkVolume` | **v2.10.0+:** `pod get --include-network-volume` fills both — the id and the full volume object. On **v2.9.0 and earlier both were dropped on deserialization** and read back `null` even with the flag, so a pre-v2.10.0 binary cannot tell you whether a pod has a volume. Upstream reports the `networkVolumeId` also comes back *without* the flag now (it is free alongside the pod), but only the flagged path is covered by a test — pass `--include-network-volume` rather than relying on that |
 
 `--status` filters **`desiredStatus` only** — `--status initializing` silently matches nothing.
 

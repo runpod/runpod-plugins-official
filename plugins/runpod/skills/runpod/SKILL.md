@@ -3,11 +3,10 @@ name: runpod
 description: >-
   Start here for any Runpod task — running GPU/CPU pods, deploying serverless
   endpoints, templates, network volumes, building images, or understanding how
-  Runpod works. Routes the request to the right Runpod skill (runpod-mcp,
-  runpodctl, flash, companion-clis, or runpod-usage) and indexes 25 verified
-  end-to-end worked examples (golden paths) to follow instead of re-deriving a
-  multi-step task. Use when it is unclear which Runpod skill applies, and for any
-  multi-step or provisioning task even when the lane is obvious.
+  Runpod works. Routes to the right skill (runpod-mcp, runpodctl, flash,
+  companion-clis, runpod-usage, runpod-migrate) and indexes two dozen live-verified
+  end-to-end examples (golden paths) — use it when the lane is unclear, and for any
+  multi-step or provisioning task even when it is not.
 metadata:
   author: runpod
   version: "1.2.0" # x-release-please-version

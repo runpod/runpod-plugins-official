@@ -49,10 +49,23 @@ MCP_ONLY = re.compile(
     re.IGNORECASE,
 )
 
+# "you must use MCP for X" / "X requires the MCP server" is an absence claim with no
+# absence wording in it — the form that slipped past the first two patterns.
+MUST_USE_MCP = re.compile(
+    r"\b(?:must use|have to use|need(?:s)? (?:to use )?|requires?"
+    r"|only\b[^.\n]{0,24}?\b(?:via|through|with|from|in))\b"
+    r"[^.\n]{0,60}\b(?:MCP|Console)\b[^.\n]{0,80}"
+    r"|\b(?:MCP|Console)\b[^.\n]{0,40}\bis (?:the )?(?:only|required)\b[^.\n]{0,80}",
+    re.IGNORECASE,
+)
+
 # A claim only falsifies if it names a real command path. `<verb> <noun>` pairs like
 # "worker-log command" are not command paths; these are.
 RESOURCES = r"pod|serverless|sls|template|tpl|hub|model|network-volume|nv|registry|reg|user|gpu|datacenter|dc|billing|doctor|ssh|send|receive|update|version"
-CMD_IN_TEXT = re.compile(rf"\b({RESOURCES})\s+([a-z][a-z-]+)\b")
+# Case-insensitive: a claim that opens a sentence capitalizes the resource
+# ("Serverless logs are only available through MCP"), and a case-sensitive match
+# let exactly that phrasing through.
+CMD_IN_TEXT = re.compile(rf"\b({RESOURCES})\s+([a-z][a-z-]+)\b", re.IGNORECASE)
 
 # Absence claims that are true and must stay allowed. Each needs a reason: this list is
 # how a legitimate "MCP has no tool for this" survives the check, not an escape hatch for
@@ -60,6 +73,7 @@ CMD_IN_TEXT = re.compile(rf"\b({RESOURCES})\s+([a-z][a-z-]+)\b")
 ALLOW = {
     # (substring that must appear in the matched text, why it is allowed)
     "MCP has no tool for these": "about MCP's surface, not runpodctl's",
+    "MCP rejects that combination": "about MCP's surface, not runpodctl's",
     "no worker-log path on REST v1": "about REST v1, not runpodctl",
     "v1 has no worker-log path at all": "about REST v1, not runpodctl",
     "MCP narrows to one GPU type": "about MCP's surface",
@@ -115,8 +129,11 @@ def load_surface(live: bool) -> tuple[str, set[str]]:
 
 # A claim that a command lacks a FLAG or a field is not an absence-of-command claim.
 # `--help` covers those, which is the whole reason this check only guards commands.
-FLAG_CLAIM = re.compile(r"--[a-z][a-z0-9-]*|\b(?:flag|field|param(?:eter)?|option|key)s?\b",
-                        re.IGNORECASE)
+FLAG_CLAIM = re.compile(
+    r"--[a-z][a-z0-9-]*"                      # a literal flag
+    r"|\b(?:flag|field|param(?:eter)?|option|key|support)s?\b"
+    r"|`[a-z]+[A-Z]\w*`",                     # a backticked camelCase api field, e.g. `templateId`
+    re.IGNORECASE)
 # "no longer MCP-only", "is not the only lane" — the claim is being retired, not made.
 NEGATED = re.compile(r"\b(?:no longer|not (?:an? )?(?:the )?only|used to be|"
                      r"is no longer|stopped being|until v?\d|before v?\d|as of v?\d)\b",
@@ -136,32 +153,86 @@ def allowed(text: str, line: str = "") -> str | None:
     return None
 
 
+# Phrasings that MUST fail, and legitimate ones that MUST NOT. A pattern tweak that
+# quietly stops catching a form is the failure mode this check cannot afford, and every
+# MUST_CATCH line below is a phrasing that actually evaded an earlier version of these
+# regexes. Run with --self-test (CI does).
+MUST_CATCH = [
+    "runpodctl has no serverless logs command.",
+    "There is no pod logs command in runpodctl.",
+    "The CLI lane cannot read serverless logs.",
+    "Only MCP can do serverless logs.",
+    "Worker logs are MCP-only; runpodctl serverless logs does not exist.",
+    "runpodctl is unable to do serverless logs.",
+    "runpodctl lacks a serverless logs subcommand.",
+    "For pod logs you must use the MCP server.",
+    "Reading serverless logs requires the MCP server.",
+    "Serverless logs are only available through MCP.",
+    "Pod logs require the Console.",
+]
+MUST_ALLOW = [
+    "serverless update has no --gpu-id flag.",
+    "MCP create-endpoint lacks templateId support for pod create.",
+    "serverless logs needs runpodctl >= v2.10.0.",
+    "Logs are no longer MCP-only: runpodctl serverless logs exists.",
+    "MCP has no tool for send or receive.",
+]
+
+
+def self_test(commands: set[str]) -> int:
+    bad = []
+    for claim in MUST_CATCH:
+        if not scan_line(claim, commands):
+            bad.append(("should have been caught", claim))
+    for claim in MUST_ALLOW:
+        if scan_line(claim, commands):
+            bad.append(("should have been exempt", claim))
+    for why, claim in bad:
+        print(f"  self-test: {why}: {claim}")
+    if bad:
+        print(f"self-test FAILED ({len(bad)} of "
+              f"{len(MUST_CATCH) + len(MUST_ALLOW)} cases)")
+        return 1
+    print(f"self-test OK ({len(MUST_CATCH)} caught, {len(MUST_ALLOW)} exempt)")
+    return 0
+
+
+def scan_line(line: str, commands: set[str]) -> list[str]:
+    """Return the existing commands a line's absence claims name, or []."""
+    hits: set[str] = set()
+    for rx in (ABSENCE, MCP_ONLY, MUST_USE_MCP):
+        for m in rx.finditer(line):
+            if allowed(m.group(0), line):
+                continue
+            named = {f"{r.lower()} {a.lower()}" for r, a in CMD_IN_TEXT.findall(line)}
+            hits |= named & commands
+    return sorted(hits)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true",
                     help="check against the latest runpodctl release instead of the snapshot")
+    ap.add_argument("--self-test", action="store_true",
+                    help="verify the patterns still catch known-bad phrasings")
     args = ap.parse_args()
 
     version, commands = load_surface(args.live)
     # index by "<resource> <action>" and by alias-expanded form
     exists = set(commands)
 
+    if args.self_test:
+        return self_test(exists)
+
     failures, notes = [], []
     for path in sorted(SKILLS.rglob("*.md")):
         rel = path.relative_to(ROOT)
         for n, line in enumerate(path.read_text().splitlines(), 1):
-            for rx in (ABSENCE, MCP_ONLY):
-                for m in rx.finditer(line):
-                    text = m.group(0)
-                    why = allowed(text, line)
-                    if why:
-                        continue
-                    named = {f"{r} {a}" for r, a in CMD_IN_TEXT.findall(text)}
-                    hits = sorted(named & exists)
-                    if hits:
-                        failures.append((rel, n, text.strip(), hits))
-                    else:
-                        notes.append((rel, n, text.strip()))
+            hits = scan_line(line, exists)
+            if hits:
+                failures.append((rel, n, line.strip(), hits))
+            elif any(rx.search(line) for rx in (ABSENCE, MCP_ONLY, MUST_USE_MCP)):
+                notes.append((rel, n, line.strip()))
 
     if failures:
         print(f"CLI absence-claim check FAILED against runpodctl {version}:\n")
