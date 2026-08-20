@@ -402,6 +402,7 @@
         "--name",
         "--output",
         "--password",
+        "--password-stdin",
         "--username"
       ]
     },
@@ -722,5 +723,5 @@
     "project",
     "config"
   ],
-  "version": "runpodctl 2.10.0-fc93344"
+  "version": "runpodctl 2.11.0-0592468"
 }
