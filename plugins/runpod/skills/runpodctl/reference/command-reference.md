@@ -118,7 +118,7 @@ Concepts: [model-caching.md](model-caching.md); flags: `runpodctl model add --he
 
 ## Registry credentials
 
-Prefer `registry create --password-stdin` for scripts so the credential does not enter the
+Prefer `registry create --password-stdin` (needs **v2.11.0+**) for scripts so the credential does not enter the
 process table or shell history. A secret already held in an environment variable can be piped
 without expanding its value into the runpodctl argument list:
 
