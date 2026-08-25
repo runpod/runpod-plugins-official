@@ -93,7 +93,8 @@ The template ids are **stable names** (`runpod-torch-v280`) and new torch lines 
 as **new templates** rather than mutating old ones — the 2.1→2.8 lineup above is the
 evidence. To pin harder than the template, deploy the immutable image tag directly
 (`--image runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`). Whether a template id's
-image tag is ever repointed in place: TODO, CON-1238.
+image tag is ever repointed in place is not yet documented — when it matters, pin the
+image tag.
 
 ## Verification
 

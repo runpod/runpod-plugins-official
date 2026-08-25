@@ -28,6 +28,20 @@ images for common workloads; deploying one is a create + poll, with no SSH insta
 step. This skill is the reference for *what those images actually are*. It does not
 manage infrastructure — deploy with **runpod-mcp** (if connected) or **runpodctl**.
 
+## Terms — "template" vs the Hub
+
+Two different products share the word "Hub", and conflating them derails discovery:
+
+| Term | What it is | Runs as | Discover with |
+| --- | --- | --- | --- |
+| **Pod template** (this skill) | A saved pod config — image + ports + disk + env. The official ones appear on Console **Hub template pages** (`console.runpod.io/hub/template/<id>`) | a **pod** | `runpodctl template list --type official` / `template search` · REST `GET /v2/catalog/templates` |
+| **Hub repo / listing** | A packaged **serverless worker** (e.g. `runpod-workers/worker-comfyui`) with a handler, deployed as an endpoint | **serverless** | `runpodctl hub list` / `hub search` · MCP `list-hub-repos` / `deploy-hub-repo` |
+
+Same word, disjoint catalogs: `hub search comfyui` returns only the serverless worker
+and none of the official ComfyUI **pod** templates, and `template search` returns no
+Hub repos. In the REST v2 catalog, pod vs serverless templates are told apart by each
+entry's `serverless` flag.
+
 ## What "official" means, and how to find them
 
 A template is Runpod-maintained when it reports `isRunpod: true`. Anything else in search
@@ -46,10 +60,7 @@ tags, ports, and env from these commands, not from these files: the templates sh
 their own release train and move faster than this repo. The reference files record the
 **shape and the gotchas**, which is the expensive part to rediscover.
 
-⚠️ **`runpodctl hub ...` is not how you find pod templates.** The Hub CLI commands cover
-Hub **repos** (serverless workers); the Console's Hub *template* pages are a different
-surface. `hub search comfyui` returns `runpod-workers/worker-comfyui` (serverless) and
-none of the official ComfyUI pod templates. Use `template list` / `template search`.
+⚠️ **`runpodctl hub ...` is not how you find pod templates** — see [Terms](#terms--template-vs-the-hub).
 
 To hand a user a Console link, use `https://console.runpod.io/hub/template/<template-id>`.
 
@@ -123,18 +134,3 @@ template deployed, fixed, or replaced. Land here, identify which, and hand off:
 
 Reference files here answer *what is in the image*; they never duplicate a walkthrough or
 a repair procedure — they point at the owner.
-
-## Open questions (block completion)
-
-Tracked in CON-1238. Every one of these is a claim this skill would otherwise have to
-guess at, and a wrong guess here is the kind a reader has no reason to reverify:
-
-- What triggers an official template image build, and from which source repos?
-- Where do the images publish, and what is the tag scheme? Is there a stable tag per
-  CUDA line, or only immutable version tags?
-- How does a **template id** get repointed at a new image — is an id stable across
-  image updates, or is a new id minted?
-- Can a user pin a template to an older image, or only pin by using the raw image tag
-  with no template?
-- Who reviews and approves a template change, and how does an external contribution
-  land? (See CON-1237.)

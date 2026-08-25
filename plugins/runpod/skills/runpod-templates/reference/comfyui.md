@@ -173,7 +173,7 @@ automatic-download path applies, since RunpodDirect is pre-installed (§6).
 
 ## 9. Version pinning
 
-TODO — blocked on CON-1238. Open: whether `cw3nka7d08` is repointed at new
+Not yet documented: whether `cw3nka7d08` is repointed at new
 `runpod/comfyui:cuda12.8` builds or a new id is minted per release, and whether a user can
 hold an older build through the template or must deploy the raw image tag instead.
 
