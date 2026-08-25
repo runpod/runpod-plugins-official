@@ -66,18 +66,13 @@ The readiness log line inside the pod is
 **The checkpoint detail:** the image ships **no model** — `/models/checkpoints`
 is empty on boot, so the default graph can't run until you add one. The default
 graph references `v1-5-pruned-emaonly-fp16.safetensors`; add exactly that filename
-so the graph is usable with no node edits. Two ways to add it:
+so the graph is usable with no node edits. Three ways to add it:
 
-- **From workflow metadata (preferred):** the current official image bundles
-  **ComfyUI-RunpodDirect**. When a loaded workflow contains trustworthy model
-  metadata, it can download the approved file straight into the correct Pod model
-  folder. Feature-detect `/server_download/folder_paths` instead of assuming a
-  particular image version. If a community workflow has only a filename and no
-  model URL/hash, use
-  [`runpod-comfyui-models`](../../../runpod-comfyui-models/SKILL.md) to resolve and
-  annotate a reviewed workflow copy first. This metadata-recovery path was added
-  after the 2026-07-07 live run; probe the route and verify a real download before
-  treating it as live-confirmed.
+- **From the UI (easiest for a human):** the prebuilt image bundles
+  **ComfyUI-Manager**, so when a loaded workflow references a missing model the UI
+  shows a **blue "download" / missing-models button** that fetches the model
+  **straight into the correct Runpod folder** — no need to find the URL or the
+  right `models/` subdirectory yourself.
 - **Programmatically (for an agent):** drop the file into
   `/workspace/runpod-slim/ComfyUI/models/checkpoints/` over SSH (same filename the
   default graph references); ComfyUI rescans on the next `/object_info` request —
@@ -88,33 +83,37 @@ so the graph is usable with no node edits. Two ways to add it:
     curl -L -o v1-5-pruned-emaonly-fp16.safetensors \
       https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors'
   ```
+- **From workflow metadata:** the current official image also bundles
+  **ComfyUI-RunpodDirect**. When a loaded workflow contains trustworthy model
+  metadata, it can download the approved file straight into the correct Pod model
+  folder. Feature-detect `/server_download/folder_paths` instead of assuming a
+  particular image version. If a community workflow has only a filename and no
+  model URL/hash, use
+  [`runpod-comfyui-models`](../../../runpod-comfyui-models/SKILL.md) to resolve and
+  annotate a reviewed workflow copy first. This metadata-recovery path was added
+  after the 2026-07-07 live run; probe the route and verify a real download before
+  treating it as live-confirmed.
 
 Then confirm generation the same way as Variant A: POST the default graph to
 `/prompt`, poll `/history/<id>`, fetch `/view?filename=<out>&type=output`.
 
 ## Variant-specific facts & gotchas
 
-Verified on pod `7ydkt5vs4fst25` (RTX 4090, $0.69/hr):
+Verified on pod `7ydkt5vs4fst25` (RTX 4090, $0.69/hr): template `ComfyUI - CUDA 12.8`
+(id `cw3nka7d08`), first boot ~4 min of proxy 502s while it copied ComfyUI onto the
+network volume, then served; generation confirmed via the API.
 
-- **Template:** `ComfyUI - CUDA 12.8`, id `cw3nka7d08`, image
-  `runpod/comfyui:cuda12.8`, `isRunpod: true` (Runpod-maintained; source
-  `github.com/runpod-workers/comfyui-base`).
-- **CUDA 13 / Blackwell / RTX 5090:** use `ComfyUI - CUDA 13`, id `2lv7ev3wfp`.
-- **Ports baked into the template:** `8188` ComfyUI, `8080` FileBrowser
-  (login `admin` / `adminadmin12`), `8888` JupyterLab (`JUPYTER_PASSWORD`), `22`
-  SSH.
-- **Auto-starts:** yes — `main.py --listen 0.0.0.0 --port 8188 --enable-cors-header`
-  is already running. Ships ComfyUI 0.26.2, torch 2.10.0+cu128.
-- **Boot time:** ~4 min of proxy `502`s on first boot (it copies ComfyUI to
-  `/workspace` — onto a network volume this copy is the slow part). Readiness line:
-  `[ComfyUI-Manager] All startup tasks have been completed.`
-- **No model ships** (gap vs "usable on first open"). Use verified workflow
-  metadata with ComfyUI-RunpodDirect or add a checkpoint over SSH as above — this
-  is the **only** SSH step needed.
-- **Larger image:** 150 GB container disk, plus the ~4-min first-boot copy. In
-  exchange you skip the entire `git clone` + `pip install --break-system-packages`
-  + `setsid … python main.py` block and the PEP 668 / detach gotchas from
-  Variant A.
+**Static image facts** (ids, variants, ports/credentials, autostart command, paths,
+custom nodes, sizing, the no-model gap) live in
+[`runpod-templates/reference/comfyui.md`](../../../runpod-templates/reference/comfyui.md)
+— maintained there once, don't trust a stale copy here.
+
+Run-specific notes that stay with this walkthrough:
+
+- **Boot time depends on the volume:** the ~4 min above is the network-volume case (the
+  first-boot copy crosses the volume). On container disk with a cached image it can be
+  well under a minute — poll, don't budget a fixed wait.
+- **Only the checkpoint needs SSH** — everything else is create + poll.
 - **Shared gotchas still apply:** "Running" ≠ ready (poll the proxy), network
   volume ↔ GPU must be the same DC, and the proxy URL is public + unauth. See the
   [README's shared gotchas](README.md#cross-cutting-gotchas-shared).
