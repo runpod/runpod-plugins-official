@@ -4,7 +4,7 @@ description: >-
   Start here for any Runpod task — running GPU/CPU pods, deploying serverless
   endpoints, templates, network volumes, building images, or understanding how
   Runpod works. Routes to the right skill (runpod-mcp, runpodctl, flash,
-  companion-clis, runpod-usage, runpod-migrate) and indexes two dozen live-verified
+  companion-clis, runpod-usage, runpod-templates, runpod-migrate) and indexes two dozen live-verified
   end-to-end examples (golden paths) — use it when the lane is unclear, and for any
   multi-step or provisioning task even when it is not.
 metadata:
@@ -29,6 +29,7 @@ the lane; otherwise read the matching skill's `SKILL.md` next.
 | **flash** | **Write Python** that runs on Runpod serverless — `@remote`/`@Endpoint` functions, `flash dev` hot-reload, `flash deploy`. Code-first, not infra management. |
 | **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
+| **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
 | **runpod-migrate** | **Move existing code** off the GraphQL API or REST v1 onto REST v2 — inventory which parts use which version, rewrite call sites, flag breaking changes. Edits the user's code; does not manage infra. |
 
 ## These skills are a snapshot; the tools are the source of truth
@@ -43,6 +44,7 @@ of you**:
 | runpod-mcp | your client's tool list (`/mcp` in Claude Code) — each tool carries its own parameter descriptions |
 | flash | `flash --help`, and the deploy/dev output |
 | companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
+| runpod-templates | `runpodctl template list --type official`, `template get <id>` (its readme is authoritative) |
 | REST v2 | the live spec at `https://api.runpod.io/v2/openapi.json` |
 
 **Never tell a user a tool cannot do something without checking first.** A missing capability
@@ -103,14 +105,17 @@ disagree, follow the path and treat the difference as a bug worth reporting.
 1. **Conceptual question, or an unmade design choice** (serverless vs pod? which
    GPU? bake the model or mount a volume?) → read **runpod-usage** first, then
    continue with the answer.
-2. **Write/iterate/ship your own code on Runpod GPUs** → **flash**.
-3. **Produce an artifact** (download a model, build+push an image, create a repo
+2. **Run a common workload on a pod, or fix a template pod** ("run ComfyUI /
+   PyTorch dev box", won't boot, missing models) → **runpod-templates** — check for
+   an official prebuilt before planning any install, and let it route repairs.
+3. **Write/iterate/ship your own code on Runpod GPUs** → **flash**.
+4. **Produce an artifact** (download a model, build+push an image, create a repo
    release, sync data to a volume) → **companion-clis**.
-4. **Migrate existing code between Runpod API versions** — "move us to REST v2",
+5. **Migrate existing code between Runpod API versions** — "move us to REST v2",
    "which Runpod API is this repo on?", "what breaks if we upgrade?" →
    **runpod-migrate**. (Calling the API to *do* something is a different job; that
    is the infra lanes below.)
-5. **Manage infrastructure** (create/list/update/delete pods, endpoints,
+6. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
    - Capability only the CLI has — **Hub, `send`/`receive`, SSH keys, `doctor`,
      model cache** → **runpodctl**.
@@ -151,7 +156,8 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
 `runpod-usage/reference/development-loop.md`: decide pod vs serverless → provision → set up
 (only if from-scratch) → verify → deliver → cost-guard + teardown. Two rules bind within it:
 
-- **Prefer a prebuilt template / Hub worker over building an image from scratch.**
+- **Prefer a prebuilt template / Hub worker over building an image from scratch** —
+  official pod templates are indexed in [`runpod-templates`](../runpod-templates/SKILL.md).
 - **Before delivering, verify the workload with a real request from outside the pod/endpoint
   — a "Running"/"ready" status does not mean it is serving.**
 

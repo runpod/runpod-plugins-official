@@ -89,26 +89,21 @@ Then confirm generation the same way as Variant A: POST the default graph to
 
 ## Variant-specific facts & gotchas
 
-Verified on pod `7ydkt5vs4fst25` (RTX 4090, $0.69/hr):
+Verified on pod `7ydkt5vs4fst25` (RTX 4090, $0.69/hr): template `ComfyUI - CUDA 12.8`
+(id `cw3nka7d08`), first boot ~4 min of proxy 502s while it copied ComfyUI onto the
+network volume, then served; generation confirmed via the API.
 
-- **Template:** `ComfyUI - CUDA 12.8`, id `cw3nka7d08`, image
-  `runpod/comfyui:cuda12.8`, `isRunpod: true` (Runpod-maintained; source
-  `github.com/runpod-workers/comfyui-base`).
-- **CUDA 13 / Blackwell / RTX 5090:** use `ComfyUI - CUDA 13`, id `2lv7ev3wfp`.
-- **Ports baked into the template:** `8188` ComfyUI, `8080` FileBrowser
-  (login `admin` / `adminadmin12`), `8888` JupyterLab (`JUPYTER_PASSWORD`), `22`
-  SSH.
-- **Auto-starts:** yes — `main.py --listen 0.0.0.0 --port 8188 --enable-cors-header`
-  is already running. Ships ComfyUI 0.26.2, torch 2.10.0+cu128.
-- **Boot time:** ~4 min of proxy `502`s on first boot (it copies ComfyUI to
-  `/workspace` — onto a network volume this copy is the slow part). Readiness line:
-  `[ComfyUI-Manager] All startup tasks have been completed.`
-- **No model ships** (gap vs "usable on first open"). Add a checkpoint via the UI
-  blue-button or over SSH as above — this is the **only** SSH step needed.
-- **Larger image:** 150 GB container disk, plus the ~4-min first-boot copy. In
-  exchange you skip the entire `git clone` + `pip install --break-system-packages`
-  + `setsid … python main.py` block and the PEP 668 / detach gotchas from
-  Variant A.
+**Static image facts** (ids, variants, ports/credentials, autostart command, paths,
+custom nodes, sizing, the no-model gap) live in
+[`runpod-templates/reference/comfyui.md`](../../../runpod-templates/reference/comfyui.md)
+— maintained there once, don't trust a stale copy here.
+
+Run-specific notes that stay with this walkthrough:
+
+- **Boot time depends on the volume:** the ~4 min above is the network-volume case (the
+  first-boot copy crosses the volume). On container disk with a cached image it can be
+  well under a minute — poll, don't budget a fixed wait.
+- **Only the checkpoint needs SSH** — everything else is create + poll.
 - **Shared gotchas still apply:** "Running" ≠ ready (poll the proxy), network
   volume ↔ GPU must be the same DC, and the proxy URL is public + unauth. See the
   [README's shared gotchas](README.md#cross-cutting-gotchas-shared).

@@ -29,7 +29,8 @@
         "plugins/runpod/skills/runpodctl/SKILL.md",
         "plugins/runpod/skills/flash/SKILL.md",
         "plugins/runpod/skills/companion-clis/SKILL.md",
-        "plugins/runpod/skills/runpod-usage/SKILL.md"
+        "plugins/runpod/skills/runpod-usage/SKILL.md",
+        "plugins/runpod/skills/runpod-templates/SKILL.md"
       ]
     }
   }
