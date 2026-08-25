@@ -43,9 +43,9 @@ registered = {
     for entry in config["packages"]["."]["extra-files"]
 }
 unregistered = sorted(
-    str(skill.relative_to(ROOT))
+    skill.relative_to(ROOT).as_posix()
     for skill in ROOT.glob("plugins/runpod/skills/*/SKILL.md")
-    if str(skill.relative_to(ROOT)) not in registered
+    if skill.relative_to(ROOT).as_posix() not in registered
 )
 if unregistered:
     print("version check FAILED — skills missing from release-please-config.json:")

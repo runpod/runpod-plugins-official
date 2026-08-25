@@ -28,14 +28,14 @@ plugins/runpod/                   THE plugin
   gemini-extension.json           Gemini manifest
   .mcp.json                       hosted Runpod MCP server config
   README.md  CHANGELOG.md
-  skills/                         the seven skills (below)
+  skills/                         the eight skills (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
 hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
                                   gen_cli_surface.py regenerates the runpodctl snapshot
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
 testdata/runpodctl/command-surface.json   vendored runpodctl command surface the absence check gates against
-.github/workflows/validate.yml    runs the hooks on PRs
+.github/workflows/validate.yml    also runs the ComfyUI workflow helper unittests
 .github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API + the latest runpodctl release
 ```
 
@@ -55,6 +55,8 @@ skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a to
   reference/*.md          detailed topics, loaded on demand
 skills/runpod-migrate/    migrate a codebase from GraphQL / REST v1 to REST v2
   scripts/                the API-version inventory scanner
+skills/runpod-comfyui-models/  recover verified model metadata for imported ComfyUI workflows
+  scripts/                workflow inventory and reviewed metadata application
 ```
 
 **runpod-mcp and runpodctl overlap** — both drive the same Runpod REST API for the
@@ -128,8 +130,8 @@ editing the repo. Each is its own checkable rule.
    - The per-path verification status is authoritative in `golden-paths/README.md`'s Status
      column; do not restate it in AGENTS.md (it drifts).
 6. **Evals** — add or update an `evals/*.eval.md` when you add or change routing/behavior.
-7. **The runpod-migrate scanner** — `rp_api_inventory.py` is the one executable in this
-   repo, and its signal table is interacting regexes where a one-line edit breaks a
+7. **The runpod-migrate scanner** — `rp_api_inventory.py` has a signal table of
+   interacting regexes where a one-line edit breaks a
    distant case. When you change it, run `python3 hooks/check_migrate_scanner.py`, and
    add a corpus under `testdata/runpod-migrate/` plus an assertion for any new behavior.
    Every existing assertion corresponds to a defect that actually shipped — do not

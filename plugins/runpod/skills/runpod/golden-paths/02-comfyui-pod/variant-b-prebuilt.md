@@ -68,11 +68,16 @@ is empty on boot, so the default graph can't run until you add one. The default
 graph references `v1-5-pruned-emaonly-fp16.safetensors`; add exactly that filename
 so the graph is usable with no node edits. Two ways to add it:
 
-- **From the UI (easiest for a human):** the prebuilt image bundles
-  **ComfyUI-Manager**, so when a loaded workflow references a missing model the UI
-  shows a **blue "download" / missing-models button** that fetches the model
-  **straight into the correct Runpod folder** — no need to find the URL or the
-  right `models/` subdirectory yourself.
+- **From workflow metadata (preferred):** the current official image bundles
+  **ComfyUI-RunpodDirect**. When a loaded workflow contains trustworthy model
+  metadata, it can download the approved file straight into the correct Pod model
+  folder. Feature-detect `/server_download/folder_paths` instead of assuming a
+  particular image version. If a community workflow has only a filename and no
+  model URL/hash, use
+  [`runpod-comfyui-models`](../../../runpod-comfyui-models/SKILL.md) to resolve and
+  annotate a reviewed workflow copy first. This metadata-recovery path was added
+  after the 2026-07-07 live run; probe the route and verify a real download before
+  treating it as live-confirmed.
 - **Programmatically (for an agent):** drop the file into
   `/workspace/runpod-slim/ComfyUI/models/checkpoints/` over SSH (same filename the
   default graph references); ComfyUI rescans on the next `/object_info` request —
@@ -103,8 +108,9 @@ Verified on pod `7ydkt5vs4fst25` (RTX 4090, $0.69/hr):
 - **Boot time:** ~4 min of proxy `502`s on first boot (it copies ComfyUI to
   `/workspace` — onto a network volume this copy is the slow part). Readiness line:
   `[ComfyUI-Manager] All startup tasks have been completed.`
-- **No model ships** (gap vs "usable on first open"). Add a checkpoint via the UI
-  blue-button or over SSH as above — this is the **only** SSH step needed.
+- **No model ships** (gap vs "usable on first open"). Use verified workflow
+  metadata with ComfyUI-RunpodDirect or add a checkpoint over SSH as above — this
+  is the **only** SSH step needed.
 - **Larger image:** 150 GB container disk, plus the ~4-min first-boot copy. In
   exchange you skip the entire `git clone` + `pip install --break-system-packages`
   + `setsid … python main.py` block and the PEP 668 / detach gotchas from

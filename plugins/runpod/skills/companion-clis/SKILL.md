@@ -1,6 +1,6 @@
 ---
 name: companion-clis
-description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker, and AWS.
+description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker, and AWS. Use runpod-comfyui-models instead when an imported ComfyUI workflow lacks model download metadata.
 allowed-tools: Bash(hf:*), Bash(gh:*), Bash(docker:*), Bash(aws:*), Bash(ssh-keygen:*), Bash(ssh-add:*), Bash(ssh-agent:*)
 compatibility: Linux, macOS, Windows
 metadata:
@@ -12,6 +12,12 @@ license: Apache-2.0
 # Companion CLIs
 
 Four CLIs commonly needed alongside Runpod. Each has its own **credentials + command reference** in [`reference/`](reference/) — plus a one-time `<cli>-setup.md` for install (only opened if the CLI isn't installed). Load only the one the task needs, not all four.
+
+If the request starts with an imported ComfyUI workflow whose model filenames lack
+verified URLs or hashes, route to
+[`runpod-comfyui-models`](../runpod-comfyui-models/SKILL.md). Return here when the
+exact Hugging Face repository/file is already known and the task is simply to
+download, cache, or bake that artifact.
 
 | CLI | Use it to | Full reference |
 |-----|-----------|----------------|

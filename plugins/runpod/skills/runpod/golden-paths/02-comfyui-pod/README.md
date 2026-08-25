@@ -10,6 +10,12 @@ as `../01-ollama-pod.md`; it follows the pod development loop in
 
 There are two ways to get there, split into their own files below.
 
+If the Pod is already running and an imported workflow names models without
+download metadata, route that repair to
+[`runpod-comfyui-models`](../../../runpod-comfyui-models/SKILL.md); Pod provisioning
+remains in this golden path. This post-launch recovery extension was not part of
+the 2026-07-07 live verification, so feature-detect the live image and its routes.
+
 ## Which variant should I use?
 
 | | Variant A — from scratch | Variant B — prebuilt official image |

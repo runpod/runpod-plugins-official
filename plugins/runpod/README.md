@@ -4,7 +4,7 @@ One entrypoint for AI agents to manage GPU workloads on Runpod — pods, serverl
 endpoints, jobs, templates, and volumes — via the Runpod MCP server, `runpodctl`,
 and `flash`, with conceptual guidance and worked golden paths.
 
-This plugin bundles seven skills, the hosted Runpod MCP server config
+This plugin bundles eight skills, the hosted Runpod MCP server config
 ([`.mcp.json`](.mcp.json)), and reference material.
 
 ## Which skill?
@@ -21,6 +21,7 @@ lane below. If you already know the lane, go straight to it.
 | [`companion-clis`](skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf` (models), `docker` (images), `gh` (repos/releases), `aws` (S3 to volumes). |
 | [`runpod-usage`](skills/runpod-usage/SKILL.md) | **Concepts** — how pods/serverless work, building containers, storage, GPU selection, gotchas. |
 | [`runpod-migrate`](skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2 — inventory, rewrite, flag breaking changes. |
+| [`runpod-comfyui-models`](skills/runpod-comfyui-models/SKILL.md) | Extract workflows from ComfyUI output PNGs when needed, repair missing model metadata, then use ComfyUI-RunpodDirect for approved direct-to-Pod downloads. |
 
 The migration flow also has a slash command: **`/runpod:migrate [scope] [path]`**
 runs the `runpod-migrate` workflow directly, e.g. `/runpod:migrate rest src/`.
@@ -109,6 +110,7 @@ For one-off actions, just ask — the router picks the lane:
 - "Which GPU should I use for a 13B model?"
 - "Write an `@remote` function and run it on a GPU"
 - "Download a model, containerize it, and deploy it"
+- "Find the missing model links in this ComfyUI workflow and download the verified files to my Pod"
 
 For anything you're **designing** rather than executing, add *"and look at the
 examples first"*:
@@ -143,6 +145,7 @@ skills/
   companion-clis/    hf / gh / docker / aws prerequisites
   runpod-usage/      concepts + reference/*.md
   runpod-migrate/    GraphQL / REST v1 -> REST v2 migration + inventory scanner
+  runpod-comfyui-models/  ComfyUI model metadata recovery + RunpodDirect handoff
 .mcp.json            hosted Runpod MCP server config
 ```
 
