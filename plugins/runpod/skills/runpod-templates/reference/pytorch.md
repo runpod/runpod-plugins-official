@@ -84,7 +84,8 @@ The Python environment is the sharp edge — verified on `runpod-torch-v280`:
 
 ## 8. Sizing
 
-Small: 20–30 GB container disk (vs 150 GB for ComfyUI). VRAM is workload-driven, not
+Container disk: 20–30 GB on the single-pod NVIDIA templates, 50 GB on the cluster
+variants, 40 GB on ROCm (vs 150 GB for ComfyUI). VRAM is workload-driven, not
 template-driven.
 
 ## 9. Version pinning

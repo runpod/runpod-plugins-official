@@ -5,7 +5,7 @@ pods, serverless endpoints, jobs, templates, and volumes — via the Runpod MCP
 server, `runpodctl`, and `flash`.
 
 This repo ships **one plugin**, [`runpod`](plugins/runpod/), that bundles a router
-plus seven skills, the hosted Runpod MCP server config, and worked golden paths.
+plus eight skills, the hosted Runpod MCP server config, and worked golden paths.
 
 **Compatibility:** installs as a native plugin in **Claude Code, Codex, Gemini,
 and opencode** (with auto-update), and as skills via **skills.sh** for Cursor,
@@ -45,7 +45,7 @@ That's it. Notes:
 ## Install
 
 Same repo, one manifest — pick your agent below. Every route installs the same
-router + seven skills, plus a hosted **Runpod MCP server** for control-plane tools.
+router + eight skills, plus a hosted **Runpod MCP server** for control-plane tools.
 Then [authenticate](#authentication).
 
 ### Claude Code
@@ -175,6 +175,7 @@ Start with the **`runpod`** router; it points at the right lane.
 | [`flash`](plugins/runpod/skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless (`@remote`). |
 | [`companion-clis`](plugins/runpod/skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf`, `docker`, `gh`, `aws`. |
 | [`runpod-usage`](plugins/runpod/skills/runpod-usage/SKILL.md) | **Concepts** — pods/serverless, containers, storage, GPU selection, gotchas. |
+| [`runpod-templates`](plugins/runpod/skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness, gotchas. |
 | [`runpod-migrate`](plugins/runpod/skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2. |
 
 See the plugin's [README](plugins/runpod/README.md) for the full guide, the

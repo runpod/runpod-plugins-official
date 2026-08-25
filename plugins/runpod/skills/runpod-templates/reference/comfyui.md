@@ -13,7 +13,7 @@ Two variants, one per CUDA line. Everything below was verified on 2026-08-25 (se
 | Name | `ComfyUI - CUDA 12.8` | `ComfyUI - CUDA 13` |
 | Template id | `cw3nka7d08` | `2lv7ev3wfp` |
 | Image | `runpod/comfyui:cuda12.8` | `runpod/comfyui:cuda13.0` |
-| GPUs | RTX 4090 and earlier | **Blackwell / RTX 5090** |
+| GPUs | pre-Blackwell (RTX 4090, L40, A100) | **Blackwell / RTX 5090** |
 | Console | [hub/template/cw3nka7d08](https://console.runpod.io/hub/template/cw3nka7d08) | [hub/template/2lv7ev3wfp](https://console.runpod.io/hub/template/2lv7ev3wfp) |
 
 Both are official (`isRunpod: true` in runpodctl; the `official` catalog slice in REST v2),

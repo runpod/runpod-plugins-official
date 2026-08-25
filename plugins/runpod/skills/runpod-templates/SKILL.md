@@ -18,11 +18,6 @@ license: Apache-2.0
 
 # Official Runpod templates
 
-> **Status: skeleton.** The structure below is settled and `reference/comfyui.md` is
-> complete and live-verified; the remaining reference files are stubs. Do not register this skill in `marketplace.json` or add
-> it to the router table until at least the ComfyUI and PyTorch references are
-> complete and the build/publish questions at the bottom are answered.
-
 **Prefer an official template over building an image.** Runpod maintains prebuilt
 images for common workloads; deploying one is a create + poll, with no SSH install
 step. This skill is the reference for *what those images actually are*. It does not
@@ -64,7 +59,7 @@ their own release train and move faster than this repo. The reference files reco
 
 To hand a user a Console link, use `https://console.runpod.io/hub/template/<template-id>`.
 
-### There is no template search — only slices you filter yourself
+### REST v2 has no template search — only slices you filter yourself
 
 REST v2 has no query/search parameter for templates, so every "search" is a client-side
 filter over a fetched slice:
@@ -76,9 +71,10 @@ filter over a fetched slice:
 | `GET /v2/templates/{id}` | — | one template, owned or catalog |
 
 **`official` (14) and `verified` (3) are fully enumerable; `community` is capped at 100
-with pagination explicitly unsupported.** So a community template past that cap is
-invisible to both the API and `runpodctl template search` — if a user names one you cannot
-find, ask them for the template id rather than concluding it does not exist.
+with pagination explicitly unsupported.** A community template past that cap never
+enters a slice the API can return, and `runpodctl template search` reads those same
+server-side slices — so it has no view past the cap either. If a user names one you
+cannot find, ask them for the template id rather than concluding it does not exist.
 
 `isRunpod` is a GraphQL/v1 field with **no v2 equivalent** — in v2, "official" is the
 `source` slice you requested, not a flag on the record.
