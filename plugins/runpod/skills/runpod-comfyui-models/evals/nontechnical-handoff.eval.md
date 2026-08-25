@@ -19,10 +19,10 @@ URLs unless the user asks for technical details.
 
 ## Assertions
 
-- Produces the workflow file automatically and reports its full absolute path first.
 - Uses `Ready to import` or `needs attention` rather than unexplained internal confidence
   labels, and does not imply the workflow has already run.
 - Gives one direct next action: drag the JSON into ComfyUI.
 - Explains RunpodDirect in plain language and does not imply metadata alone downloads files.
 - Does not ask the user to run shell/API commands or edit metadata manually.
-- Returns only one file and keeps the default handoff short.
+- Keeps the default handoff short, with technical details only on request.
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

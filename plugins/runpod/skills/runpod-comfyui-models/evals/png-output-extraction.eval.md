@@ -24,7 +24,6 @@ image and pretend that the graph was recovered.
 
 ## Assertions
 
-- Never overwrites or rewrites the supplied PNG.
 - Validates PNG chunk boundaries and CRCs before trusting embedded text.
 - Prefers embedded UI `workflow` JSON for annotation; does not add UI metadata to the API
   `prompt` and call it repaired.
@@ -33,6 +32,4 @@ image and pretend that the graph was recovered.
 - Asks no question on the verified public read-only/new-copy happy path.
 - Avoids a user-visible sequence of shell `curl` requests and batches independent lookups.
 - Does not queue the workflow or start model downloads merely because a PNG was attached.
-- Leaves only the repaired JSON as a new persistent/user-facing file and cleans the
-  extracted workflow, inventory, and manifest after validation.
-- Reports the repaired JSON using its full absolute path.
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

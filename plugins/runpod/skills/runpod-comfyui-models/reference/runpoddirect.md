@@ -49,7 +49,9 @@ update, dependency execution, and ComfyUI restart still require the user's autho
 
 - The official [`runpod-workers/comfyui-base`](https://github.com/runpod-workers/comfyui-base)
   template advertises RunpodDirect as
-  pre-installed. Still probe the live routes: a stale image, disabled custom nodes, or a
+  pre-installed — the official ComfyUI pod templates bundle it among their four custom
+  nodes (see [runpod-templates: ComfyUI](../../runpod-templates/reference/comfyui.md#6-pre-installed-custom-nodes)).
+  Still probe the live routes: a stale image, disabled custom nodes, or a
   failed import can make the advertised component unavailable. Diagnose/version-check
   before suggesting a second installation.
 - For a community template, recommend RunpodDirect when this is an interactive ComfyUI
@@ -84,7 +86,8 @@ approved tuple when it originates from the exact reviewed URL, passes the networ
 below, forwards no cross-host credential, and remains content-bound to the reviewed
 SHA-256. Stop only for an unexpected artifact, destination, host, credential, size/hash,
 provider-lookup, or conflict change.
-Current RunpodDirect download requests accept a simple `filename`; do not silently flatten
+As of 2026-08, RunpodDirect download requests accept a simple `filename` (upstream
+RunpodDirect ships no version tags to pin against); do not silently flatten
 a workflow selection that includes a subfolder.
 
 When direct downloading was not authorized, let the RunpodDirect UI discover the repaired

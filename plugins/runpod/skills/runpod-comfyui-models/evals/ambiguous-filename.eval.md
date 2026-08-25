@@ -26,5 +26,4 @@ download while the choice remains.
 - Keeps all credible candidates visible with useful discriminators
 - Explains the multiple possible files without relying on an unexplained `ambiguous` label
 - Does not edit the workflow or call RunpodDirect with a fuzzy/ambiguous match
-- Still creates exactly one partial workflow JSON and reports its full absolute path
-- Cleans its exact task-specific temporary directory before stopping for the decision
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

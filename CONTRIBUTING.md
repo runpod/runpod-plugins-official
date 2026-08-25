@@ -130,6 +130,7 @@ python3 hooks/check_links.py               # relative Markdown links resolve
 python3 hooks/check_migrate_scanner.py     # runpod-migrate scanner vs. its corpora
 python3 hooks/check_migrate_tables.py      # runpod-migrate path claims vs. the spec
 python3 hooks/check_migrate_class3.py      # runpod-migrate Class-3 table vs. the spec
+# skill helper unittests (also run in CI)
 python3 -B -m unittest discover -s plugins/runpod/skills/runpod-comfyui-models/tests -p "test_*.py"
 ```
 

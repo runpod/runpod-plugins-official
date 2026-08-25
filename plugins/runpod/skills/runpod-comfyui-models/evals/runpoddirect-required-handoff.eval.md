@@ -29,5 +29,4 @@ or restarting anything automatically.
 - Links or names ComfyUI-RunpodDirect as required for automatic direct-to-Pod downloads.
 - Keeps custom-node installation/update and ComfyUI restart separately authorized.
 - Still returns the portable repaired JSON when the extension is absent or unchecked.
-- Does not attach or link a normalized workflow, inventory, or resolution manifest.
-- Reports the repaired JSON's full absolute path and never modifies the source artifact.
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

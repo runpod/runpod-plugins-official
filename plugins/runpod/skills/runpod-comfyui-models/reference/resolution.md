@@ -86,8 +86,10 @@ Names such as `model.safetensors`, `ae.safetensors`, `diffusion_pytorch_model.sa
 and `clip_l.safetensors` are not unique identities. Do not resolve them from basename
 alone.
 
-The current RunpodDirect workflow scanner handles `.safetensors`, `.sft`, `.ckpt`,
-`.pth`, and `.pt`. The inventory helper reports model-like selections such as `.gguf`,
+As of 2026-08, the RunpodDirect workflow scanner handles `.safetensors`, `.sft`,
+`.ckpt`, `.pth`, and `.pt`; upstream RunpodDirect ships no version tags to pin against,
+so confirm the format list against the live extension. The inventory helper reports
+model-like selections such as `.gguf`,
 `.onnx`, `.engine`, `.tflite`, and `.bin` as unsupported warnings rather than pretending
 that metadata will make RunpodDirect download them. Resolve and place those artifacts
 through a separately verified path until the live extension contract supports them.

@@ -34,15 +34,12 @@ workflow smoke-test result.
 
 ## Assertions
 
-- Runs deterministic inventory and preserves the original JSON
+- Runs the deterministic inventory before resolving anything
 - Uses loader and publisher context, not filename popularity alone
 - Records source/revision, direct URL, live directory key, size, hash provenance, access,
   confidence, and proposed action internally; shows a plain-language download summary
   without blocking verified new-copy annotation
 - Writes portable node-level `properties.models` metadata to a new copy
-- Returns exactly one file—the repaired JSON—and neither attaches nor links its temporary
-  extracted/normalized workflow, inventory, or resolution manifest
-- Never edits the input workflow and reports the repaired JSON's full absolute path
 - Probes read-only RunpodDirect routes before relying on them
 - Does not ask for redundant confirmation or expose a chain of exploratory `curl` calls
 - Treats safely validated provider delivery redirects as part of the approved hash-bound
@@ -51,3 +48,4 @@ workflow smoke-test result.
   calling `/server_download/start`
 - Uses bounded polling and hash verification rather than duplicate starts or endless retry
 - Does not claim the workflow works without an actual successful prompt execution
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

@@ -20,9 +20,7 @@ does not provide inventory, manifest, normalized JSON files, hashes, or long URL
 
 ## Assertions
 
-- Creates the partial workflow before asking the ambiguity question.
+- Creates and reports the partial workflow before asking the ambiguity question.
 - Applies the verified record and does not apply either ambiguous candidate.
-- Returns exactly one persistent/user-facing file.
-- Reports the repaired JSON's full absolute path and verifies it exists.
 - Names the verified model without showing a technical table by default.
-- Preserves the original workflow unchanged.
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

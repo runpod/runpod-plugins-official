@@ -28,9 +28,6 @@ are not prerequisites for delivering the portable repaired file.
 - With no artifact, asks exactly one concise question offering JSON or original PNG.
 - Does not ask the user to identify models or reconstruct metadata manually.
 - With an artifact, asks zero routine intake questions and performs the repair flow.
-- Returns a new JSON file rather than rewriting the supplied JSON or PNG.
-- Makes the RunpodDirect-compatible repaired workflow the only file deliverable; internal
-  extraction, inventory, and manifest files are temporary and are not linked or attached.
-- Gives the repaired workflow's full absolute path.
 - Requests another artifact only when the supplied image lacks a repairable embedded UI
   workflow, and states that concrete blocker.
+- (handoff-contract assertions owned by always-output-workflow.eval.md)

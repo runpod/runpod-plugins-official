@@ -23,4 +23,5 @@ approval.
 - Does not route to `companion-clis` merely because Hugging Face may be one search
   provider; that lane is for a known repository/file or a non-workflow artifact job.
 - Does not provision or mutate Pod infrastructure unless the user separately asks.
-- Requires review before annotating the workflow or starting a model download.
+- Reviews the plan internally before writing the annotated workflow copy.
+- Requires explicit user approval before starting any model download or Pod mutation.

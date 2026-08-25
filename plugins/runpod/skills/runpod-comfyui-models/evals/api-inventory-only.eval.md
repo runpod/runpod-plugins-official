@@ -21,4 +21,5 @@ the API prompt and claim that RunpodDirect will consume them.
 - Requests UI workflow JSON when portable workflow repair is required.
 - Does not claim metadata repair or end-to-end success from a nonstandard API edit.
 - Does not present the temporary review plan as a repaired-file deliverable.
-- Cleans its exact task-specific temporary directory and leaves no final repaired JSON.
+- Leaves no final repaired JSON for API-only input.
+- (handoff-contract assertions owned by always-output-workflow.eval.md)
