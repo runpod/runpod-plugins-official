@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
+import math
 import os
 import re
 import sys
@@ -35,6 +37,13 @@ UNSUPPORTED_MODEL_EXTENSIONS = (
 )
 
 _SAFE_FILENAME = re.compile(r"^[^\x00-\x1f<>:\"/\\|?*]+$")
+_SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
+_HF_REVISION = re.compile(r"^[0-9a-fA-F]{40}$")
+ALLOWED_HOSTS = {"huggingface.co", "civitai.com", "www.civitai.com"}
+_SENSITIVE_QUERY_KEYS = re.compile(
+    r"(?:^|_)(?:access_token|api_key|apikey|auth|authorization|key|secret|token)(?:$|_)",
+    re.IGNORECASE,
+)
 
 
 class InventoryError(ValueError):
@@ -248,12 +257,134 @@ def _iter_strings(
             yield from _iter_strings(child, path + (key,))
 
 
+def _metadata_has_sha256(entry: dict[str, Any]) -> bool:
+    raw_hash = entry.get("hash")
+    if not isinstance(raw_hash, str):
+        return False
+    normalized = raw_hash.casefold()
+    if normalized.startswith("sha256:"):
+        return bool(_SHA256.fullmatch(normalized.removeprefix("sha256:")))
+    hash_type = entry.get("hash_type")
+    return (
+        isinstance(hash_type, str)
+        and hash_type.strip().casefold() in {"sha256", "sha-256"}
+        and bool(_SHA256.fullmatch(normalized))
+    )
+
+
+def _metadata_sha256(entry: dict[str, Any]) -> str | None:
+    if not _metadata_has_sha256(entry):
+        return None
+    normalized = str(entry["hash"]).casefold()
+    return normalized.removeprefix("sha256:")
+
+
+def _validate_url(
+    raw: Any,
+    filename: str | None,
+    *,
+    allow_mutable_hf_revision: bool = False,
+) -> str:
+    """Validate a model URL against the shared inventory/apply safety policy.
+
+    A filename of None binds the URL to no specific file name (used when the
+    metadata entry's name is itself invalid and already reported).
+    """
+
+    if not isinstance(raw, str) or raw != raw.strip():
+        raise InventoryError("model URL must be a non-empty, trimmed string")
+    try:
+        parsed = urlsplit(raw)
+    except ValueError as exc:
+        raise InventoryError(f"model URL is not parseable: {raw!r}") from exc
+    if parsed.scheme.casefold() != "https" or not parsed.hostname:
+        raise InventoryError(f"model URL must use HTTPS: {raw!r}")
+    if parsed.username or parsed.password or parsed.fragment:
+        raise InventoryError(f"model URL contains credentials or a fragment: {raw!r}")
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise InventoryError(f"model URL has an invalid port: {raw!r}") from exc
+    if port not in {None, 443}:
+        raise InventoryError(f"model URL uses a non-HTTPS port: {raw!r}")
+    host = parsed.hostname.rstrip(".").casefold()
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        pass
+    else:
+        raise InventoryError(f"IP-address model URLs are not allowed: {raw!r}")
+    if host not in ALLOWED_HOSTS:
+        raise InventoryError(f"model URL host is not allowlisted: {host}")
+
+    if parsed.query:
+        for pair in parsed.query.split("&"):
+            key = unquote(pair.split("=", 1)[0])
+            if _SENSITIVE_QUERY_KEYS.search(key):
+                raise InventoryError("model URL query appears to contain a credential")
+
+    path_parts = [unquote(part) for part in parsed.path.split("/") if part]
+    if host == "huggingface.co":
+        try:
+            resolve_index = path_parts.index("resolve")
+            revision = path_parts[resolve_index + 1]
+            remote_filename = path_parts[-1]
+        except (ValueError, IndexError) as exc:
+            raise InventoryError(
+                "Hugging Face URL must be a /resolve/<commit>/ file URL"
+            ) from exc
+        if resolve_index != 2 or len(path_parts) < 5:
+            raise InventoryError(
+                "Hugging Face URL must identify /<owner>/<repo>/resolve/<commit>/<file>"
+            )
+        if not _HF_REVISION.fullmatch(revision):
+            if not allow_mutable_hf_revision:
+                raise InventoryError(
+                    "Hugging Face URL must pin a full commit revision unless a "
+                    "reviewed SHA-256 binds the expected bytes"
+                )
+            if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", revision):
+                raise InventoryError("Hugging Face URL contains an unsafe revision")
+            # Dot segments (including percent-encoded forms, already decoded by
+            # unquote above) must never name a revision.
+            if any(
+                segment in {".", ".."}
+                for segment in revision.replace("\\", "/").split("/")
+            ):
+                raise InventoryError("Hugging Face URL contains an unsafe revision")
+        if filename is not None and remote_filename != filename:
+            raise InventoryError(
+                "Hugging Face URL filename does not match the manifest filename"
+            )
+    else:
+        if (
+            len(path_parts) != 4
+            or path_parts[:3] != ["api", "download", "models"]
+            or not path_parts[3].isdigit()
+        ):
+            raise InventoryError(
+                "Civitai URL must be /api/download/models/<numeric-version-id>"
+            )
+    return raw
+
+
 def _metadata_issues(entry: dict[str, Any]) -> list[str]:
     issues: list[str] = []
-    if _model_filename(entry.get("name")) is None:
+    filename = _model_filename(entry.get("name"))
+    if filename is None:
         issues.append("invalid_or_missing_name")
-    if not isinstance(entry.get("url"), str) or not entry["url"].strip():
+    raw_url = entry.get("url")
+    if not isinstance(raw_url, str) or not raw_url.strip():
         issues.append("missing_url")
+    else:
+        try:
+            _validate_url(
+                raw_url,
+                filename,
+                allow_mutable_hf_revision=_metadata_has_sha256(entry),
+            )
+        except InventoryError:
+            issues.append("unsafe_url")
     if not isinstance(entry.get("directory"), str) or not entry["directory"].strip():
         issues.append("missing_directory")
     raw_hash = entry.get("hash")
@@ -663,9 +794,22 @@ def build_inventory(document: Any, source_name: str | None = None) -> dict[str, 
 
 
 def load_json(path: Path) -> Any:
+    def reject_constant(value: str) -> Any:
+        raise InventoryError(f"invalid JSON in {path}: non-finite number {value!r}")
+
+    def finite_float(value: str) -> float:
+        parsed = float(value)
+        if not math.isfinite(parsed):
+            reject_constant(value)
+        return parsed
+
     try:
         with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
+            return json.load(
+                handle,
+                parse_constant=reject_constant,
+                parse_float=finite_float,
+            )
     except OSError as exc:
         raise InventoryError(f"cannot read {path}: {exc}") from exc
     except json.JSONDecodeError as exc:
@@ -679,9 +823,13 @@ def _write_report(report: dict[str, Any], output: Path | None) -> None:
         return
     if output.exists():
         raise InventoryError(f"refusing to overwrite existing report: {output}")
-    output.parent.mkdir(parents=False, exist_ok=True)
-    with output.open("x", encoding="utf-8", newline="\n") as handle:
-        handle.write(rendered)
+    if not output.parent.exists():
+        raise InventoryError(f"output directory does not exist: {output.parent}")
+    try:
+        with output.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(rendered)
+    except (OSError, UnicodeError) as exc:
+        raise InventoryError(f"cannot write {output}: {exc}") from exc
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:

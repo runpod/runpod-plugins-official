@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-import ipaddress
 import json
 import os
 import re
@@ -13,26 +12,22 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urlsplit
 
 sys.dont_write_bytecode = True
 
 from inventory_workflow_models import (
     InventoryError,
+    _SHA256,
+    _metadata_has_sha256,
+    _metadata_sha256,
     _model_filename,
+    _validate_url as _check_url_policy,
     build_inventory,
     load_json,
 )
 
 
-ALLOWED_HOSTS = {"huggingface.co", "civitai.com", "www.civitai.com"}
 _SAFE_DIRECTORY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
-_SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
-_HF_REVISION = re.compile(r"^[0-9a-fA-F]{40}$")
-_SENSITIVE_QUERY_KEYS = re.compile(
-    r"(?:^|_)(?:access_token|api_key|apikey|auth|authorization|key|secret|token)(?:$|_)",
-    re.IGNORECASE,
-)
 
 
 class ApplyError(ValueError):
@@ -86,65 +81,16 @@ def _validate_url(
     *,
     allow_mutable_hf_revision: bool = False,
 ) -> str:
-    if not isinstance(raw, str) or raw != raw.strip():
-        raise ApplyError("model URL must be a non-empty, trimmed string")
-    parsed = urlsplit(raw)
-    if parsed.scheme.casefold() != "https" or not parsed.hostname:
-        raise ApplyError(f"model URL must use HTTPS: {raw!r}")
-    if parsed.username or parsed.password or parsed.fragment:
-        raise ApplyError(f"model URL contains credentials or a fragment: {raw!r}")
-    try:
-        port = parsed.port
-    except ValueError as exc:
-        raise ApplyError(f"model URL has an invalid port: {raw!r}") from exc
-    if port not in {None, 443}:
-        raise ApplyError(f"model URL uses a non-HTTPS port: {raw!r}")
-    host = parsed.hostname.rstrip(".").casefold()
-    try:
-        ipaddress.ip_address(host)
-    except ValueError:
-        pass
-    else:
-        raise ApplyError(f"IP-address model URLs are not allowed: {raw!r}")
-    if host not in ALLOWED_HOSTS:
-        raise ApplyError(f"model URL host is not allowlisted: {host}")
+    """Validate against the shared policy (inventory_workflow_models._validate_url)."""
 
-    if parsed.query:
-        for pair in parsed.query.split("&"):
-            key = unquote(pair.split("=", 1)[0])
-            if _SENSITIVE_QUERY_KEYS.search(key):
-                raise ApplyError("model URL query appears to contain a credential")
-
-    path_parts = [unquote(part) for part in parsed.path.split("/") if part]
-    if host == "huggingface.co":
-        try:
-            resolve_index = path_parts.index("resolve")
-            revision = path_parts[resolve_index + 1]
-            remote_filename = path_parts[-1]
-        except (ValueError, IndexError) as exc:
-            raise ApplyError("Hugging Face URL must be a /resolve/<commit>/ file URL") from exc
-        if resolve_index != 2 or len(path_parts) < 5:
-            raise ApplyError(
-                "Hugging Face URL must identify /<owner>/<repo>/resolve/<commit>/<file>"
-            )
-        if not _HF_REVISION.fullmatch(revision):
-            if not allow_mutable_hf_revision:
-                raise ApplyError(
-                    "Hugging Face URL must pin a full commit revision unless a "
-                    "reviewed SHA-256 binds the expected bytes"
-                )
-            if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", revision):
-                raise ApplyError("Hugging Face URL contains an unsafe revision")
-        if remote_filename != filename:
-            raise ApplyError("Hugging Face URL filename does not match the manifest filename")
-    else:
-        if (
-            len(path_parts) != 4
-            or path_parts[:3] != ["api", "download", "models"]
-            or not path_parts[3].isdigit()
-        ):
-            raise ApplyError("Civitai URL must be /api/download/models/<numeric-version-id>")
-    return raw
+    try:
+        return _check_url_policy(
+            raw,
+            filename,
+            allow_mutable_hf_revision=allow_mutable_hf_revision,
+        )
+    except InventoryError as exc:
+        raise ApplyError(str(exc)) from exc
 
 
 def _directories_equivalent(first: str, second: str) -> bool:
@@ -157,28 +103,6 @@ def _directories_equivalent(first: str, second: str) -> bool:
     return aliases.get(first.casefold(), first.casefold()) == aliases.get(
         second.casefold(), second.casefold()
     )
-
-
-def _metadata_has_sha256(entry: dict[str, Any]) -> bool:
-    raw_hash = entry.get("hash")
-    if not isinstance(raw_hash, str):
-        return False
-    normalized = raw_hash.casefold()
-    if normalized.startswith("sha256:"):
-        return bool(_SHA256.fullmatch(normalized.removeprefix("sha256:")))
-    hash_type = entry.get("hash_type")
-    return (
-        isinstance(hash_type, str)
-        and hash_type.strip().casefold() in {"sha256", "sha-256"}
-        and bool(_SHA256.fullmatch(normalized))
-    )
-
-
-def _metadata_sha256(entry: dict[str, Any]) -> str | None:
-    if not _metadata_has_sha256(entry):
-        return None
-    normalized = str(entry["hash"]).casefold()
-    return normalized.removeprefix("sha256:")
 
 
 def _validate_manifest(
@@ -302,6 +226,7 @@ def _validate_manifest(
         model = {
             "directory": directory,
             "filename": filename,
+            "replace_existing": raw.get("replace_existing") is True,
             "requirement": requirement,
             "requirement_id": requirement_id,
             "url": url,
@@ -457,7 +382,35 @@ def apply_manifest_to_document(
         allow_unresolved=allow_unresolved,
     )
     output = copy.deepcopy(document)
-    removals = _associated_metadata_paths(validated)
+    metadata_by_path = {
+        existing["path"]: existing for existing in inventory["existing_metadata"]
+    }
+    # An existing entry whose canonical fields already match the reviewed
+    # resolution carries no conflict: keep it verbatim (unknown keys survive)
+    # instead of dropping it through remove + recreate.
+    recreated_models: list[dict[str, Any]] = []
+    for model in validated:
+        associated_existing = [
+            metadata_by_path[occurrence["path"]]
+            for occurrence in model["requirement"]["occurrences"]
+            if occurrence.get("source") == "metadata"
+            and occurrence.get("path") in metadata_by_path
+        ]
+        if (
+            model["replace_existing"] is not True
+            and associated_existing
+            and all(
+                not existing.get("issues")
+                and existing.get("name") == model["filename"]
+                and existing.get("directory") == model["directory"]
+                and existing.get("url") == model["url"]
+                and _metadata_sha256(existing) == model.get("sha256")
+                for existing in associated_existing
+            )
+        ):
+            continue
+        recreated_models.append(model)
+    removals = _associated_metadata_paths(recreated_models)
     if allow_unresolved:
         removals.update(
             entry["path"]
@@ -468,7 +421,7 @@ def apply_manifest_to_document(
     fallback_target = _ui_metadata_target(output)
     attachments: dict[str, list[dict[str, Any]]] = {}
     root_attachments: list[dict[str, Any]] = []
-    for model in validated:
+    for model in recreated_models:
         node_paths = sorted(
             {
                 occurrence["node_path"]
@@ -568,8 +521,12 @@ def _write_new_workflow(
             handle.write(rendered)
             handle.flush()
             os.fsync(handle.fileno())
+        if os.path.lexists(output_path):
+            raise ApplyError(f"refusing to overwrite existing output: {output_path}")
         os.replace(temporary_name, output_path)
         temporary_name = None
+    except (OSError, UnicodeError) as exc:
+        raise ApplyError(f"cannot write {output_path}: {exc}") from exc
     finally:
         if temporary_name:
             try:

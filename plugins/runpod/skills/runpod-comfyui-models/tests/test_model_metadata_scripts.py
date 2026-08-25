@@ -15,6 +15,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from apply_model_metadata import (  # noqa: E402
     ApplyError,
+    _validate_url,
     apply_manifest_to_document,
     write_new_workflow,
 )
@@ -295,6 +296,59 @@ class InventoryTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(ApplyError, "subfolder"):
             apply_manifest_to_document(workflow, manifest)
+
+    def test_unsafe_existing_metadata_url_is_partial(self) -> None:
+        unsafe_urls = {
+            "attacker_suffix_host": (
+                "https://huggingface.co.attacker.example/example/models/resolve/"
+                f"{HF_REVISION}/base.safetensors"
+            ),
+            "plain_http": (
+                "http://huggingface.co/example/models/resolve/"
+                f"{HF_REVISION}/base.safetensors"
+            ),
+            "ip_literal_host": (
+                f"https://192.0.2.1/example/models/resolve/{HF_REVISION}/base.safetensors"
+            ),
+            "userinfo_credentials": (
+                f"https://user:secret@huggingface.co/example/models/resolve/"
+                f"{HF_REVISION}/base.safetensors"
+            ),
+            "credential_query": (
+                "https://huggingface.co/example/models/resolve/"
+                f"{HF_REVISION}/base.safetensors?token=abc123"
+            ),
+            "unparseable_ipv6_brackets": "https://[::1/base.safetensors",
+        }
+        for label, url in unsafe_urls.items():
+            with self.subTest(label=label):
+                workflow = {
+                    "nodes": [
+                        {
+                            "id": 1,
+                            "properties": {
+                                "models": [
+                                    {
+                                        "directory": "checkpoints",
+                                        "name": "base.safetensors",
+                                        "url": url,
+                                    }
+                                ]
+                            },
+                            "type": "CheckpointLoaderSimple",
+                            "widgets_values": ["base.safetensors"],
+                        }
+                    ]
+                }
+                inventory = build_inventory(workflow)
+                self.assertEqual(
+                    inventory["existing_metadata"][0]["issues"],
+                    ["unsafe_url"],
+                )
+                self.assertEqual(
+                    inventory["requirements"][0]["metadata_status"],
+                    "partial",
+                )
 
 
 class ApplyTests(unittest.TestCase):
@@ -885,6 +939,57 @@ class ApplyTests(unittest.TestCase):
                 workflow,
             )
 
+    def test_hf_mutable_revision_rejects_dot_segments(self) -> None:
+        url = (
+            "https://huggingface.co/example/models/resolve/"
+            "{revision}/base.safetensors"
+        )
+        for revision in (".", "..", "%2e%2e", "%2E%2E"):
+            with self.subTest(revision=revision):
+                with self.assertRaisesRegex(ApplyError, "unsafe revision"):
+                    _validate_url(
+                        url.format(revision=revision),
+                        "base.safetensors",
+                        allow_mutable_hf_revision=True,
+                    )
+        branch_url = url.format(revision="feature-branch_1.2")
+        self.assertEqual(
+            _validate_url(
+                branch_url,
+                "base.safetensors",
+                allow_mutable_hf_revision=True,
+            ),
+            branch_url,
+        )
+
+    def test_identical_existing_metadata_is_kept_verbatim(self) -> None:
+        existing = {
+            "directory": "checkpoints",
+            "name": "base.safetensors",
+            "note": "picked by the reviewer",
+            "size": 123456789,
+            "url": hf_url("base.safetensors"),
+        }
+        workflow = {
+            "nodes": [
+                {
+                    "id": 1,
+                    "properties": {"models": [existing]},
+                    "type": "CheckpointLoaderSimple",
+                    "widgets_values": ["base.safetensors"],
+                }
+            ]
+        }
+        manifest = manifest_for(
+            workflow,
+            {"base.safetensors": {"directory": "checkpoints"}},
+        )
+        output, applied = apply_manifest_to_document(workflow, manifest)
+        self.assertEqual(applied, ["base.safetensors"])
+        entries = output["nodes"][0]["properties"]["models"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(list(entries[0].items()), list(existing.items()))
+
 
 class CliRoundTripTests(unittest.TestCase):
     def test_cli_always_outputs_valid_ui_workflow_when_models_are_unresolved(self) -> None:
@@ -1060,6 +1165,188 @@ class CliRoundTripTests(unittest.TestCase):
             {path.resolve() for path in SCRIPT_DIR.rglob("*.pyc")},
             baseline_bytecode,
         )
+
+    def test_cli_refuses_to_publish_unsafe_preexisting_metadata_url(self) -> None:
+        workflow = {
+            "nodes": [
+                {
+                    "id": 1,
+                    "properties": {
+                        "models": [
+                            {
+                                "directory": "checkpoints",
+                                "name": "base.safetensors",
+                                "url": (
+                                    "https://huggingface.co.attacker.example/example/"
+                                    f"models/resolve/{HF_REVISION}/base.safetensors"
+                                ),
+                            }
+                        ]
+                    },
+                    "type": "CheckpointLoaderSimple",
+                    "widgets_values": ["base.safetensors"],
+                }
+            ]
+        }
+        inventory = build_inventory(workflow)
+        manifest = {
+            "models": [],
+            "schema_version": 1,
+            "workflow_sha256": inventory["workflow_sha256"],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workflow_path = root / "workflow.json"
+            manifest_path = root / "manifest.json"
+            output_path = root / "workflow.repaired.json"
+            workflow_path.write_text(json.dumps(workflow), encoding="utf-8")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-B",
+                    str(SCRIPT_DIR / "apply_model_metadata.py"),
+                    str(workflow_path),
+                    str(manifest_path),
+                    "--output",
+                    str(output_path),
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertTrue(result.stderr.startswith("error:"))
+            self.assertIn("unresolved models: base.safetensors", result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertFalse(output_path.exists())
+            self.assertEqual(
+                json.loads(workflow_path.read_text(encoding="utf-8")),
+                workflow,
+            )
+
+    def test_cli_allow_unresolved_strips_unsafe_preexisting_metadata_url(self) -> None:
+        workflow = {
+            "nodes": [
+                {
+                    "id": 1,
+                    "properties": {
+                        "models": [
+                            {
+                                "directory": "checkpoints",
+                                "name": "base.safetensors",
+                                "url": (
+                                    "https://huggingface.co.attacker.example/example/"
+                                    f"models/resolve/{HF_REVISION}/base.safetensors"
+                                ),
+                            }
+                        ]
+                    },
+                    "type": "CheckpointLoaderSimple",
+                    "widgets_values": ["base.safetensors"],
+                }
+            ]
+        }
+        inventory = build_inventory(workflow)
+        manifest = {
+            "models": [],
+            "schema_version": 1,
+            "workflow_sha256": inventory["workflow_sha256"],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workflow_path = root / "workflow.json"
+            manifest_path = root / "manifest.json"
+            output_path = root / "workflow.repaired.json"
+            workflow_path.write_text(json.dumps(workflow), encoding="utf-8")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-B",
+                    str(SCRIPT_DIR / "apply_model_metadata.py"),
+                    str(workflow_path),
+                    str(manifest_path),
+                    "--output",
+                    str(output_path),
+                    "--allow-unresolved",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["applied_models"], [])
+            self.assertEqual(payload["status"], "partial")
+            self.assertEqual(payload["unresolved_requirements"], 1)
+            raw_output = output_path.read_text(encoding="utf-8")
+            self.assertNotIn("attacker", raw_output)
+            self.assertEqual(
+                json.loads(raw_output)["nodes"][0]["properties"]["models"],
+                [],
+            )
+            self.assertEqual(
+                json.loads(workflow_path.read_text(encoding="utf-8")),
+                workflow,
+            )
+
+    def test_inventory_cli_rejects_non_finite_json(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workflow_path = root / "workflow.json"
+            for constant in ("NaN", "Infinity", "-Infinity", "1e400"):
+                with self.subTest(constant=constant):
+                    workflow_path.write_text(
+                        '{"nodes": [], "value": ' + constant + "}",
+                        encoding="utf-8",
+                    )
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            "-B",
+                            str(SCRIPT_DIR / "inventory_workflow_models.py"),
+                            str(workflow_path),
+                        ],
+                        capture_output=True,
+                        check=False,
+                        text=True,
+                    )
+                    self.assertEqual(result.returncode, 2)
+                    self.assertTrue(result.stderr.startswith("error:"))
+                    self.assertIn("non-finite", result.stderr)
+                    self.assertNotIn("Traceback", result.stderr)
+
+    def test_inventory_cli_requires_existing_output_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workflow_path = root / "workflow.json"
+            workflow_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+            missing_dir = root / "no-such-dir"
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-B",
+                    str(SCRIPT_DIR / "inventory_workflow_models.py"),
+                    str(workflow_path),
+                    "--output",
+                    str(missing_dir / "report.json"),
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertTrue(result.stderr.startswith("error:"))
+            self.assertIn("output directory does not exist", result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertFalse(missing_dir.exists())
 
 
 if __name__ == "__main__":
