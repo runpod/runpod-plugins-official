@@ -4,8 +4,8 @@ description: >-
   Start here for any Runpod task — running GPU/CPU pods, deploying serverless
   endpoints, templates, network volumes, building images, or understanding how
   Runpod works. Routes to the right skill (runpod-mcp, runpodctl, flash,
-  companion-clis, runpod-usage, runpod-templates, runpod-migrate,
-  runpod-comfyui-models) and indexes two dozen live-verified end-to-end examples
+  companion-clis, runpod-usage, runpod-templates, runpod-migrate)
+  and indexes two dozen live-verified end-to-end examples
   (golden paths) — use it when the lane is unclear, and for any multi-step or
   provisioning task even when it is not.
 metadata:
@@ -32,7 +32,6 @@ the lane; otherwise read the matching skill's `SKILL.md` next.
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
 | **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
 | **runpod-migrate** | **Move existing code** off the GraphQL API or REST v1 onto REST v2 — inventory which parts use which version, rewrite call sites, flag breaking changes. Edits the user's code; does not manage infra. |
-| **runpod-comfyui-models** | **Repair imported ComfyUI workflows or output PNGs** whose model filenames lack trustworthy download metadata; extract embedded workflow JSON when needed, resolve and review exact sources, annotate a workflow copy, then hand approved downloads to ComfyUI-RunpodDirect on a Pod. |
 
 ## These skills are a snapshot; the tools are the source of truth
 
@@ -47,7 +46,6 @@ of you**:
 | flash | `flash --help`, and the deploy/dev output |
 | companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
 | runpod-templates | `runpodctl template list --type official`, `template get <id>` (its readme is authoritative) |
-| runpod-comfyui-models | the workflow JSON, live ComfyUI `/object_info` and model routes, provider metadata, and feature-detected ComfyUI-RunpodDirect routes |
 | REST v2 | the live spec at `https://api.runpod.io/v2/openapi.json` |
 
 **Never tell a user a tool cannot do something without checking first.** A missing capability
@@ -111,19 +109,14 @@ disagree, follow the path and treat the difference as a bug worth reporting.
 2. **Run a common workload on a pod, or fix a template pod** ("run ComfyUI /
    PyTorch dev box", won't boot, missing models) → **runpod-templates** — check for
    an official prebuilt before planning any install, and let it route repairs.
-3. **Repair an imported ComfyUI workflow or output PNG whose referenced models
-   lack download links or trustworthy metadata** → **runpod-comfyui-models**.
-   Extract embedded workflow JSON from the PNG first. If the exact Hugging Face
-   repo and file are already known and no workflow repair is needed, use
-   **companion-clis** instead.
-4. **Write/iterate/ship your own code on Runpod GPUs** → **flash**.
-5. **Produce an artifact** (download a model, build+push an image, create a repo
+3. **Write/iterate/ship your own code on Runpod GPUs** → **flash**.
+4. **Produce an artifact** (download a model, build+push an image, create a repo
    release, sync data to a volume) → **companion-clis**.
-6. **Migrate existing code between Runpod API versions** — "move us to REST v2",
+5. **Migrate existing code between Runpod API versions** — "move us to REST v2",
    "which Runpod API is this repo on?", "what breaks if we upgrade?" →
    **runpod-migrate**. (Calling the API to *do* something is a different job; that
    is the infra lanes below.)
-7. **Manage infrastructure** (create/list/update/delete pods, endpoints,
+6. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
    - Capability only the CLI has — **Hub, `send`/`receive`, SSH keys, `doctor`,
      model cache** → **runpodctl**.

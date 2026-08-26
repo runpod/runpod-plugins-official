@@ -234,5 +234,5 @@ final repaired JSON's full absolute path is the one path that must be shown. Do 
 generate a second persistent audit artifact; summarize requested audit evidence in chat.
 
 For a task that also creates or starts a Pod, first consult the
-[worked examples](../../runpod/golden-paths/README.md), then route that infrastructure
+[worked examples](../../../runpod/golden-paths/README.md), then route that infrastructure
 work through `runpod-mcp` or `runpodctl`. Return here once ComfyUI is reachable.

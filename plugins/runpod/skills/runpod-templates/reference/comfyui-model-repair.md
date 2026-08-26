@@ -1,22 +1,9 @@
----
-name: runpod-comfyui-models
-description: >-
-  Repair imported ComfyUI workflows with missing or broken model metadata for
-  ComfyUI-RunpodDirect. Accept a workflow JSON or original ComfyUI output PNG,
-  extract and inventory it, and resolve exact model artifacts. Use when a user
-  reports a broken workflow, missing models, or failed model discovery; use
-  companion-clis for generic Hugging Face transfers and runpod-mcp or runpodctl
-  for Pod lifecycle.
-user-invocable: true
-allowed-tools: Bash(python3:*), Bash(curl:*)
-compatibility: Linux, macOS, Windows
-metadata:
-  author: runpod
-  version: "1.2.0" # x-release-please-version
-license: Apache-2.0
----
-
 # Repair a ComfyUI workflow for RunpodDirect
+
+This is a **usage guide** in the `runpod-templates` skill — a repair procedure, not a
+9-question template reference. The helper scripts it drives live in
+[`../scripts/`](../scripts/) (`inventory_workflow_models.py`, `apply_model_metadata.py`,
+`extract_png_workflow.py`).
 
 Return a new UI workflow JSON containing trustworthy `properties.models` records that
 ComfyUI-RunpodDirect can consume — never substitute a plausible model merely to make the
@@ -28,7 +15,7 @@ when resolution is incomplete, ambiguous, gated, or interrupted.
 
 | Term | What it is | Role here |
 | --- | --- | --- |
-| **UI workflow JSON** | The graph the ComfyUI frontend exports/imports: nodes, links, widget values, `properties` | the only JSON this skill annotates |
+| **UI workflow JSON** | The graph the ComfyUI frontend exports/imports: nodes, links, widget values, `properties` | the only JSON this guide annotates |
 | **API `prompt` JSON** | The execution format POSTed to `/prompt`, keyed by node id | inventory evidence only — never annotate it |
 | **`properties.models` record** | A loader node's model metadata entry (`name`, `url`, `directory`, optional `hash`) | what a repair adds or fixes |
 
@@ -58,9 +45,9 @@ contract.
 
 | Reference | The one question it answers |
 | --- | --- |
-| [reference/resolution.md](reference/resolution.md) | Which exact artifact is this model? Evidence, source order, confidence policy. |
-| [reference/metadata.md](reference/metadata.md) | How is approved metadata written into the workflow? Patch rules, unsafe-URL handling, the exact handoff lines. |
-| [reference/runpoddirect.md](reference/runpoddirect.md) | Is the live extension there, and how is it driven safely? Feature detection, download authorization, URL/redirect/secret safety. |
+| [comfyui-repair/resolution.md](comfyui-repair/resolution.md) | Which exact artifact is this model? Evidence, source order, confidence policy. |
+| [comfyui-repair/metadata.md](comfyui-repair/metadata.md) | How is approved metadata written into the workflow? Patch rules, unsafe-URL handling, the exact handoff lines. |
+| [comfyui-repair/runpoddirect.md](comfyui-repair/runpoddirect.md) | Is the live extension there, and how is it driven safely? Feature detection, download authorization, URL/redirect/secret safety. |
 
 ## Low-friction contract
 
@@ -76,32 +63,33 @@ finish the authorized work and report once — an optional next step is not a qu
 
 ## Workflow
 
-1. **Extract** (PNG input only): `python3 -B extract_png_workflow.py` pulls the embedded
-   UI `workflow` from a ComfyUI output PNG into the task's temporary directory.
-2. **Inventory**: `python3 -B inventory_workflow_models.py` lists every loader
-   selection, subgraphs included — evidence, never an identity decision.
-3. **Resolve** each identity per [reference/resolution.md](reference/resolution.md),
+1. **Extract** (PNG input only): `python3 -B ../scripts/extract_png_workflow.py` pulls
+   the embedded UI `workflow` from a ComfyUI output PNG into the task's temporary
+   directory.
+2. **Inventory**: `python3 -B ../scripts/inventory_workflow_models.py` lists every
+   loader selection, subgraphs included — evidence, never an identity decision.
+3. **Resolve** each identity per [comfyui-repair/resolution.md](comfyui-repair/resolution.md),
    stopping at the first `verified` publisher artifact; keep the review manifest
    temporary.
-4. **Apply**: `python3 -B apply_model_metadata.py --allow-unresolved` writes the new
-   workflow every time, even when nothing could be resolved; patch rules, unsafe-URL
-   handling, and the publish contract live in
-   [reference/metadata.md](reference/metadata.md).
+4. **Apply**: `python3 -B ../scripts/apply_model_metadata.py --allow-unresolved` writes
+   the new workflow every time, even when nothing could be resolved; patch rules,
+   unsafe-URL handling, and the publish contract live in
+   [comfyui-repair/metadata.md](comfyui-repair/metadata.md).
 5. **Live checks** (only within the request's scope): one batched read-only probe of the
    pod's RunpodDirect routes — `curl` is fine, batched rather than a visible sequence —
    then downloads only as authorized, per
-   [reference/runpoddirect.md](reference/runpoddirect.md).
+   [comfyui-repair/runpoddirect.md](comfyui-repair/runpoddirect.md).
 
 Consult `--help` only after a usage error. Working state (extracted JSON, inventory,
 manifest) lives in one task-specific temporary directory, deleted after the repaired
 JSON validates; the repaired JSON is the only persistent artifact. Hand off in plain
-language — the exact lines are in [reference/metadata.md](reference/metadata.md).
+language — the exact lines are in [comfyui-repair/metadata.md](comfyui-repair/metadata.md).
 
 ## Routing onward
 
 | The task is actually… | Send it to |
 | --- | --- |
-| Provision a pod for the workflow | [golden path 02](../runpod/golden-paths/02-comfyui-pod/README.md) (index: [golden paths](../runpod/golden-paths/README.md)), then runpod-mcp or runpodctl |
+| Provision a pod for the workflow | [golden path 02](../../runpod/golden-paths/02-comfyui-pod/README.md) (index: [golden paths](../../runpod/golden-paths/README.md)), then runpod-mcp or runpodctl |
 | Model repo and file already known exactly | `companion-clis` |
-| A template pod won't boot, or models are missing on a template pod | `runpod-templates` |
-| Install or understand RunpodDirect itself | [reference/runpoddirect.md](reference/runpoddirect.md) |
+| Another template problem (a pod that won't boot, models missing on first boot) | the other reference files in this skill — [comfyui.md](comfyui.md) / [pytorch.md](pytorch.md) |
+| Install or understand RunpodDirect itself | [comfyui-repair/runpoddirect.md](comfyui-repair/runpoddirect.md) |

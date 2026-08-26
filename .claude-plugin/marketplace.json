@@ -10,7 +10,7 @@
     {
       "name": "runpod",
       "displayName": "Runpod (Official)",
-      "description": "Official Runpod skills and MCP server: a router plus lanes (runpodctl, flash, templates, ComfyUI workflow repair, migration, companion CLIs, conceptual usage) that bundles the hosted Runpod MCP server.",
+      "description": "Official Runpod skills and MCP server: a router plus lanes (runpodctl, flash, templates incl. ComfyUI workflow repair, migration, companion CLIs, conceptual usage) that bundles the hosted Runpod MCP server.",
       "source": "./plugins/runpod",
       "category": "deployment",
       "skills": [
@@ -21,8 +21,7 @@
         "./skills/runpod-usage",
         "./skills/runpod-templates",
         "./skills/companion-clis",
-        "./skills/runpod-migrate",
-        "./skills/runpod-comfyui-models"
+        "./skills/runpod-migrate"
       ]
     }
   ]

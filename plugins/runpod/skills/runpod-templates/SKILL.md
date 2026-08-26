@@ -7,9 +7,11 @@ description: >-
   boot. Use when a task says "run <X> on a pod" and an official template already
   covers it, instead of building an image — and when a user needs help with or wants
   to fix something about a Runpod template they are already running (won't boot, can't
-  reach the UI, missing models, wrong CUDA line): start here and route onward. Deploy
+  reach the UI, missing models, wrong CUDA line, broken ComfyUI workflow metadata on
+  imported workflows): start here and route onward. Deploy
   with runpodctl or runpod-mcp; end-to-end walkthroughs live in the runpod router's
   golden paths.
+allowed-tools: Bash(python3:*), Bash(curl:*)
 metadata:
   author: runpod
   version: "1.2.0" # x-release-please-version
@@ -114,6 +116,10 @@ can skim to the one it needs:
 8. **Sizing** — container disk and minimum VRAM.
 9. **Version pinning** — how to hold a known-good version.
 
+One file is the exception: [`reference/comfyui-model-repair.md`](reference/comfyui-model-repair.md)
+is a **usage guide** — a ComfyUI workflow repair procedure that drives the scripts in
+[`scripts/`](scripts/) — not a 9-question template reference.
+
 ## Routing onward — this skill is the hub, not the destination
 
 A user asking about a template rarely wants the reference file itself; they want a
@@ -123,7 +129,7 @@ template deployed, fixed, or replaced. Land here, identify which, and hand off:
 | --- | --- |
 | **Deploy** a template end to end | the matching golden path in the table above ([index](../runpod/golden-paths/README.md)) — live-verified runs with real commands |
 | **Fix a pod that won't serve** ("Running" but URL dead, 404/502) | the template's reference file, §Readiness — then [`runpod-usage/reference/gotchas.md`](../runpod-usage/reference/gotchas.md) |
-| **Fix a ComfyUI workflow whose models won't download** (missing/broken model metadata, imported workflow or PNG) | the **`runpod-comfyui-models`** skill — it carries the repair scripts. The official ComfyUI templates ship ComfyUI-RunpodDirect, so its automatic-download path applies |
+| **Fix a ComfyUI workflow whose models won't download** (missing/broken model metadata, imported workflow or PNG) | [the repair guide](reference/comfyui-model-repair.md) — it drives the repair scripts in [`scripts/`](scripts/). The official ComfyUI templates ship ComfyUI-RunpodDirect, so its automatic-download path applies |
 | **Add models / files** to a running template pod | the template's reference file (§What does not ship), or `companion-clis` for generic Hugging Face transfers |
 | **Customize beyond what the template ships** (pinned versions, extra nodes, lighter image) | [`runpod-usage/reference/building-images.md`](../runpod-usage/reference/building-images.md) — build `FROM` the official base |
 | **A serverless worker**, not a pod | not a pod template — Hub workers via `runpodctl` / `runpod-mcp` |

@@ -50,7 +50,7 @@ update, dependency execution, and ComfyUI restart still require the user's autho
 - The official [`runpod-workers/comfyui-base`](https://github.com/runpod-workers/comfyui-base)
   template advertises RunpodDirect as
   pre-installed — the official ComfyUI pod templates bundle it among their four custom
-  nodes (see [runpod-templates: ComfyUI](../../runpod-templates/reference/comfyui.md#6-pre-installed-custom-nodes)).
+  nodes (see [runpod-templates: ComfyUI](../comfyui.md#6-pre-installed-custom-nodes)).
   Still probe the live routes: a stale image, disabled custom nodes, or a
   failed import can make the advertised component unavailable. Diagnose/version-check
   before suggesting a second installation.

@@ -28,7 +28,7 @@ plugins/runpod/                   THE plugin
   gemini-extension.json           Gemini manifest
   .mcp.json                       hosted Runpod MCP server config
   README.md  CHANGELOG.md
-  skills/                         the nine skills (below)
+  skills/                         the eight skills (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
 hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
                                   gen_cli_surface.py regenerates the runpodctl snapshot
@@ -53,12 +53,11 @@ skills/flash/             write & deploy your own code on Runpod serverless (@re
 skills/companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
 skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a tool
   reference/*.md          detailed topics, loaded on demand
-skills/runpod-templates/  official prebuilt pod templates — what ships, ports, paths, gotchas
-  reference/*.md          one file per template, fixed question shape
+skills/runpod-templates/  official prebuilt pod templates + ComfyUI model-repair guide
+  reference/*.md          one file per template (fixed question shape) + comfyui-model-repair.md usage guide
+  scripts/                the ComfyUI repair helpers (CI-gated unittests)
 skills/runpod-migrate/    migrate a codebase from GraphQL / REST v1 to REST v2
   scripts/                the API-version inventory scanner
-skills/runpod-comfyui-models/  recover verified model metadata for imported ComfyUI workflows
-  scripts/                workflow inventory and reviewed metadata application
 ```
 
 **runpod-mcp and runpodctl overlap** — both drive the same Runpod REST API for the

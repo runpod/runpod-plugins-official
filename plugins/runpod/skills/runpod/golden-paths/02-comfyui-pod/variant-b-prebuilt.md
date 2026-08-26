@@ -88,9 +88,9 @@ so the graph is usable with no node edits. Three ways to add it:
   metadata, it can download the approved file straight into the correct Pod model
   folder. Feature-detect `/server_download/folder_paths` instead of assuming a
   particular image version. If a community workflow has only a filename and no
-  model URL/hash, use
-  [`runpod-comfyui-models`](../../../runpod-comfyui-models/SKILL.md) to resolve and
-  annotate a reviewed workflow copy first. This metadata-recovery path was added
+  model URL/hash, use the
+  [ComfyUI model-repair guide](../../../runpod-templates/reference/comfyui-model-repair.md)
+  to resolve and annotate a reviewed workflow copy first. This metadata-recovery path was added
   after the 2026-07-07 live run; probe the route and verify a real download before
   treating it as live-confirmed.
 

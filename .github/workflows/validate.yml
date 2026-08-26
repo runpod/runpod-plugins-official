@@ -32,4 +32,4 @@ jobs:
       - name: Check runpod-migrate Class-3 table against the spec snapshot
         run: python3 hooks/check_migrate_class3.py
       - name: Test ComfyUI workflow model metadata helpers
-        run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-comfyui-models/tests -p "test_*.py"
+        run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p "test_*.py"

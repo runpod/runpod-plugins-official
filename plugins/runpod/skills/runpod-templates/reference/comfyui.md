@@ -134,10 +134,10 @@ Both templates ship four, confirmed present at `/extensions/<name>/`:
 | **ComfyUI-KJNodes** | extra utility nodes |
 | **Civicomfy** | Civitai model downloader |
 
-**RunpodDirect ships here.** So for a workflow repaired by the `runpod-comfyui-models`
-skill, the official templates are the case where automatic downloads are available by
-default — that skill's "RunpodDirect was not detected" branch does not apply to a stock
-pod from these templates.
+**RunpodDirect ships here.** So for a workflow repaired with the sibling
+[model-repair guide](./comfyui-model-repair.md), the official templates are the case
+where automatic downloads are available by default — the guide's "RunpodDirect was not
+detected" branch does not apply to a stock pod from these templates.
 
 ## 7. What does not ship — no model
 
@@ -162,8 +162,8 @@ fetch `/view?filename=<out>&type=output`.
 
 If the user arrives with an **imported workflow whose model metadata is missing or
 broken** (models won't download, filenames with no source), that is a repair task — hand
-off to the **`runpod-comfyui-models`** skill. On a stock pod from these templates its
-automatic-download path applies, since RunpodDirect is pre-installed (§6).
+off to the [model-repair guide](./comfyui-model-repair.md). On a stock pod from these
+templates its automatic-download path applies, since RunpodDirect is pre-installed (§6).
 
 ## 8. Sizing
 

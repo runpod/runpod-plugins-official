@@ -22,5 +22,5 @@ which routes onward.
 - A "my pod is Running but the URL 502s" task on an official template also routes
   to `runpod-templates` first (the reference's Readiness section), onward to
   runpod-usage gotchas when the cause is template-independent.
-- An imported ComfyUI workflow with missing model metadata is handed to
-  `runpod-comfyui-models`, not repaired ad hoc inside the templates lane.
+- An imported ComfyUI workflow with missing model metadata is handed to the
+  templates skill's model-repair guide, not repaired ad hoc.

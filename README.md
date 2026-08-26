@@ -4,8 +4,8 @@ The **official** plugin marketplace of skills for AI agents to manage GPU worklo
 pods, serverless endpoints, jobs, templates, and volumes — via the Runpod MCP
 server, `runpodctl`, and `flash`.
 
-This repo ships **one plugin**, [`runpod`](plugins/runpod/), with nine skills total:
-one router plus eight lanes, the hosted Runpod MCP server config, and worked golden paths.
+This repo ships **one plugin**, [`runpod`](plugins/runpod/), with eight skills total:
+one router plus seven lanes, the hosted Runpod MCP server config, and worked golden paths.
 
 **Compatibility:** installs as a native plugin in **Claude Code, Codex, Gemini,
 and opencode** (with auto-update), and as skills via **skills.sh** for Cursor,
@@ -45,7 +45,7 @@ That's it. Notes:
 ## Install
 
 Same repo, one manifest — pick your agent below. Every route installs the same
-nine skills (one router plus eight lanes), plus a hosted **Runpod MCP server** for
+eight skills (one router plus seven lanes), plus a hosted **Runpod MCP server** for
 control-plane tools.
 Then [authenticate](#authentication).
 
@@ -178,7 +178,6 @@ Start with the **`runpod`** router; it points at the right lane.
 | [`runpod-usage`](plugins/runpod/skills/runpod-usage/SKILL.md) | **Concepts** — pods/serverless, containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](plugins/runpod/skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness, gotchas. |
 | [`runpod-migrate`](plugins/runpod/skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2. |
-| [`runpod-comfyui-models`](plugins/runpod/skills/runpod-comfyui-models/SKILL.md) | Extract ComfyUI workflows from output PNGs when needed, repair missing model metadata, and hand approved downloads to ComfyUI-RunpodDirect. |
 
 See the plugin's [README](plugins/runpod/README.md) for the full guide, the
 development loop, and setup. Worked end-to-end examples live in
@@ -193,7 +192,7 @@ clause — *"and look at the examples first"*:
   translator: audio in, translated text out. Plan it out."*
 - *"Use the runpod-migrate skill to move this repo from GraphQL to REST v2. Show me
   the inventory before you change anything."*
-- *"Use runpod-comfyui-models to repair the missing model links in this workflow, then download the approved files to my Pod."*
+- *"Use the Runpod skills to repair the missing model links in this ComfyUI workflow, then download the approved files to my Pod."*
 - *"Use the Runpod skills and check the examples — deploy this handler to serverless."*
 - *"Use the Runpod skills — cheapest GPU that fits a 13B model?"*
 - *"Use the Runpod skills and check the examples — my endpoint returns `IN_QUEUE` forever."*
