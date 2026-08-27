@@ -63,15 +63,27 @@ finish the authorized work and report once — an optional next step is not a qu
 
 ## Workflow
 
-1. **Extract** (PNG input only): `python3 -B ../scripts/extract_png_workflow.py` pulls
+Shell commands do not resolve like the links in this guide: links resolve relative to
+this file, but a `python3 ../scripts/...` invocation resolves against the agent's
+working directory, which is usually somewhere else. Resolve the skill's `scripts/`
+directory once, from the location of this guide, and use it for every invocation:
+
+```bash
+SKILL_SCRIPTS="$(cd "$(dirname <path-to-this-guide>)/../scripts" && pwd)"
+```
+
+(`<path-to-this-guide>` is the absolute path this reference was loaded from. Verify with
+`ls "$SKILL_SCRIPTS"` — it must list the three scripts below — before running anything.)
+
+1. **Extract** (PNG input only): `python3 -B "$SKILL_SCRIPTS/extract_png_workflow.py"` pulls
    the embedded UI `workflow` from a ComfyUI output PNG into the task's temporary
    directory.
-2. **Inventory**: `python3 -B ../scripts/inventory_workflow_models.py` lists every
+2. **Inventory**: `python3 -B "$SKILL_SCRIPTS/inventory_workflow_models.py"` lists every
    loader selection, subgraphs included — evidence, never an identity decision.
 3. **Resolve** each identity per [comfyui-repair/resolution.md](comfyui-repair/resolution.md),
    stopping at the first `verified` publisher artifact; keep the review manifest
    temporary.
-4. **Apply**: `python3 -B ../scripts/apply_model_metadata.py --allow-unresolved` writes
+4. **Apply**: `python3 -B "$SKILL_SCRIPTS/apply_model_metadata.py" --allow-unresolved` writes
    the new workflow every time, even when nothing could be resolved; patch rules,
    unsafe-URL handling, and the publish contract live in
    [comfyui-repair/metadata.md](comfyui-repair/metadata.md).
