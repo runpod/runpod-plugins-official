@@ -6,6 +6,25 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.0](https://github.com/runpod/runpod-plugins-official/compare/v1.2.0...v1.3.0) (2026-08-28)
+
+
+### Features
+
+* add runpod-templates and runpod-comfyui-models skills ([#54](https://github.com/runpod/runpod-plugins-official/issues/54)) ([63dc276](https://github.com/runpod/runpod-plugins-official/commit/63dc276b7744e16d5bbd0916cbb9bfad79f01c42))
+
+
+### Refactors
+
+* fold ComfyUI workflow repair into runpod-templates ([#55](https://github.com/runpod/runpod-plugins-official/issues/55)) ([4912d93](https://github.com/runpod/runpod-plugins-official/commit/4912d93e5ac4746acf6415ca395413eabf0564f4))
+
+
+### Documentation
+
+* **runpodctl:** document secure registry password input ([#51](https://github.com/runpod/runpod-plugins-official/issues/51)) ([8be10ce](https://github.com/runpod/runpod-plugins-official/commit/8be10ce686487bc75fcd63e06297b1fee13ea12e))
+* **runpodctl:** drop the duplicated install reference ([#49](https://github.com/runpod/runpod-plugins-official/issues/49)) ([d92b127](https://github.com/runpod/runpod-plugins-official/commit/d92b12763d5f20f820f5690dd023250ac3cbf4cf))
+* **runpod:** v2.10.0 surface, source-of-truth posture, and golden paths as step 0 of routing ([#44](https://github.com/runpod/runpod-plugins-official/issues/44)) ([4e6ba01](https://github.com/runpod/runpod-plugins-official/commit/4e6ba01676247216c12047237327526cdb52bf54))
+
 ## [1.2.0](https://github.com/runpod/runpod-plugins-official/compare/v1.1.2...v1.2.0) (2026-08-19)
 
 
