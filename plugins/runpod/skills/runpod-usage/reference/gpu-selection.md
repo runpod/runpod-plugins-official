@@ -1,7 +1,7 @@
 # GPU selection
 
-How to pick a GPU: size VRAM to the model first, then choose a tier/pool, then
-worry about cloud, availability, and placement.
+How to pick a GPU: size VRAM to the model first, pin the CUDA floor your image needs,
+then choose a tier/pool, then worry about cloud, availability, and placement.
 
 ## Step 1: size VRAM to the model
 
@@ -34,7 +34,60 @@ Sizes assume fp16 inference; quantize to drop a tier or two.
 | 70B | ~140 GB | 2x 80 GB, or one `HOPPER_141` (H200) / `BLACKWELL_180` (B200) |
 | > 70B | 200 GB+ | multi-GPU 80 GB+, or Blackwell / H200 with `gpu_count` > 1 |
 
-## Step 3: GPU tiers and pools
+## Step 3: pin the CUDA floor
+
+The GPU decides how much fits; the **host's CUDA version** decides whether your image
+runs on it at all. A container built against a newer CUDA than the host driver provides
+fails at startup or falls back to CPU — and nothing in a pod/endpoint create rejects the
+combination for you, so state the constraint explicitly.
+
+**Default to a floor of `12.8`.** That is the line the current official images target
+(`runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` and newer, `runpod/comfyui:cuda12.8`),
+and it is the minimum for Blackwell cards (RTX 5090, RTX PRO 6000 Blackwell, B200).
+Go to `13.0` only when the image itself is a CUDA-13 build — e.g.
+`runpod/comfyui:cuda13.0`, or the `cu1300` cluster PyTorch image — not merely because the
+GPU is new. Leave the floor off only for a CPU pod, or when you deliberately need an
+older host for an old image (a torch 2.1 / `cu118` build, say).
+
+| Lane | How to set it |
+|------|---------------|
+| `runpodctl` | `pod create --min-cuda-version 12.8` / `serverless create --min-cuda-version 12.8` (both verified against the vendored 2.10.0 command surface; `template create` has no such flag — templates carry `allowedCudaVersions` instead) |
+| REST v2 | `gpu.minCudaVersion: "12.8"` on `POST /v2/pods` and `POST /v2/serverless` |
+| flash | `min_cuda_version=CudaVersion.V12_8` — already the default (`skills/flash/reference/api.md`) |
+| Runpod MCP | The `create-pod` / `create-endpoint` tool schemas carry no CUDA parameter as of 2026-09-02 — check the live schema, and when a floor matters use `runpodctl` or post to v2 directly |
+
+### Floor vs exact set
+
+- **`minCudaVersion`** — an open-ended floor, `major.minor`, compared **numerically**, so
+  `12.11` is above `12.2`. This is what you want almost always.
+- **`allowedCudaVersions`** — an exact-match array. Anything not listed is excluded, so a
+  version no machine currently reports yields a **capacity error rather than a fallback**.
+  Reach for it only when you need to exclude a newer version too (the ComfyUI 12.8
+  template does exactly this — see `skills/runpod-templates/reference/comfyui.md`).
+- The two are **mutually exclusive** when `allowedCudaVersions` is non-empty (`400` if
+  both are sent). An explicit `[]` states "no constraint" and may accompany a floor.
+- A **template** can carry `allowedCudaVersions`, which is expanded into GPU pod and
+  endpoint creates from it. CPU pods ignore it — a CPU workload has no `gpu` block at all.
+
+### Discover what is actually available
+
+Don't guess a version — a floor set above current stock reads as "no capacity":
+
+```bash
+# per-GPU CUDA versions, each tagged with whether it has free capacity right now
+curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  "https://api.runpod.io/v2/catalog/gpus?include=AVAILABILITY&product=POD&minCudaVersion=12.8"
+```
+
+`cudaVersions[]` comes back only with `include=AVAILABILITY`. The `minCudaVersion` *query*
+param accepts a bare major (`12`) unlike the create-body field; `cudaVersions` requires
+`major.minor` and is mutually exclusive with it. Use `product=SERVERLESS` when sizing an
+endpoint — the same GPU can be scarce for pods and plentiful for serverless.
+
+If the floor leaves you short on capacity, drop it one line (12.8 → 12.6) **only** if the
+image tolerates it; otherwise widen the GPU list or the region instead.
+
+## Step 4: GPU tiers and pools
 
 A **GPU pool** groups interchangeable GPUs by VRAM tier. Requesting a pool lets
 Runpod pick any available GPU in that tier (better availability); pinning an exact
@@ -66,7 +119,7 @@ in `docs/references/gpu-types.mdx`.
 Rule of thumb: prefer **fewer high-end GPUs over more low-end GPUs**. One 80 GB card
 usually beats two 40 GB cards for a model that fits.
 
-## Step 4: Secure vs Community Cloud
+## Step 5: Secure vs Community Cloud
 
 - **Secure Cloud** — T3/T4 data centers, high redundancy, stable public IPs. Use for
   production and sensitive data. Standard pricing.
@@ -74,7 +127,7 @@ usually beats two 40 GB cards for a model that fits.
   public IPs can change on migrate/restart. Good for cost-sensitive, tolerant work.
   (No new hosts are being onboarded; existing capacity remains.)
 
-## Step 5: availability and multi-GPU selection
+## Step 6: availability and multi-GPU selection
 
 `runpodctl gpu list` reports on-demand `securePricePerHr` / `communityPricePerHr` per
 GPU (explicitly `null` when that cloud doesn't offer it) plus a
@@ -98,7 +151,7 @@ GPU supply fluctuates by tier and region. To avoid throttling:
 - Use `gpu_count` > 1 (Serverless) / multi-GPU Pods when a model exceeds a single
   card's VRAM.
 
-## Step 6: data-center placement
+## Step 7: data-center placement
 
 - Restricting an endpoint or Pod to specific data centers **shrinks the available
   GPU pool** — allow all regions for maximum availability unless you have a reason
