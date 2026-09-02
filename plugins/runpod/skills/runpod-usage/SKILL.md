@@ -38,7 +38,7 @@ Read the one reference file that matches the question:
 | Build a Docker image Runpod can run (handler contract, Dockerfile, `--platform=linux/amd64`) | `reference/docker.md` |
 | **How to build an image well** — base image, layering, bake-in vs volume, pod vs serverless (queue/LB) contract | `reference/building-images.md` |
 | Where data lives — container disk vs network volume, model caching, S3 access | `reference/storage.md` |
-| Which GPU / how much VRAM / cost & availability / data centers | `reference/gpu-selection.md` |
+| Which GPU / how much VRAM / **which CUDA version** / cost & availability / data centers | `reference/gpu-selection.md` |
 | Why a stopped pod may not restart with a GPU — pods are bound to one machine; what else is per machine | `reference/pods-and-machines.md` |
 | Endpoint releases, rolling updates, version overlap, GitHub builds | `reference/endpoint-builds-and-releases.md` |
 | Storing API tokens and keys as secrets and referencing them from env vars | `reference/secrets.md` |

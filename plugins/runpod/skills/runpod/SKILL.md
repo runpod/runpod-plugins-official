@@ -156,7 +156,7 @@ moment an op needs a flag/feature MCP doesn't expose.**
 
 For any "get <X> running on Runpod" task, follow the **development loop** in
 `runpod-usage/reference/development-loop.md`: decide pod vs serverless → provision → set up
-(only if from-scratch) → verify → deliver → cost-guard + teardown. Two rules bind within it:
+(only if from-scratch) → verify → deliver → cost-guard + teardown. These rules bind within it:
 
 - **Prefer a prebuilt template / Hub worker over building an image from scratch** —
   official pod templates are indexed in [`runpod-templates`](../runpod-templates/SKILL.md).
@@ -172,6 +172,11 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
   network volume; otherwise the cache is the cheaper default. Cache capacity is per
   machine, so time both on the user's own endpoint rather than quoting a threshold. See
   [`runpodctl/reference/model-caching.md`](../runpodctl/reference/model-caching.md).
+- **Pin the CUDA floor on every GPU create** — `--min-cuda-version 12.8` in runpodctl,
+  `gpu.minCudaVersion: "12.8"` in REST v2 and MCP (`13.0` only for a CUDA-13 image). Without it the create accepts any host CUDA version
+  and a modern image can land on a host too old to run it, which reads as a container that
+  dies at startup or silently runs on CPU:
+  [`gpu-selection.md`](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 
 It branches to two sub-loops:
 

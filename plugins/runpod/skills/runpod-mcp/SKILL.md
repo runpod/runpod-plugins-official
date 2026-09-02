@@ -110,6 +110,12 @@ For whole multi-resource jobs, read the golden paths linked at the top of this s
 - **Use runpodctl instead** for: **`send`/`receive`** file transfer, **SSH** key
   management, **`doctor`** setup, **model cache** — or any shell-only agent, or
   when the user wants a reproducible command.
+- **Pin the CUDA floor on every GPU create.** `create-pod` and `create-endpoint` take
+  `gpu.minCudaVersion` (`"12.8"` by default, `"13.0"` only for a CUDA-13 image);
+  `create-template` takes `allowedCudaVersions`. Without a floor the create accepts any
+  host CUDA version, and a modern image can land on a host too old to run it. Why 12.8
+  and when to use 13.0:
+  [`runpod-usage` gpu-selection](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 - **Hand pod creation to runpodctl** for a **multi-GPU priority list** (v2 `create-pod`
   takes one GPU type; check the live schema before assuming, and watch for a `_warning`
   on an otherwise-successful create), or for a **template + CPU** pod together, which
