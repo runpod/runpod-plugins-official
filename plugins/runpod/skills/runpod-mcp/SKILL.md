@@ -7,7 +7,8 @@ description: >-
   (create-pod, list-endpoints, …) are connected in this session, or to connect
   them (hosted OAuth or local npx). Prefer this over runpodctl for plain infra
   CRUD when MCP is available; use runpodctl for the terminal, file transfer, or
-  SSH setup.
+  SSH setup. Connection lane only — the server itself carries its tool surface
+  and its own task playbooks, so read those rather than a list kept here.
 allowed-tools: Bash(npx:*), Bash(claude:*)
 compatibility: Linux, macOS, Windows
 metadata:
@@ -23,11 +24,18 @@ so an MCP-capable agent can manage infrastructure without shelling out. It is th
 same Runpod REST API that `runpodctl` uses — pick MCP when its tools are
 connected (typed params, structured errors, no shell quoting).
 
-**For a multi-step job, read the worked example before calling tools.** Tool calls are easy
-to issue and easy to issue in the wrong order — the verified end-to-end sequences live in
-[runpod/golden-paths/README.md](../runpod/golden-paths/README.md) (image → template →
-endpoint, pod → volume → serverless, multi-region, autoscaling, monitoring). This skill
-covers what each tool does; the paths cover what order to do them in and what it costs.
+**For a multi-step job, read the worked example before calling tools.** Tool calls are
+easy to issue and easy to issue in the wrong order — the verified end-to-end sequences
+live in [runpod/golden-paths/README.md](../runpod/golden-paths/README.md) (image →
+template → endpoint, pod → volume → serverless, multi-region, autoscaling, monitoring).
+They are how the job was done before, costs included. The server's own resources cover
+procedure within one journey; the paths cover what order to do a whole job in.
+
+**This skill covers connecting and lane choice only.** What the tools are and what
+each one accepts comes from the connected server, not from this file — see
+[The server is the source of truth](#the-server-is-the-source-of-truth). That split
+is deliberate: the server ships weekly, a tool list written down here does not, and
+a stale list reads as authoritative right up to the moment it is wrong.
 
 ## Connect
 
@@ -53,49 +61,46 @@ server directly:
 
 ```bash
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"0"}}}' \
-| curl -s -X POST https://mcp.getrunpod.io/ -H "Content-Type: application/json" \
-    -H "Accept: application/json, text/event-stream" -H "Authorization: Bearer $RUNPOD_API_KEY" -d @-
-# → serverInfo.version e.g. "3.0.0 [RUNPOD_REST_VERSION=v2]"  (verified 2026-07-29)
+| curl -s -X POST https://mcp.getrunpod.io/ \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "Authorization: Bearer $RUNPOD_API_KEY" -d @-
 ```
 
-The MCP server drives Runpod's **REST v2** internally (`RUNPOD_REST_VERSION=v2`), so most
-tools avoid the buggy **public `rest.runpod.io/v1`** control API. Two exceptions worth
-knowing: the Hub, public-endpoint and `set-endpoint-gpus` tools go through GraphQL (so they
-work under either REST version), and **CPU serverless endpoints are not creatable through
-MCP** — v2 has no CPU-endpoint concept at all (`create-endpoint` requires `gpuPoolIds`), so
-use `runpodctl serverless create --compute-type CPU` for those.
+## The server is the source of truth
 
-**Prefer MCP or `runpodctl` over hand-rolled `rest.runpod.io/v1` calls for creating endpoints.**
+Once connected, read the server — do not reason about its tools from memory or from
+this file.
 
-## Tool surface
+1. **The tool list and every parameter** come from the client's own view of the
+   connected server: `/mcp` in Claude Code, or `tools/list`. Each tool carries its
+   own parameter descriptions, generated from Runpod's REST v2 contract. Check there
+   before concluding a capability exists *or* doesn't — an absence you infer from a
+   doc is the one claim that rots silently.
+2. **The task playbooks come from the server too.** It publishes them as MCP resources
+   under `runpod://skills/` — a router at `runpod://skills/runpod` plus a journey skill
+   per task (serverless deploys, pod diagnosis, endpoint operations, cost audits,
+   catalog discovery, API-boundary honesty). Enumerate them with `resources/list` and
+   read the routed one before a multi-step job. They are versioned with the server, so
+   they describe the tools you actually have.
+3. **The wire contract** is the Runpod v2 OpenAPI document at
+   `https://api.runpod.io/v2/openapi.json`, for fields beyond the tool surface.
 
-Structured tools, grouped by resource:
+Coverage, at the resource level only, so you can tell whether this lane applies at
+all: pods, serverless endpoints and their workers and jobs, the Hub (browse and
+deploy), public pay-per-use endpoints, templates, network volumes, container-registry
+auth (including AWS ECR delegations), the GPU/CPU/data-center catalog, and billing.
+Log streaming for pods, workers, and jobs is included. Anything finer than that —
+which fields a create accepts, which tier is immutable, what a delete returns — read
+from the live schema.
 
-- **Pods** — list, get, create, update, start, stop, restart, delete, stream logs.
-- **Serverless endpoints** — list, get, create, update, delete; list workers; list releases; stream worker logs.
-  - **Logs are no longer an MCP-only capability** — runpodctl grew `pod logs` and `serverless logs` in v2.10.0. MCP still returns already-parsed, bounded frames, which is the easier shape inside an agent; reach for the CLI when you are shell-only or want `--follow`. Job *output* streaming (`stream-job`) remains MCP-only.
-  - `create-endpoint` takes `endpointType: QUEUE` (default) or `LOAD_BALANCER` — see golden path 14. The routing type is fixed at creation; `update-endpoint` cannot change it.
-  - Read an endpoint's invoke URLs from `requestUrls` on the get/list reply instead of assembling them.
-  - To pin a specific GPU **SKU** on an existing endpoint use `set-endpoint-gpus`; `create-endpoint`/`update-endpoint` expose only `gpuPoolIds` and can't express a SKU (`deploy-hub-repo` can pin one at deploy time via `gpuIds` exclusions).
-- **Jobs (serverless runtime)** — run, runsync, status, stream, cancel, retry, health, purge queue.
-- **Hub** — `list-hub-repos` (public catalog of prebuilt Serverless workers and Pod templates: vLLM, ComfyUI, …) and `deploy-hub-repo`, which deploys a repo's listed release as an endpoint — the same as clicking Deploy on the Hub.
-- **Public endpoints** — `list-public-endpoints`: managed pay-per-use model APIs (text/image/video/audio) that need no deployment. Call the returned endpointId with `run-endpoint`/`runsync-endpoint`.
-- **Templates** — list, get, create, update, delete.
-- **Network volumes** — list, get, create, update, delete. `create-network-volume` takes `volumeType` (`STANDARD` | `HIGH_PERFORMANCE`) and a size of 10–4096 GB; omit `volumeType` to get the data center's default tier. The tier is **immutable after creation** — `update-network-volume` can't change it.
-- **Container registry auth** — list, get, create, delete. A username + password for **any** registry; pass the resulting id as `containerRegistryAuthId` on create-pod/create-endpoint.
-- **ECR delegations** (`list-`/`create-`/`delete-registry-delegation`) — **AWS ECR only**, v2 only, and stores no credentials: you register a repository ARN and Runpod gets scoped pull access instead. Prefer it over a stored username/password for ECR. The reply carries a `dockerRegistryUri` — that's the image URI to deploy with.
-- **Catalog** — list/get GPU types, list/get CPU types, list/get data centers.
-- **Billing** — scoped usage/cost breakdowns (`get-billing`).
+One protocol quirk worth knowing, because it looks like a bug: delete tools can return
+`isError: true` with "Unexpected end of JSON input" **even on success**, since the REST
+API answers 204 No Content. Confirm with a follow-up `get-`/`list-` (a deleted resource
+then 404s) rather than retrying the delete.
 
-> The tool list above is a map, not a contract. The server is the source of truth —
-> `/mcp` (or your client's tool list) shows exactly what the connected version exposes,
-> and each tool carries its own parameter descriptions. Check there before assuming a
-> capability exists or doesn't.
-
-> Delete tools (`delete-template`, `delete-pod`, …) can return `isError: true` with
-> "Unexpected end of JSON input" **even on success** — the Runpod REST API returns
-> 204 No Content. Don't treat it as failure; confirm with a follow-up `get-`/`list-`
-> (a deleted resource then 404s).
+For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage/`.
+For whole multi-resource jobs, read the golden paths linked at the top of this skill.
 
 ## Use MCP vs runpodctl
 
@@ -104,17 +109,13 @@ Structured tools, grouped by resource:
 - **Use runpodctl instead** for: **`send`/`receive`** file transfer, **SSH** key
   management, **`doctor`** setup, **model cache** — or any shell-only agent, or
   when the user wants a reproducible command.
-- **Hand pod creation to runpodctl** for a **multi-GPU priority list** (MCP's v2
-  create-pod takes one GPU type; extra `gpuTypeIds` are dropped with a `_warning`
-  on success), or for a **template + CPU** pod together — `create-pod` rejects that
-  combination, since a template deploy is GPU-and-v2-only. Each alone is fine in
-  MCP: `templateId` (v2-only, `imageName` then optional, and each field you pass
+- **Hand pod creation to runpodctl** for a **multi-GPU priority list** (v2 `create-pod`
+  takes one GPU type; check the live schema before assuming, and watch for a `_warning`
+  on an otherwise-successful create), or for a **template + CPU** pod together, which
+  v2 does not express. Each alone is fine in MCP: `templateId` (each field you pass
   replaces the template's whole value rather than merging) or `computeType: "CPU"`.
 - **Not this lane:** writing/deploying your own Python (→ flash); downloading
   models or building/pushing images (→ companion-clis).
-
-For concepts (pods vs serverless, GPU selection, storage), read
-`../runpod-usage/`.
 
 ## Source & docs
 

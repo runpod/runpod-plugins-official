@@ -108,7 +108,8 @@ editing the repo. Each is its own checkable rule.
 4. **Capability matrix** — the runpod-mcp vs runpodctl precedence rule is canonical
    in `skills/runpod/SKILL.md`.
    - When it changes, update `skills/runpod/SKILL.md`, `skills/runpod-mcp/SKILL.md`, and
-     `skills/runpodctl/SKILL.md` in the same change.
+     `skills/runpodctl/SKILL.md` in the same change. In `skills/runpod-mcp/SKILL.md` that
+     means the *lane choice* only — never a tool list or a field-level claim (see 9).
    - State the rule only in `skills/runpod/SKILL.md`; do not restate it elsewhere.
 5. **Golden paths** — they are **step 0 of routing, not an appendix**.
    `skills/runpod/SKILL.md` tells an agent to match the task against the golden-paths
@@ -155,6 +156,10 @@ editing the repo. Each is its own checkable rule.
    - Prefer a positive claim ("read them with `serverless logs`") or silence. If an absence
      claim is genuinely load-bearing, give it a **version floor** ("needs ≥ v2.10.0") rather
      than an open-ended "cannot", and add it to the check's `ALLOW` list with a reason.
+   - **The MCP tool surface is not documented in this repo at all.** No hook can gate it —
+     the server ships on its own cadence and publishes its tools (with generated parameter
+     descriptions) plus its own task playbooks under `runpod://skills/`, so a copy here is
+     stale by construction.
    - **An eval asserting a false negative is the worst case** — it trains the wrong behavior
      in rather than merely misinforming a reader. This has already happened twice: v2.9.0
      added `serverless health` and v2.10.0 added `serverless logs`/`pod logs`, each
