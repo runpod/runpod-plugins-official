@@ -315,7 +315,7 @@ are **pod on-demand** rates. Shape, stock-value vocabulary and the `"none"` vs
 omitted-key sentinel:
 [reference/output-and-errors.md](reference/output-and-errors.md#gpu-pricing-and-per-data-center-availability).
 
-`ssh info` gives connection details, not a session — if interactive SSH isn't available, run `ssh user@host "command"`. **Registry auth, `billing` history, and SSH key management** (`ssh add-key`/`remove-key`) are in [reference/command-reference.md](reference/command-reference.md).
+`ssh info` gives connection details, not a session — if interactive SSH isn't available, run `ssh user@host "command"`. **Registry auth, `billing` history, and SSH key management** (`ssh add-key`/`remove-key`) are in [reference/command-reference.md](reference/command-reference.md). `ssh info` itself verifies host keys the ordinary OpenSSH way; the **unreleased** host key pinning that the deprecated `project`/`exec python` paths use, and why a mismatch there must never be cleared automatically, is in [reference/command-reference.md](reference/command-reference.md#pod-host-key-trust-unreleased).
 
 ### File Transfer
 
