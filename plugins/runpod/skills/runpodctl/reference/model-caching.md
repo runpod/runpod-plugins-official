@@ -12,7 +12,45 @@ where the weights come from, how large/private they are, and how often they chan
 
 Rule of thumb: on HuggingFace → **HF cache**; your own artifact → **Model Repository**
 (or a network volume if you want to manage the filesystem yourself); need a fully
-reproducible image or system libs baked in → **bake**.
+reproducible image or system libs baked in → **bake**. But check the size first — see
+the next section.
+
+## Size first: cache or network volume
+
+The HF cache is the right default *because it costs nothing* — you don't pay for the
+cached copy and you aren't billed for download time. It has two limits that decide
+whether it is still the right call for a given model:
+
+- **The per-host cache is finite.** It holds a working set, not your whole model
+  library. A very large model, or several models attached to one endpoint, will not all
+  stay resident.
+- **A cache hit is per host, per region.** The speedup only happens on a host that
+  already holds those weights. On a host or region that doesn't, the worker has to pull
+  the model before it can serve.
+
+That second point is the expensive one, and it is **invisible in the endpoint UI**: the
+worker looks like it is starting normally while it sits there downloading. You are
+paying for that worker the whole time, and nothing in the job status says "downloading"
+— it just looks like a very long cold start. The bigger the model, the more often you
+eat it, because large weights are evicted from host caches sooner and are less likely to
+be pre-warmed in a region you scale into.
+
+**So:**
+
+| Model size vs the cache | Use |
+|---|---|
+| Comfortably small — fits and stays resident | **HF model cache** (`--model-reference`). Free, no download billing, seconds-fast cold start. |
+| Large enough that it won't reliably stay cached, or you're scaling across regions | **Network volume**, pre-loaded once. Costs storage per month, but the weights are *there* — no per-region re-download, no idle worker burning GPU time waiting on a pull. |
+
+The trade is plain: the cache is free but best-effort and capped; a network volume costs
+money but is guaranteed-resident — and **pinned to one data center**, so multi-region
+means one pre-loaded volume per DC (see golden path
+[10](../../runpod/golden-paths/10-multi-region-ha-serverless.md)).
+
+If you can't tell which side of the line a model falls on, watch the worker logs on the
+first cold start in a fresh region (`runpodctl serverless logs <endpoint-id>`, or the MCP
+`stream-worker-logs`). Weight-download time measured in **minutes** rather than seconds
+means the cache is not carrying that model — move it to a volume.
 
 ## HF model cache — `--model-reference`
 
@@ -35,7 +73,10 @@ runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090
 - Gated/private HF models: provide an `HF_TOKEN` (endpoint env var).
 
 You are **not billed for download time** with the cache, and cold starts drop to
-seconds because workers start on hosts that already hold the model.
+seconds **on a host that already holds the model**. On one that doesn't, the worker
+pulls the weights first — the download itself isn't billed, but the worker is up and
+billing while it waits, and nothing in the job status shows why. See
+[Size first](#size-first-cache-or-network-volume).
 
 ## Model Repository — `runpodctl model`
 

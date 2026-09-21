@@ -161,6 +161,15 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
   official pod templates are indexed in [`runpod-templates`](../runpod-templates/SKILL.md).
 - **Before delivering, verify the workload with a real request from outside the pod/endpoint
   — a "Running"/"ready" status does not mean it is serving.**
+- **Default to Secure Cloud.** Community Cloud is cheaper but less stable — hosts can be
+  reclaimed mid-run and public IPs change on migrate/restart. Only deploy Community when
+  the user explicitly asks, and tell them the trade. (`runpodctl pod create` already
+  defaults to `--cloud-type SECURE`; don't override it.)
+- **Size the model against the host cache before choosing it.** The HF model cache is free
+  and fast, but it is capped and only helps on hosts that already hold the model — a model
+  too big for it leaves workers sitting idle (and billing) while weights download in a new
+  region. Past that size, pre-load a network volume instead. See
+  [`runpodctl/reference/model-caching.md`](../runpodctl/reference/model-caching.md).
 
 It branches to two sub-loops:
 

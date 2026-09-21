@@ -68,11 +68,21 @@ usually beats two 40 GB cards for a model that fits.
 
 ## Step 4: Secure vs Community Cloud
 
+**Default to Secure Cloud.** Recommend and deploy Secure unless the user explicitly asks
+for Community, and say why when they do.
+
 - **Secure Cloud** — T3/T4 data centers, high redundancy, stable public IPs. Use for
-  production and sensitive data. Standard pricing.
-- **Community Cloud** — vetted peer-to-peer hosts, cheaper, variable reliability;
-  public IPs can change on migrate/restart. Good for cost-sensitive, tolerant work.
-  (No new hosts are being onboarded; existing capacity remains.)
+  production and sensitive data. Standard pricing. **This is the default** (`runpodctl
+  pod create --cloud-type` defaults to `SECURE`; leave it alone).
+- **Community Cloud** — vetted peer-to-peer hosts, cheaper, but noticeably less stable:
+  hosts can disappear or be reclaimed mid-run, public IPs change on migrate/restart, and
+  a public port 22 needs `--public-ip`. No new hosts are being onboarded; existing
+  capacity remains. Only pick it when the user asks for the lower price *and* the work
+  tolerates an interruption — throwaway experiments, batch work that can restart.
+
+The price gap is not free: an interrupted long run costs more than it saved. When a user
+asks for the cheapest option, quote the Community rate but recommend Secure, and let
+them choose.
 
 ## Step 5: availability and multi-GPU selection
 

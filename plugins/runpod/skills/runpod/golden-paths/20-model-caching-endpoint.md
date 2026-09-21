@@ -117,6 +117,14 @@ Results from the 2026-07-15 live run (worker logs read via the Runpod MCP `strea
   fail to resolve.
 - **Readiness, not fire-and-forget** — a fresh endpoint reports created before any worker
   is ready; poll `/health` before calling (see [15 — monitor & debug](15-monitor-and-debug.md)).
+- **Check the model's size against the cache before choosing this path.** The cache is
+  capped and per-host: a model too large to stay resident gets re-pulled whenever a
+  worker lands on a host or region that doesn't hold it. That shows up as a worker that
+  looks like it is just starting slowly while it is really downloading — and you pay for
+  that worker the entire time. Past that size, pre-load a **network volume** instead
+  (golden path [07](07-network-volume-handoff.md)); it costs storage but removes the
+  invisible idle. See
+  [`reference/model-caching.md` → Size first](../../runpodctl/reference/model-caching.md#size-first-cache-or-network-volume).
 - **First cold start can be very long.** Run 1 (2026-07-14): worker-vLLM sat
   `initializing` >20 min on a fresh RTX 4090 host (first-ever ~10 GB image pull) and never
   readied. Run 2: readied in **162 s** once the image was warm on the pool. Budget

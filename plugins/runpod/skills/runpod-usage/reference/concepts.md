@@ -18,10 +18,13 @@ Use a Pod when:
 
 Not a good fit when traffic is bursty or idle much of the day — you pay for idle time.
 
-Two clouds:
+Two clouds — **default to Secure Cloud**:
 
 - **Secure Cloud** — T3/T4 data centers, high redundancy. Production and sensitive data.
-- **Community Cloud** — vetted peer-to-peer providers, cheaper, variable reliability.
+  Use this unless the user explicitly asks for Community.
+- **Community Cloud** — vetted peer-to-peer providers, cheaper, but less stable: hosts
+  can go away mid-run and public IPs change on migrate/restart. Fine for throwaway or
+  restartable work, not for anything long-running or production.
   (Runpod is no longer onboarding new Community Cloud hosts; existing capacity remains.)
 
 Limits: no Docker Compose (Runpod runs Docker for you), no UDP (TCP/HTTP only), no Windows.
