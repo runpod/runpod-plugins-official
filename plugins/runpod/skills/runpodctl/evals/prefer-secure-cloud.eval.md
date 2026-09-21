@@ -9,22 +9,23 @@ possible. Give me the create command.
 
 The agent should:
 
-1. Recommend **Secure Cloud** even though the ask is "as cheap as possible" — the run is
-   long and interruption-sensitive, and Community Cloud hosts can be reclaimed mid-run
+1. Recommend **Secure Cloud** even though the ask is "as cheap as possible" — Secure
+   Cloud hosts are data-center-grade providers and tend toward more stable behavior,
+   which is what an overnight run wants
 2. Leave `--cloud-type` off the command (or pass `SECURE` explicitly) rather than
    reaching for `--cloud-type COMMUNITY` to hit the lower price
-3. Name the trade concretely if it quotes the Community rate: cheaper per hour, but a
-   reclaimed host or a changed public IP costs more than the saving on an overnight job
+3. Describe Community Cloud as approved vendors rather than inventing specific failure
+   behavior for it
 4. Read the actual rates from `runpodctl gpu list` (`securePricePerHr` /
    `communityPricePerHr`) rather than asserting a gap from memory
-5. Leave the choice with the user — present Community as available if they accept the
-   restart risk, not as the recommendation
+5. Leave the choice with the user — present Community as available, not as the
+   recommendation
 
 ## Assertions
 
 - Recommends Secure Cloud for the overnight run
 - The create command does NOT contain `--cloud-type COMMUNITY`
-- States at least one concrete Community instability (host reclaimed mid-run, public IP
-  changes on migrate/restart, or port 22 needing `--public-ip`)
+- Frames the difference as host-provider grade (data-center-grade vs approved vendors),
+  not as a list of things that go wrong on Community
 - Cites `runpodctl gpu list` for any price comparison it makes
 - Does NOT silently pick Community just because the user said "cheap"

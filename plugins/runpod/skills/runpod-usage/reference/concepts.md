@@ -20,11 +20,11 @@ Not a good fit when traffic is bursty or idle much of the day — you pay for id
 
 Two clouds — **default to Secure Cloud**:
 
-- **Secure Cloud** — T3/T4 data centers, high redundancy. Production and sensitive data.
-  Use this unless the user explicitly asks for Community.
-- **Community Cloud** — vetted peer-to-peer providers, cheaper, but less stable: hosts
-  can go away mid-run and public IPs change on migrate/restart. Fine for throwaway or
-  restartable work, not for anything long-running or production.
+- **Secure Cloud** — T3/T4 data centers run by data-center-grade host providers, high
+  redundancy. Production and sensitive data. Use this unless the user explicitly asks
+  for Community.
+- **Community Cloud** — approved vendors, cheaper. Secure Cloud's data-center-grade
+  providers tend toward more stable behavior, which is why Secure is the default.
   (Runpod is no longer onboarding new Community Cloud hosts; existing capacity remains.)
 
 Limits: no Docker Compose (Runpod runs Docker for you), no UDP (TCP/HTTP only), no Windows.
