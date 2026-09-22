@@ -128,8 +128,17 @@ Results from the 2026-07-15 live run (worker logs read via the Runpod MCP `strea
 - **One cached model per endpoint** (platform limit, docs → Current limitations) even
   though `--model-reference` is a repeatable flag. A repo with several quantizations
   currently downloads **all** of them.
+- **Cache capacity is per machine.** The host tier is a share of each machine's own
+  disk, so the same model can fit one host and not another — two workers on one endpoint
+  can cold-start at very different speeds, and there is no cache-size number to look up.
+- **A tier that can't serve you fails quietly.** If the shared per-data-center copy is
+  unusable, there's no error — you just fall back to per-host downloads and it feels
+  slower. Don't chase it as a bug.
 - **No published list of model-cache regions.** Don't tell a user which regions support
-  it — deploy and measure instead.
+  it. Check which data centers offer network volumes (`list-data-centers` →
+  `networkVolumeTypes`) as the list to check, then deploy and measure.
+- **Measure your own endpoint.** This is beta and doesn't behave identically for every
+  account or host — someone else's benchmark says little about yours.
 - **First cold start can be very long.** Run 1 (2026-07-14): worker-vLLM sat
   `initializing` >20 min on a fresh RTX 4090 host (first-ever ~10 GB image pull) and never
   readied. Run 2: readied in **162 s** once the image was warm on the pool. Budget

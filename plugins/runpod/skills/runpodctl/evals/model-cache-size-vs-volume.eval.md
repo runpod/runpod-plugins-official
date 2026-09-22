@@ -18,7 +18,8 @@ The agent should:
 3. Lean toward a **pre-loaded network volume** for a latency-sensitive endpoint at this
    size, while saying the cache is the reasonable default when latency is not critical
 4. Recommend **measuring both** on the user's own model and region rather than asserting
-   a threshold — there is no published cache quota
+   a threshold — cache capacity is a share of each machine's disk, so it varies by host
+   and there is no number to quote; a benchmark from elsewhere doesn't transfer
 5. Note that a network volume is **pinned to one data center**, so multi-region means one
    pre-loaded volume per DC
 6. On the region question: say **Runpod publishes no list** of model-cache-enabled data
@@ -31,6 +32,8 @@ The agent should:
 - Describes the miss as a queued job / delayed worker start, not a billing leak
 - Mentions the volume's single-data-center pinning for the multi-region case
 - Suggests testing both rather than quoting a hard size cutoff
+- Says capacity varies by host rather than implying a single platform-wide cache size
+- Treats inconsistent cold starts across workers as expected, not as a broken endpoint
 - Does NOT claim the worker bills while downloading
 - Does NOT state a list of regions that support the model cache as fact
 - Does NOT claim `--model-reference` makes cold starts fast unconditionally

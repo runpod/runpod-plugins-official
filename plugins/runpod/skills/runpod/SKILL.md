@@ -168,8 +168,8 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
 - **Cache vs network volume is a latency call, not a cost call.** Download time is never
   billed, but on a cache miss Runpod holds the worker start until the model lands — the
   job sits in the queue and the endpoint looks idle. Latency-sensitive → pre-load a
-  network volume; otherwise the cache is the cheaper default, and the two are worth
-  timing against each other. See
+  network volume; otherwise the cache is the cheaper default. Cache capacity is per
+  machine, so time both on the user's own endpoint rather than quoting a threshold. See
   [`runpodctl/reference/model-caching.md`](../runpodctl/reference/model-caching.md).
 
 It branches to two sub-loops:

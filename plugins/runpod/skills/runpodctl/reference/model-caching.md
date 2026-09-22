@@ -38,6 +38,17 @@ reads the shared copy. Runpod's own writeup says quota and eviction policy on th
 DC-scoped tier are "still open problems, not solved ones", and that a full volume falls
 back to origin downloads. Treat residency as best-effort, not a guarantee.
 
+**Capacity is per machine, not per platform.** The host tier is a share of each
+machine's own disk, so how much it holds depends on the machine your worker lands on —
+the same model can fit one host and not another. That is why there is no cache-size
+number to look up, and why two workers on the same endpoint can cold-start at very
+different speeds.
+
+**A tier that can't serve you fails quietly.** If the shared copy is unusable — the data
+center isn't set up for it, or its storage is full — you don't get an error. The
+endpoint falls back to per-host downloads and just feels slower. Inconsistent cold
+starts across workers on one endpoint are the normal symptom, not a bug to chase.
+
 ### Which to pick
 
 | Situation | Use |
@@ -46,10 +57,15 @@ back to origin downloads. Treat residency as best-effort, not a guarantee.
 | **Not latency-sensitive**, or the model isn't huge | **HF model cache** (`--model-reference`). Free, nothing to pre-load, and a hit is seconds. |
 | Unsure | **Test both.** This is a measurable trade, not a rule — deploy each and time the cold start on your model, in your region. |
 
-Two constraints that push large models toward a volume: the cache tiers have finite
-capacity with no published quota, and a network volume is **pinned to one data center**,
-so multi-region means one pre-loaded volume per DC (golden path
-[10](../../runpod/golden-paths/10-multi-region-ha-serverless.md)).
+**Measure your own endpoint — don't reason from someone else's numbers.** This is a beta
+feature and it does not behave identically for every account or every host today. A
+benchmark from a blog post, a forum thread, or another endpoint tells you very little
+about what yours will do.
+
+Two constraints push large models toward a volume: cache capacity varies by host, so a
+large model's residency is a coin flip rather than a guarantee; and a network volume is
+**pinned to one data center**, so multi-region means one pre-loaded volume per DC
+(golden path [10](../../runpod/golden-paths/10-multi-region-ha-serverless.md)).
 
 To measure it, watch the worker logs on a cold start in a fresh region (`runpodctl
 serverless logs <endpoint-id>`, or the MCP `stream-worker-logs`). Weight-download time in
@@ -63,8 +79,9 @@ regional restriction, and the engineering blog only says the shared tier is
 "scoped per datacenter". Third-party posts claim it is region-limited; none cite a
 source. **Do not state a supported-region list to a user.**
 
-The closest live proxy is which data centers offer network volumes at all, since the
-shared cache tier is built on that per-DC storage. Read it, don't memorize it:
+The right thing to check is which data centers offer network volumes at all: the shared
+tier is built on that per-DC storage, so a data center without it cannot serve a shared
+copy — workers there fall back to per-host downloads. Read it live, don't memorize it:
 
 ```bash
 # MCP: list-data-centers  →  networkVolumeTypes
@@ -73,9 +90,10 @@ shared cache tier is built on that per-DC storage. Read it, don't memorize it:
 Snapshot 2026-09-22 — **17 of 33** data centers report a `networkVolumeTypes` value:
 `AP-JP-1`, `CA-MTL-3`, `CA-MTL-4`, `EU-FR-1`, `EU-NL-1`, `EU-RO-1`, `EUR-IS-1`,
 `EUR-IS-3`, `EUR-NO-1`, `EUR-NO-2`, `US-CA-2`, `US-CO-1`, `US-IL-1`, `US-MO-2`,
-`US-NC-2`, `US-TX-3`. This is **a proxy, not the model-cache list** — say so if you use
-it. If a user needs certainty for a specific region, the honest answer is to deploy there
-and measure the first cold start.
+`US-NC-2`, `US-TX-3`. Necessary, not sufficient — network storage in a data center does
+not by itself prove the cache is enabled there, so present this as **the list to check,
+not the official model-cache region list**. If a user needs certainty for a specific
+region, deploy there and measure the first cold start.
 
 ### Documented limits
 
