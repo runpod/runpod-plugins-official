@@ -165,10 +165,11 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
   hosts are data-center-grade providers and so tend toward more stable behavior. Only
   deploy Community when the user explicitly asks. (`runpodctl pod create` already
   defaults to `--cloud-type SECURE`; don't override it.)
-- **Size the model against the host cache before choosing it.** The HF model cache is free
-  and fast, but it is capped and only helps on hosts that already hold the model — a model
-  too big for it leaves workers sitting idle (and billing) while weights download in a new
-  region. Past that size, pre-load a network volume instead. See
+- **Cache vs network volume is a latency call, not a cost call.** Download time is never
+  billed, but on a cache miss Runpod holds the worker start until the model lands — the
+  job sits in the queue and the endpoint looks idle. Latency-sensitive → pre-load a
+  network volume; otherwise the cache is the cheaper default, and the two are worth
+  timing against each other. See
   [`runpodctl/reference/model-caching.md`](../runpodctl/reference/model-caching.md).
 
 It branches to two sub-loops:

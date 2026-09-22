@@ -1,34 +1,36 @@
-# Size a model against the host cache before choosing `--model-reference`
+# Cache vs network volume is a latency call, and the miss path looks like an idle queue
 
 ## Prompt
 
 I'm deploying a 70B model from HuggingFace to a serverless endpoint and I'll be scaling
-it across a few regions. Should I use the model cache or a network volume?
+it across a few regions. Should I use the model cache or a network volume? Also, is the
+cache available in every region?
 
 ## Expected behavior
 
 The agent should:
 
-1. Recommend a **pre-loaded network volume** for a model this large across regions, not
-   the HF model cache
-2. Explain the cache's two limits: it is capped (a very large model will not reliably
-   stay resident) and a hit is **per host, per region**
-3. Name the failure mode explicitly — on a host or region that doesn't hold the weights,
-   the worker downloads them while looking like a slow cold start, and the worker bills
-   the whole time even though the download itself isn't billed
-4. State the trade honestly: the cache is free, a network volume costs storage per month
-   but the weights are guaranteed resident
+1. Frame the choice as **latency**, not cost — download time is not billed on a cache
+   hit or a miss, so the cache doesn't save money over a volume, it saves setup
+2. Describe the miss path correctly: Runpod holds worker start until the model is
+   downloaded, so the **job sits in the queue** and the endpoint looks idle or stuck
+   when it is actually downloading
+3. Lean toward a **pre-loaded network volume** for a latency-sensitive endpoint at this
+   size, while saying the cache is the reasonable default when latency is not critical
+4. Recommend **measuring both** on the user's own model and region rather than asserting
+   a threshold — there is no published cache quota
 5. Note that a network volume is **pinned to one data center**, so multi-region means one
    pre-loaded volume per DC
-6. Offer a way to measure it rather than guessing — read weight-download time in the
-   worker logs (`runpodctl serverless logs <endpoint-id>`); minutes rather than seconds
-   means the cache is not carrying that model
+6. On the region question: say **Runpod publishes no list** of model-cache-enabled data
+   centers, and offer the network-volume-capable DC list only as a labeled proxy, or
+   offer to deploy and measure
 
 ## Assertions
 
-- Recommends a network volume over the cache for this size + multi-region shape
-- Says the cache is capped AND that a hit is per host/region
-- Describes the invisible idle: worker up and billing while weights download
-- Says the cache costs nothing and the volume costs storage
+- Says download time is NOT billed, on hit or miss
+- Describes the miss as a queued job / delayed worker start, not a billing leak
 - Mentions the volume's single-data-center pinning for the multi-region case
+- Suggests testing both rather than quoting a hard size cutoff
+- Does NOT claim the worker bills while downloading
+- Does NOT state a list of regions that support the model cache as fact
 - Does NOT claim `--model-reference` makes cold starts fast unconditionally

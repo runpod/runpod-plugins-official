@@ -12,45 +12,80 @@ where the weights come from, how large/private they are, and how often they chan
 
 Rule of thumb: on HuggingFace → **HF cache**; your own artifact → **Model Repository**
 (or a network volume if you want to manage the filesystem yourself); need a fully
-reproducible image or system libs baked in → **bake**. But check the size first — see
-the next section.
+reproducible image or system libs baked in → **bake**. Cache vs volume is a latency
+call, not a cost call — see the next section before choosing.
 
-## Size first: cache or network volume
+## Cache or network volume — it is a latency call, not a cost call
 
-The HF cache is the right default *because it costs nothing* — you don't pay for the
-cached copy and you aren't billed for download time. It has two limits that decide
-whether it is still the right call for a given model:
+**You are not billed for model download time, cache hit or miss.** Runpod's docs are
+explicit: if no host already holds the model, "the system delays starting your workers
+until the model is downloaded onto the machine where your workers will run, ensuring you
+still won't be charged for the download time."
 
-- **The per-host cache is finite.** It holds a working set, not your whole model
-  library. A very large model, or several models attached to one endpoint, will not all
-  stay resident.
-- **A cache hit is per host, per region.** The speedup only happens on a host that
-  already holds those weights. On a host or region that doesn't, the worker has to pull
-  the model before it can serve.
+So the thing a cache miss costs you is **time to first response**, not money. And the
+way it shows up is easy to misread: the job **sits in the queue** while the worker start
+is held back for the download. From the outside that looks like a stuck or idle
+endpoint, not a download. It isn't broken — it's the miss path.
 
-That second point is the expensive one, and it is **invisible in the endpoint UI**: the
-worker looks like it is starting normally while it sits there downloading. You are
-paying for that worker the whole time, and nothing in the job status says "downloading"
-— it just looks like a very long cold start. The bigger the model, the more often you
-eat it, because large weights are evicted from host caches sooner and are less likely to
-be pre-warmed in a region you scale into.
+### How the cache actually works
 
-**So:**
+Three tiers, nearest first ([Runpod engineering
+blog](https://www.runpod.io/blog/building-runpods-model-store)): **host-local disk** →
+a **data-center-scoped network volume** → the **origin** (HuggingFace). The scheduler is
+locality-aware — it prefers hosts that already have the model, or can reach it from a
+nearby cache. On a miss, one worker downloads and then everyone in that data center
+reads the shared copy. Runpod's own writeup says quota and eviction policy on that
+DC-scoped tier are "still open problems, not solved ones", and that a full volume falls
+back to origin downloads. Treat residency as best-effort, not a guarantee.
 
-| Model size vs the cache | Use |
+### Which to pick
+
+| Situation | Use |
 |---|---|
-| Comfortably small — fits and stays resident | **HF model cache** (`--model-reference`). Free, no download billing, seconds-fast cold start. |
-| Large enough that it won't reliably stay cached, or you're scaling across regions | **Network volume**, pre-loaded once. Costs storage per month, but the weights are *there* — no per-region re-download, no idle worker burning GPU time waiting on a pull. |
+| **Latency-sensitive** — user-facing, tight SLA, or you scale into fresh regions often and can't absorb a first-request stall | **Network volume**, pre-loaded. Costs storage per month, but the weights are already there. |
+| **Not latency-sensitive**, or the model isn't huge | **HF model cache** (`--model-reference`). Free, nothing to pre-load, and a hit is seconds. |
+| Unsure | **Test both.** This is a measurable trade, not a rule — deploy each and time the cold start on your model, in your region. |
 
-The trade is plain: the cache is free but best-effort and capped; a network volume costs
-money but is guaranteed-resident — and **pinned to one data center**, so multi-region
-means one pre-loaded volume per DC (see golden path
+Two constraints that push large models toward a volume: the cache tiers have finite
+capacity with no published quota, and a network volume is **pinned to one data center**,
+so multi-region means one pre-loaded volume per DC (golden path
 [10](../../runpod/golden-paths/10-multi-region-ha-serverless.md)).
 
-If you can't tell which side of the line a model falls on, watch the worker logs on the
-first cold start in a fresh region (`runpodctl serverless logs <endpoint-id>`, or the MCP
-`stream-worker-logs`). Weight-download time measured in **minutes** rather than seconds
-means the cache is not carrying that model — move it to a volume.
+To measure it, watch the worker logs on a cold start in a fresh region (`runpodctl
+serverless logs <endpoint-id>`, or the MCP `stream-worker-logs`). Weight-download time in
+**minutes** rather than seconds means that region isn't carrying the model for you.
+
+### Regional availability — unknown, don't guess
+
+**Runpod does not publish a list of data centers where the model cache is enabled.** The
+[cached models docs](https://docs.runpod.io/serverless/endpoints/model-caching) state no
+regional restriction, and the engineering blog only says the shared tier is
+"scoped per datacenter". Third-party posts claim it is region-limited; none cite a
+source. **Do not state a supported-region list to a user.**
+
+The closest live proxy is which data centers offer network volumes at all, since the
+shared cache tier is built on that per-DC storage. Read it, don't memorize it:
+
+```bash
+# MCP: list-data-centers  →  networkVolumeTypes
+```
+
+Snapshot 2026-09-22 — **17 of 33** data centers report a `networkVolumeTypes` value:
+`AP-JP-1`, `CA-MTL-3`, `CA-MTL-4`, `EU-FR-1`, `EU-NL-1`, `EU-RO-1`, `EUR-IS-1`,
+`EUR-IS-3`, `EUR-NO-1`, `EUR-NO-2`, `US-CA-2`, `US-CO-1`, `US-IL-1`, `US-MO-2`,
+`US-NC-2`, `US-TX-3`. This is **a proxy, not the model-cache list** — say so if you use
+it. If a user needs certainty for a specific region, the honest answer is to deploy there
+and measure the first cold start.
+
+### Documented limits
+
+- **One cached model per endpoint** ([docs → Current
+  limitations](https://docs.runpod.io/serverless/endpoints/model-caching)). `runpodctl`
+  accepts `--model-reference` repeatedly, so the CLI will take more than one — the
+  platform limit is the binding one.
+- **All quantizations get downloaded.** If a HF repo holds several (4-bit AWQ, 8-bit
+  GPTQ, …), the system currently pulls them all; you can't select one yet.
+- The feature is **beta**.
 
 ## HF model cache — `--model-reference`
 
@@ -66,17 +101,17 @@ runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090
 - Weights land in the standard HF cache dir `/runpod-volume/huggingface-cache/hub/`
   (`models--{org}--{name}/snapshots/{hash}/`), so anything that reads the HF cache
   (Transformers, vLLM, …) picks it up automatically.
-- Repeatable — pass it multiple times to attach multiple models.
+- The CLI flag is repeatable, but the platform currently allows **one cached model per
+  endpoint** (docs → Current limitations).
 - Works with `--template-id` **and** `--hub-id`, but **GPU only** (`--compute-type GPU`).
 - **Requires runpodctl v2.4.0+.** Check `runpodctl version`; the Homebrew tap can lag —
   prefer the [GitHub releases](https://github.com/runpod/runpodctl/releases) binary.
 - Gated/private HF models: provide an `HF_TOKEN` (endpoint env var).
 
-You are **not billed for download time** with the cache, and cold starts drop to
-seconds **on a host that already holds the model**. On one that doesn't, the worker
-pulls the weights first — the download itself isn't billed, but the worker is up and
-billing while it waits, and nothing in the job status shows why. See
-[Size first](#size-first-cache-or-network-volume).
+You are **not billed for download time** — hit or miss. Cold starts drop to seconds on
+a host that already holds the model; on one that doesn't, worker start is held back
+until the download finishes, so the job sits in the queue longer. See
+[Cache or network volume](#cache-or-network-volume--it-is-a-latency-call-not-a-cost-call).
 
 ## Model Repository — `runpodctl model`
 

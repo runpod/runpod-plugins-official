@@ -27,7 +27,7 @@ async `/run` + patience. Total spend across all runs ≈ $0.69.
 | --- | --- |
 | A model **already on HuggingFace** served without image bloat or a DC-pinned volume | **HF model cache (this path)** — `--model-reference`, fastest cold starts |
 | **Your own** artifact (not on HF) served, managed + versioned | Model Repository — `runpodctl model add` (see [`reference/model-caching.md`](../../runpodctl/reference/model-caching.md)) |
-| A **large** model reused across workers where you manage the files | Network volume — golden path [07](07-network-volume-handoff.md) |
+| A **large** model, or a latency-sensitive endpoint that can't absorb a first-request stall | Network volume — golden path [07](07-network-volume-handoff.md) |
 | A **fully reproducible** image / system libs baked in | Bake into image — golden path [05](05-model-to-endpoint-pipeline.md) |
 | Output from a model **Runpod already hosts**, zero infra | Public Endpoint — golden path [11](11-public-endpoints.md) |
 
@@ -117,14 +117,19 @@ Results from the 2026-07-15 live run (worker logs read via the Runpod MCP `strea
   fail to resolve.
 - **Readiness, not fire-and-forget** — a fresh endpoint reports created before any worker
   is ready; poll `/health` before calling (see [15 — monitor & debug](15-monitor-and-debug.md)).
-- **Check the model's size against the cache before choosing this path.** The cache is
-  capped and per-host: a model too large to stay resident gets re-pulled whenever a
-  worker lands on a host or region that doesn't hold it. That shows up as a worker that
-  looks like it is just starting slowly while it is really downloading — and you pay for
-  that worker the entire time. Past that size, pre-load a **network volume** instead
-  (golden path [07](07-network-volume-handoff.md)); it costs storage but removes the
-  invisible idle. See
-  [`reference/model-caching.md` → Size first](../../runpodctl/reference/model-caching.md#size-first-cache-or-network-volume).
+- **A cache miss costs latency, not money.** You are not billed for download time
+  either way; on a miss, Runpod holds the worker start until the model lands, so the
+  **job sits in the queue** and the endpoint looks idle or stuck when it is really
+  downloading. If the project is latency-sensitive, pre-load a **network volume**
+  instead (golden path [07](07-network-volume-handoff.md)). If it isn't, the cache is
+  the cheaper default — and the two are worth timing against each other on your model.
+  See [`reference/model-caching.md` → Cache or network
+  volume](../../runpodctl/reference/model-caching.md#cache-or-network-volume--it-is-a-latency-call-not-a-cost-call).
+- **One cached model per endpoint** (platform limit, docs → Current limitations) even
+  though `--model-reference` is a repeatable flag. A repo with several quantizations
+  currently downloads **all** of them.
+- **No published list of model-cache regions.** Don't tell a user which regions support
+  it — deploy and measure instead.
 - **First cold start can be very long.** Run 1 (2026-07-14): worker-vLLM sat
   `initializing` >20 min on a fresh RTX 4090 host (first-ever ~10 GB image pull) and never
   readied. Run 2: readied in **162 s** once the image was warm on the pool. Budget

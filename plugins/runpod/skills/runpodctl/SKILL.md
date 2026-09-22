@@ -252,6 +252,8 @@ sync between volumes automatically — see golden path
 
 For exact serverless flags, run `runpodctl serverless <action> --help`.
 
+`serverless update --model-reference` includes the server-resolved `modelReferences` in JSON/YAML output; `--clear-models` returns `modelReferences: []`. Other updates do not fetch model references; use `serverless model-status <id>` to inspect them.
+
 ### Templates (alias: tpl)
 
 ```bash
