@@ -161,6 +161,16 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
   official pod templates are indexed in [`runpod-templates`](../runpod-templates/SKILL.md).
 - **Before delivering, verify the workload with a real request from outside the pod/endpoint
   — a "Running"/"ready" status does not mean it is serving.**
+- **Default to Secure Cloud.** Community Cloud hosts are approved vendors; Secure Cloud
+  hosts are data-center-grade providers and so tend toward more stable behavior. Only
+  deploy Community when the user explicitly asks. (`runpodctl pod create` already
+  defaults to `--cloud-type SECURE`; don't override it.)
+- **Cache vs network volume is a latency call, not a cost call.** Download time is never
+  billed, but on a cache miss Runpod holds the worker start until the model lands — the
+  job sits in the queue and the endpoint looks idle. Latency-sensitive → pre-load a
+  network volume; otherwise the cache is the cheaper default. Cache capacity is per
+  machine, so time both on the user's own endpoint rather than quoting a threshold. See
+  [`runpodctl/reference/model-caching.md`](../runpodctl/reference/model-caching.md).
 
 It branches to two sub-loops:
 
