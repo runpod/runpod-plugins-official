@@ -31,7 +31,7 @@ request/response inference API (that is golden path 03, Whisper) — different l
 `endpoint-workflows.md`.
 
 This path uses the **runpodctl** lane: it exposes every flag this needs
-(`--ports`, `--env`, `--network-volume-id`, `--terminate-after`) and gives a
+(`--ports`, `--env`, `--network-volume-id`) and gives a
 non-interactive SSH channel to run install commands. MCP's `create-pod` can also
 set ports/env, but runpodctl is preferred when you need a template lookup + SSH
 exec in one lane (see the router).
@@ -88,16 +88,13 @@ runpodctl pod create \
   --ports "11434/http,22/tcp" \
   --env '{"OLLAMA_HOST":"0.0.0.0","OLLAMA_MODELS":"/workspace/ollama"}' \
   --network-volume-id <volume-id> \
-  --volume-mount-path /workspace \
-  --terminate-after <iso8601 a few hours out>   # cost guard: TERMINATES (not --stop-after)
+  --volume-mount-path /workspace
 ```
 
 *Everything the service needs is baked in now. **Ports and env cannot be added to
 a running pod without a reset**, so `11434/http` (Ollama's API port) and `22/tcp`
 (SSH, the agent's control channel) are declared up front. `OLLAMA_MODELS` points
-pulls at the volume mount. `--terminate-after` deletes the pod at the given time
-(`--stop-after` only stops it and keeps billing disk/volume). Live run used an
-**RTX 4090**.*
+pulls at the volume mount. Live run used an **RTX 4090**.*
 
 ### 3. Wait for the pod, then get the SSH connection
 
@@ -196,14 +193,13 @@ Only report success once a real request returns the right result.
 | Long single generation dies at ~100s (`524`) | Proxy is **HTTPS + Cloudflare, 100s cap** | Fine for normal API use; for long work stream or keep prompts short. |
 | Models vanish after stop | Default model dir is container disk (wiped on stop) | Set `OLLAMA_MODELS=/workspace/ollama` onto the **network volume**. |
 | Pod won't schedule after attaching the volume | Network volume is **DC-locked** | Create the pod in the **same DC** as the volume (`datacenter list` to co-locate). |
-| Pod stopped but still billing | Used `--stop-after` (only stops) | Use **`--terminate-after`** as the real cost guard — it deletes the pod. |
+| Pod still billing past a `--terminate-after` / `--stop-after` deadline | runpodctl before v2.12.0 accepts these flags, but the backend never enforced them | `runpodctl update` (v2.12.0 removed them), and `runpodctl pod remove <pod-id>` when done. |
 | Endpoint is wide open | The proxy URL is **public and Ollama has no built-in auth** | Warn the user; don't expose sensitive models unprotected. Add your own auth if needed. |
 
 ## Cost & cleanup
 
-- **Cost guard at creation:** `--terminate-after <iso8601>` deletes the pod at
-  that time. `--stop-after` only *stops* it, so disk/volume keep billing — prefer
-  terminate.
+- **Cost guard:** the pod bills until you remove it. A stopped pod still bills
+  for disk and the volume.
 - **Live cost reference:** the verified run used an **RTX 4090** GPU pod.
 - **Tear down when done:**
   ```bash
@@ -248,6 +244,6 @@ generic, reusable capabilities — not Ollama-specific recipes.
 pod (RTX 4090, PyTorch template, port 11434 + env at creation) → SSH install →
 `ollama serve` (env passed explicitly) → `ollama pull llama3.2:1b` onto the volume
 → external poll of `/api/tags` (200) → `/api/generate` returned text. The run's
-findings (env over SSH, `--terminate-after` vs `--stop-after`, `datacenter list`
+findings (env over SSH, `datacenter list`
 for GPU/DC co-location, `uv`, non-interactive auth) are folded into the flow above
 and the skill references.

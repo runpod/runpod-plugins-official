@@ -133,4 +133,4 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
    don't report success on "pod Running" alone.
 4. **Escalate on manual steps** — if something needs a human (OAuth, a quota
    increase, a license click, a missing credential), stop and tell the user.
-5. **Clean up** — set `--stop-after` / `--terminate-after` on test resources.
+5. **Clean up** — remove test resources when done (`runpodctl pod remove`).
