@@ -54,7 +54,19 @@ reverify — it has already gone stale twice (runpodctl v2.9.0 added `serverless
 added `pod logs`/`serverless logs`). If a limit still holds, name the version it holds for
 rather than saying "cannot".
 
-## First run — check auth before the first infra action
+## First run — update the tools, then check auth
+
+**Update before the first command of every task.** Old builds keep flags that later releases
+fixed or removed. runpodctl before v2.12.0 accepts `pod create --stop-after` /
+`--terminate-after`, but the backend never enforced them, so pods kept billing past the
+deadline. Update each tool you are about to use:
+```bash
+runpodctl update && runpodctl version   # runpodctl
+flash update                            # flash
+```
+The MCP needs no step: the hosted server is always current, and a local install started with
+`npx @runpod/mcp-server@latest` fetches the latest release.
+Use the same build for the rest of the task.
 
 Infra tasks (pods, endpoints, jobs, volumes) need a working control plane — the **Runpod MCP**
 or **runpodctl**. Don't start and discover mid-task that nothing's set up: check first, and if

@@ -70,13 +70,13 @@ A trimmed, whisper-flavored version of the base repo. Four files:
 
 ### 1. Provision a dev pod (interactive, from an official base)
 Create a GPU pod on an official Runpod PyTorch template (or the base repo's
-template), register an SSH key first, cost-guard it. Same shape as golden path
+template), register an SSH key first, remove it when done. Same shape as golden path
 [06](../06-dev-pod.md)/[07](../07-network-volume-handoff.md):
 ```bash
 runpodctl pod create --name whisper-dev-09 \
   --template-id runpod-torch-v280 --gpu-id "NVIDIA GeForce RTX 4090" \
   --data-center-ids EU-RO-1 --container-disk-in-gb 30 \
-  --ssh --terminate-after 2026-07-10T23:30:00Z
+  --ssh
   # heavy models -> add: --network-volume-id <vol-id> --volume-mount-path /workspace
 runpodctl pod get <pod-id>        # poll until "ssh" block has an ip/port (see 06 bad-draw gotcha)
 # once ready, read ip / port / key from `ssh info` into shell vars (SSH-over-TCP form, golden path 06);
@@ -257,7 +257,7 @@ runpodctl template delete <template-id>    # the serverless template from step 5
 runpodctl network-volume delete <vol-id>   # if you created one (pod removed first)
 runpodctl pod list && runpodctl serverless list && runpodctl network-volume list   # confirm clean
 ```
-Pod cost guard: `--terminate-after` at creation (deletes it), not `--stop-after`. The pushed
+Pod cost guard: `runpodctl pod remove <pod-id>` when done (`--terminate-after` never worked). The pushed
 Docker image (`<your-registry>/whisper-dualmode:v1`) is kept — endpoints reference it by tag.
 
 ## Relation to the other paths

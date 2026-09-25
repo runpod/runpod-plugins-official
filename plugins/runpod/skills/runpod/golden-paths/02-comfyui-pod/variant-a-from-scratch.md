@@ -39,7 +39,7 @@ runpodctl pod create --name comfyui \
   --gpu-id "NVIDIA GeForce RTX 4090" --data-center-ids <dc> \
   --ports "8188/http,22/tcp" \                    # 8188 = ComfyUI proxy port, 22 = SSH; MUST be set at creation
   --network-volume-id <volume-id> --volume-mount-path /workspace \  # persist models/install
-  --ssh --terminate-after <iso8601 a few hours out>                 # SSH control channel + cost guard that DELETES the pod
+  --ssh                                                             # SSH control channel
 ```
 
 ```bash
@@ -111,5 +111,4 @@ graph to `/prompt`, poll `/history/<id>`, then fetch the image at
 ## Cost & cleanup
 
 Shared with Variant B — see [Cost & cleanup in the README](README.md#cost--cleanup-shared).
-In short: `--terminate-after` at creation, then `runpodctl pod remove <pod-id>`
-and delete the network volume when done.
+In short: `runpodctl pod remove <pod-id>`, then delete the network volume when done.

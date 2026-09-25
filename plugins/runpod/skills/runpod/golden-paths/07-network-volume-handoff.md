@@ -51,7 +51,7 @@ runpodctl pod create --name handoff-writer \
   --template-id runpod-torch-v280 --gpu-id "NVIDIA GeForce RTX 4090" \
   --data-center-ids EU-RO-1 \
   --network-volume-id <vol-id> --volume-mount-path /workspace \
-  --ssh --terminate-after <iso8601 ~1h out>          # no --ports: nothing to serve
+  --ssh                                              # no --ports: nothing to serve
 
 runpodctl pod get <pod-id>                            # poll until it has a runtime
 # once the runtime is up, read ip / port / key from `ssh info` (JSON) into shell vars
@@ -139,7 +139,7 @@ runpodctl serverless delete <endpoint-id-2>      #  compute-type change — dele
 runpodctl network-volume delete <vol-id>         # pod must already be removed
 runpodctl serverless list && runpodctl pod list && runpodctl network-volume list   # confirm clean
 ```
-Pod cost guard: `--terminate-after` (deletes the pod), not `--stop-after`. The reader
+Pod cost guard: `runpodctl pod remove <pod-id>` when done (`--terminate-after` never worked). The reader
 endpoint is scale-to-zero (`workers=(0,1)`), ~$0 idle.
 
 ## Real application (spec): LoRA fine-tune → serve the adapter
