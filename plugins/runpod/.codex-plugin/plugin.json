@@ -19,7 +19,7 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Runpod (Official)",
+    "displayName": "Runpod",
     "shortDescription": "Official Runpod skills + MCP server — pods, serverless, runpodctl, flash.",
     "longDescription": "Official Runpod agent skills and a bundled MCP server: a router that dispatches to runpodctl, flash, and companion CLIs, plus conceptual usage guidance and worked golden paths.",
     "developerName": "Runpod",
@@ -33,6 +33,9 @@
       "Create a pod with an RTX 4090.",
       "Deploy a serverless endpoint from this image.",
       "Which GPU should I use for a 13B model?"
-    ]
+    ],
+    "brandColor": "#5D29F0",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
   }
 }
