@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Validate marketplace manifests
         run: python3 hooks/validate_marketplace.py
       - name: Check manifest versions agree
@@ -33,3 +33,18 @@ jobs:
         run: python3 hooks/check_migrate_class3.py
       - name: Test ComfyUI workflow model metadata helpers
         run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p "test_*.py"
+      - name: Test runpod-migrate scanner helpers
+        run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p "test_*.py"
+
+  nix-checks:
+    # Runs the full static-analysis gate (ruff, mypy, bandit, unittest,
+    # shellcheck, shfmt, biome, nixfmt, deadnix, statix) hermetically. The
+    # `validate` job above stays the source of truth for the domain-specific
+    # hooks; this job adds lint/type/security/format/tests.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: nix flake check
+        run: nix flake check --print-build-logs

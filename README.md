@@ -218,7 +218,9 @@ hooks/                            marketplace, branding & link validation
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). For the reproducible dev environment and
+the static-analysis gate (ruff, mypy, bandit, shellcheck, shfmt, biome, nixfmt,
+deadnix, statix — run with `nix flake check`), see the [Nix flake guide](nix/README.md).
 
 ## License
 
