@@ -6,22 +6,23 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
-sys.path.insert(0, str(SCRIPT_DIR))
-
-from apply_model_metadata import (  # noqa: E402
+from apply_model_metadata import (
     ApplyError,
     _validate_url,
     apply_manifest_to_document,
     write_new_workflow,
 )
-from inventory_workflow_models import build_inventory  # noqa: E402
+from inventory_workflow_models import build_inventory
 
-
+SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
 HF_REVISION = "a" * 40
 
 
@@ -29,12 +30,14 @@ def hf_url(filename: str) -> str:
     return f"https://huggingface.co/example/models/resolve/{HF_REVISION}/{filename}"
 
 
-def manifest_for(workflow: dict, resolutions: dict[str, dict]) -> dict:
+def manifest_for(
+    workflow: dict[str, Any], resolutions: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
     inventory = build_inventory(workflow)
     by_name = {item["filename"]: item for item in inventory["requirements"]}
-    models = []
+    models: list[dict[str, Any]] = []
     for filename, resolution in resolutions.items():
-        item = {
+        item: dict[str, Any] = {
             "ambiguous": False,
             "directory": resolution["directory"],
             "filename": filename,
@@ -53,9 +56,57 @@ def manifest_for(workflow: dict, resolutions: dict[str, dict]) -> dict:
     }
 
 
+# --------------------------------------------------------------------------
+# InventoryTests: unsafe existing-metadata URL variants (converted to a table)
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class UnsafeUrlCase:
+    description: str
+    url: str
+
+
+UNSAFE_URL_CASES: list[UnsafeUrlCase] = [
+    UnsafeUrlCase(
+        description="attacker suffix host is not huggingface.co",
+        url=(
+            "https://huggingface.co.attacker.example/example/models/resolve/"
+            f"{HF_REVISION}/base.safetensors"
+        ),
+    ),
+    UnsafeUrlCase(
+        description="plain http is not https",
+        url=f"http://huggingface.co/example/models/resolve/{HF_REVISION}/base.safetensors",
+    ),
+    UnsafeUrlCase(
+        description="ip-literal host is not allowlisted",
+        url=f"https://192.0.2.1/example/models/resolve/{HF_REVISION}/base.safetensors",
+    ),
+    UnsafeUrlCase(
+        description="userinfo credentials are rejected",
+        url=(
+            "https://user:secret@huggingface.co/example/models/resolve/"
+            f"{HF_REVISION}/base.safetensors"
+        ),
+    ),
+    UnsafeUrlCase(
+        description="a credential-bearing query is rejected",
+        url=(
+            "https://huggingface.co/example/models/resolve/"
+            f"{HF_REVISION}/base.safetensors?token=abc123"
+        ),
+    ),
+    UnsafeUrlCase(
+        description="an unparseable ipv6 bracket URL is rejected",
+        url="https://[::1/base.safetensors",
+    ),
+]
+
+
 class InventoryTests(unittest.TestCase):
     def test_ui_nodes_nested_subgraphs_and_metadata_are_stable(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "definitions": {
                 "subgraphs": [
                     {
@@ -121,7 +172,7 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(requirements["nested-vae.safetensors"]["directory_hints"], ["vae"])
 
     def test_api_input_names_provide_directory_hints(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "3": {
                 "class_type": "LoraLoader",
                 "inputs": {
@@ -139,7 +190,7 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(occurrence["node_path"], "/3")
 
     def test_non_model_strings_and_traversal_are_not_candidates(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -157,7 +208,7 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(names, ["normal.safetensors"])
 
     def test_model_like_text_and_unsupported_extensions_are_warnings(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -182,7 +233,7 @@ class InventoryTests(unittest.TestCase):
         )
 
     def test_generic_loader_and_note_fields_are_not_model_requirements(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "1": {
                 "class_type": "ImageLoader",
                 "inputs": {"caption": "photo.safetensors"},
@@ -205,7 +256,7 @@ class InventoryTests(unittest.TestCase):
         )
 
     def test_same_filename_in_distinct_consumers_has_distinct_requirements(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -224,10 +275,9 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(len(requirements), 2)
         self.assertNotEqual(requirements[0]["requirement_id"], requirements[1]["requirement_id"])
         by_node = {
-            requirement["occurrences"][0]["node_id"]: requirement
-            for requirement in requirements
+            requirement["occurrences"][0]["node_id"]: requirement for requirement in requirements
         }
-        manifest = {
+        manifest: dict[str, Any] = {
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
             "models": [
@@ -263,7 +313,7 @@ class InventoryTests(unittest.TestCase):
         self.assertNotEqual(first["url"], second["url"])
 
     def test_subfoldered_ui_selection_is_reported_and_not_flattened(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -279,7 +329,7 @@ class InventoryTests(unittest.TestCase):
             requirement["occurrences"][0]["selected_value"],
             "styles/ink.safetensors",
         )
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [
                 {
                     "ambiguous": False,
@@ -298,31 +348,9 @@ class InventoryTests(unittest.TestCase):
             apply_manifest_to_document(workflow, manifest)
 
     def test_unsafe_existing_metadata_url_is_partial(self) -> None:
-        unsafe_urls = {
-            "attacker_suffix_host": (
-                "https://huggingface.co.attacker.example/example/models/resolve/"
-                f"{HF_REVISION}/base.safetensors"
-            ),
-            "plain_http": (
-                "http://huggingface.co/example/models/resolve/"
-                f"{HF_REVISION}/base.safetensors"
-            ),
-            "ip_literal_host": (
-                f"https://192.0.2.1/example/models/resolve/{HF_REVISION}/base.safetensors"
-            ),
-            "userinfo_credentials": (
-                f"https://user:secret@huggingface.co/example/models/resolve/"
-                f"{HF_REVISION}/base.safetensors"
-            ),
-            "credential_query": (
-                "https://huggingface.co/example/models/resolve/"
-                f"{HF_REVISION}/base.safetensors?token=abc123"
-            ),
-            "unparseable_ipv6_brackets": "https://[::1/base.safetensors",
-        }
-        for label, url in unsafe_urls.items():
-            with self.subTest(label=label):
-                workflow = {
+        for case in UNSAFE_URL_CASES:
+            with self.subTest(case.description):
+                workflow: dict[str, Any] = {
                     "nodes": [
                         {
                             "id": 1,
@@ -331,7 +359,7 @@ class InventoryTests(unittest.TestCase):
                                     {
                                         "directory": "checkpoints",
                                         "name": "base.safetensors",
-                                        "url": url,
+                                        "url": case.url,
                                     }
                                 ]
                             },
@@ -351,9 +379,111 @@ class InventoryTests(unittest.TestCase):
                 )
 
 
+# --------------------------------------------------------------------------
+# ApplyTests: stale/unreviewed/ambiguous/unsafe manifest mutations (table)
+# --------------------------------------------------------------------------
+
+
+def _mutate_stale(manifest: dict[str, Any]) -> None:
+    manifest["workflow_sha256"] = "0" * 64
+
+
+def _mutate_unreviewed(manifest: dict[str, Any]) -> None:
+    manifest["models"][0]["reviewed"] = False
+
+
+def _mutate_ambiguous(manifest: dict[str, Any]) -> None:
+    manifest["models"][0]["ambiguous"] = True
+
+
+def _mutate_unsafe_host(manifest: dict[str, Any]) -> None:
+    manifest["models"][0]["url"] = (
+        f"https://huggingface.co.evil.example/example/resolve/{HF_REVISION}/base.safetensors"
+    )
+
+
+def _mutate_traversal_directory(manifest: dict[str, Any]) -> None:
+    manifest["models"][0]["directory"] = "../checkpoints"
+
+
+def _mutate_unpinned_revision(manifest: dict[str, Any]) -> None:
+    manifest["models"][0]["url"] = (
+        "https://huggingface.co/example/models/resolve/main/base.safetensors"
+    )
+
+
+@dataclass(frozen=True)
+class StaleManifestCase:
+    description: str
+    mutate: Callable[[dict[str, Any]], None]
+
+
+STALE_MANIFEST_CASES: list[StaleManifestCase] = [
+    StaleManifestCase(
+        description="stale workflow_sha256 no longer matches the workflow", mutate=_mutate_stale
+    ),
+    StaleManifestCase(
+        description="an unreviewed model entry is refused", mutate=_mutate_unreviewed
+    ),
+    StaleManifestCase(description="an ambiguous model entry is refused", mutate=_mutate_ambiguous),
+    StaleManifestCase(
+        description="an unsafe (suffix) host URL is refused", mutate=_mutate_unsafe_host
+    ),
+    StaleManifestCase(
+        description="a traversal directory is refused", mutate=_mutate_traversal_directory
+    ),
+    StaleManifestCase(
+        description="an unpinned branch revision without a sha256 is refused",
+        mutate=_mutate_unpinned_revision,
+    ),
+]
+
+
+@dataclass(frozen=True)
+class FlattenedSelectionCase:
+    description: str
+    selected: str
+
+
+FLATTENED_SELECTION_CASES: list[FlattenedSelectionCase] = [
+    FlattenedSelectionCase(
+        description="whitespace-padded selection is not a simple filename",
+        selected=" base.safetensors ",
+    ),
+    FlattenedSelectionCase(
+        description="subfoldered selection is not a simple filename",
+        selected="styles/base.safetensors",
+    ),
+]
+
+
+@dataclass(frozen=True)
+class HfMutableRevisionCase:
+    description: str
+    revision: str
+    raises: bool
+
+
+HF_MUTABLE_REVISION_CASES: list[HfMutableRevisionCase] = [
+    HfMutableRevisionCase(description="single-dot revision is unsafe", revision=".", raises=True),
+    HfMutableRevisionCase(description="double-dot revision is unsafe", revision="..", raises=True),
+    HfMutableRevisionCase(
+        description="percent-encoded double-dot (lower) is unsafe", revision="%2e%2e", raises=True
+    ),
+    HfMutableRevisionCase(
+        description="percent-encoded double-dot (upper) is unsafe", revision="%2E%2E", raises=True
+    ),
+    HfMutableRevisionCase(
+        description="a plain branch name is a safe mutable revision",
+        revision="feature-branch_1.2",
+        raises=False,
+    ),
+]
+
+
 class ApplyTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.workflow = {
+        self.workflow: dict[str, Any] = {
             "last_node_id": 2,
             "links": [[1, 1, 0, 2, 0, "MODEL"]],
             "nodes": [
@@ -401,7 +531,7 @@ class ApplyTests(unittest.TestCase):
         self.assertEqual(checkpoint_metadata["hash_type"], "SHA256")
 
     def test_pure_api_workflow_is_inventory_only(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "9": {
                 "class_type": "UNETLoader",
                 "inputs": {"unet_name": "flux.safetensors", "weight_dtype": "default"},
@@ -415,50 +545,21 @@ class ApplyTests(unittest.TestCase):
             apply_manifest_to_document(workflow, manifest)
 
     def test_refuses_stale_unreviewed_ambiguous_and_unsafe_resolutions(self) -> None:
-        good = manifest_for(
-            self.workflow,
-            {
-                "base.safetensors": {"directory": "checkpoints"},
-                "style.safetensors": {"directory": "loras"},
-            },
-        )
-        cases = []
-
-        stale = copy.deepcopy(good)
-        stale["workflow_sha256"] = "0" * 64
-        cases.append(stale)
-
-        unreviewed = copy.deepcopy(good)
-        unreviewed["models"][0]["reviewed"] = False
-        cases.append(unreviewed)
-
-        ambiguous = copy.deepcopy(good)
-        ambiguous["models"][0]["ambiguous"] = True
-        cases.append(ambiguous)
-
-        unsafe_host = copy.deepcopy(good)
-        unsafe_host["models"][0]["url"] = (
-            f"https://huggingface.co.evil.example/example/resolve/{HF_REVISION}/base.safetensors"
-        )
-        cases.append(unsafe_host)
-
-        traversal = copy.deepcopy(good)
-        traversal["models"][0]["directory"] = "../checkpoints"
-        cases.append(traversal)
-
-        unpinned = copy.deepcopy(good)
-        unpinned["models"][0]["url"] = (
-            "https://huggingface.co/example/models/resolve/main/base.safetensors"
-        )
-        cases.append(unpinned)
-
-        for case in cases:
-            with self.subTest(case=case):
+        for case in STALE_MANIFEST_CASES:
+            with self.subTest(case.description):
+                manifest = manifest_for(
+                    self.workflow,
+                    {
+                        "base.safetensors": {"directory": "checkpoints"},
+                        "style.safetensors": {"directory": "loras"},
+                    },
+                )
+                case.mutate(manifest)
                 with self.assertRaises(ApplyError):
-                    apply_manifest_to_document(self.workflow, case)
+                    apply_manifest_to_document(self.workflow, manifest)
 
     def test_filename_case_must_match_loader_exactly(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -468,7 +569,7 @@ class ApplyTests(unittest.TestCase):
             ]
         }
         inventory = build_inventory(workflow)
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [
                 {
                     "ambiguous": False,
@@ -487,7 +588,7 @@ class ApplyTests(unittest.TestCase):
             apply_manifest_to_document(workflow, manifest)
 
     def test_invalid_existing_hash_type_is_not_complete(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -510,7 +611,7 @@ class ApplyTests(unittest.TestCase):
         inventory = build_inventory(workflow)
         self.assertEqual(inventory["requirements"][0]["metadata_status"], "partial")
         self.assertIn("invalid_hash_type", inventory["existing_metadata"][0]["issues"])
-        empty_manifest = {
+        empty_manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
@@ -519,7 +620,7 @@ class ApplyTests(unittest.TestCase):
             apply_manifest_to_document(workflow, empty_manifest)
 
     def test_existing_metadata_name_case_mismatch_requires_reviewed_replacement(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -571,7 +672,7 @@ class ApplyTests(unittest.TestCase):
         )
 
     def test_existing_metadata_directory_mismatch_cannot_satisfy_loader(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -598,7 +699,7 @@ class ApplyTests(unittest.TestCase):
             "directory_mismatch_with_loader",
             inventory["existing_metadata"][0]["issues"],
         )
-        empty_manifest = {
+        empty_manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
@@ -607,9 +708,9 @@ class ApplyTests(unittest.TestCase):
             apply_manifest_to_document(workflow, empty_manifest)
 
     def test_flattened_existing_metadata_cannot_satisfy_non_simple_selection(self) -> None:
-        for selected in (" base.safetensors ", "styles/base.safetensors"):
-            with self.subTest(selected=selected):
-                workflow = {
+        for case in FLATTENED_SELECTION_CASES:
+            with self.subTest(case.description):
+                workflow: dict[str, Any] = {
                     "nodes": [
                         {
                             "id": 1,
@@ -623,7 +724,7 @@ class ApplyTests(unittest.TestCase):
                                 ]
                             },
                             "type": "CheckpointLoaderSimple",
-                            "widgets_values": [selected],
+                            "widgets_values": [case.selected],
                         }
                     ]
                 }
@@ -632,18 +733,15 @@ class ApplyTests(unittest.TestCase):
                     item
                     for item in inventory["requirements"]
                     if any(
-                        occurrence.get("source") != "metadata"
-                        for occurrence in item["occurrences"]
+                        occurrence.get("source") != "metadata" for occurrence in item["occurrences"]
                     )
                 )
-                empty_manifest = {
+                empty_manifest: dict[str, Any] = {
                     "models": [],
                     "schema_version": 1,
                     "workflow_sha256": inventory["workflow_sha256"],
                 }
-                self.assertTrue(
-                    requirement["selection_mismatch"] or requirement["subfoldered"]
-                )
+                self.assertTrue(requirement["selection_mismatch"] or requirement["subfoldered"])
                 with self.assertRaisesRegex(ApplyError, "unresolved models"):
                     apply_manifest_to_document(workflow, empty_manifest)
 
@@ -699,7 +797,7 @@ class ApplyTests(unittest.TestCase):
         )
 
     def test_replaces_only_metadata_associated_with_target_consumer(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -735,15 +833,11 @@ class ApplyTests(unittest.TestCase):
             ]
         }
         inventory = build_inventory(workflow)
-        by_node = {
-            item["occurrences"][0]["node_id"]: item
-            for item in inventory["requirements"]
-        }
+        by_node = {item["occurrences"][0]["node_id"]: item for item in inventory["requirements"]}
         replacement_url = (
-            "https://huggingface.co/reviewed/repo/resolve/"
-            f"{'d' * 40}/same.safetensors"
+            f"https://huggingface.co/reviewed/repo/resolve/{'d' * 40}/same.safetensors"
         )
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [
                 {
                     "ambiguous": False,
@@ -811,12 +905,14 @@ class ApplyTests(unittest.TestCase):
             workflow_path.write_text(json.dumps(workflow), encoding="utf-8")
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
-            with patch(
-                "apply_model_metadata.build_inventory",
-                side_effect=[initial_inventory, failed_inventory],
+            with (
+                patch(
+                    "apply_model_metadata.build_inventory",
+                    side_effect=[initial_inventory, failed_inventory],
+                ),
+                self.assertRaisesRegex(ApplyError, "failed validation"),
             ):
-                with self.assertRaisesRegex(ApplyError, "failed validation"):
-                    write_new_workflow(workflow_path, manifest_path, output_path)
+                write_new_workflow(workflow_path, manifest_path, output_path)
             self.assertFalse(output_path.exists())
 
     def test_file_writer_publishes_complete_workflow_with_empty_manifest(self) -> None:
@@ -832,7 +928,7 @@ class ApplyTests(unittest.TestCase):
             initial_manifest,
         )
         complete_inventory = build_inventory(complete_workflow)
-        empty_manifest = {
+        empty_manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": complete_inventory["workflow_sha256"],
@@ -880,9 +976,9 @@ class ApplyTests(unittest.TestCase):
             self.assertEqual(applied, ["base.safetensors"])
             self.assertTrue(output_path.exists())
             self.assertEqual(
-                build_inventory(
-                    json.loads(output_path.read_text(encoding="utf-8"))
-                )["summary"]["unresolved_requirements"],
+                build_inventory(json.loads(output_path.read_text(encoding="utf-8")))["summary"][
+                    "unresolved_requirements"
+                ],
                 1,
             )
             self.assertEqual(
@@ -891,7 +987,7 @@ class ApplyTests(unittest.TestCase):
             )
 
     def test_partial_output_removes_known_invalid_metadata(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -912,7 +1008,7 @@ class ApplyTests(unittest.TestCase):
             ]
         }
         inventory = build_inventory(workflow)
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
@@ -940,27 +1036,26 @@ class ApplyTests(unittest.TestCase):
             )
 
     def test_hf_mutable_revision_rejects_dot_segments(self) -> None:
-        url = (
-            "https://huggingface.co/example/models/resolve/"
-            "{revision}/base.safetensors"
-        )
-        for revision in (".", "..", "%2e%2e", "%2E%2E"):
-            with self.subTest(revision=revision):
-                with self.assertRaisesRegex(ApplyError, "unsafe revision"):
-                    _validate_url(
-                        url.format(revision=revision),
-                        "base.safetensors",
-                        allow_mutable_hf_revision=True,
+        url = "https://huggingface.co/example/models/resolve/{revision}/base.safetensors"
+        for case in HF_MUTABLE_REVISION_CASES:
+            with self.subTest(case.description):
+                revision_url = url.format(revision=case.revision)
+                if case.raises:
+                    with self.assertRaisesRegex(ApplyError, "unsafe revision"):
+                        _validate_url(
+                            revision_url,
+                            "base.safetensors",
+                            allow_mutable_hf_revision=True,
+                        )
+                else:
+                    self.assertEqual(
+                        _validate_url(
+                            revision_url,
+                            "base.safetensors",
+                            allow_mutable_hf_revision=True,
+                        ),
+                        revision_url,
                     )
-        branch_url = url.format(revision="feature-branch_1.2")
-        self.assertEqual(
-            _validate_url(
-                branch_url,
-                "base.safetensors",
-                allow_mutable_hf_revision=True,
-            ),
-            branch_url,
-        )
 
     def test_identical_existing_metadata_is_kept_verbatim(self) -> None:
         existing = {
@@ -970,7 +1065,7 @@ class ApplyTests(unittest.TestCase):
             "size": 123456789,
             "url": hf_url("base.safetensors"),
         }
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -991,9 +1086,28 @@ class ApplyTests(unittest.TestCase):
         self.assertEqual(list(entries[0].items()), list(existing.items()))
 
 
+# --------------------------------------------------------------------------
+# CliRoundTripTests: non-finite JSON rejection (converted to a table)
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class NonFiniteConstantCase:
+    description: str
+    constant: str
+
+
+NON_FINITE_CONSTANT_CASES: list[NonFiniteConstantCase] = [
+    NonFiniteConstantCase(description="NaN is rejected", constant="NaN"),
+    NonFiniteConstantCase(description="Infinity is rejected", constant="Infinity"),
+    NonFiniteConstantCase(description="-Infinity is rejected", constant="-Infinity"),
+    NonFiniteConstantCase(description="an overflowing float literal is rejected", constant="1e400"),
+]
+
+
 class CliRoundTripTests(unittest.TestCase):
     def test_cli_always_outputs_valid_ui_workflow_when_models_are_unresolved(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -1003,7 +1117,7 @@ class CliRoundTripTests(unittest.TestCase):
             ]
         }
         inventory = build_inventory(workflow)
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
@@ -1044,7 +1158,7 @@ class CliRoundTripTests(unittest.TestCase):
             )
 
     def test_inventory_apply_and_reinventory_through_cli(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -1053,9 +1167,7 @@ class CliRoundTripTests(unittest.TestCase):
                 }
             ]
         }
-        baseline_bytecode = {
-            path.resolve() for path in SCRIPT_DIR.rglob("*.pyc")
-        }
+        baseline_bytecode = {path.resolve() for path in SCRIPT_DIR.rglob("*.pyc")}
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             workflow_path = root / "workflow.json"
@@ -1146,9 +1258,7 @@ class CliRoundTripTests(unittest.TestCase):
                 0,
                 reinventory_result.stderr,
             )
-            repaired_inventory = json.loads(
-                repaired_inventory_path.read_text(encoding="utf-8")
-            )
+            repaired_inventory = json.loads(repaired_inventory_path.read_text(encoding="utf-8"))
             repaired = json.loads(repaired_path.read_text(encoding="utf-8"))
             original = json.loads(workflow_path.read_text(encoding="utf-8"))
             self.assertNotIn("properties", original["nodes"][0])
@@ -1167,7 +1277,7 @@ class CliRoundTripTests(unittest.TestCase):
         )
 
     def test_cli_refuses_to_publish_unsafe_preexisting_metadata_url(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -1189,7 +1299,7 @@ class CliRoundTripTests(unittest.TestCase):
             ]
         }
         inventory = build_inventory(workflow)
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
@@ -1228,7 +1338,7 @@ class CliRoundTripTests(unittest.TestCase):
             )
 
     def test_cli_allow_unresolved_strips_unsafe_preexisting_metadata_url(self) -> None:
-        workflow = {
+        workflow: dict[str, Any] = {
             "nodes": [
                 {
                     "id": 1,
@@ -1250,7 +1360,7 @@ class CliRoundTripTests(unittest.TestCase):
             ]
         }
         inventory = build_inventory(workflow)
-        manifest = {
+        manifest: dict[str, Any] = {
             "models": [],
             "schema_version": 1,
             "workflow_sha256": inventory["workflow_sha256"],
@@ -1299,10 +1409,10 @@ class CliRoundTripTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             workflow_path = root / "workflow.json"
-            for constant in ("NaN", "Infinity", "-Infinity", "1e400"):
-                with self.subTest(constant=constant):
+            for case in NON_FINITE_CONSTANT_CASES:
+                with self.subTest(case.description):
                     workflow_path.write_text(
-                        '{"nodes": [], "value": ' + constant + "}",
+                        '{"nodes": [], "value": ' + case.constant + "}",
                         encoding="utf-8",
                     )
                     result = subprocess.run(

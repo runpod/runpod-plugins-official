@@ -7,16 +7,18 @@ import sys
 import tempfile
 import unittest
 import zlib
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+
+import extract_png_workflow as extractor
+from apply_model_metadata import ApplyError, apply_manifest_to_document
+from inventory_workflow_models import build_inventory
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
-sys.path.insert(0, str(SCRIPT_DIR))
-
-import extract_png_workflow as extractor  # noqa: E402
-from apply_model_metadata import ApplyError, apply_manifest_to_document  # noqa: E402
-from inventory_workflow_models import build_inventory  # noqa: E402
 
 
 def png_chunk(chunk_type: bytes, data: bytes) -> bytes:
@@ -44,9 +46,7 @@ def text_chunk(keyword: str, value: str) -> bytes:
 
 
 def ztext_chunk(keyword: str, value: bytes) -> bytes:
-    return png_chunk(
-        b"zTXt", keyword.encode("latin-1") + b"\x00\x00" + zlib.compress(value)
-    )
+    return png_chunk(b"zTXt", keyword.encode("latin-1") + b"\x00\x00" + zlib.compress(value))
 
 
 def itext_chunk(
@@ -72,10 +72,159 @@ def itext_chunk(
     )
 
 
+_IHDR = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+_IMAGE_DATA = zlib.compress(b"\x00\x00\x00\x00")
+_GOOD_WORKFLOW = text_chunk("workflow", json.dumps({"nodes": []}))
+_BAD_CRC = png_bytes(_GOOD_WORKFLOW[:-1] + bytes([_GOOD_WORKFLOW[-1] ^ 0xFF]))
+
+
+@dataclass(frozen=True)
+class ReadPngErrorCase:
+    description: str
+    data: bytes
+    expected_regex: str | None  # regex the PngWorkflowError message must match, or None for any
+
+
+READ_PNG_ERROR_CASES: list[ReadPngErrorCase] = [
+    ReadPngErrorCase(
+        description="negative: a flipped CRC byte is rejected",
+        data=_BAD_CRC,
+        expected_regex="invalid CRC",
+    ),
+    ReadPngErrorCase(
+        description="negative: two conflicting workflow chunks are a duplicate",
+        data=png_bytes(_GOOD_WORKFLOW, text_chunk("workflow", json.dumps({"nodes": [{"id": 2}]}))),
+        expected_regex="duplicate 'workflow'",
+    ),
+    ReadPngErrorCase(
+        description="negative: two identical workflow chunks are a duplicate",
+        data=png_bytes(_GOOD_WORKFLOW, _GOOD_WORKFLOW),
+        expected_regex="duplicate 'workflow'",
+    ),
+    ReadPngErrorCase(
+        description="corner: the same key across tEXt and zTXt is a duplicate",
+        data=png_bytes(
+            _GOOD_WORKFLOW,
+            ztext_chunk("workflow", json.dumps({"nodes": []}).encode("latin-1")),
+        ),
+        expected_regex="duplicate 'workflow'",
+    ),
+    ReadPngErrorCase(
+        description="boundary: a PNG with no IDAT is missing required image chunks",
+        data=b"".join(
+            (
+                extractor.PNG_SIGNATURE,
+                png_chunk(b"IHDR", _IHDR),
+                png_chunk(b"IEND", b""),
+            )
+        ),
+        expected_regex="missing required image chunks",
+    ),
+    ReadPngErrorCase(
+        description="negative: a non-empty IEND chunk is rejected",
+        data=b"".join(
+            (
+                extractor.PNG_SIGNATURE,
+                png_chunk(b"IHDR", _IHDR),
+                png_chunk(b"IDAT", _IMAGE_DATA),
+                png_chunk(b"IEND", b"x"),
+            )
+        ),
+        expected_regex="IEND chunk must be empty",
+    ),
+    ReadPngErrorCase(
+        description="negative: trailing bytes after IEND are rejected",
+        data=png_bytes() + b"trailing",
+        expected_regex="trailing data",
+    ),
+    ReadPngErrorCase(
+        description="boundary: a declared chunk length over the format cap is rejected",
+        data=b"".join(
+            (
+                extractor.PNG_SIGNATURE,
+                png_chunk(b"IHDR", _IHDR),
+                struct.pack(">I", 1 << 31),
+                b"abCD",
+            )
+        ),
+        expected_regex="format length limit",
+    ),
+    ReadPngErrorCase(
+        description="corner: an invalid UTF-8 iTXt translated keyword is rejected",
+        data=png_bytes(
+            itext_chunk("workflow", json.dumps({"nodes": []}), translated_keyword=b"\xff")
+        ),
+        expected_regex="ASCII/UTF-8",
+    ),
+]
+
+
+@dataclass(frozen=True)
+class StrictJsonCase:
+    description: str
+    value: str
+
+
+STRICT_JSON_CASES: list[StrictJsonCase] = [
+    StrictJsonCase(
+        description="negative: duplicate object keys are rejected",
+        value='{"nodes": [], "nodes": []}',
+    ),
+    StrictJsonCase(
+        description="negative: a non-finite constant is rejected",
+        value='{"value": NaN}',
+    ),
+    StrictJsonCase(
+        description="negative: a float that overflows is rejected",
+        value='{"value": 1e999}',
+    ),
+    StrictJsonCase(
+        description="corner: a non-object JSON root is rejected",
+        value="[]",
+    ),
+]
+
+
+class PngReadErrorTableTests(unittest.TestCase):
+    def test_read_png_text_rejects_malformed_input(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for index, case in enumerate(READ_PNG_ERROR_CASES):
+                with self.subTest(case.description):
+                    path = Path(temp_dir) / f"case-{index}.png"
+                    path.write_bytes(case.data)
+                    if case.expected_regex is None:
+                        with self.assertRaises(extractor.PngWorkflowError):
+                            extractor.read_png_text(path)
+                    else:
+                        with self.assertRaisesRegex(
+                            extractor.PngWorkflowError, case.expected_regex
+                        ):
+                            extractor.read_png_text(path)
+
+    def test_strict_json_rejects_invalid_documents(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for index, case in enumerate(STRICT_JSON_CASES):
+                with self.subTest(case.description):
+                    path = Path(temp_dir) / f"case-{index}.png"
+                    path.write_bytes(png_bytes(text_chunk("workflow", case.value)))
+                    with self.assertRaises(extractor.PngWorkflowError):
+                        extractor.embedded_json(path, "workflow")
+
+    def test_strict_json_rejects_deeply_nested_values(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            deep_path = Path(temp_dir) / "deep.png"
+            deep_path.write_bytes(png_bytes(text_chunk("workflow", '{"value": [[[0]]]}')))
+            with (
+                mock.patch.object(extractor, "MAX_JSON_DEPTH", 3),
+                self.assertRaisesRegex(extractor.PngWorkflowError, "nesting safety limit"),
+            ):
+                extractor.embedded_json(deep_path, "workflow")
+
+
 class PngWorkflowExtractorTests(unittest.TestCase):
     def test_reads_comfyui_text_workflow_and_prompt(self) -> None:
-        workflow = {"nodes": [{"id": 1, "type": "CheckpointLoaderSimple"}]}
-        prompt = {"1": {"class_type": "CheckpointLoaderSimple", "inputs": {}}}
+        workflow: dict[str, Any] = {"nodes": [{"id": 1, "type": "CheckpointLoaderSimple"}]}
+        prompt: dict[str, Any] = {"1": {"class_type": "CheckpointLoaderSimple", "inputs": {}}}
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
             path.write_bytes(
@@ -91,16 +240,15 @@ class PngWorkflowExtractorTests(unittest.TestCase):
         self.assertEqual(set(text_values), {"workflow", "prompt", "parameters"})
 
     def test_reads_compressed_ztxt_and_itxt(self) -> None:
-        workflow = {"nodes": []}
-        prompt = {"1": {"class_type": "EmptyLatentImage", "inputs": {}}}
+        workflow: dict[str, Any] = {"nodes": []}
+        prompt: dict[str, Any] = {"1": {"class_type": "EmptyLatentImage", "inputs": {}}}
         ztxt = png_chunk(
             b"zTXt",
             b"prompt\x00\x00" + zlib.compress(json.dumps(prompt).encode("latin-1")),
         )
         itxt = png_chunk(
             b"iTXt",
-            b"workflow\x00\x01\x00en\x00\x00"
-            + zlib.compress(json.dumps(workflow).encode("utf-8")),
+            b"workflow\x00\x01\x00en\x00\x00" + zlib.compress(json.dumps(workflow).encode("utf-8")),
         )
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
@@ -111,7 +259,7 @@ class PngWorkflowExtractorTests(unittest.TestCase):
         self.assertEqual(parsed["prompt"], prompt)
 
     def test_reads_uncompressed_itxt_unicode_and_ignores_method_byte(self) -> None:
-        workflow = {"nodes": [], "extra": {"label": "zażółć 🚀"}}
+        workflow: dict[str, Any] = {"nodes": [], "extra": {"label": "zażółć 🚀"}}
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
             path.write_bytes(
@@ -120,7 +268,7 @@ class PngWorkflowExtractorTests(unittest.TestCase):
                         "workflow",
                         json.dumps(workflow, ensure_ascii=False),
                         compression_method=255,
-                        translated_keyword="przepływ".encode("utf-8"),
+                        translated_keyword="przepływ".encode(),
                     )
                 )
             )
@@ -129,7 +277,7 @@ class PngWorkflowExtractorTests(unittest.TestCase):
         self.assertEqual(parsed["workflow"], workflow)
 
     def test_selected_workflow_is_not_blocked_by_invalid_prompt_json(self) -> None:
-        workflow = {"nodes": [{"id": 1, "type": "CheckpointLoaderSimple"}]}
+        workflow: dict[str, Any] = {"nodes": [{"id": 1, "type": "CheckpointLoaderSimple"}]}
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
             path.write_bytes(
@@ -145,7 +293,7 @@ class PngWorkflowExtractorTests(unittest.TestCase):
                 extractor.embedded_json(path, "prompt")
 
     def test_selected_workflow_does_not_decompress_invalid_prompt(self) -> None:
-        workflow = {"nodes": [{"id": 1, "type": "CheckpointLoaderSimple"}]}
+        workflow: dict[str, Any] = {"nodes": [{"id": 1, "type": "CheckpointLoaderSimple"}]}
         invalid_prompt = png_chunk(b"zTXt", b"prompt\x00\x00not-zlib")
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
@@ -158,13 +306,11 @@ class PngWorkflowExtractorTests(unittest.TestCase):
             parsed, keys = extractor.embedded_json(path, "workflow")
             self.assertEqual(parsed, {"workflow": workflow})
             self.assertEqual(keys, {"prompt", "workflow"})
-            with self.assertRaisesRegex(
-                extractor.PngWorkflowError, "invalid compressed PNG text"
-            ):
+            with self.assertRaisesRegex(extractor.PngWorkflowError, "invalid compressed PNG text"):
                 extractor.embedded_json(path, "prompt")
 
     def test_prompt_only_remains_api_inventory_only(self) -> None:
-        prompt = {
+        prompt: dict[str, Any] = {
             "1": {
                 "class_type": "CheckpointLoaderSimple",
                 "inputs": {"ckpt_name": "base.safetensors"},
@@ -185,41 +331,6 @@ class PngWorkflowExtractorTests(unittest.TestCase):
         with self.assertRaisesRegex(ApplyError, "API prompt JSON"):
             apply_manifest_to_document(parsed["prompt"], manifest)
 
-    def test_rejects_bad_crc_and_conflicting_duplicate_metadata(self) -> None:
-        good = text_chunk("workflow", json.dumps({"nodes": []}))
-        bad_crc = good[:-1] + bytes([good[-1] ^ 0xFF])
-        conflicting = text_chunk("workflow", json.dumps({"nodes": [{"id": 2}]}))
-        cases = {
-            "bad CRC": png_bytes(bad_crc),
-            "conflicting duplicate": png_bytes(good, conflicting),
-        }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for name, value in cases.items():
-                with self.subTest(name=name):
-                    path = Path(temp_dir) / f"{name}.png"
-                    path.write_bytes(value)
-                    with self.assertRaises(extractor.PngWorkflowError):
-                        extractor.read_png_text(path)
-
-    def test_rejects_identical_and_cross_encoding_duplicate_metadata(self) -> None:
-        value = json.dumps({"nodes": []})
-        duplicate_cases = {
-            "identical": (text_chunk("workflow", value), text_chunk("workflow", value)),
-            "cross encoding": (
-                text_chunk("workflow", value),
-                ztext_chunk("workflow", value.encode("latin-1")),
-            ),
-        }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for name, chunks in duplicate_cases.items():
-                with self.subTest(name=name):
-                    path = Path(temp_dir) / f"{name}.png"
-                    path.write_bytes(png_bytes(*chunks))
-                    with self.assertRaisesRegex(
-                        extractor.PngWorkflowError, "duplicate 'workflow'"
-                    ):
-                        extractor.read_png_text(path)
-
     def test_rejects_compressed_text_expansion_over_limit(self) -> None:
         compressed = png_chunk(
             b"zTXt",
@@ -228,11 +339,11 @@ class PngWorkflowExtractorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
             path.write_bytes(png_bytes(compressed))
-            with mock.patch.object(extractor, "MAX_TEXT_VALUE_BYTES", 128):
-                with self.assertRaisesRegex(
-                    extractor.PngWorkflowError, "safety limit"
-                ):
-                    extractor.read_png_text(path)
+            with (
+                mock.patch.object(extractor, "MAX_TEXT_VALUE_BYTES", 128),
+                self.assertRaisesRegex(extractor.PngWorkflowError, "safety limit"),
+            ):
+                extractor.read_png_text(path)
 
     def test_does_not_decompress_unrecognized_text(self) -> None:
         compressed = ztext_chunk("parameters", b"x" * 4096)
@@ -252,113 +363,33 @@ class PngWorkflowExtractorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "output.png"
             path.write_bytes(png)
-            with mock.patch.object(extractor, "MAX_PNG_BYTES", len(png) - 1):
-                with self.assertRaisesRegex(
-                    extractor.PngWorkflowError, "input safety limit"
-                ):
-                    extractor.read_png_text(path)
-            with mock.patch.object(
-                extractor, "MAX_TEXT_CHUNK_BYTES", len(b"workflow\x00")
+            with (
+                mock.patch.object(extractor, "MAX_PNG_BYTES", len(png) - 1),
+                self.assertRaisesRegex(extractor.PngWorkflowError, "input safety limit"),
             ):
-                with self.assertRaisesRegex(
-                    extractor.PngWorkflowError, "text chunk exceeds"
-                ):
-                    extractor.read_png_text(path)
-            with mock.patch.object(
-                extractor,
-                "MAX_TOTAL_TEXT_CHUNK_BYTES",
-                len(b"workflow\x00") + len(json.dumps({"nodes": []})),
+                extractor.read_png_text(path)
+            with (
+                mock.patch.object(extractor, "MAX_TEXT_CHUNK_BYTES", len(b"workflow\x00")),
+                self.assertRaisesRegex(extractor.PngWorkflowError, "text chunk exceeds"),
             ):
-                with self.assertRaisesRegex(
-                    extractor.PngWorkflowError, "aggregate safety limit"
-                ):
-                    extractor.read_png_text(path)
-
-    def test_rejects_invalid_itxt_translated_keyword_utf8(self) -> None:
-        malformed = itext_chunk(
-            "workflow",
-            json.dumps({"nodes": []}),
-            translated_keyword=b"\xff",
-        )
-        with tempfile.TemporaryDirectory() as temp_dir:
-            path = Path(temp_dir) / "output.png"
-            path.write_bytes(png_bytes(malformed))
-            with self.assertRaisesRegex(
-                extractor.PngWorkflowError, "ASCII/UTF-8"
+                extractor.read_png_text(path)
+            with (
+                mock.patch.object(
+                    extractor,
+                    "MAX_TOTAL_TEXT_CHUNK_BYTES",
+                    len(b"workflow\x00") + len(json.dumps({"nodes": []})),
+                ),
+                self.assertRaisesRegex(extractor.PngWorkflowError, "aggregate safety limit"),
             ):
                 extractor.read_png_text(path)
 
-    def test_rejects_invalid_png_structure_and_trailing_data(self) -> None:
-        ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
-        image_data = zlib.compress(b"\x00\x00\x00\x00")
-        cases = {
-            "missing IDAT": b"".join(
-                (
-                    extractor.PNG_SIGNATURE,
-                    png_chunk(b"IHDR", ihdr),
-                    png_chunk(b"IEND", b""),
-                )
-            ),
-            "nonempty IEND": b"".join(
-                (
-                    extractor.PNG_SIGNATURE,
-                    png_chunk(b"IHDR", ihdr),
-                    png_chunk(b"IDAT", image_data),
-                    png_chunk(b"IEND", b"x"),
-                )
-            ),
-            "trailing data": png_bytes() + b"trailing",
-            "oversized declared chunk": b"".join(
-                (
-                    extractor.PNG_SIGNATURE,
-                    png_chunk(b"IHDR", ihdr),
-                    struct.pack(">I", 1 << 31),
-                    b"abCD",
-                )
-            ),
-        }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for name, value in cases.items():
-                with self.subTest(name=name):
-                    path = Path(temp_dir) / f"{name}.png"
-                    path.write_bytes(value)
-                    with self.assertRaises(extractor.PngWorkflowError):
-                        extractor.read_png_text(path)
-
-    def test_strict_json_rejects_duplicates_nonfinite_and_deep_values(self) -> None:
-        cases = {
-            "duplicate": '{"nodes": [], "nodes": []}',
-            "constant": '{"value": NaN}',
-            "overflow": '{"value": 1e999}',
-            "non-object": "[]",
-        }
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for name, value in cases.items():
-                with self.subTest(name=name):
-                    path = Path(temp_dir) / f"{name}.png"
-                    path.write_bytes(png_bytes(text_chunk("workflow", value)))
-                    with self.assertRaises(extractor.PngWorkflowError):
-                        extractor.embedded_json(path, "workflow")
-
-            deep_path = Path(temp_dir) / "deep.png"
-            deep_path.write_bytes(
-                png_bytes(text_chunk("workflow", '{"value": [[[0]]]}'))
-            )
-            with mock.patch.object(extractor, "MAX_JSON_DEPTH", 3):
-                with self.assertRaisesRegex(
-                    extractor.PngWorkflowError, "nesting safety limit"
-                ):
-                    extractor.embedded_json(deep_path, "workflow")
-
     def test_cli_writes_new_workflow_and_refuses_overwrite(self) -> None:
-        workflow = {"nodes": [{"id": 3, "type": "VAELoader"}]}
+        workflow: dict[str, Any] = {"nodes": [{"id": 3, "type": "VAELoader"}]}
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source = root / "output.png"
             output = root / "workflow.json"
-            source.write_bytes(
-                png_bytes(text_chunk("workflow", json.dumps(workflow)))
-            )
+            source.write_bytes(png_bytes(text_chunk("workflow", json.dumps(workflow))))
             command = [
                 sys.executable,
                 "-B",
@@ -381,17 +412,13 @@ class PngWorkflowExtractorTests(unittest.TestCase):
             root = Path(temp_dir)
             source = root / "source.png"
             source.write_bytes(b"original")
-            with self.assertRaisesRegex(
-                extractor.PngWorkflowError, "must not overwrite"
-            ):
+            with self.assertRaisesRegex(extractor.PngWorkflowError, "must not overwrite"):
                 extractor._write_new_json(source, source, {"nodes": []})
             self.assertEqual(source.read_bytes(), b"original")
             with self.assertRaisesRegex(
                 extractor.PngWorkflowError, "output directory does not exist"
             ):
-                extractor._write_new_json(
-                    source, root / "missing" / "workflow.json", {"nodes": []}
-                )
+                extractor._write_new_json(source, root / "missing" / "workflow.json", {"nodes": []})
 
 
 if __name__ == "__main__":
