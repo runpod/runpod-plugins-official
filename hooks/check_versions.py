@@ -6,11 +6,16 @@ a whole, and each skill's `metadata.version` mirrors that single plugin version 
 lockstep (see CONTRIBUTING.md → Cutting a release). Releases are automated by
 release-please; this guard just fails CI if anything ever drifts out of sync.
 """
-import json, re, sys
+
+from __future__ import annotations
+
+import json
+import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-seen = {}
+seen: dict[str, str | None] = {}
 
 # JSON manifests: read the top-level "version" key.
 for f in [
@@ -58,6 +63,6 @@ vals = set(seen.values())
 if None in vals or len(vals) != 1:
     print("version check FAILED — versions disagree:")
     for f, v in seen.items():
-        print(f"  {str(v):10} {f}")
+        print(f"  {v!s:10} {f}")
     sys.exit(1)
 print(f"version check OK — all manifests + skills at {vals.pop()}")

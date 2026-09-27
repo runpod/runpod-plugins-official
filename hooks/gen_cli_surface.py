@@ -8,8 +8,14 @@ Refresh this when runpodctl cuts a release, then re-run
 hooks/check_cli_absence_claims.py and fix whatever it now reports. The snapshot is
 the gate's source of truth precisely so a release cannot quietly falsify a doc.
 """
+
 from __future__ import annotations
-import argparse, json, re, subprocess, sys
+
+import argparse
+import json
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,8 +26,10 @@ HIDDEN = ["get pod", "get cloud", "create pod", "remove pod", "exec", "project",
 
 
 def run(binp: str, path: str, *extra: str) -> str:
-    return subprocess.run([binp] + path.split() + list(extra),
-                          capture_output=True, text=True).stdout
+    # check=False: a subcommand's --help may exit non-zero; we only want stdout.
+    return subprocess.run(
+        [binp, *path.split(), *extra], capture_output=True, text=True, check=False
+    ).stdout
 
 
 def subcommands(binp: str, path: str) -> list[str]:
@@ -48,7 +56,7 @@ def main() -> int:
         print(f"could not run {args.bin!r}", file=sys.stderr)
         return 1
 
-    cmds: dict[str, dict] = {}
+    cmds: dict[str, dict[str, list[str]]] = {}
     for top in subcommands(args.bin, ""):
         for path in [top] + [f"{top} {s}" for s in subcommands(args.bin, top)]:
             out = run(args.bin, path, "--help")
@@ -59,14 +67,21 @@ def main() -> int:
             }
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({
-        "_comment": "Vendored runpodctl command surface. Regenerate with "
-                    "hooks/gen_cli_surface.py against a released binary. "
-                    "Gates hooks/check_cli_absence_claims.py.",
-        "version": version,
-        "hidden_commands": HIDDEN,
-        "commands": cmds,
-    }, indent=2, sort_keys=True) + "\n")
+    OUT.write_text(
+        json.dumps(
+            {
+                "_comment": "Vendored runpodctl command surface. Regenerate with "
+                "hooks/gen_cli_surface.py against a released binary. "
+                "Gates hooks/check_cli_absence_claims.py.",
+                "version": version,
+                "hidden_commands": HIDDEN,
+                "commands": cmds,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
     print(f"wrote {OUT.relative_to(ROOT)} — {version}, {len(cmds)} commands")
     return 0
 

@@ -8,6 +8,9 @@ ignored. Exit non-zero if any bad occurrence is found.
 
 Run from the repo root: python3 hooks/check_runpod_branding.py
 """
+
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
@@ -20,15 +23,13 @@ ROOT = Path(__file__).resolve().parent.parent
 CAMEL = re.compile(r"RunPod(?!-Key-Go)")
 UPPER = re.compile(r"RUNPOD(?![_A-Z0-9.])")
 
-bad = []
+bad: list[tuple[Path, int, str, str]] = []
 for md in ROOT.rglob("*.md"):
     if ".git" in md.parts:
         continue
     for i, line in enumerate(md.read_text(errors="replace").splitlines(), 1):
-        for m in CAMEL.finditer(line):
-            bad.append((md.relative_to(ROOT), i, "RunPod", line.strip()))
-        for m in UPPER.finditer(line):
-            bad.append((md.relative_to(ROOT), i, "RUNPOD", line.strip()))
+        bad.extend((md.relative_to(ROOT), i, "RunPod", line.strip()) for _ in CAMEL.finditer(line))
+        bad.extend((md.relative_to(ROOT), i, "RUNPOD", line.strip()) for _ in UPPER.finditer(line))
 
 if bad:
     print('branding check FAILED — use "Runpod" (not "RunPod"/"RUNPOD"):')

@@ -5,6 +5,9 @@ Skips http(s)/mailto links. For a link with a #fragment into a Markdown file
 (or a bare #fragment within the same file), verifies the fragment matches a
 heading, using GitHub's slug rules. Run from the repo root: python3 hooks/check_links.py
 """
+
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
@@ -17,12 +20,11 @@ HEADING = re.compile(r"^#{1,6}\s+(.*?)\s*#*\s*$")
 def slug(text: str) -> str:
     s = text.strip().lower()
     s = re.sub(r"[^\w\s-]", "", s)  # drop punctuation except word/space/hyphen
-    s = s.replace(" ", "-")
-    return s
+    return s.replace(" ", "-")
 
 
-def slugs_for(path: Path) -> set:
-    out = set()
+def slugs_for(path: Path) -> set[str]:
+    out: set[str] = set()
     try:
         for line in path.read_text(errors="replace").splitlines():
             m = HEADING.match(line)
@@ -33,7 +35,7 @@ def slugs_for(path: Path) -> set:
     return out
 
 
-bad = []
+bad: list[tuple[Path, int, str, str]] = []
 for md in ROOT.rglob("*.md"):
     if ".git" in md.parts:
         continue
@@ -48,9 +50,8 @@ for md in ROOT.rglob("*.md"):
             if path_part and not target.exists():
                 bad.append((md.relative_to(ROOT), line_no, link, "missing file"))
                 continue
-            if frag and target.suffix == ".md":
-                if slug(frag) not in slugs_for(target):
-                    bad.append((md.relative_to(ROOT), line_no, link, "missing anchor"))
+            if frag and target.suffix == ".md" and slug(frag) not in slugs_for(target):
+                bad.append((md.relative_to(ROOT), line_no, link, "missing anchor"))
 
 if bad:
     print("link check FAILED:")
