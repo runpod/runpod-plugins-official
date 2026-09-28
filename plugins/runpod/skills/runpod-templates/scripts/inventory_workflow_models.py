@@ -7,7 +7,13 @@ records to a manifest without this script needing network access or credentials.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
 import argparse
+import enum
 import hashlib
 import ipaddress
 import json
@@ -15,10 +21,15 @@ import math
 import os
 import re
 import sys
+from collections.abc import Iterator
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import unquote, urlsplit
 
+JSONValue: TypeAlias = Union[bool, int, float, str, "list[JSONValue]", "dict[str, JSONValue]", None]
+# JSON pointer path components: dict keys (str) and list indices (int).
+PathParts: TypeAlias = "tuple[str | int, ...]"
 
 SCHEMA_VERSION = 1
 MODEL_EXTENSIONS = (
@@ -39,6 +50,7 @@ UNSUPPORTED_MODEL_EXTENSIONS = (
 _SAFE_FILENAME = re.compile(r"^[^\x00-\x1f<>:\"/\\|?*]+$")
 _SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
 _HF_REVISION = re.compile(r"^[0-9a-fA-F]{40}$")
+_SAFE_DIRECTORY_HINT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")
 ALLOWED_HOSTS = {"huggingface.co", "civitai.com", "www.civitai.com"}
 _SENSITIVE_QUERY_KEYS = re.compile(
     r"(?:^|_)(?:access_token|api_key|apikey|auth|authorization|key|secret|token)(?:$|_)",
@@ -50,7 +62,88 @@ class InventoryError(ValueError):
     """Raised for malformed input that cannot be inventoried safely."""
 
 
-def _canonical_json(value: Any) -> str:
+class NodeKind(enum.Enum):
+    """Which ComfyUI serialization a scanned node came from."""
+
+    UI = "ui"
+    API = "api"
+
+
+class SourceKind(enum.Enum):
+    """Where a model-like string was read from within a node."""
+
+    INPUT = "input"
+    WIDGET = "widget"
+
+
+@dataclass(frozen=True)
+class NodeRecord:
+    """A ComfyUI node located in a workflow document."""
+
+    node: dict[str, Any]
+    path: PathParts
+    kind: NodeKind
+    node_id: str
+    node_type: str
+
+
+@dataclass(frozen=True)
+class ModelArrayRecord:
+    """A single entry inside a ComfyUI ``models`` metadata array."""
+
+    entry: dict[str, Any]
+    path: PathParts
+    scope: str
+    node_id: str | None
+    node_type: str | None
+    node_kind: NodeKind | None
+
+
+NodeInfo = tuple[str, str, NodeKind]
+
+
+@dataclass
+class _RequirementRecord:
+    """Mutable accumulator state for one model requirement."""
+
+    filenames: set[str] = field(default_factory=set)
+    directory_hints: set[str] = field(default_factory=set)
+    occurrences: list[dict[str, Any]] = field(default_factory=list)
+    metadata_entries: list[dict[str, Any]] = field(default_factory=list)
+
+
+class RequirementAccumulator:
+    """Collect consumer/metadata occurrences keyed by requirement identity."""
+
+    def __init__(self) -> None:
+        self._records: dict[str, _RequirementRecord] = {}
+
+    def add(
+        self,
+        requirement_key: str,
+        filename: str,
+        hints: set[str],
+        occurrence: dict[str, Any],
+        metadata_entry: dict[str, Any] | None = None,
+    ) -> None:
+        record = self._records.setdefault(requirement_key, _RequirementRecord())
+        record.filenames.add(filename)
+        record.directory_hints.update(hints)
+        record.occurrences.append(occurrence)
+        if metadata_entry is not None:
+            record.metadata_entries.append(metadata_entry)
+
+    def __contains__(self, requirement_key: str) -> bool:
+        return requirement_key in self._records
+
+    def __getitem__(self, requirement_key: str) -> _RequirementRecord:
+        return self._records[requirement_key]
+
+    def items(self) -> Iterator[tuple[str, _RequirementRecord]]:
+        yield from self._records.items()
+
+
+def _canonical_json(value: object) -> str:
     return json.dumps(
         value,
         ensure_ascii=False,
@@ -60,22 +153,18 @@ def _canonical_json(value: Any) -> str:
     )
 
 
-def workflow_sha256(value: Any) -> str:
+def workflow_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("utf-8")).hexdigest()
 
 
-def _pointer(parts: tuple[Any, ...]) -> str:
+def _pointer(parts: PathParts) -> str:
     if not parts:
         return ""
-    encoded = []
-    for part in parts:
-        encoded.append(str(part).replace("~", "~0").replace("/", "~1"))
+    encoded = [str(part).replace("~", "~0").replace("/", "~1") for part in parts]
     return "/" + "/".join(encoded)
 
 
-def _filename_with_extensions(
-    raw_value: Any, extensions: tuple[str, ...]
-) -> str | None:
+def _filename_with_extensions(raw_value: object, extensions: tuple[str, ...]) -> str | None:
     """Return a safe basename matching extensions, or None."""
 
     if not isinstance(raw_value, str):
@@ -105,19 +194,19 @@ def _filename_with_extensions(
     return filename
 
 
-def _model_filename(raw_value: Any) -> str | None:
+def _model_filename(raw_value: object) -> str | None:
     """Return a RunpodDirect-supported model basename, or None."""
 
     return _filename_with_extensions(raw_value, MODEL_EXTENSIONS)
 
 
-def _unsupported_model_filename(raw_value: Any) -> str | None:
+def _unsupported_model_filename(raw_value: object) -> str | None:
     """Return a safe model-like basename outside RunpodDirect's scanner contract."""
 
     return _filename_with_extensions(raw_value, UNSUPPORTED_MODEL_EXTENSIONS)
 
 
-def _is_subfoldered_selection(raw_value: Any) -> bool:
+def _is_subfoldered_selection(raw_value: object) -> bool:
     """Return whether a local loader selection includes a relative subdirectory."""
 
     if not isinstance(raw_value, str):
@@ -128,8 +217,8 @@ def _is_subfoldered_selection(raw_value: Any) -> bool:
     return "/" in value.replace("\\", "/")
 
 
-def _hints_from_field(field: str) -> set[str]:
-    key = re.sub(r"[^a-z0-9]+", "_", field.casefold()).strip("_")
+def _hints_from_field(field_name: str) -> set[str]:
+    key = re.sub(r"[^a-z0-9]+", "_", field_name.casefold()).strip("_")
     if not key:
         return set()
     if "clip_vision" in key:
@@ -180,8 +269,8 @@ def _hints_from_node_type(node_type: str) -> set[str]:
     return set()
 
 
-def _field_may_reference_model(field: str) -> bool:
-    key = re.sub(r"[^a-z0-9]+", "_", field.casefold()).strip("_")
+def _field_may_reference_model(field_name: str) -> bool:
+    key = re.sub(r"[^a-z0-9]+", "_", field_name.casefold()).strip("_")
     model_subject = (
         r"(?:model|checkpoint|ckpt|weights?|lora|vae|unet|clip|encoder|"
         r"text_encoder|control_?net|diffusion_model|style_model|upscale_model|gligen)"
@@ -216,45 +305,43 @@ def _node_may_reference_model(node_type: str) -> bool:
     )
 
 
-def _iter_nodes(
-    value: Any, path: tuple[Any, ...] = ()
-) -> Iterator[tuple[dict[str, Any], tuple[Any, ...], str, str, str]]:
-    """Yield (node, path, kind, id, type), including nodes in subgraphs/envelopes."""
+def _iter_nodes(value: object, path: PathParts = ()) -> Iterator[NodeRecord]:
+    """Yield node records, including nodes in subgraphs/envelopes."""
 
     if isinstance(value, list):
         for index, child in enumerate(value):
-            yield from _iter_nodes(child, path + (index,))
+            yield from _iter_nodes(child, (*path, index))
         return
     if not isinstance(value, dict):
         return
 
     ui_type = value.get("type")
     api_type = value.get("class_type")
-    if isinstance(ui_type, str) and ui_type and (
-        "widgets_values" in value or "inputs" in value or "properties" in value
+    if (
+        isinstance(ui_type, str)
+        and ui_type
+        and ("widgets_values" in value or "inputs" in value or "properties" in value)
     ):
         raw_id = value.get("id", path[-1] if path else "")
-        yield value, path, "ui", str(raw_id), ui_type
+        yield NodeRecord(value, path, NodeKind.UI, str(raw_id), ui_type)
     elif isinstance(api_type, str) and api_type and isinstance(value.get("inputs"), dict):
         raw_id = value.get("id", path[-1] if path else "")
-        yield value, path, "api", str(raw_id), api_type
+        yield NodeRecord(value, path, NodeKind.API, str(raw_id), api_type)
 
     for key, child in value.items():
-        yield from _iter_nodes(child, path + (key,))
+        yield from _iter_nodes(child, (*path, key))
 
 
-def _iter_strings(
-    value: Any, path: tuple[Any, ...] = ()
-) -> Iterator[tuple[str, tuple[Any, ...], str]]:
+def _iter_strings(value: object, path: PathParts = ()) -> Iterator[tuple[str, PathParts, str]]:
     if isinstance(value, str):
-        field = str(path[-1]) if path else ""
-        yield value, path, field
+        field_name = str(path[-1]) if path else ""
+        yield value, path, field_name
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            yield from _iter_strings(child, path + (index,))
+            yield from _iter_strings(child, (*path, index))
     elif isinstance(value, dict):
         for key, child in value.items():
-            yield from _iter_strings(child, path + (key,))
+            yield from _iter_strings(child, (*path, key))
 
 
 def _metadata_has_sha256(entry: dict[str, Any]) -> bool:
@@ -280,7 +367,7 @@ def _metadata_sha256(entry: dict[str, Any]) -> str | None:
 
 
 def _validate_url(
-    raw: Any,
+    raw: object,
     filename: str | None,
     *,
     allow_mutable_hf_revision: bool = False,
@@ -325,47 +412,45 @@ def _validate_url(
 
     path_parts = [unquote(part) for part in parsed.path.split("/") if part]
     if host == "huggingface.co":
-        try:
-            resolve_index = path_parts.index("resolve")
-            revision = path_parts[resolve_index + 1]
-            remote_filename = path_parts[-1]
-        except (ValueError, IndexError) as exc:
-            raise InventoryError(
-                "Hugging Face URL must be a /resolve/<commit>/ file URL"
-            ) from exc
-        if resolve_index != 2 or len(path_parts) < 5:
-            raise InventoryError(
-                "Hugging Face URL must identify /<owner>/<repo>/resolve/<commit>/<file>"
-            )
-        if not _HF_REVISION.fullmatch(revision):
-            if not allow_mutable_hf_revision:
-                raise InventoryError(
-                    "Hugging Face URL must pin a full commit revision unless a "
-                    "reviewed SHA-256 binds the expected bytes"
-                )
-            if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", revision):
-                raise InventoryError("Hugging Face URL contains an unsafe revision")
-            # Dot segments (including percent-encoded forms, already decoded by
-            # unquote above) must never name a revision.
-            if any(
-                segment in {".", ".."}
-                for segment in revision.replace("\\", "/").split("/")
-            ):
-                raise InventoryError("Hugging Face URL contains an unsafe revision")
-        if filename is not None and remote_filename != filename:
-            raise InventoryError(
-                "Hugging Face URL filename does not match the manifest filename"
-            )
-    else:
-        if (
-            len(path_parts) != 4
-            or path_parts[:3] != ["api", "download", "models"]
-            or not path_parts[3].isdigit()
-        ):
-            raise InventoryError(
-                "Civitai URL must be /api/download/models/<numeric-version-id>"
-            )
+        _validate_huggingface_path(path_parts, filename, allow_mutable_hf_revision)
+    elif (
+        len(path_parts) != 4
+        or path_parts[:3] != ["api", "download", "models"]
+        or not path_parts[3].isdigit()
+    ):
+        raise InventoryError("Civitai URL must be /api/download/models/<numeric-version-id>")
     return raw
+
+
+def _validate_huggingface_path(
+    path_parts: list[str],
+    filename: str | None,
+    allow_mutable_hf_revision: bool,
+) -> None:
+    try:
+        resolve_index = path_parts.index("resolve")
+        revision = path_parts[resolve_index + 1]
+        remote_filename = path_parts[-1]
+    except (ValueError, IndexError) as exc:
+        raise InventoryError("Hugging Face URL must be a /resolve/<commit>/ file URL") from exc
+    if resolve_index != 2 or len(path_parts) < 5:
+        raise InventoryError(
+            "Hugging Face URL must identify /<owner>/<repo>/resolve/<commit>/<file>"
+        )
+    if not _HF_REVISION.fullmatch(revision):
+        if not allow_mutable_hf_revision:
+            raise InventoryError(
+                "Hugging Face URL must pin a full commit revision unless a "
+                "reviewed SHA-256 binds the expected bytes"
+            )
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", revision):
+            raise InventoryError("Hugging Face URL contains an unsafe revision")
+        # Dot segments (including percent-encoded forms, already decoded by
+        # unquote above) must never name a revision.
+        if any(segment in {".", ".."} for segment in revision.replace("\\", "/").split("/")):
+            raise InventoryError("Hugging Face URL contains an unsafe revision")
+    if filename is not None and remote_filename != filename:
+        raise InventoryError("Hugging Face URL filename does not match the manifest filename")
 
 
 def _metadata_issues(entry: dict[str, Any]) -> list[str]:
@@ -396,10 +481,10 @@ def _metadata_issues(entry: dict[str, Any]) -> list[str]:
             issues.append("invalid_hash")
         else:
             self_describing = raw_hash.casefold().startswith("sha256:")
-            valid_type = (
-                isinstance(raw_hash_type, str)
-                and raw_hash_type.strip().casefold() in {"sha256", "sha-256"}
-            )
+            valid_type = isinstance(raw_hash_type, str) and raw_hash_type.strip().casefold() in {
+                "sha256",
+                "sha-256",
+            }
             if not self_describing and raw_hash_type is None:
                 issues.append("missing_hash_type")
             elif not valid_type and raw_hash_type is not None:
@@ -410,22 +495,13 @@ def _metadata_issues(entry: dict[str, Any]) -> list[str]:
 
 
 def _iter_model_arrays(
-    value: Any,
-    node_by_path: dict[tuple[Any, ...], tuple[str, str, str]],
-    path: tuple[Any, ...] = (),
-) -> Iterator[
-    tuple[
-        dict[str, Any],
-        tuple[Any, ...],
-        str,
-        str | None,
-        str | None,
-        str | None,
-    ]
-]:
+    value: object,
+    node_by_path: dict[PathParts, NodeInfo],
+    path: PathParts = (),
+) -> Iterator[ModelArrayRecord]:
     if isinstance(value, list):
         for index, child in enumerate(value):
-            yield from _iter_model_arrays(child, node_by_path, path + (index,))
+            yield from _iter_model_arrays(child, node_by_path, (*path, index))
         return
     if not isinstance(value, dict):
         return
@@ -437,25 +513,25 @@ def _iter_model_arrays(
         scope = "node" if node_info else "root"
         for index, entry in enumerate(models):
             if isinstance(entry, dict):
-                yield (
-                    entry,
-                    path + ("models", index),
-                    scope,
-                    node_info[0] if node_info else None,
-                    node_info[1] if node_info else None,
-                    node_info[2] if node_info else None,
+                yield ModelArrayRecord(
+                    entry=entry,
+                    path=(*path, "models", index),
+                    scope=scope,
+                    node_id=node_info[0] if node_info else None,
+                    node_type=node_info[1] if node_info else None,
+                    node_kind=node_info[2] if node_info else None,
                 )
 
     for key, child in value.items():
-        yield from _iter_model_arrays(child, node_by_path, path + (key,))
+        yield from _iter_model_arrays(child, node_by_path, (*path, key))
 
 
-def _detect_format(node_kinds: set[str]) -> str:
-    if node_kinds == {"ui"}:
+def _detect_format(node_kinds: set[NodeKind]) -> str:
+    if node_kinds == {NodeKind.UI}:
         return "ui"
-    if node_kinds == {"api"}:
+    if node_kinds == {NodeKind.API}:
         return "api"
-    if node_kinds == {"ui", "api"}:
+    if node_kinds == {NodeKind.UI, NodeKind.API}:
         return "hybrid"
     return "unknown"
 
@@ -470,280 +546,308 @@ def _directory_hint_groups(hints: set[str]) -> set[str]:
     return {aliases.get(hint.casefold(), hint.casefold()) for hint in hints}
 
 
-def build_inventory(document: Any, source_name: str | None = None) -> dict[str, Any]:
-    if not isinstance(document, dict):
-        raise InventoryError("workflow JSON root must be an object")
+def _matching_consumers(
+    accumulator: RequirementAccumulator,
+    filename: str,
+    node_id: str | None,
+    metadata_node_path: str | None,
+    *,
+    exact: bool,
+) -> list[str]:
+    """Return requirement keys whose loader occurrences match ``filename``."""
 
-    nodes = list(_iter_nodes(document))
-    node_by_path = {
-        path: (node_id, node_type, kind)
-        for _, path, kind, node_id, node_type in nodes
-    }
-    node_kinds = {kind for _, _, kind, _, _ in nodes}
-    requirements: dict[str, dict[str, Any]] = {}
-    metadata: list[dict[str, Any]] = []
-    warnings: list[dict[str, str]] = []
-
-    def add_requirement(
-        requirement_key: str,
-        filename: str,
-        hints: set[str],
-        occurrence: dict[str, Any],
-        metadata_entry: dict[str, Any] | None = None,
-    ) -> None:
-        record = requirements.setdefault(
-            requirement_key,
-            {
-                "filenames": set(),
-                "directory_hints": set(),
-                "occurrences": [],
-                "metadata_entries": [],
-            },
+    matches: list[str] = []
+    for candidate_key, candidate in accumulator.items():
+        candidate_names = candidate.filenames
+        name_matches = (
+            filename in candidate_names
+            if exact
+            else any(filename.casefold() == name.casefold() for name in candidate_names)
         )
-        record["filenames"].add(filename)
-        record["directory_hints"].update(hints)
-        record["occurrences"].append(occurrence)
-        if metadata_entry is not None:
-            record["metadata_entries"].append(metadata_entry)
+        if not name_matches:
+            continue
+        candidate_node_paths = {
+            occurrence.get("node_path")
+            for occurrence in candidate.occurrences
+            if occurrence.get("source") != "metadata"
+        }
+        if not candidate_node_paths:
+            continue
+        if node_id is None or metadata_node_path in candidate_node_paths:
+            matches.append(candidate_key)
+    return matches
 
-    for node, node_path, kind, node_id, node_type in nodes:
-        sources: list[tuple[str, Any, tuple[Any, ...]]] = []
+
+def _collect_consumer_requirements(
+    nodes: list[NodeRecord],
+    accumulator: RequirementAccumulator,
+    warnings: list[dict[str, str]],
+) -> None:
+    """Scan loader nodes for model-like selections and record requirements."""
+
+    for record in nodes:
+        node = record.node
+        node_path = record.path
+        sources: list[tuple[SourceKind, object, PathParts]] = []
         if "inputs" in node:
-            sources.append(("input", node.get("inputs"), node_path + ("inputs",)))
+            sources.append((SourceKind.INPUT, node.get("inputs"), (*node_path, "inputs")))
         if "widgets_values" in node:
             sources.append(
-                ("widget", node.get("widgets_values"), node_path + ("widgets_values",))
+                (SourceKind.WIDGET, node.get("widgets_values"), (*node_path, "widgets_values"))
             )
         for source, values, base_path in sources:
-            for raw_value, relative_path, field in _iter_strings(values):
-                filename = _model_filename(raw_value)
-                unsupported_filename = _unsupported_model_filename(raw_value)
-                if not filename and not unsupported_filename:
-                    continue
-                field_hints = _hints_from_field(field)
-                node_hints = _hints_from_node_type(node_type)
-                hints = field_hints or node_hints
-                value_path = base_path + relative_path
-                value_pointer = _pointer(value_path)
-                qualified = bool(hints) or _field_may_reference_model(
-                    field
-                ) or _node_may_reference_model(node_type)
-                if not qualified:
-                    warnings.append(
-                        {
-                            "code": "unqualified_model_like_string",
-                            "message": (
-                                f"ignored {filename or unsupported_filename!r}: node/field "
-                                "context does not identify a model consumer"
-                            ),
-                            "path": value_pointer,
-                        }
-                    )
-                    continue
-                if unsupported_filename:
-                    warnings.append(
-                        {
-                            "code": "unsupported_runpoddirect_extension",
-                            "message": (
-                                f"{unsupported_filename!r} looks like a model, but its "
-                                "extension is outside the current RunpodDirect scanner contract"
-                            ),
-                            "path": value_pointer,
-                        }
-                    )
-                    continue
-                add_requirement(
-                    "consumer|"
-                    + _pointer(node_path)
-                    + "|"
-                    + value_pointer
-                    + "|"
-                    + filename.casefold(),
-                    filename,
-                    hints,
-                    {
-                        "directory_hints": sorted(hints),
-                        "field": field,
-                        "node_id": node_id,
-                        "node_kind": kind,
-                        "node_path": _pointer(node_path),
-                        "node_type": node_type,
-                        "path": value_pointer,
-                        "selected_value": raw_value,
-                        "source": source,
-                        "subfoldered": _is_subfoldered_selection(raw_value),
-                    },
+            for raw_value, relative_path, field_name in _iter_strings(values):
+                _record_consumer_string(
+                    accumulator,
+                    warnings,
+                    record,
+                    source,
+                    base_path,
+                    relative_path,
+                    field_name,
+                    raw_value,
                 )
 
-    for entry, entry_path, scope, node_id, node_type, node_kind in _iter_model_arrays(
-        document, node_by_path
-    ):
-        issues = _metadata_issues(entry)
-        filename = _model_filename(entry.get("name"))
-        normalized = {
-            "directory": (
-                entry.get("directory")
-                if isinstance(entry.get("directory"), str)
-                else None
-            ),
-            "hash": entry.get("hash") if isinstance(entry.get("hash"), str) else None,
-            "hash_type": (
-                entry.get("hash_type")
-                if isinstance(entry.get("hash_type"), str)
-                else entry.get("hashType")
-                if isinstance(entry.get("hashType"), str)
-                else None
-            ),
-            "issues": issues,
-            "name": entry.get("name") if isinstance(entry.get("name"), str) else None,
-            "node_id": node_id,
-            "node_type": node_type,
-            "path": _pointer(entry_path),
-            "scope": scope,
-            "url": entry.get("url") if isinstance(entry.get("url"), str) else None,
-        }
+
+def _record_consumer_string(
+    accumulator: RequirementAccumulator,
+    warnings: list[dict[str, str]],
+    record: NodeRecord,
+    source: SourceKind,
+    base_path: PathParts,
+    relative_path: PathParts,
+    field_name: str,
+    raw_value: str,
+) -> None:
+    filename = _model_filename(raw_value)
+    unsupported_filename = _unsupported_model_filename(raw_value)
+    if not filename and not unsupported_filename:
+        return
+    field_hints = _hints_from_field(field_name)
+    node_hints = _hints_from_node_type(record.node_type)
+    hints = field_hints or node_hints
+    value_path = (*base_path, *relative_path)
+    value_pointer = _pointer(value_path)
+    qualified = (
+        bool(hints)
+        or _field_may_reference_model(field_name)
+        or _node_may_reference_model(record.node_type)
+    )
+    if not qualified:
+        warnings.append(
+            {
+                "code": "unqualified_model_like_string",
+                "message": (
+                    f"ignored {filename or unsupported_filename!r}: node/field "
+                    "context does not identify a model consumer"
+                ),
+                "path": value_pointer,
+            }
+        )
+        return
+    if unsupported_filename:
+        warnings.append(
+            {
+                "code": "unsupported_runpoddirect_extension",
+                "message": (
+                    f"{unsupported_filename!r} looks like a model, but its "
+                    "extension is outside the current RunpodDirect scanner contract"
+                ),
+                "path": value_pointer,
+            }
+        )
+        return
+    if filename is None:
+        return
+    accumulator.add(
+        "consumer|" + _pointer(record.path) + "|" + value_pointer + "|" + filename.casefold(),
+        filename,
+        hints,
+        {
+            "directory_hints": sorted(hints),
+            "field": field_name,
+            "node_id": record.node_id,
+            "node_kind": record.kind.value,
+            "node_path": _pointer(record.path),
+            "node_type": record.node_type,
+            "path": value_pointer,
+            "selected_value": raw_value,
+            "source": source.value,
+            "subfoldered": _is_subfoldered_selection(raw_value),
+        },
+    )
+
+
+def _normalize_metadata(record: ModelArrayRecord, issues: list[str]) -> dict[str, Any]:
+    """Build the neutral existing-metadata record (sharing the issues list)."""
+
+    entry = record.entry
+    return {
+        "directory": (entry.get("directory") if isinstance(entry.get("directory"), str) else None),
+        "hash": entry.get("hash") if isinstance(entry.get("hash"), str) else None,
+        "hash_type": (
+            entry.get("hash_type")
+            if isinstance(entry.get("hash_type"), str)
+            else entry.get("hashType")
+            if isinstance(entry.get("hashType"), str)
+            else None
+        ),
+        "issues": issues,
+        "name": entry.get("name") if isinstance(entry.get("name"), str) else None,
+        "node_id": record.node_id,
+        "node_type": record.node_type,
+        "path": _pointer(record.path),
+        "scope": record.scope,
+        "url": entry.get("url") if isinstance(entry.get("url"), str) else None,
+    }
+
+
+def _metadata_directory_hints(entry: dict[str, Any]) -> set[str]:
+    raw_directory = entry.get("directory")
+    if isinstance(raw_directory, str) and _SAFE_DIRECTORY_HINT.fullmatch(raw_directory.strip()):
+        return {raw_directory.strip()}
+    return set()
+
+
+def _associate_metadata_entry(
+    record: ModelArrayRecord,
+    filename: str,
+    issues: list[str],
+    normalized: dict[str, Any],
+    accumulator: RequirementAccumulator,
+    warnings: list[dict[str, str]],
+) -> None:
+    """Attach a metadata entry to the requirement(s) its basename resolves."""
+
+    entry = record.entry
+    entry_path = record.path
+    node_id = record.node_id
+    hints = _metadata_directory_hints(entry)
+    metadata_node_path = _pointer(entry_path[:-3]) if node_id is not None else None
+
+    matches = _matching_consumers(accumulator, filename, node_id, metadata_node_path, exact=True)
+    case_mismatch = False
+    if not matches:
+        matches = _matching_consumers(
+            accumulator, filename, node_id, metadata_node_path, exact=False
+        )
+        case_mismatch = bool(matches)
+
+    occurrence = {
+        "directory_hints": sorted(hints),
+        "field": "models",
+        "node_id": node_id,
+        "node_kind": record.node_kind.value if record.node_kind is not None else None,
+        "node_path": metadata_node_path,
+        "node_type": record.node_type,
+        "path": _pointer(entry_path),
+        "selected_value": entry.get("name"),
+        "source": "metadata",
+        "subfoldered": _is_subfoldered_selection(entry.get("name")),
+    }
+
+    if len(matches) == 1:
+        candidate = accumulator[matches[0]]
+        expected_filename = min(candidate.filenames, key=lambda item: (item.casefold(), item))
+        if case_mismatch:
+            issues.append("name_mismatch_with_loader")
+
+        candidate_hints = set(candidate.directory_hints)
+        metadata_hints = hints
+        if candidate_hints and hints:
+            if _directory_hint_groups(candidate_hints).isdisjoint(_directory_hint_groups(hints)):
+                issues.append("directory_mismatch_with_loader")
+            # Loader-derived hints remain authoritative. Avoid making a
+            # repair impossible by folding a conflicting metadata folder
+            # back into the requirement's accepted directory set.
+            metadata_hints = set()
+        accumulator.add(matches[0], expected_filename, metadata_hints, occurrence, normalized)
+    elif not matches:
+        accumulator.add(
+            "metadata|" + _pointer(entry_path) + "|" + filename.casefold(),
+            filename,
+            hints,
+            occurrence,
+            normalized,
+        )
+    else:
+        warnings.append(
+            {
+                "code": "ambiguous_model_metadata_scope",
+                "message": (
+                    "metadata basename matches multiple consuming fields and was not "
+                    "used to satisfy any one requirement"
+                ),
+                "path": _pointer(entry_path),
+            }
+        )
+
+
+def _collect_model_array_metadata(
+    document: object,
+    node_by_path: dict[PathParts, NodeInfo],
+    accumulator: RequirementAccumulator,
+    warnings: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """Scan ``models`` arrays, associate entries and report metadata issues."""
+
+    metadata: list[dict[str, Any]] = []
+    for record in _iter_model_arrays(document, node_by_path):
+        issues = _metadata_issues(record.entry)
+        filename = _model_filename(record.entry.get("name"))
+        normalized = _normalize_metadata(record, issues)
         metadata.append(normalized)
         if filename:
-            raw_directory = entry.get("directory")
-            hints = (
-                {raw_directory.strip()}
-                if isinstance(raw_directory, str)
-                and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", raw_directory.strip())
-                else set()
-            )
-            metadata_node_path = _pointer(entry_path[:-3]) if node_id is not None else None
-            def matching_consumers(*, exact: bool) -> list[str]:
-                matches: list[str] = []
-                for candidate_key, candidate in requirements.items():
-                    candidate_names = set(candidate["filenames"])
-                    name_matches = (
-                        filename in candidate_names
-                        if exact
-                        else any(
-                            filename.casefold() == candidate_name.casefold()
-                            for candidate_name in candidate_names
-                        )
-                    )
-                    if not name_matches:
-                        continue
-                    candidate_node_paths = {
-                        occurrence.get("node_path")
-                        for occurrence in candidate["occurrences"]
-                        if occurrence.get("source") != "metadata"
-                    }
-                    if not candidate_node_paths:
-                        continue
-                    if node_id is None or metadata_node_path in candidate_node_paths:
-                        matches.append(candidate_key)
-                return matches
-
-            matches = matching_consumers(exact=True)
-            case_mismatch = False
-            if not matches:
-                matches = matching_consumers(exact=False)
-                case_mismatch = bool(matches)
-
-            occurrence = {
-                "directory_hints": sorted(hints),
-                "field": "models",
-                "node_id": node_id,
-                "node_kind": node_kind,
-                "node_path": metadata_node_path,
-                "node_type": node_type,
-                "path": _pointer(entry_path),
-                "selected_value": entry.get("name"),
-                "source": "metadata",
-                "subfoldered": _is_subfoldered_selection(entry.get("name")),
-            }
-            if len(matches) == 1:
-                candidate = requirements[matches[0]]
-                expected_filename = sorted(
-                    candidate["filenames"], key=lambda item: (item.casefold(), item)
-                )[0]
-                if case_mismatch:
-                    issues.append("name_mismatch_with_loader")
-
-                candidate_hints = set(candidate["directory_hints"])
-                metadata_hints = hints
-                if candidate_hints and hints:
-                    if _directory_hint_groups(candidate_hints).isdisjoint(
-                        _directory_hint_groups(hints)
-                    ):
-                        issues.append("directory_mismatch_with_loader")
-                    # Loader-derived hints remain authoritative. Avoid making a
-                    # repair impossible by folding a conflicting metadata folder
-                    # back into the requirement's accepted directory set.
-                    metadata_hints = set()
-                add_requirement(
-                    matches[0],
-                    expected_filename,
-                    metadata_hints,
-                    occurrence,
-                    normalized,
-                )
-            elif not matches:
-                add_requirement(
-                    "metadata|" + _pointer(entry_path) + "|" + filename.casefold(),
-                    filename,
-                    hints,
-                    occurrence,
-                    normalized,
-                )
-            else:
-                warnings.append(
-                    {
-                        "code": "ambiguous_model_metadata_scope",
-                        "message": (
-                            "metadata basename matches multiple consuming fields and was not "
-                            "used to satisfy any one requirement"
-                        ),
-                        "path": _pointer(entry_path),
-                    }
-                )
+            _associate_metadata_entry(record, filename, issues, normalized, accumulator, warnings)
         if issues:
             warnings.append(
                 {
                     "code": "incomplete_model_metadata",
                     "message": ", ".join(issues),
-                    "path": _pointer(entry_path),
+                    "path": _pointer(record.path),
                 }
             )
+    return metadata
 
+
+def _metadata_status(metadata_entries: list[dict[str, Any]]) -> str:
+    if metadata_entries and any(not item["issues"] for item in metadata_entries):
+        return "complete"
+    if metadata_entries:
+        return "partial"
+    return "missing"
+
+
+def _unique_occurrences(occurrences: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    ordered = sorted(
+        occurrences,
+        key=lambda item: (
+            item.get("path") or "",
+            item.get("source") or "",
+            item.get("node_id") or "",
+        ),
+    )
+    unique: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for occurrence in ordered:
+        signature = _canonical_json(occurrence)
+        if signature not in seen:
+            seen.add(signature)
+            unique.append(occurrence)
+    return unique
+
+
+def _finalize_requirements(accumulator: RequirementAccumulator) -> list[dict[str, Any]]:
     output_requirements: list[dict[str, Any]] = []
-    for requirement_key, raw_record in requirements.items():
-        filenames = sorted(raw_record["filenames"], key=lambda item: (item.casefold(), item))
-        occurrences = sorted(
-            raw_record["occurrences"],
-            key=lambda item: (
-                item.get("path") or "",
-                item.get("source") or "",
-                item.get("node_id") or "",
-            ),
-        )
-        unique_occurrences = []
-        seen_occurrences: set[str] = set()
-        for occurrence in occurrences:
-            signature = _canonical_json(occurrence)
-            if signature not in seen_occurrences:
-                seen_occurrences.add(signature)
-                unique_occurrences.append(occurrence)
-
-        metadata_entries = raw_record["metadata_entries"]
-        if metadata_entries and any(not item["issues"] for item in metadata_entries):
-            metadata_status = "complete"
-        elif metadata_entries:
-            metadata_status = "partial"
-        else:
-            metadata_status = "missing"
+    for requirement_key, record in accumulator.items():
+        filenames = sorted(record.filenames, key=lambda item: (item.casefold(), item))
+        unique_occurrences = _unique_occurrences(record.occurrences)
         output_requirements.append(
             {
-                "directory_ambiguous": len(
-                    _directory_hint_groups(raw_record["directory_hints"])
-                )
-                > 1,
-                "directory_hints": sorted(raw_record["directory_hints"]),
+                "directory_ambiguous": len(_directory_hint_groups(record.directory_hints)) > 1,
+                "directory_hints": sorted(record.directory_hints),
                 "filename": filenames[0],
-                "metadata_status": metadata_status,
+                "metadata_status": _metadata_status(record.metadata_entries),
                 "occurrences": unique_occurrences,
                 "selection_mismatch": any(
                     occurrence.get("selected_value") != filenames[0]
@@ -767,10 +871,29 @@ def build_inventory(document: Any, source_name: str | None = None) -> dict[str, 
             item["requirement_id"],
         )
     )
+    return output_requirements
+
+
+def build_inventory(document: object, source_name: str | None = None) -> dict[str, Any]:
+    if not isinstance(document, dict):
+        raise InventoryError("workflow JSON root must be an object")
+
+    nodes = list(_iter_nodes(document))
+    node_by_path: dict[PathParts, NodeInfo] = {
+        node.path: (node.node_id, node.node_type, node.kind) for node in nodes
+    }
+    node_kinds = {node.kind for node in nodes}
+
+    accumulator = RequirementAccumulator()
+    warnings: list[dict[str, str]] = []
+    _collect_consumer_requirements(nodes, accumulator, warnings)
+    metadata = _collect_model_array_metadata(document, node_by_path, accumulator, warnings)
+    output_requirements = _finalize_requirements(accumulator)
+
     metadata.sort(key=lambda item: (item["path"], item.get("name") or ""))
     warnings.sort(key=lambda item: (item["path"], item["code"], item["message"]))
 
-    result = {
+    result: dict[str, Any] = {
         "existing_metadata": metadata,
         "requirements": output_requirements,
         "schema_version": SCHEMA_VERSION,
@@ -793,8 +916,8 @@ def build_inventory(document: Any, source_name: str | None = None) -> dict[str, 
     return result
 
 
-def load_json(path: Path) -> Any:
-    def reject_constant(value: str) -> Any:
+def load_json(path: Path) -> JSONValue:
+    def reject_constant(value: str) -> float:
         raise InventoryError(f"invalid JSON in {path}: non-finite number {value!r}")
 
     def finite_float(value: str) -> float:
@@ -805,11 +928,12 @@ def load_json(path: Path) -> Any:
 
     try:
         with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(
+            parsed: JSONValue = json.load(
                 handle,
                 parse_constant=reject_constant,
                 parse_float=finite_float,
             )
+            return parsed
     except OSError as exc:
         raise InventoryError(f"cannot read {path}: {exc}") from exc
     except json.JSONDecodeError as exc:

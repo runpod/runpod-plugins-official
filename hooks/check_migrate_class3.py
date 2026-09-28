@@ -19,9 +19,16 @@ about a decision that does not exist, followed by a deliberate workaround.
 
 Exit 1 if any Class-3 identifier is present in v2.
 """
+
 from __future__ import annotations
-import argparse, json, re, sys
+
+import argparse
+import json
+import re
+import sys
 from pathlib import Path
+
+type JSONValue = bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"] | None
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SKILL = ROOT / "plugins/runpod/skills/runpod-migrate"
@@ -42,81 +49,123 @@ GRAPHQL_ONLY = re.compile(
 NOT_A_FIELD = {"true", "false", "null", "array", "string", "none", "n/a"}
 
 
+def as_obj(value: JSONValue) -> dict[str, JSONValue]:
+    """Return `value` if it is a JSON object, else an empty object."""
+    return value if isinstance(value, dict) else {}
+
+
+def ref_target(val: JSONValue) -> str | None:
+    """The schema name a property value references, via $ref, allOf[0].$ref, or items.$ref."""
+    if not isinstance(val, dict):
+        return None
+    ref = val.get("$ref")
+    if isinstance(ref, str):
+        return ref.split("/")[-1]
+    all_of = val.get("allOf")
+    if isinstance(all_of, list) and all_of and isinstance(all_of[0], dict):
+        first_ref = all_of[0].get("$ref")
+        if isinstance(first_ref, str):
+            return first_ref.split("/")[-1]
+    if val.get("type") == "array":
+        items = val.get("items")
+        if isinstance(items, dict):
+            items_ref = items.get("$ref")
+            if isinstance(items_ref, str):
+                return items_ref.split("/")[-1]
+    return None
+
+
 def fetch_live() -> Path:
     """Download the live spec to a temp file. Used by the scheduled drift job."""
-    import tempfile, urllib.request
-    with urllib.request.urlopen(LIVE_SPEC_URL, timeout=30) as r:
+    import tempfile
+    import urllib.parse
+    import urllib.request
+
+    if urllib.parse.urlsplit(LIVE_SPEC_URL).scheme not in ("http", "https"):
+        raise ValueError(f"refusing to fetch non-http(s) URL: {LIVE_SPEC_URL!r}")
+    with urllib.request.build_opener().open(LIVE_SPEC_URL, timeout=30) as r:
         body = r.read()
     tmp = Path(tempfile.mkstemp(suffix=".json")[1])
     tmp.write_bytes(body)
     return tmp
 
 
-def load_spec(path: Path):
-    doc = json.loads(path.read_text())
-    schemas = doc.get("components", {}).get("schemas", {})
-    params = doc.get("components", {}).get("parameters", {})
+def load_spec(
+    path: Path,
+) -> tuple[dict[str, set[str]], set[str], dict[str, JSONValue], list[str]]:
+    doc: dict[str, JSONValue] = json.loads(path.read_text())
+    schemas = as_obj(as_obj(doc.get("components")).get("schemas"))
 
-    def merge(node, acc=None, depth=0):
+    def merge(
+        node: JSONValue, acc: dict[str, JSONValue] | None = None, depth: int = 0
+    ) -> dict[str, JSONValue]:
         acc = acc if acc is not None else {}
         if depth > 6 or not isinstance(node, dict):
             return acc
-        if "$ref" in node:
-            return merge(schemas.get(node["$ref"].split("/")[-1], {}), acc, depth + 1)
-        for sub in node.get("allOf", []):
-            merge(sub, acc, depth + 1)
-        acc.update(node.get("properties", {}) or {})
+        ref = node.get("$ref")
+        if isinstance(ref, str):
+            return merge(schemas.get(ref.split("/")[-1]), acc, depth + 1)
+        all_of = node.get("allOf")
+        if isinstance(all_of, list):
+            for sub in all_of:
+                merge(sub, acc, depth + 1)
+        props = node.get("properties")
+        if isinstance(props, dict):
+            acc.update(props)
         return acc
 
-    def flatten(name, depth=0, seen=None):
+    def flatten(name: str, depth: int = 0, seen: frozenset[str] | None = None) -> set[str]:
         """All field names reachable in a schema, nested included."""
-        seen = seen if seen is not None else set()
-        out = set()
+        seen = seen if seen is not None else frozenset()
+        out: set[str] = set()
         if depth > 4 or name not in schemas or name in seen:
             return out
         seen = seen | {name}
         for key, val in merge(schemas[name]).items():
             out.add(key)
-            ref = None
-            if "$ref" in val:
-                ref = val["$ref"].split("/")[-1]
-            elif "allOf" in val and isinstance(val["allOf"][0], dict) and "$ref" in val["allOf"][0]:
-                ref = val["allOf"][0]["$ref"].split("/")[-1]
-            elif val.get("type") == "array" and isinstance(val.get("items"), dict) and "$ref" in val["items"]:
-                ref = val["items"]["$ref"].split("/")[-1]
+            ref = ref_target(val)
             if ref:
                 out |= flatten(ref, depth + 1, seen)
         return out
 
-    request_fields = {}
+    request_fields: dict[str, set[str]] = {}
     for name in schemas:
         if re.match(r"^(Create|Update)\w+Request$", name):
             request_fields[name] = flatten(name)
 
-    query_params = set()
-    for item in (doc.get("paths") or {}).values():
-        for op in item.values():
+    params = as_obj(as_obj(doc.get("components")).get("parameters"))
+    query_params: set[str] = set()
+    for item in as_obj(doc.get("paths")).values():
+        for op in as_obj(item).values():
             if not isinstance(op, dict):
                 continue
-            for prm in op.get("parameters", []) or []:
+            raw_params = op.get("parameters")
+            for raw_prm in raw_params if isinstance(raw_params, list) else []:
+                if not isinstance(raw_prm, dict):
+                    continue
+                prm = raw_prm
                 if "$ref" in prm:
-                    prm = params.get(prm["$ref"].split("/")[-1], {})
-                if prm.get("in") == "query" and prm.get("name"):
-                    query_params.add(prm["name"])
+                    ref = prm.get("$ref")
+                    prm = as_obj(params.get(ref.split("/")[-1])) if isinstance(ref, str) else {}
+                pname = prm.get("name")
+                if prm.get("in") == "query" and isinstance(pname, str) and pname:
+                    query_params.add(pname)
 
-    enums = {n: s["enum"] for n, s in schemas.items() if isinstance(s, dict) and s.get("enum")}
-    return request_fields, query_params, enums, sorted(doc.get("paths") or {})
+    enums: dict[str, JSONValue] = {
+        n: s["enum"] for n, s in schemas.items() if isinstance(s, dict) and s.get("enum")
+    }
+    return request_fields, query_params, enums, sorted(as_obj(doc.get("paths")))
 
 
-def parse_class3(md: Path):
+def parse_class3(md: Path) -> list[tuple[str, list[str], str]]:
     """Yield (capability, [identifiers], status_text) for each Class-3 row."""
     lines = md.read_text().splitlines()
-    start = next((i for i, l in enumerate(lines) if l.startswith("## Class 3")), None)
+    start = next((i for i, ln in enumerate(lines) if ln.startswith("## Class 3")), None)
     if start is None:
         return []
-    rows = []
-    for line in lines[start + 1:]:
-        if line.startswith("## ") or line.startswith("### "):
+    rows: list[tuple[str, list[str], str]] = []
+    for line in lines[start + 1 :]:
+        if line.startswith(("## ", "### ")):
             break
         if not line.startswith("|"):
             continue
@@ -124,7 +173,7 @@ def parse_class3(md: Path):
         if len(cells) < 3 or set(cells[0]) <= {"-", " "} or cells[0].lower() == "capability":
             continue
         cap = re.sub(r"\*\*", "", cells[0])
-        idents = [t for t in re.findall(r"`([^`]+)`", cells[1])]
+        idents = list(re.findall(r"`([^`]+)`", cells[1]))
         rows.append((cap, idents, cells[2]))
     return rows
 
@@ -132,10 +181,15 @@ def parse_class3(md: Path):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skill", type=Path, default=DEFAULT_SKILL)
-    ap.add_argument("--spec", type=Path, default=DEFAULT_SPEC,
-                    help="OpenAPI document (default: the vendored snapshot)")
-    ap.add_argument("--live", action="store_true",
-                    help=f"fetch {LIVE_SPEC_URL} instead of using --spec")
+    ap.add_argument(
+        "--spec",
+        type=Path,
+        default=DEFAULT_SPEC,
+        help="OpenAPI document (default: the vendored snapshot)",
+    )
+    ap.add_argument(
+        "--live", action="store_true", help=f"fetch {LIVE_SPEC_URL} instead of using --spec"
+    )
     a = ap.parse_args()
 
     if a.live:
@@ -146,14 +200,19 @@ def main() -> int:
         print(f"not found: {md}", file=sys.stderr)
         return 2
 
-    req_fields, qparams, enums, paths = load_spec(a.spec)
+    req_fields, qparams, _enums, paths = load_spec(a.spec)
     rows = parse_class3(md)
     print(f"spec:  {a.spec} — {len(req_fields)} request schemas, {len(qparams)} query params")
     print(f"table: {md.name} Class 3 — {len(rows)} rows\n")
 
-    violations, unchecked, ok, read_only = [], [], [], []
+    violations: list[tuple[str, list[str], str]] = []
+    unchecked: list[tuple[str, list[str]]] = []
+    ok: list[str] = []
+    read_only: list[tuple[str, list[str]]] = []
     for cap, idents, status in rows:
-        found, skipped, reads = [], [], []
+        found: list[str] = []
+        skipped: list[str] = []
+        reads: list[str] = []
         for ident in idents:
             tok = ident.strip()
             kind = "field"
@@ -163,7 +222,7 @@ def main() -> int:
                 tok, kind = tok.lstrip("?").rstrip("=").strip(), "query"
             # `POST /pods/{id}/reset` -> route
             elif re.match(r"^(GET|POST|PATCH|PUT|DELETE)\s+/", tok):
-                method, route = tok.split(None, 1)
+                route = tok.split(None, 1)[1]
                 norm = re.sub(r"\{[^}]+\}", "{}", route.strip().rstrip("/"))
                 if not norm.startswith("/v2"):
                     norm = "/v2" + norm
@@ -184,13 +243,14 @@ def main() -> int:
                 if tok in qparams:
                     reads.append(f"{tok} → query parameter")
                 continue
-            where = [s for s, f in req_fields.items() if tok in f]
+            where = [s for s, fields in req_fields.items() if tok in fields]
             if where:
                 found.append(f"{tok} → {', '.join(sorted(where))}")
             elif tok in qparams:
                 reads.append(f"{tok} → query parameter (read filter only)")
-        checkable = [t for t in idents
-                     if t.strip() not in skipped and t.strip().lower() not in NOT_A_FIELD]
+        checkable = [
+            t for t in idents if t.strip() not in skipped and t.strip().lower() not in NOT_A_FIELD
+        ]
         if reads:
             read_only.append((cap, reads))
         if found:
@@ -225,9 +285,11 @@ def main() -> int:
             print(f"  {cap}: {', '.join(sk)}")
         print()
 
-    print(f"verified absent: {len(ok)}/{len(rows)} rows"
-          f"   wrong: {len(violations)}   read-filter-only: {len(read_only)}"
-          f"   unchecked: {len(unchecked)}")
+    print(
+        f"verified absent: {len(ok)}/{len(rows)} rows"
+        f"   wrong: {len(violations)}   read-filter-only: {len(read_only)}"
+        f"   unchecked: {len(unchecked)}"
+    )
     return 1 if violations else 0
 
 

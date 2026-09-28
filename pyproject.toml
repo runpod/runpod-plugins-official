@@ -1,0 +1,94 @@
+# pyproject.toml — runpod-plugins-official
+#
+# Tool configuration ONLY. This repo ships no Python package/wheel — it is a
+# plugin marketplace whose Python is CI hooks (hooks/), skill scripts
+# (plugins/runpod/skills/*/scripts/) and their unittest suite. There is
+# deliberately no [build-system] / [project] table.
+#
+# The interpreter runs a current CPython (3.15 under Nix, see nix/versions.nix),
+# but every tool targets Python 3.14 — the repo's CI floor (.github/workflows/
+# validate.yml pins setup-python to 3.14) — so we never emit syntax that floor
+# can't run. The exception is the skill scripts (plugins/runpod/skills/*/scripts/):
+# they ship to users and run on whatever `python3` the user has, so they must
+# keep running on Python 3.9, the macOS system python3. ruff checks their syntax
+# against 3.9 (per-file-target-version below), mypy type-checks them against
+# 3.10 (the oldest mypy supports; see nix/checks/default.nix), and CI runs their
+# tests on 3.9 (validate.yml `skill-scripts-oldest-python`). Policy: findings are fixed in the code, never suppressed. The only
+# per-file relaxations below are test-ergonomic (asserts in tests), not
+# defect-hiding.
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+# Never lint the fixture corpora, container payloads or eval fixtures. Also
+# exclude Markdown: ruff >=0.16 reformats Python fenced code blocks inside `.md`,
+# but this repo's docs (skills, golden paths, reference) are curated prose whose
+# examples are hand-formatted for narrative clarity — ruff owns the real `.py`
+# tree, not doc snippets. Excluding `*.md` also keeps the dev-shell
+# `ruff format --check .` in lockstep with the first-party-scoped nix gate.
+extend-exclude = [
+  "testdata",
+  "**/golden-paths/**/template",
+  "plugins/runpod/skills/flash/evals/fixtures",
+  "*.md",
+]
+
+[tool.ruff.per-file-target-version]
+"plugins/runpod/skills/*/scripts/**" = "py39"
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade (modern typing/syntax)
+  "B",   # flake8-bugbear
+  "SIM", # flake8-simplify
+  "C4",  # flake8-comprehensions
+  "PTH", # flake8-use-pathlib
+  "RET",     # flake8-return
+  "PIE",     # flake8-pie
+  "RUF",     # ruff-specific
+  "ANN",     # flake8-annotations (full typing)
+  "PERF",    # perflint — manual append-loops → comprehension/extend
+  "FURB192", # refurb — sorted(...)[0] → min()/max()
+  "PLW1510", # pylint — subprocess.run needs an explicit check= argument
+  "PLW2901", # pylint — loop variable overwritten inside the loop body
+]
+# Security is owned by the dedicated bandit gate (not duplicated via ruff's "S"
+# rules), so there is a single place to satisfy — and no per-line suppressions.
+# A few further cleanups are applied in the code but NOT gated here: FURB113
+# (append+append → extend) is a ruff *preview* rule, and FURB124 (chained
+# comparison) and FURB183 (drop a pointless `f"{x}"`) exist only in the standalone
+# `refurb` tool. Gating them would mean enabling global preview or adding a whole
+# refurb gate — deferred as its own decision rather than smuggled in here.
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+# Files live in unpackaged directories; treat each root as a namespace base so
+# same-named modules across skills don't collide.
+explicit_package_bases = true
+exclude = [
+  "^testdata/",
+  "/golden-paths/.*/template/",
+  "^plugins/runpod/skills/flash/evals/fixtures/",
+]
+
+[tool.bandit]
+# The unit tests and fixture/payload trees are not application code.
+exclude_dirs = [
+  "testdata",
+  "plugins/runpod/skills/runpod-templates/tests",
+  "plugins/runpod/skills/flash/evals/fixtures",
+  "golden-paths",
+]
+# Policy (not a per-finding suppression): the gate runs with --severity-level
+# medium. The only Low findings here are B404 (importing subprocess) and B603
+# (calling subprocess with an argument LIST — the safe, shell-free form), which
+# fire on correct code and have no fix short of not shelling out at all. Every
+# Medium/High finding is fixed in the code, never with a `# nosec`. bandit's
+# reported "#nosec skipped" count stays at 0.

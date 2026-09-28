@@ -1,2 +1,7 @@
 # Local dev artifacts
 .flash/
+
+# Nix
+result
+result-*
+.direnv/

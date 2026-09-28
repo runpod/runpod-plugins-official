@@ -26,7 +26,7 @@ PY
 done
 
 # release-please sources of truth.
-printf '%s\n' "$NEW" > version.txt && echo "  version.txt -> $NEW"
+printf '%s\n' "$NEW" >version.txt && echo "  version.txt -> $NEW"
 python3 - .release-please-manifest.json "$NEW" <<'PY'
 import json,sys
 p,new=sys.argv[1],sys.argv[2]

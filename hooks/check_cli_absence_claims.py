@@ -20,11 +20,28 @@ command exists in the vendored surface snapshot.
 
 Exit 1 if any absence claim names a command that exists.
 """
+
 from __future__ import annotations
-import argparse, json, re, subprocess, sys, tempfile, urllib.request
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+import tempfile
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def _require_web_url(url: str) -> None:
+    """Reject non-http(s) URLs before opening them (guards against file:/custom schemes)."""
+    if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
+        raise ValueError(f"refusing to fetch non-http(s) URL: {url!r}")
+
+
 SKILLS = ROOT / "plugins/runpod/skills"
 SNAPSHOT = ROOT / "testdata/runpodctl/command-surface.json"
 
@@ -61,7 +78,10 @@ MUST_USE_MCP = re.compile(
 
 # A claim only falsifies if it names a real command path. `<verb> <noun>` pairs like
 # "worker-log command" are not command paths; these are.
-RESOURCES = r"pod|serverless|sls|template|tpl|hub|model|network-volume|nv|registry|reg|user|gpu|datacenter|dc|billing|doctor|ssh|send|receive|update|version"
+RESOURCES = (
+    r"pod|serverless|sls|template|tpl|hub|model|network-volume|nv|registry|reg|"
+    r"user|gpu|datacenter|dc|billing|doctor|ssh|send|receive|update|version"
+)
 # Case-insensitive: a claim that opens a sentence capitalizes the resource
 # ("Serverless logs are only available through MCP"), and a case-sensitive match
 # let exactly that phrasing through.
@@ -94,21 +114,26 @@ def load_surface(live: bool) -> tuple[str, set[str]]:
     if not live:
         snap = json.loads(SNAPSHOT.read_text())
         return snap["version"], set(snap["commands"]) | set(snap.get("hidden_commands", []))
-    tag = json.load(urllib.request.urlopen(
-        "https://api.github.com/repos/runpod/runpodctl/releases/latest"))["tag_name"]
+    latest = "https://api.github.com/repos/runpod/runpodctl/releases/latest"
+    _require_web_url(latest)
+    tag = json.load(urllib.request.build_opener().open(latest))["tag_name"]
     import platform
+
     arch = "arm64" if platform.machine() in ("arm64", "aarch64") else "amd64"
     osname = "darwin" if sys.platform == "darwin" else "linux"
     url = f"https://github.com/runpod/runpodctl/releases/download/{tag}/runpodctl-{osname}-{arch}"
+    _require_web_url(url)
     with tempfile.NamedTemporaryFile(delete=False, suffix="-runpodctl") as fh:
-        fh.write(urllib.request.urlopen(url).read())
+        fh.write(urllib.request.build_opener().open(url).read())
         binp = fh.name
     Path(binp).chmod(0o755)
     cmds: set[str] = set()
 
     def walk(path: str) -> None:
-        out = subprocess.run([binp] + path.split() + ["--help"],
-                             capture_output=True, text=True).stdout
+        # check=False: a subcommand's --help may exit non-zero; we only want stdout.
+        out = subprocess.run(
+            [binp, *path.split(), "--help"], capture_output=True, text=True, check=False
+        ).stdout
         seen = False
         for ln in out.splitlines():
             if ln.startswith("Available Commands:"):
@@ -130,14 +155,17 @@ def load_surface(live: bool) -> tuple[str, set[str]]:
 # A claim that a command lacks a FLAG or a field is not an absence-of-command claim.
 # `--help` covers those, which is the whole reason this check only guards commands.
 FLAG_CLAIM = re.compile(
-    r"--[a-z][a-z0-9-]*"                      # a literal flag
+    r"--[a-z][a-z0-9-]*"  # a literal flag
     r"|\b(?:flag|field|param(?:eter)?|option|key|support)s?\b"
-    r"|`[a-z]+[A-Z]\w*`",                     # a backticked camelCase api field, e.g. `templateId`
-    re.IGNORECASE)
+    r"|`[a-z]+[A-Z]\w*`",  # a backticked camelCase api field, e.g. `templateId`
+    re.IGNORECASE,
+)
 # "no longer MCP-only", "is not the only lane" — the claim is being retired, not made.
-NEGATED = re.compile(r"\b(?:no longer|not (?:an? )?(?:the )?only|used to be|"
-                     r"is no longer|stopped being|until v?\d|before v?\d|as of v?\d)\b",
-                     re.IGNORECASE)
+NEGATED = re.compile(
+    r"\b(?:no longer|not (?:an? )?(?:the )?only|used to be|"
+    r"is no longer|stopped being|until v?\d|before v?\d|as of v?\d)\b",
+    re.IGNORECASE,
+)
 
 
 def allowed(text: str, line: str = "") -> str | None:
@@ -180,18 +208,16 @@ MUST_ALLOW = [
 
 
 def self_test(commands: set[str]) -> int:
-    bad = []
-    for claim in MUST_CATCH:
-        if not scan_line(claim, commands):
-            bad.append(("should have been caught", claim))
-    for claim in MUST_ALLOW:
-        if scan_line(claim, commands):
-            bad.append(("should have been exempt", claim))
+    bad = [
+        ("should have been caught", claim) for claim in MUST_CATCH if not scan_line(claim, commands)
+    ]
+    bad.extend(
+        ("should have been exempt", claim) for claim in MUST_ALLOW if scan_line(claim, commands)
+    )
     for why, claim in bad:
         print(f"  self-test: {why}: {claim}")
     if bad:
-        print(f"self-test FAILED ({len(bad)} of "
-              f"{len(MUST_CATCH) + len(MUST_ALLOW)} cases)")
+        print(f"self-test FAILED ({len(bad)} of {len(MUST_CATCH) + len(MUST_ALLOW)} cases)")
         return 1
     print(f"self-test OK ({len(MUST_CATCH)} caught, {len(MUST_ALLOW)} exempt)")
     return 0
@@ -211,10 +237,16 @@ def scan_line(line: str, commands: set[str]) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--live", action="store_true",
-                    help="check against the latest runpodctl release instead of the snapshot")
-    ap.add_argument("--self-test", action="store_true",
-                    help="verify the patterns still catch known-bad phrasings")
+    ap.add_argument(
+        "--live",
+        action="store_true",
+        help="check against the latest runpodctl release instead of the snapshot",
+    )
+    ap.add_argument(
+        "--self-test",
+        action="store_true",
+        help="verify the patterns still catch known-bad phrasings",
+    )
     args = ap.parse_args()
 
     version, commands = load_surface(args.live)
@@ -243,8 +275,10 @@ def main() -> int:
         print("Fix the claim. If it is genuinely still true, add it to ALLOW with a reason.")
         return 1
 
-    print(f"CLI absence-claim check OK against runpodctl {version} "
-          f"({len(notes)} absence claim(s) reviewed, none name an existing command)")
+    print(
+        f"CLI absence-claim check OK against runpodctl {version} "
+        f"({len(notes)} absence claim(s) reviewed, none name an existing command)"
+    )
     if args.live:
         for rel, n, text in notes:
             print(f"  note {rel}:{n}  {text[:110]}")

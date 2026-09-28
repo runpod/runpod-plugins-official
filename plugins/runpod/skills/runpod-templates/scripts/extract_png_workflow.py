@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import math
 import os
@@ -12,7 +13,6 @@ import sys
 import zlib
 from pathlib import Path
 from typing import Any, BinaryIO
-
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 TEXT_CHUNK_TYPES = {b"tEXt", b"zTXt", b"iTXt"}
@@ -42,10 +42,7 @@ def _decode_keyword(raw: bytes) -> tuple[str, bytes]:
     keyword_raw, separator, remainder = raw.partition(b"\x00")
     if not separator or not 1 <= len(keyword_raw) <= 79:
         raise PngWorkflowError("PNG text chunk has an invalid keyword")
-    if any(
-        not (0x20 <= value <= 0x7E or 0xA1 <= value <= 0xFF)
-        for value in keyword_raw
-    ):
+    if any(not (0x20 <= value <= 0x7E or 0xA1 <= value <= 0xFF) for value in keyword_raw):
         raise PngWorkflowError("PNG text keyword contains a non-printing character")
     if keyword_raw.startswith(b" ") or keyword_raw.endswith(b" ") or b"  " in keyword_raw:
         raise PngWorkflowError("PNG text keyword contains invalid spacing")
@@ -92,9 +89,7 @@ def _decode_text_chunk(chunk_type: bytes, raw: bytes) -> tuple[str, str]:
     if len(remainder) < 2:
         raise PngWorkflowError("iTXt chunk is missing compression fields")
     compression_flag, compression_method = remainder[0], remainder[1]
-    if compression_flag not in {0, 1} or (
-        compression_flag == 1 and compression_method != 0
-    ):
+    if compression_flag not in {0, 1} or (compression_flag == 1 and compression_method != 0):
         raise PngWorkflowError("iTXt chunk uses unsupported compression fields")
     language, separator, remainder = remainder[2:].partition(b"\x00")
     if not separator:
@@ -183,9 +178,7 @@ def read_png_text(
                 text_keys.add(keyword)
                 if keyword in JSON_TEXT_KEYS:
                     if keyword in seen_json_keys:
-                        raise PngWorkflowError(
-                            f"PNG contains duplicate {keyword!r} metadata"
-                        )
+                        raise PngWorkflowError(f"PNG contains duplicate {keyword!r} metadata")
                     seen_json_keys.add(keyword)
                 capture = keyword in capture_keys
                 if capture:
@@ -214,9 +207,7 @@ def read_png_text(
                     raise PngWorkflowError("PNG text keyword changed while reading chunk")
                 total_decoded += len(text.encode("utf-8"))
                 if total_decoded > MAX_TOTAL_TEXT_VALUE_BYTES:
-                    raise PngWorkflowError(
-                        "decoded PNG text exceeds the aggregate safety limit"
-                    )
+                    raise PngWorkflowError("decoded PNG text exceeds the aggregate safety limit")
                 values[keyword] = text
             if chunk_type == b"IEND":
                 saw_iend = True
@@ -263,16 +254,12 @@ def _parse_embedded_json(key: str, raw: str) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for name, value in pairs:
             if name in result:
-                raise PngWorkflowError(
-                    f"embedded {key!r} JSON contains duplicate key {name!r}"
-                )
+                raise PngWorkflowError(f"embedded {key!r} JSON contains duplicate key {name!r}")
             result[name] = value
         return result
 
-    def reject_constant(value: str) -> Any:
-        raise PngWorkflowError(
-            f"embedded {key!r} JSON contains non-finite number {value!r}"
-        )
+    def reject_constant(value: str) -> float:
+        raise PngWorkflowError(f"embedded {key!r} JSON contains non-finite number {value!r}")
 
     def finite_float(value: str) -> float:
         parsed = float(value)
@@ -296,9 +283,7 @@ def _parse_embedded_json(key: str, raw: str) -> dict[str, Any]:
     return value
 
 
-def embedded_json(
-    path: Path, kind: str | None = None
-) -> tuple[dict[str, Any], set[str]]:
+def embedded_json(path: Path, kind: str | None = None) -> tuple[dict[str, Any], set[str]]:
     selected_keys = set(JSON_TEXT_KEYS) if kind is None else {kind}
     text_values, text_keys = read_png_text(path, selected_keys)
     parsed: dict[str, Any] = {}
@@ -310,7 +295,7 @@ def embedded_json(
     return parsed, text_keys
 
 
-def _write_new_json(source: Path, output: Path, value: Any) -> None:
+def _write_new_json(source: Path, output: Path, value: object) -> None:
     source_resolved = source.resolve()
     output_resolved = output.resolve()
     if os.path.normcase(str(source_resolved)) == os.path.normcase(str(output_resolved)):
@@ -320,9 +305,9 @@ def _write_new_json(source: Path, output: Path, value: Any) -> None:
     if not output.parent.exists():
         raise PngWorkflowError(f"output directory does not exist: {output.parent}")
     try:
-        rendered = (
-            json.dumps(value, ensure_ascii=False, allow_nan=False, indent=2) + "\n"
-        ).encode("utf-8")
+        rendered = (json.dumps(value, ensure_ascii=False, allow_nan=False, indent=2) + "\n").encode(
+            "utf-8"
+        )
     except (TypeError, ValueError, UnicodeEncodeError) as exc:
         raise PngWorkflowError(f"cannot serialize extracted JSON safely: {exc}") from exc
     created = False
@@ -332,10 +317,8 @@ def _write_new_json(source: Path, output: Path, value: Any) -> None:
             handle.write(rendered)
     except OSError as exc:
         if created:
-            try:
+            with contextlib.suppress(OSError):
                 output.unlink()
-            except OSError:
-                pass
         raise PngWorkflowError(f"cannot write {output}: {exc}") from exc
 
 
@@ -365,9 +348,7 @@ def main(argv: list[str] | None = None) -> int:
         parsed, text_keys = embedded_json(args.png, args.kind)
         if args.output:
             if args.kind not in parsed:
-                available = ", ".join(
-                    sorted(set(JSON_TEXT_KEYS).intersection(text_keys))
-                ) or "none"
+                available = ", ".join(sorted(set(JSON_TEXT_KEYS).intersection(text_keys))) or "none"
                 raise PngWorkflowError(
                     f"PNG has no embedded {args.kind!r} JSON (available: {available})"
                 )

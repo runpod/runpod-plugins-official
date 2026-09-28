@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Refresh the vendored snapshot from the live spec
         run: |
           curl -sSf https://api.runpod.io/v2/openapi.json \
