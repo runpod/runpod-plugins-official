@@ -64,6 +64,8 @@ export function graphData(
     for (const step of concept.steps) for (const target of step.concepts) add(concept.id, target, "involves");
   }
   for (const link of guideLinks) add(`guide:${link.from}`, link.to, link.type === "uses" ? "example" : "explains");
+  // Each doc or golden path also hangs off the guide it belongs to, so no guide floats alone.
+  for (const guide of guides) if (guide.parent) add(`guide:${guide.id}`, `guide:${guide.parent}`, "in");
   const guideNodes: GuideNode[] = guides.map((guide) => ({
     id: `guide:${guide.id}`,
     guideId: guide.id,
@@ -146,7 +148,7 @@ const isGuide = (n) => GUIDE_KINDS.has(n.kind);
 const LINK_COLORS = {
   is_a: "#ffffff", part_of: "#7fd1ff", requires: "#ff7a7a", uses: "#9aa1b2", located_in: "#62d98b",
   runs_on: "#c49bff", billed_by: "#ffcf5c", constrained_by: "#ff9f5c", field_ref: "#4a5060", involves: "#ff5ca8",
-  example: "#ffb347", explains: "#8f96a8",
+  example: "#ffb347", explains: "#8f96a8", in: "#3a4150",
 };
 
 const byId = new Map(DATA.nodes.map((n) => [n.id, n]));

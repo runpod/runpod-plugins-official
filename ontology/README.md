@@ -39,15 +39,18 @@ the links between them:
 ```
 concept ──rules──▶ facts with public evidence
    ▲  ▲
-   │  └── explains ── skill / reference doc   (a rule cites the doc as evidence, or a skill
-   │                                           lists the concept under metadata.concepts)
+   │  └── explains ── skill / reference doc   (a rule cites the doc as evidence, or the doc
+   │                                           lists the concept in its frontmatter)
    └───── uses ────── golden path             (the path's frontmatter lists the concept,
                                                or a rule cites the path as evidence)
 ```
 
-- Golden-path frontmatter declares `lanes`, `mcp` and `concepts`, and each `SKILL.md` lists
-  `metadata.concepts`. `pnpm check:guides` rejects a missing tag or an unknown lane, level or
-  concept id, and CI runs it.
+- Golden-path frontmatter declares `lanes`, `mcp` and `concepts`, each `SKILL.md` lists
+  `metadata.concepts`, and a reference doc lists `concepts:` unless a rule already cites it.
+  `pnpm check:guides` rejects a guide that links to no concept, a missing tag, or an unknown
+  lane, level or concept id, and CI runs it.
+- Every doc and golden path also records its parent (its skill, its parent path, or the
+  `runpod` router for a top-level golden path), so nothing in the graph stands alone.
 - The graph page shows guides as squares linked to their concepts (golden paths and skills
   by default; reference docs can be switched on), and `pnpm query tree` prints the same
   links as a tree.

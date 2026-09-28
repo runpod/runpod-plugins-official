@@ -1,3 +1,7 @@
+---
+concepts: [network-volume, data-center, file-transfer]
+---
+
 # AWS CLI
 
 The AWS CLI is used to access Runpod storage over the S3 protocol. Any Runpod product that can mount a Network Volume — pods, clusters, and serverless endpoints — can have its storage accessed this way. The bucket name is the network volume ID.

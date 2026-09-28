@@ -6,7 +6,7 @@ summary: >
   or rsync over SSH to a pod, and the S3-compatible API on network volumes.
 product: pods
 is_a: null
-part_of: null
+part_of: runpod-platform
 aliases: [runpodctl send, runpodctl receive, croc, S3 upload, s3api, cloud sync, datasets in, checkpoints out]
 
 surfaces:

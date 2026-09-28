@@ -6,7 +6,7 @@ summary: >
   a short backfill of recent lines.
 product: pods
 is_a: null
-part_of: null
+part_of: runpod-platform
 aliases: [pod logs, worker logs, container logs, system logs, SSE log stream]
 
 surfaces:

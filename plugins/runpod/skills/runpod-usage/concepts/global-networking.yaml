@@ -6,7 +6,7 @@ summary: >
   internal DNS name, `<podId>.runpod.internal`, so services can talk without public ports.
 product: pods
 is_a: null
-part_of: null
+part_of: runpod-platform
 aliases: [.runpod.internal, globalNetwork, private networking, pod-to-pod networking]
 
 surfaces:

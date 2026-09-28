@@ -108,11 +108,11 @@ export function buildDatabase(concepts: Concept[], path: string, guides: Guide[]
   // Links last: a rule may point at a rule defined in a later file.
   for (const c of concepts) for (const r of c.rules) for (const see of r.see) link.run(r.id, see);
 
-  const guide = insert("INSERT INTO guides VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  const guide = insert("INSERT INTO guides VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
   const lane = insert("INSERT INTO guide_lanes VALUES (?, ?)");
   const guideLink = insert("INSERT OR IGNORE INTO guide_links VALUES (?, ?, ?, ?)");
   for (const g of guides) {
-    guide.run(g.id, g.kind, g.title, g.description, g.path, g.mcp, g.needs_shell ? 1 : 0, g.body);
+    guide.run(g.id, g.kind, g.title, g.description, g.path, g.mcp, g.needs_shell ? 1 : 0, g.parent, g.body);
     for (const name of g.lanes) lane.run(g.id, name);
   }
   for (const l of guideLinks) guideLink.run(l.from, l.to, l.type, l.via);

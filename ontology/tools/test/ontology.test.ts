@@ -175,7 +175,8 @@ test("the API routes concepts, neighbors and search, and rejects the rest", () =
 test("golden-path and skill frontmatter link to concepts and reject bad or missing tags", () => {
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
   const { guides, links, errors } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
-  assert.deepEqual(guides.map((g) => g.id), ["demo", "demo/intro", "golden-path/01-good", "golden-path/02-bad", "golden-path/03-untagged"]);
+  assert.deepEqual(guides.map((g) => g.id), ["demo", "demo/intro", "runpod", "golden-path/01-good", "golden-path/02-bad", "golden-path/03-untagged"]);
+  assert.deepEqual(guides.map((g) => g.parent), [null, "demo", null, "runpod", "runpod", "runpod"]);
 
   const good = guides.find((g) => g.id === "golden-path/01-good")!;
   assert.deepEqual([good.lanes, good.mcp, good.needs_shell, good.concepts], [["runpod-mcp", "rest"], "full", false, ["site", "volume"]]);
@@ -190,10 +191,11 @@ test("golden-path and skill frontmatter link to concepts and reject bad or missi
     "03-untagged.md: lanes must be a non-empty list",
     "03-untagged.md: mcp must be one of",
     "03-untagged.md: concepts must be a non-empty list",
+    "03-untagged.md: links to no concept",
   ]) {
     assertHasError(errors, fragment);
   }
-  assert.equal(errors.length, 6);
+  assert.equal(errors.length, 7);
 });
 
 test("the database stores guides and the tree hangs concepts and their guides off their parents", () => {
@@ -202,12 +204,12 @@ test("the database stores guides and the tree hangs concepts and their guides of
   const good = guides.filter((g) => g.id !== "golden-path/02-bad" && g.id !== "golden-path/03-untagged");
   const db = buildDatabase(concepts, join(mkdtempSync(join(tmpdir(), "ontology-")), "guides.sqlite"), good, links.filter((l) => good.some((g) => g.id === l.from)));
 
-  assert.deepEqual(guidesFor(db, "volume").map((g) => `${g.kind}:${g.id}:${g.mcp}`), ["golden-path:golden-path/01-good:full", "skill:demo:null"]);
-  assert.deepEqual(getConcept(db, "site")!.guides.map((g) => g.id), ["golden-path/01-good"]);
+  assert.deepEqual(guidesFor(db, "volume").map((g) => `${g.kind}:${g.id}:${g.mcp}`), ["golden-path:golden-path/01-good:full", "skill:demo:null", "reference:demo/intro:null"]);
+  assert.deepEqual(getConcept(db, "site")!.guides.map((g) => g.id), ["golden-path/01-good", "runpod"]);
 
   const roots = tree(db);
   assert.deepEqual(roots.map((node) => node.id).sort(), ["site", "volume", "volume-setup"]);
-  assert.deepEqual(tree(db, "volume")[0]!.guides.map((g) => g.id), ["golden-path/01-good", "demo"]);
+  assert.deepEqual(tree(db, "volume")[0]!.guides.map((g) => g.id), ["golden-path/01-good", "demo", "demo/intro"]);
 });
 
 test("a guide whose id matches a concept id stays a separate graph node", () => {

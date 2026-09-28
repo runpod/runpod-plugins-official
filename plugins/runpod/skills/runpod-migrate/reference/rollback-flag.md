@@ -1,3 +1,7 @@
+---
+concepts: [runpod-platform]
+---
+
 # Rollback flag: keeping v1 one env var away
 
 While v2 is new to a team, an env-var switch that returns to the old code path is cheap

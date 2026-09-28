@@ -1,3 +1,7 @@
+---
+concepts: [template, container-image, instant-cluster]
+---
+
 # Official PyTorch templates
 
 The general-purpose GPU base: torch + CUDA + SSH + (optional) JupyterLab. This is the

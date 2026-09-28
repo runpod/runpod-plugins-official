@@ -7,7 +7,7 @@ summary: >
   your own model to the Model Repository.
 product: storage
 is_a: null
-part_of: null
+part_of: runpod-platform
 aliases: [cached models, model cache, model weights, modelReferences, Model Repository]
 
 surfaces:

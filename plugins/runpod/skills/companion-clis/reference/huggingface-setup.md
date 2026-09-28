@@ -1,3 +1,7 @@
+---
+concepts: [container-image]
+---
+
 # HuggingFace CLI — one-time setup
 
 Install the `hf` CLI (only needed once, if `hf version` fails). Auth and `hf download`

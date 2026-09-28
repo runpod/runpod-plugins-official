@@ -7,7 +7,7 @@ summary: >
   to it. The new pod has a new id, IP address and proxy URL.
 product: pods
 is_a: null
-part_of: null
+part_of: pod
 aliases: [migrate pod, automatic pod migration]
 
 surfaces:

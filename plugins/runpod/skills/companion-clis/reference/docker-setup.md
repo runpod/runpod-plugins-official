@@ -1,3 +1,7 @@
+---
+concepts: [container-image]
+---
+
 # Docker — one-time setup
 
 Install Docker (only needed once, if `docker --version` fails). Credentials, tagging,

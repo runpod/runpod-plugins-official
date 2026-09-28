@@ -7,7 +7,7 @@ summary: >
   load-balanced worker runs its own HTTP server.
 product: serverless
 is_a: null
-part_of: null
+part_of: worker
 aliases: [handler, handler.py, runpod.serverless.start, concurrent handler, worker contract]
 
 relations:

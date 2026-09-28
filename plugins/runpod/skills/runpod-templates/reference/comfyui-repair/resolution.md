@@ -1,3 +1,7 @@
+---
+concepts: [template, pod]
+---
+
 # Resolve model identity
 
 Use this reference when a workflow names a model but lacks a trustworthy artifact URL,
