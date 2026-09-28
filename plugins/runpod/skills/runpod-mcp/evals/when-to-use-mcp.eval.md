@@ -8,7 +8,8 @@ Handle each.
 
 ## Expected behavior
 
-Per `runpod-mcp/SKILL.md`:
+Per `runpod-mcp/SKILL.md` for the lane choice, and the connected server's own tool
+list for the tool names (the skill deliberately keeps no copy of them):
 
 1. **(1) list endpoints → runpod-mcp** — a structured read the server exposes; MCP
    is connected, so prefer it.
@@ -23,3 +24,5 @@ Per `runpod-mcp/SKILL.md`:
 - Routes the endpoint **list** and the **pod logs** to runpod-mcp (connected → structured reads).
 - Routes the **Hub deploy** to runpod-mcp via `deploy-hub-repo` (optionally `list-hub-repos` first).
 - Does NOT claim MCP lacks Hub tools or fall back to runpodctl for the Hub deploy while MCP is connected.
+- Names the tools from the connected server's tool list, not from a list recited out of
+  the skill — and does not assert a tool is missing without having looked.
