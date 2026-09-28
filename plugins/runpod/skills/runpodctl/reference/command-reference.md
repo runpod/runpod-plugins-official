@@ -146,11 +146,7 @@ readiness loop. If interactive SSH isn't available, execute remotely via
 `ssh remove-key` takes `--name` **or** `--fingerprint`; use the fingerprint to disambiguate
 keys that share a name.
 
-### Pod host key trust (unreleased)
-
-**Not in v2.14.0 or any earlier release.** This describes unmerged work (CON-1161); a released
-binary still disables host key checking on the paths below. Check `runpodctl version` before
-relying on any of it.
+### Pod host key trust
 
 Affects only the **hidden, deprecated** `project` subcommands and `exec python`, which share
 one Go SSH client. **`ssh info` is unchanged**: it prints an ordinary
