@@ -12,6 +12,7 @@
     "validate": "node --disable-warning=ExperimentalWarning src/validate.ts",
     "build:sqlite": "node --disable-warning=ExperimentalWarning src/build-sqlite.ts",
     "build:graph": "node --disable-warning=ExperimentalWarning src/build-graph.ts",
+    "build:bundle": "node --disable-warning=ExperimentalWarning src/build-bundle.ts",
     "query": "node --disable-warning=ExperimentalWarning src/cli.ts",
     "serve": "node --disable-warning=ExperimentalWarning src/server.ts",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
