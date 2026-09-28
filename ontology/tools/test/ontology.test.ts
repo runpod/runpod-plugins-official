@@ -5,9 +5,9 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { collectGuides } from "../src/build-bundle.ts";
-import { formatConcept } from "../src/format.ts";
 import { graphData, renderGraph } from "../src/build-graph.ts";
 import { buildDatabase } from "../src/build-sqlite.ts";
+import { formatConcept } from "../src/format.ts";
 import { getConcept, guidesFor, neighbors, resolve, search, tree } from "../src/query.ts";
 import { route } from "../src/server.ts";
 import { validate } from "../src/validate.ts";
@@ -17,7 +17,10 @@ const noFile = join(fixtures, "does-not-exist");
 const badErrors = () => validate(join(fixtures, "bad"), noFile, noFile).errors;
 
 const assertHasError = (errors: string[], fragment: string) =>
-  assert.ok(errors.some((error) => error.includes(fragment)), `missing error containing: ${fragment}\n${errors.join("\n")}`);
+  assert.ok(
+    errors.some((error) => error.includes(fragment)),
+    `missing error containing: ${fragment}\n${errors.join("\n")}`,
+  );
 
 test("the good fixtures validate cleanly", () => {
   const report = validate(join(fixtures, "good"), noFile, noFile);
@@ -58,7 +61,10 @@ test("time-bound wording is rejected", () => {
 });
 
 test("skill evidence must point at a file in the repo", () => {
-  assertHasError(badErrors(), "broken: rule broken.missing-skill-file cites skill file plugins/runpod/skills/nowhere/SKILL.md");
+  assertHasError(
+    badErrors(),
+    "broken: rule broken.missing-skill-file cites skill file plugins/runpod/skills/nowhere/SKILL.md",
+  );
 });
 
 test("evidence with no ref, url, path or note is rejected", () => {
@@ -82,26 +88,34 @@ test("getConcept assembles fields, edges, states and linked rules", () => {
   const db = fixtureDb();
   const volume = getConcept(db, "volume")!;
   assert.equal(volume.fields.length, 1);
-  assert.deepEqual(volume.rules.map((rule) => rule.id), ["volume.backups", "volume.site-fixed"]);
+  assert.deepEqual(
+    volume.rules.map((rule) => rule.id),
+    ["volume.backups", "volume.site-fixed"],
+  );
   assert.deepEqual(volume.edges_out, [
     { type: "field_ref", target_id: "site" },
     { type: "located_in", target_id: "site" },
   ]);
-  assert.deepEqual(volume.linked_rules.map((rule) => rule.id), ["site.capacity-hidden"]);
+  assert.deepEqual(
+    volume.linked_rules.map((rule) => rule.id),
+    ["site.capacity-hidden"],
+  );
 
   const site = getConcept(db, "site")!;
   assert.deepEqual(site.transitions, [{ action: "close", from_state: "OPEN", to_state: "CLOSED" }]);
-  assert.deepEqual(site.edges_in.map((edge) => `${edge.type}:${edge.source_id}`), [
-    "field_ref:volume",
-    "involves:volume-setup",
-    "located_in:volume",
-  ]);
+  assert.deepEqual(
+    site.edges_in.map((edge) => `${edge.type}:${edge.source_id}`),
+    ["field_ref:volume", "involves:volume-setup", "located_in:volume"],
+  );
 });
 
 test("evidence carries refs, urls, paths and notes", () => {
   const db = fixtureDb();
   const rule = getConcept(db, "volume")!.rules.find((r) => r.id === "volume.site-fixed")!;
-  assert.deepEqual(rule.evidence.map((e) => e.source), ["rest-v2-spec", "public-docs", "other"]);
+  assert.deepEqual(
+    rule.evidence.map((e) => e.source),
+    ["rest-v2-spec", "public-docs", "other"],
+  );
   assert.equal(rule.evidence[1]?.url, "https://docs.runpod.io/storage/network-volumes");
   assert.equal(rule.evidence[1]?.note, "Docs page for volumes");
   assert.equal(rule.evidence[2]?.path, "notes/volume-probe.md");
@@ -118,7 +132,9 @@ test("search matches concept aliases as well as rule text", () => {
 test("neighbors walks edges in both directions", () => {
   const db = fixtureDb();
   assert.deepEqual(
-    neighbors(db, "site").map((edge) => `${edge.direction}:${edge.type}:${edge.concept_id}`).sort(),
+    neighbors(db, "site")
+      .map((edge) => `${edge.direction}:${edge.type}:${edge.concept_id}`)
+      .sort(),
     ["in:field_ref:volume", "in:involves:volume-setup", "in:located_in:volume"],
   );
 });
@@ -144,8 +160,20 @@ test("a process keeps its steps in order with their concepts and rules", () => {
   const db = fixtureDb();
   const setup = getConcept(db, "volume-setup")!;
   assert.deepEqual(setup.steps, [
-    { step_id: "pick-site", title: "Pick a site", description: "Choose where the volume lives.", concepts: ["site"], rules: ["site.capacity-hidden"] },
-    { step_id: "create", title: "Create the volume", description: "The volume is created in that site and stays there.", concepts: ["volume", "site"], rules: ["volume.site-fixed"] },
+    {
+      step_id: "pick-site",
+      title: "Pick a site",
+      description: "Choose where the volume lives.",
+      concepts: ["site"],
+      rules: ["site.capacity-hidden"],
+    },
+    {
+      step_id: "create",
+      title: "Create the volume",
+      description: "The volume is created in that site and stays there.",
+      concepts: ["volume", "site"],
+      rules: ["volume.site-fixed"],
+    },
   ]);
   assert.deepEqual(getConcept(db, "volume")!.steps, []);
 });
@@ -164,7 +192,10 @@ test("the API routes concepts, neighbors and search, and rejects the rest", () =
   assert.equal((get("/api/concepts").body as { id: string }[]).length, 3);
   assert.equal((get("/api/concepts/Disk%20Store").body as { id: string }).id, "volume");
   assert.deepEqual(get("/api/concepts/site/neighbors").body, neighbors(db, "site"));
-  assert.equal((get("/api/search?q=snapshots&limit=1").body as { rule: { id: string } }[])[0]?.rule.id, "volume.backups");
+  assert.equal(
+    (get("/api/search?q=snapshots&limit=1").body as { rule: { id: string } }[])[0]?.rule.id,
+    "volume.backups",
+  );
   assert.equal(get("/api/search").status, 400);
   assert.equal(get("/api/concepts/unknown").status, 404);
   assert.equal(get("/api/concepts/site/extra/path").status, 404);
@@ -176,13 +207,28 @@ test("the API routes concepts, neighbors and search, and rejects the rest", () =
 test("golden-path and skill frontmatter link to concepts and reject bad or missing tags", () => {
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
   const { guides, links, errors } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
-  assert.deepEqual(guides.map((g) => g.id), ["demo", "demo/intro", "runpod", "golden-path/01-good", "golden-path/02-bad", "golden-path/03-untagged"]);
-  assert.deepEqual(guides.map((g) => g.parent), [null, "demo", null, "runpod", "runpod", "runpod"]);
+  assert.deepEqual(
+    guides.map((g) => g.id),
+    ["demo", "demo/intro", "runpod", "golden-path/01-good", "golden-path/02-bad", "golden-path/03-untagged"],
+  );
+  assert.deepEqual(
+    guides.map((g) => g.parent),
+    [null, "demo", null, "runpod", "runpod", "runpod"],
+  );
 
   const good = guides.find((g) => g.id === "golden-path/01-good")!;
-  assert.deepEqual([good.lanes, good.mcp, good.needs_shell, good.concepts], [["runpod-mcp", "rest"], "full", false, ["site", "volume", "volume-setup"]]);
-  assert.deepEqual(links.filter((l) => l.from === good.id).map((l) => `${l.type}:${l.to}:${l.via}`), ["uses:volume:frontmatter", "uses:site:frontmatter", "uses:volume-setup:frontmatter"]);
-  assert.deepEqual(links.filter((l) => l.from === "demo").map((l) => `${l.type}:${l.to}`), ["explains:volume"]);
+  assert.deepEqual(
+    [good.lanes, good.mcp, good.needs_shell, good.concepts],
+    [["runpod-mcp", "rest"], "full", false, ["site", "volume", "volume-setup"]],
+  );
+  assert.deepEqual(
+    links.filter((l) => l.from === good.id).map((l) => `${l.type}:${l.to}:${l.via}`),
+    ["uses:volume:frontmatter", "uses:site:frontmatter", "uses:volume-setup:frontmatter"],
+  );
+  assert.deepEqual(
+    links.filter((l) => l.from === "demo").map((l) => `${l.type}:${l.to}`),
+    ["explains:volume"],
+  );
   assert.equal(guides.find((g) => g.id === "demo/intro")!.mcp, null);
 
   for (const fragment of [
@@ -203,14 +249,28 @@ test("the database stores guides and the tree hangs concepts and their guides of
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
   const { guides, links } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
   const good = guides.filter((g) => g.id !== "golden-path/02-bad" && g.id !== "golden-path/03-untagged");
-  const db = buildDatabase(concepts, join(mkdtempSync(join(tmpdir(), "ontology-")), "guides.sqlite"), good, links.filter((l) => good.some((g) => g.id === l.from)));
+  const db = buildDatabase(
+    concepts,
+    join(mkdtempSync(join(tmpdir(), "ontology-")), "guides.sqlite"),
+    good,
+    links.filter((l) => good.some((g) => g.id === l.from)),
+  );
 
-  assert.deepEqual(guidesFor(db, "volume").map((g) => `${g.kind}:${g.id}:${g.mcp}`), ["golden-path:golden-path/01-good:full", "skill:demo:null", "reference:demo/intro:null"]);
-  assert.deepEqual(getConcept(db, "site")!.guides.map((g) => g.id), ["golden-path/01-good", "runpod"]);
+  assert.deepEqual(
+    guidesFor(db, "volume").map((g) => `${g.kind}:${g.id}:${g.mcp}`),
+    ["golden-path:golden-path/01-good:full", "skill:demo:null", "reference:demo/intro:null"],
+  );
+  assert.deepEqual(
+    getConcept(db, "site")!.guides.map((g) => g.id),
+    ["golden-path/01-good", "runpod"],
+  );
 
   const roots = tree(db);
   assert.deepEqual(roots.map((node) => node.id).sort(), ["site", "volume", "volume-setup"]);
-  assert.deepEqual(tree(db, "volume")[0]!.guides.map((g) => g.id), ["golden-path/01-good", "demo", "demo/intro"]);
+  assert.deepEqual(
+    tree(db, "volume")[0]!.guides.map((g) => g.id),
+    ["golden-path/01-good", "demo", "demo/intro"],
+  );
 });
 
 test("a guide whose id matches a concept id stays a separate graph node", () => {
@@ -218,7 +278,11 @@ test("a guide whose id matches a concept id stays a separate graph node", () => 
   const { guides, links } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
   // A skill named like a concept, as the flash skill and the Flash concept are.
   const clash = { ...guides[0]!, id: "volume" };
-  const { nodes, links: graphLinks } = graphData(concepts, [clash], [{ from: "volume", to: "site", type: "explains", via: "frontmatter" }]);
+  const { nodes, links: graphLinks } = graphData(
+    concepts,
+    [clash],
+    [{ from: "volume", to: "site", type: "explains", via: "frontmatter" }],
+  );
   const ids = nodes.map((node) => node.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.ok(ids.includes("volume") && ids.includes("guide:volume"));
@@ -228,7 +292,11 @@ test("a guide whose id matches a concept id stays a separate graph node", () => 
 
 test("a concept that no guide covers is an error", () => {
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
-  const { errors } = collectGuides([...concepts, { ...concepts[0]!, id: "orphan", rules: [] }], join(fixtures, "skills"), fixtures);
+  const { errors } = collectGuides(
+    [...concepts, { ...concepts[0]!, id: "orphan", rules: [] }],
+    join(fixtures, "skills"),
+    fixtures,
+  );
   assertHasError(errors, "concept orphan: no skill, reference doc or golden path covers it");
 });
 
@@ -253,7 +321,16 @@ test("the formatter is stable and never changes the data", () => {
   assert.equal(formatConcept(once), once);
   assert.ok(once.startsWith("id: volume\nname: Volume\nkind: resource\nsummary: >\n"));
   assert.ok(once.includes('aliases: [disk, "store, backup"]'));
-  assert.ok(once.includes("  - id: volume.x\n    statement: >\n      Short one-line statement.\n    status: documented\n    evidence:\n      - { source: rest-v2-spec, ref: x }"));
+  // Python YAML parsers reject ?, : and quotes in plain flow scalars, so those are quoted.
+  const tricky = formatConcept(
+    `${once}fields:\n  - { name: q, note: 'Is it? See "docs": yes', url: https://x.io/a }\n`,
+  );
+  assert.ok(tricky.includes('{ name: q, note: "Is it? See \\"docs\\": yes", url: "https://x.io/a" }'));
+  assert.ok(
+    once.includes(
+      "  - id: volume.x\n    statement: >\n      Short one-line statement.\n    status: documented\n    evidence:\n      - { source: rest-v2-spec, ref: x }",
+    ),
+  );
   assert.ok(once.split("\n").every((line) => line.length <= 80 || line.includes("{") || line.includes("[")));
   for (const file of ["volume.yaml", "site.yaml", "volume-setup.yaml"]) {
     const text = readFileSync(join(fixtures, "good", file), "utf8");

@@ -42,7 +42,12 @@ export function route(db: DatabaseSync, url: URL): Reply {
   if (rest.length) return notFound(`no route for ${url.pathname}`);
 
   if (!resource) {
-    const meta = Object.fromEntries(db.prepare("SELECT key, value FROM meta").all().map((row) => [row.key, row.value]));
+    const meta = Object.fromEntries(
+      db
+        .prepare("SELECT key, value FROM meta")
+        .all()
+        .map((row) => [row.key, row.value]),
+    );
     return { status: 200, body: { routes: ROUTES, meta } };
   }
 

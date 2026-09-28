@@ -12,7 +12,14 @@ export interface RuleRecord {
   conflict: boolean;
   applies_to: string[];
   see: string[];
-  evidence: { source: string; ref: string | null; url: string | null; path: string | null; seen: string | null; note: string | null }[];
+  evidence: {
+    source: string;
+    ref: string | null;
+    url: string | null;
+    path: string | null;
+    seen: string | null;
+    note: string | null;
+  }[];
 }
 
 export interface ConceptRecord {
@@ -89,7 +96,9 @@ function loadRules(db: DatabaseSync, where: string, params: string[]): RuleRecor
     const id = String(row.id);
     const targets = db.prepare("SELECT target_kind, target_name FROM rule_targets WHERE rule_id = ?").all(id) as Row[];
     const see = db.prepare("SELECT see_rule_id FROM rule_links WHERE rule_id = ?").all(id) as Row[];
-    const evidence = plain(db.prepare("SELECT source, ref, url, path, seen, note FROM evidence WHERE rule_id = ? ORDER BY id").all(id));
+    const evidence = plain(
+      db.prepare("SELECT source, ref, url, path, seen, note FROM evidence WHERE rule_id = ? ORDER BY id").all(id),
+    );
     return {
       id,
       concept_id: String(row.concept_id),
@@ -114,13 +123,18 @@ export function getConcept(db: DatabaseSync, reference: string): ConceptRecord |
   const all = (sql: string) => plain(db.prepare(sql).all(id));
 
   const surfaces: Record<string, string[]> = {};
-  for (const row of all("SELECT surface, item, value FROM surfaces WHERE concept_id = ? ORDER BY surface, item, value")) {
-    (surfaces[`${row.surface}.${row.item}`] ??= []).push(String(row.value));
+  for (const row of all(
+    "SELECT surface, item, value FROM surfaces WHERE concept_id = ? ORDER BY surface, item, value",
+  )) {
+    const key = `${row.surface}.${row.item}`;
+    surfaces[key] = [...(surfaces[key] ?? []), String(row.value)];
   }
 
   const rules = loadRules(db, "concept_id = ?", [id]);
   const linkedIds = [...new Set(rules.flatMap((rule) => rule.see))].filter((see) => !see.startsWith(`${id}.`));
-  const linked_rules = linkedIds.length ? loadRules(db, `id IN (${linkedIds.map(() => "?").join(",")})`, linkedIds) : [];
+  const linked_rules = linkedIds.length
+    ? loadRules(db, `id IN (${linkedIds.map(() => "?").join(",")})`, linkedIds)
+    : [];
 
   return {
     id,
@@ -130,22 +144,46 @@ export function getConcept(db: DatabaseSync, reference: string): ConceptRecord |
     product: (concept.product as string | null) ?? null,
     is_a: (concept.is_a as string | null) ?? null,
     part_of: (concept.part_of as string | null) ?? null,
-    aliases: all("SELECT name FROM names WHERE concept_id = ? AND source = 'alias' ORDER BY name").map((r) => String(r.name)),
-    surfaces,
-    fields: all("SELECT name, type, set_on, required, ref, unit, default_value, enum_values, note FROM fields WHERE concept_id = ? ORDER BY rowid").map(
-      (row) => ({ ...row, required: row.required === 1, enum_values: row.enum_values ? JSON.parse(String(row.enum_values)) : null }),
+    aliases: all("SELECT name FROM names WHERE concept_id = ? AND source = 'alias' ORDER BY name").map((r) =>
+      String(r.name),
     ),
-    states: all("SELECT field, value, description FROM states WHERE concept_id = ? ORDER BY rowid") as ConceptRecord["states"],
-    transitions: all("SELECT action, from_state, to_state FROM transitions WHERE concept_id = ? ORDER BY rowid") as ConceptRecord["transitions"],
-    steps: all("SELECT step_id, title, description FROM process_steps WHERE concept_id = ? ORDER BY position").map((row) => ({
-      step_id: String(row.step_id),
-      title: String(row.title),
-      description: String(row.description),
-      concepts: (db.prepare("SELECT target_id FROM step_concepts WHERE concept_id = ? AND step_id = ? ORDER BY rowid").all(id, String(row.step_id)) as Row[]).map((r) => String(r.target_id)),
-      rules: (db.prepare("SELECT rule_id FROM step_rules WHERE concept_id = ? AND step_id = ? ORDER BY rowid").all(id, String(row.step_id)) as Row[]).map((r) => String(r.rule_id)),
+    surfaces,
+    fields: all(
+      "SELECT name, type, set_on, required, ref, unit, default_value, enum_values, note FROM fields WHERE concept_id = ? ORDER BY rowid",
+    ).map((row) => ({
+      ...row,
+      required: row.required === 1,
+      enum_values: row.enum_values ? JSON.parse(String(row.enum_values)) : null,
     })),
-    edges_out: all("SELECT type, target_id FROM edges WHERE source_id = ? ORDER BY type, target_id") as ConceptRecord["edges_out"],
-    edges_in: all("SELECT type, source_id FROM edges WHERE target_id = ? ORDER BY type, source_id") as ConceptRecord["edges_in"],
+    states: all(
+      "SELECT field, value, description FROM states WHERE concept_id = ? ORDER BY rowid",
+    ) as ConceptRecord["states"],
+    transitions: all(
+      "SELECT action, from_state, to_state FROM transitions WHERE concept_id = ? ORDER BY rowid",
+    ) as ConceptRecord["transitions"],
+    steps: all("SELECT step_id, title, description FROM process_steps WHERE concept_id = ? ORDER BY position").map(
+      (row) => ({
+        step_id: String(row.step_id),
+        title: String(row.title),
+        description: String(row.description),
+        concepts: (
+          db
+            .prepare("SELECT target_id FROM step_concepts WHERE concept_id = ? AND step_id = ? ORDER BY rowid")
+            .all(id, String(row.step_id)) as Row[]
+        ).map((r) => String(r.target_id)),
+        rules: (
+          db
+            .prepare("SELECT rule_id FROM step_rules WHERE concept_id = ? AND step_id = ? ORDER BY rowid")
+            .all(id, String(row.step_id)) as Row[]
+        ).map((r) => String(r.rule_id)),
+      }),
+    ),
+    edges_out: all(
+      "SELECT type, target_id FROM edges WHERE source_id = ? ORDER BY type, target_id",
+    ) as ConceptRecord["edges_out"],
+    edges_in: all(
+      "SELECT type, source_id FROM edges WHERE target_id = ? ORDER BY type, source_id",
+    ) as ConceptRecord["edges_in"],
     rules,
     linked_rules,
     guides: guidesFor(db, id),
@@ -177,7 +215,10 @@ export function search(db: DatabaseSync, query: string, options: { limit?: numbe
 }
 
 /** Concepts one edge away, in either direction. */
-export function neighbors(db: DatabaseSync, id: string): { direction: "out" | "in"; type: string; concept_id: string }[] {
+export function neighbors(
+  db: DatabaseSync,
+  id: string,
+): { direction: "out" | "in"; type: string; concept_id: string }[] {
   const out = db.prepare("SELECT type, target_id AS concept_id FROM edges WHERE source_id = ?").all(id) as Row[];
   const into = db.prepare("SELECT type, source_id AS concept_id FROM edges WHERE target_id = ?").all(id) as Row[];
   return [

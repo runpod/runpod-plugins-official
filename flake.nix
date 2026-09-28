@@ -17,7 +17,7 @@
 #   "run all targets" command; CI runs exactly this:
 #       nix flake check
 #       #  -> ruff-lint ruff-format mypy bandit unittest shellcheck shfmt
-#       #     biome nixfmt deadnix statix
+#       #     biome yamllint actionlint nixfmt deadnix statix
 #
 #   Run ONE check on its own:
 #       nix build .#checks.<system>.<name>      # e.g. .#checks.x86_64-linux.mypy

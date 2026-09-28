@@ -63,13 +63,24 @@ const SENSITIVE: [RegExp, string][] = [
 // Wording that is only true for a while. Statements say what holds; when a
 // fact may change, evidence carries the date it was checked.
 const TIME_BOUND: RegExp[] = [
-  /\bcurrently\b/i, /\bas of\b/i, /\bat the moment\b/i, /\bfor now\b/i, /\brecently\b/i,
-  /\btoday\b/i, /\bnot yet\b/i, /\bsoon\b/i, /\bupcoming\b/i, /\bPR #?\d+/i,
+  /\bcurrently\b/i,
+  /\bas of\b/i,
+  /\bat the moment\b/i,
+  /\bfor now\b/i,
+  /\brecently\b/i,
+  /\btoday\b/i,
+  /\bnot yet\b/i,
+  /\bsoon\b/i,
+  /\bupcoming\b/i,
+  /\bPR #?\d+/i,
 ];
 
 function excerpt(text: string, pattern: RegExp): string {
   const at = text.search(pattern);
-  return text.slice(Math.max(0, at - 20), at + 40).replace(/\s+/g, " ").trim();
+  return text
+    .slice(Math.max(0, at - 20), at + 40)
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Every human-readable string in a concept, with where it sits. URLs are left
@@ -80,7 +91,7 @@ function strings(concept: Concept): { path: string; text: string }[] {
     if (typeof value === "string") {
       if (!path.endsWith(".url")) out.push({ path, text: value });
     } else if (Array.isArray(value)) {
-      value.forEach((item, index) => walk(item, `${path}[${index}]`));
+      for (const [index, item] of value.entries()) walk(item, `${path}[${index}]`);
     } else if (value && typeof value === "object") {
       for (const [key, item] of Object.entries(value)) walk(item, path ? `${path}.${key}` : key);
     }
@@ -100,7 +111,8 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
 
   for (const concept of concepts) {
     for (const rule of concept.rules) {
-      if (ruleIds.has(rule.id)) errors.push(`${concept.id}: rule id ${rule.id} is also used in ${ruleIds.get(rule.id)}`);
+      if (ruleIds.has(rule.id))
+        errors.push(`${concept.id}: rule id ${rule.id} is also used in ${ruleIds.get(rule.id)}`);
       ruleIds.set(rule.id, concept.id);
     }
   }
@@ -125,13 +137,17 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
         if (pattern.test(text)) errors.push(`${where}: ${path} mentions ${why}: "${excerpt(text, pattern)}"`);
       }
       for (const pattern of TIME_BOUND) {
-        if (pattern.test(text)) errors.push(`${where}: ${path} is time-bound ("${excerpt(text, pattern)}"); state it so it stays true, or cite the checked date in evidence`);
+        if (pattern.test(text))
+          errors.push(
+            `${where}: ${path} is time-bound ("${excerpt(text, pattern)}"); state it so it stays true, or cite the checked date in evidence`,
+          );
       }
     }
 
     // Processes: steps only on kind process, at least two, unique ids, and every
     // concept and rule a step names must exist.
-    if (concept.kind === "process" && concept.steps.length < 2) errors.push(`${where}: a process needs at least two steps`);
+    if (concept.kind === "process" && concept.steps.length < 2)
+      errors.push(`${where}: a process needs at least two steps`);
     if (concept.kind !== "process" && concept.steps.length) errors.push(`${where}: only kind process may have steps`);
     const stepIds = new Set<string>();
     for (const step of concept.steps) {
@@ -149,16 +165,19 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
 
     for (const transition of concept.states?.transitions ?? []) {
       for (const state of [...transition.from, transition.to]) {
-        if (!stateNames.has(state)) errors.push(`${where}: transition ${transition.action} names unknown state ${state}`);
+        if (!stateNames.has(state))
+          errors.push(`${where}: transition ${transition.action} names unknown state ${state}`);
       }
     }
 
     for (const rule of concept.rules) {
-      if (!rule.id.startsWith(`${concept.id}.`)) errors.push(`${where}: rule ${rule.id} must start with "${concept.id}."`);
+      if (!rule.id.startsWith(`${concept.id}.`))
+        errors.push(`${where}: rule ${rule.id} must start with "${concept.id}."`);
       for (const target of rule.applies_to) {
         const [kind, name] = [target.slice(0, target.indexOf(":")), target.slice(target.indexOf(":") + 1)];
         const known = kind === "field" ? fieldNames : kind === "state" ? stateNames : actionNames;
-        if (!known.has(name)) errors.push(`${where}: rule ${rule.id} applies_to ${target}, which ${where} does not declare`);
+        if (!known.has(name))
+          errors.push(`${where}: rule ${rule.id} applies_to ${target}, which ${where} does not declare`);
       }
       for (const see of rule.see) {
         if (!ruleIds.has(see)) errors.push(`${where}: rule ${rule.id} sees ${see}, which is not a rule`);

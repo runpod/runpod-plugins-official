@@ -1,0 +1,19 @@
+# yamllint config for the repo's own YAML: the concept files, their test
+# fixtures and the GitHub workflows. The concept files' layout comes from
+# `pnpm format` in ontology/tools; these rules match that style.
+extends: default
+
+ignore: |
+  testdata/
+  node_modules/
+  pnpm-lock.yaml
+  ontology/tools/test/fixtures/bad/
+
+rules:
+  document-start: disable
+  # One-line list entries (fields, relations, evidence) are the house style.
+  line-length: disable
+  braces: { min-spaces-inside: 1, max-spaces-inside: 1 }
+  brackets: { min-spaces-inside: 0, max-spaces-inside: 0 }
+  # GitHub Actions uses the key `on:`.
+  truthy: { check-keys: false }

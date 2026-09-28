@@ -8,7 +8,7 @@
 
 import { existsSync } from "node:fs";
 import { DEFAULT_DB_PATH } from "./build-sqlite.ts";
-import { getConcept, neighbors, openOntology, search, tree, type TreeNode } from "./query.ts";
+import { getConcept, neighbors, openOntology, search, type TreeNode, tree } from "./query.ts";
 
 const [command, argument = ""] = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 const flags = process.argv.slice(2);
@@ -16,7 +16,9 @@ const limitAt = flags.indexOf("--limit");
 const limit = limitAt >= 0 ? Number(flags[limitAt + 1]) : 10;
 
 if (!command || (!argument && command !== "tree")) {
-  console.error('usage: cli.ts concept <ref> | search "<text>" [--limit N] | neighbors <id> | tree [ref] | sql "<select>"');
+  console.error(
+    'usage: cli.ts concept <ref> | search "<text>" [--limit N] | neighbors <id> | tree [ref] | sql "<select>"',
+  );
   process.exit(2);
 }
 if (!existsSync(DEFAULT_DB_PATH)) {
@@ -39,13 +41,19 @@ switch (command) {
   }
   case "search":
     for (const hit of search(db, argument, { limit })) {
-      console.log(`${hit.rank.toFixed(2).padStart(7)}  ${hit.rule.id}  [${hit.rule.status}${hit.rule.conflict ? ", conflict" : ""}]`);
+      console.log(
+        `${hit.rank.toFixed(2).padStart(7)}  ${hit.rule.id}  [${hit.rule.status}${hit.rule.conflict ? ", conflict" : ""}]`,
+      );
       console.log(`         ${hit.rule.statement}`);
     }
     break;
   case "neighbors":
     for (const edge of neighbors(db, argument)) {
-      console.log(edge.direction === "out" ? `${argument} -${edge.type}-> ${edge.concept_id}` : `${edge.concept_id} -${edge.type}-> ${argument}`);
+      console.log(
+        edge.direction === "out"
+          ? `${argument} -${edge.type}-> ${edge.concept_id}`
+          : `${edge.concept_id} -${edge.type}-> ${argument}`,
+      );
     }
     break;
   case "tree": {
@@ -60,7 +68,10 @@ switch (command) {
     const counts = (node: TreeNode) => {
       const examples = node.guides.filter((g) => g.kind === "golden-path").length;
       const docs = node.guides.length - examples;
-      const parts = [examples && `${examples} example${examples > 1 ? "s" : ""}`, docs && `${docs} doc${docs > 1 ? "s" : ""}`].filter(Boolean);
+      const parts = [
+        examples && `${examples} example${examples > 1 ? "s" : ""}`,
+        docs && `${docs} doc${docs > 1 ? "s" : ""}`,
+      ].filter(Boolean);
       return parts.length ? `  (${parts.join(", ")})` : "";
     };
     const print = (node: TreeNode, prefix: string, last: boolean, top: boolean) => {
@@ -86,7 +97,7 @@ switch (command) {
     for (const node of platform) print(node, "", true, true);
     if (loose.length) {
       console.log(`${platform.length ? "\n" : ""}Not under the platform (no is_a or part_of):`);
-      loose.forEach((node, index) => print(node, "", index === loose.length - 1, false));
+      for (const [index, node] of loose.entries()) print(node, "", index === loose.length - 1, false);
     }
     if (expand) console.log("\n◆ golden path (example)  ▪ skill or reference doc");
     break;

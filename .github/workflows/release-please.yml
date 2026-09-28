@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) and provenance; no npm token is stored
+      id-token: write  # npm trusted publishing (OIDC) and provenance; no npm token is stored
     steps:
       - uses: actions/checkout@v4
         with:
