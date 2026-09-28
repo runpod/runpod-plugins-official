@@ -129,7 +129,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use direct pod creation with `--image` when the user has a specific Docker image and does not need a saved template.
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
-- **Leave `--cloud-type` at its `SECURE` default.** Community Cloud hosts are approved vendors; Secure Cloud hosts are data-center-grade providers and so tend toward more stable behavior. Only pass `--cloud-type COMMUNITY` when the user explicitly asks for it (note that a public port 22 then needs `--public-ip`).
+- **Leave `--cloud-type` at its `SECURE` default.** Community Cloud hosts are approved vendors; Secure Cloud hosts are data-center-grade providers and so tend toward more stable behavior. Only pass `--cloud-type COMMUNITY` when the user explicitly asks for it (a public port 22 there needs a machine with a public IP, which the CLI cannot request).
 - A CPU pod gets 2 vCPUs on whichever CPU flavor has the most stock; `--name` defaults to the image name without its tag. CPU pods take a network volume (`--network-volume-id`) but not a pod volume (`--volume-in-gb` is rejected). Do not pass GPU flags.
 - **Set a CUDA floor on every GPU create: `--min-cuda-version 12.8`.** It exists on both
   `pod create` and `serverless create` (not `template create`) and it is the only thing
@@ -140,7 +140,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
   `allowedCudaVersions` exact-match variant, and how to check what has capacity:
   [`runpod-usage` gpu-selection "pin the CUDA floor"](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 - **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `pod create --wait-for running` (v2.15.0+) returns when the container is up with no ssh needed — use it when container-up is all the task needs, or for an image that does not start sshd (most cpu images, since cpu pods get no Runpod-managed ssh), where plain `--wait` would bill through the whole timeout and then fail. A cpu image that starts its own sshd still satisfies plain `--wait`, so keep that when the user needs ssh; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
-- Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` **at creation** (they can't be added to a running pod without a reset), then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
+- Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` at creation when possible; `runpodctl pod update` can change them on an existing pod. Then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
 - Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
 - Clean up paid resources after tests: delete serverless endpoints, pods, and temporary volumes created for validation.
@@ -172,6 +172,11 @@ runpodctl pod {start|stop|restart|update|delete} <pod-id>                    # l
 runpodctl pod logs <pod-id>                          # recent container+system logs, json lines (v2.10.0+)
 runpodctl pod logs <pod-id> --follow                 # keep streaming, reconnects on its own
 runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image pull / create / start
+```
+
+`runpodctl pod reset <pod-id>` returns an unsupported-by-API-v2 error. Use `pod restart` only when a restart is intended.
+
+```bash
 ```
 
 **A stalled deploy shows up in `--source system`** (v2.10.0+): repeated pull progress, or a

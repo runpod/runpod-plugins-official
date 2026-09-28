@@ -220,10 +220,10 @@ no `code`:
 So: check the exit code, then check for an `error` key even on stdout.
 
 "Not ready" fires whenever the pod has no **public port 22**, which is not the same thing
-as "still booting". A pod whose image never starts an sshd reports not-ready indefinitely —
-verified by creating a `ubuntu:22.04` CPU pod and polling for ~70 s at `status: RUNNING`
-throughout. So **bound any SSH readiness loop** and don't treat `RUNNING` as "SSH is
-coming"; if it never arrives, the image is the problem, not the wait.
+as "still booting". A `ubuntu:22.04` CPU pod created through the earlier v1 path stayed at
+`status: RUNNING` without SSH for ~70 s; that path could not request Runpod-managed SSH.
+The current API v2 CPU create path requests managed SSH when SSH is enabled. So **bound
+any SSH readiness loop** and don't treat `RUNNING` alone as proof that SSH is ready.
 
 Two v2.9.0 changes make this easier to get right: `pod create --wait` does the bounded
 readiness loop for you (and proves an ssh *banner*, not just a published port), and

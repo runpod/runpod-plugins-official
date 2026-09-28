@@ -36,7 +36,7 @@ Output shapes, error codes and env vars are in
 | output | progress on **stderr** every ~15s; stdout stays exactly one json object, in the `pod get` shape (so it includes the live `ssh` block, unlike a plain create) |
 | on failure | the pod is **not** deleted — exit is non-zero, code `wait_timeout` (or `wait_interrupted` on ctrl-c), and the error object carries the pod id in `id` plus the delete command. A second ctrl-c always exits |
 | refuses | `--ssh=false` **in ssh mode** (there would be nothing to wait for); it is allowed with `--wait-for running`, which does not need ssh |
-| warns, still waits | **in ssh mode:** `--compute-type CPU` (cpu pods are created over rest, which cannot request Runpod-managed ssh, so only an image that starts its own sshd becomes reachable; use `--wait-for running` to wait without ssh) and `--cloud-type COMMUNITY` without `--public-ip` (community cloud only maps a public ssh port on a machine that has a public ip) |
+| warns, still waits | **in ssh mode:** `--cloud-type COMMUNITY` (community cloud only maps a public ssh port on a machine that has a public ip, which the CLI cannot request) |
 
 ### Pod status fields
 
