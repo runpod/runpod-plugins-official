@@ -130,7 +130,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
 - **Leave `--cloud-type` at its `SECURE` default.** Community Cloud hosts are approved vendors; Secure Cloud hosts are data-center-grade providers and so tend toward more stable behavior. Only pass `--cloud-type COMMUNITY` when the user explicitly asks for it (note that a public port 22 then needs `--public-ip`).
-- Do not pass GPU flags when creating CPU pods. Check `runpodctl pod create --help` for the current valid flag set.
+- A CPU pod gets 2 vCPUs on whichever CPU flavor has the most stock; `--name` defaults to the image name without its tag. CPU pods take a network volume (`--network-volume-id`) but not a pod volume (`--volume-in-gb` is rejected). Do not pass GPU flags.
 - **Set a CUDA floor on every GPU create: `--min-cuda-version 12.8`.** It exists on both
   `pod create` and `serverless create` (not `template create`) and it is the only thing
   keeping a modern image off a host too old to run it — the create itself will not reject
@@ -165,10 +165,10 @@ runpodctl pod list                                   # running pods (+ --all / -
 runpodctl pod get <pod-id>                           # details incl. SSH info + runtimeStatus
 runpodctl pod create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8   # from template
 runpodctl pod create --image <img> --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8        # from image
-runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (lowercase `cpu`; serverless uses `CPU`)
+runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (2 vCPUs; name defaults to the image)
 runpodctl pod create --image <img> --gpu-id <id> --wait                      # block until ssh answers, then print the pod (v2.9.0+)
 runpodctl pod create --compute-type cpu --image ubuntu:22.04 --wait-for running  # block until the container is up; no sshd needed (v2.15.0+)
-runpodctl pod {start|stop|restart|reset|update|delete} <pod-id>              # lifecycle (delete aliases: rm/remove)
+runpodctl pod {start|stop|restart|update|delete} <pod-id>                    # lifecycle (delete aliases: rm/remove; no reset in v3)
 runpodctl pod logs <pod-id>                          # recent container+system logs, json lines (v2.10.0+)
 runpodctl pod logs <pod-id> --follow                 # keep streaming, reconnects on its own
 runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image pull / create / start
