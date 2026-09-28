@@ -1,7 +1,7 @@
 {
   "name": "runpod",
   "interface": {
-    "displayName": "Runpod (Official)"
+    "displayName": "Runpod"
   },
   "plugins": [
     {
