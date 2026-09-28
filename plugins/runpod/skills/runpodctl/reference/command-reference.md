@@ -165,10 +165,13 @@ pin rather than creating one: `StrictHostKeyChecking=yes` with `UpdateHostKeys=n
 neither enroll a key itself nor let the server add further keys to the entry.
 
 A mismatch is reported, never repaired. **Never delete the offending entry automatically, and
-never advise a user to.** It means either the pod was rebuilt or reset and so generated a new
-host key, or the connection is being intercepted — and deleting the entry to clear the error
-destroys the only signal that separates the two. Surface the fingerprint and let the operator
-decide.
+never advise a user to.** It means either the pod's container was recreated and so generated a
+new host key, or the connection is being intercepted — and deleting the entry to clear the error
+destroys the only signal that separates the two. A recreated container is the common case: stopping
+and starting a pod clears its container disk, as do `pod update` and a reset, and Runpod's images
+generate fresh host keys at boot. The pod id stays the same, so the pin does not survive a stop and
+start. Surface the fingerprint, ask whether the pod was stopped, updated, or reset since the last
+connection, and let the operator decide.
 
 Trust on first use closes silent key substitution on **later** connections. It does **not**
 prevent interception of the **first** connection to a pod; that needs the host key delivered
