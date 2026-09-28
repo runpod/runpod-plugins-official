@@ -13,7 +13,14 @@ pnpm test
 pnpm build:sqlite        # build/ontology.sqlite
 pnpm build:graph         # build/graph.html, a force-directed graph with a panel per concept
 pnpm query concept pod   # or: search "<text>", neighbors <id>, sql "<query>"
+pnpm serve               # http://localhost:8787: the graph page plus the JSON API below
 ```
+
+The server is read-only: `GET /api/concepts`, `/api/concepts/<id|name|alias>`,
+`/api/concepts/<ref>/neighbors` and `/api/search?q=<text>`. It also deploys to Vercel
+with the project's root directory set to `ontology/tools`: `vercel.json` compiles the
+tools, builds the SQLite file next to the function in `api/index.mjs`, and serves the
+graph page statically.
 
 - `sqlite/schema.sql` is the table layout. `tools/src/query.ts` is the query layer an agent tool would use.
 - Fields and paths are checked against the REST v2 snapshot at
