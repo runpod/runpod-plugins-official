@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl]
+mcp: full
+concepts: [hub-repo, serverless-endpoint, worker, job, gpu-pool]
+---
+
 # Golden path 03 — Whisper — Variant A: Runpod Hub worker
 
 **Status:** COVERED — live-verified 2026-07-07. **Lane:** runpodctl + Runpod Hub.

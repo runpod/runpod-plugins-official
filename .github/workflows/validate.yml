@@ -72,6 +72,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm validate --strict
+      - run: pnpm check:guides
       - run: pnpm build:sqlite
 
   nix-checks:
