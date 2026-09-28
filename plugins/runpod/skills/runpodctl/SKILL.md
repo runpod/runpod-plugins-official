@@ -130,7 +130,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
 - CPU pod creation defaults to the `cpu3c` flavor with 2 vCPUs when no size is selected; the CLI generates a name if omitted. CPU pods support network volumes, but API v2 CPU creation does not support persistent container volumes or `--public-ip`. Do not pass GPU flags.
 - **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
-- Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` **at creation** (they can't be added to a running pod without a reset), then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
+- Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` at creation when possible; `runpodctl pod update` can change them on an existing pod. Then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
 - Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
 - Clean up paid resources after tests: delete serverless endpoints, pods, and temporary volumes created for validation.
@@ -160,6 +160,11 @@ runpodctl pod {start|stop|restart|update|delete} <pod-id>                    # l
 runpodctl pod logs <pod-id>                          # recent container+system logs, json lines (v2.10.0+)
 runpodctl pod logs <pod-id> --follow                 # keep streaming, reconnects on its own
 runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image pull / create / start
+```
+
+`runpodctl pod reset <pod-id>` returns an unsupported-by-API-v2 error. Use `pod restart` only when a restart is intended.
+
+```bash
 ```
 
 **A stalled deploy shows up in `--source system`** (v2.10.0+): repeated pull progress, or a
