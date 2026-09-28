@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { graphData, renderGraph } from "../src/build-graph.ts";
 import { buildDatabase } from "../src/build-sqlite.ts";
 import { getConcept, neighbors, resolve, search } from "../src/query.ts";
+import { route } from "../src/server.ts";
 import { validate } from "../src/validate.ts";
 
 const fixtures = fileURLToPath(new URL("fixtures/", import.meta.url));
@@ -153,4 +154,17 @@ test("the validator checks process steps", () => {
   assertHasError(errors, 'bad-process: step only concept "nowhere" is not a concept');
   assertHasError(errors, "bad-process: step only names rule nothing.here");
   assertHasError(errors, "steps-on-resource: only kind process may have steps");
+});
+
+test("the API routes concepts, neighbors and search, and rejects the rest", () => {
+  const db = fixtureDb();
+  const get = (path: string) => route(db, new URL(path, "http://localhost"));
+  assert.equal((get("/api/concepts").body as { id: string }[]).length, 3);
+  assert.equal((get("/api/concepts/Disk%20Store").body as { id: string }).id, "volume");
+  assert.deepEqual(get("/api/concepts/site/neighbors").body, neighbors(db, "site"));
+  assert.equal((get("/api/search?q=snapshots&limit=1").body as { rule: { id: string } }[])[0]?.rule.id, "volume.backups");
+  assert.equal(get("/api/search").status, 400);
+  assert.equal(get("/api/concepts/unknown").status, 404);
+  assert.equal(get("/api/concepts/site/extra/path").status, 404);
+  assert.equal(get("/other").status, 404);
 });
