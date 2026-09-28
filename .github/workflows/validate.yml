@@ -36,6 +36,21 @@ jobs:
       - name: Test runpod-migrate scanner helpers
         run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p "test_*.py"
 
+  skill-scripts-oldest-python:
+    # The skill scripts run on users' machines with whatever `python3` they have,
+    # so their tests also run on the oldest version we support: 3.9, the macOS
+    # system python3. The validate job above only proves they work on 3.14.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Test ComfyUI workflow model metadata helpers
+        run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p "test_*.py"
+      - name: Test runpod-migrate scanner helpers
+        run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p "test_*.py"
+
   nix-checks:
     # Runs the full static-analysis gate (ruff, mypy, bandit, unittest,
     # shellcheck, shfmt, biome, nixfmt, deadnix, statix) hermetically. The

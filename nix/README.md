@@ -112,7 +112,7 @@ Entering `nix develop` prints a banner (`rpp-help` re-prints it). The interprete
 |--------|------|
 | `check-format`   | `ruff format --check .` |
 | `check-lint`     | `ruff check .` |
-| `check-types`    | `mypy .` |
+| `check-types`    | `mypy .`, then the skill scripts again with `--python-version 3.10` |
 | `check-security` | `bandit -c pyproject.toml --severity-level medium -r hooks plugins` |
 | `check-shell`    | `shellcheck scripts/*.sh` + `shfmt` |
 | `check-nix`      | `nixfmt --check .` + `deadnix --fail .` + `statix check .` |
@@ -166,7 +166,7 @@ All tools come straight from the `flake.lock`-pinned nixpkgs (via `versions.nix`
 
 - **ruff-lint** — `ruff check .` over the first-party Python
 - **ruff-format** — `ruff format --check .`
-- **mypy** — `mypy .` under `--strict`
+- **mypy** — `mypy .` under `--strict`, plus a second pass over the skill scripts targeting Python 3.10, because they run on users' machines rather than in CI
 - **bandit** — `bandit --severity-level medium` (security; see the policy note above)
 - **unittest** — the stdlib `unittest` suite (mirrors the CI invocation)
 - **shellcheck** — every first-party `*.sh` in `scripts/`

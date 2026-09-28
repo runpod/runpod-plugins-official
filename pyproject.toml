@@ -8,7 +8,12 @@
 # The interpreter runs a current CPython (3.15 under Nix, see nix/versions.nix),
 # but every tool targets Python 3.14 — the repo's CI floor (.github/workflows/
 # validate.yml pins setup-python to 3.14) — so we never emit syntax that floor
-# can't run. Policy: findings are fixed in the code, never suppressed. The only
+# can't run. The exception is the skill scripts (plugins/runpod/skills/*/scripts/):
+# they ship to users and run on whatever `python3` the user has, so they must
+# keep running on Python 3.9, the macOS system python3. ruff checks their syntax
+# against 3.9 (per-file-target-version below), mypy type-checks them against
+# 3.10 (the oldest mypy supports; see nix/checks/default.nix), and CI runs their
+# tests on 3.9 (validate.yml `skill-scripts-oldest-python`). Policy: findings are fixed in the code, never suppressed. The only
 # per-file relaxations below are test-ergonomic (asserts in tests), not
 # defect-hiding.
 
@@ -27,6 +32,9 @@ extend-exclude = [
   "plugins/runpod/skills/flash/evals/fixtures",
   "*.md",
 ]
+
+[tool.ruff.per-file-target-version]
+"plugins/runpod/skills/*/scripts/**" = "py39"
 
 [tool.ruff.lint]
 select = [

@@ -97,10 +97,13 @@ let
       src = pySrc;
       text = "ruff format --check .";
     };
+    # The second pass type-checks the skill scripts against the oldest Python
+    # mypy supports: they run on users' machines, so an API added after 3.10
+    # (StrEnum, Path.walk, `type` aliases) must fail here, not on a user's Mac.
     mypy = {
       runtimeInputs = [ versions.mypy ];
       src = pySrc;
-      text = "mypy .";
+      text = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
     };
     # bandit reads exclude_dirs and the `--severity-level medium` policy from
     # pyproject.toml — a documented policy, not a per-finding suppression.

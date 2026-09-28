@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import sys
+import tempfile
 import unittest
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,6 +32,7 @@ from rp_api_inventory import (
     _signal_match,
     comment_index,
     intentional_lines,
+    iter_files,
     md_cell,
 )
 
@@ -423,6 +425,37 @@ HIT_MARKER_CASES: list[HitMarkerCase] = [
 ]
 
 
+@dataclass(frozen=True)
+class IterFilesCase:
+    description: str
+    files: tuple[str, ...]
+    expected: tuple[str, ...]
+
+
+ITER_FILES_CASES: list[IterFilesCase] = [
+    IterFilesCase(
+        description="positive: nested files are yielded in sorted walk order",
+        files=("src/b.py", "src/a.py", "README.md", "src/pkg/c.ts"),
+        expected=("README.md", "src/a.py", "src/b.py", "src/pkg/c.ts"),
+    ),
+    IterFilesCase(
+        description="negative: skipped directories are not descended into",
+        files=("app.py", "node_modules/dep.js", ".git/config", ".github/workflows/ci.yml"),
+        expected=("app.py",),
+    ),
+    IterFilesCase(
+        description="negative: skipped suffixes are not yielded",
+        files=("app.py", "yarn.lock", "bundle.min.js", "logo.png"),
+        expected=("app.py",),
+    ),
+    IterFilesCase(
+        description="boundary: an empty tree yields nothing",
+        files=(),
+        expected=(),
+    ),
+]
+
+
 class SignalMatchTests(unittest.TestCase):
     def test_signal_match(self) -> None:
         for case in SIGNAL_MATCH_CASES:
@@ -476,6 +509,22 @@ class HitMarkerSuffixTests(unittest.TestCase):
         for case in HIT_MARKER_CASES:
             with self.subTest(case.description):
                 self.assertEqual(_hit_marker_suffix(case.finding), case.expected)
+
+
+class IterFilesTests(unittest.TestCase):
+    """Walks a real temporary tree, so it also proves the directory walk runs on
+    the oldest Python the skill scripts support (see validate.yml)."""
+
+    def test_iter_files(self) -> None:
+        for case in ITER_FILES_CASES:
+            with self.subTest(case.description), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                for rel in case.files:
+                    path = root / rel
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("x\n", encoding="utf-8")
+                actual = tuple(p.relative_to(root).as_posix() for p in iter_files(root))
+                self.assertEqual(actual, case.expected)
 
 
 if __name__ == "__main__":

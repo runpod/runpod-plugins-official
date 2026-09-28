@@ -7,6 +7,11 @@ records to a manifest without this script needing network access or credentials.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
 import argparse
 import enum
 import hashlib
@@ -22,9 +27,9 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-type JSONValue = bool | int | float | str | list[JSONValue] | dict[str, JSONValue] | None
+JSONValue: TypeAlias = Union[bool, int, float, str, "list[JSONValue]", "dict[str, JSONValue]", None]
 # JSON pointer path components: dict keys (str) and list indices (int).
-type PathParts = tuple[str | int, ...]
+PathParts: TypeAlias = "tuple[str | int, ...]"
 
 SCHEMA_VERSION = 1
 MODEL_EXTENSIONS = (

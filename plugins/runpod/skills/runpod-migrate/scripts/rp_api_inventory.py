@@ -32,17 +32,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
 from typing import NamedTuple, TypedDict
 
 
-class Gen(StrEnum):
+class Gen(str, Enum):
     """API generation a hit belongs to. The value is the stable token used as a
     JSON field, a report bucket key and a scope filter, so it must never change."""
 
@@ -735,12 +736,12 @@ class Finding(TypedDict):
 
 
 def iter_files(root: Path) -> Iterator[Path]:
-    for dirpath, dirnames, filenames in root.walk():
+    for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".git"))
         for fn in sorted(filenames):
             if any(fn.endswith(s) for s in SKIP_SUFFIXES):
                 continue
-            path = dirpath / fn
+            path = Path(dirpath) / fn
             try:
                 if path.stat().st_size > MAX_BYTES:
                     continue

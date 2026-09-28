@@ -18,7 +18,7 @@
 {
   check-format = "ruff format --check .";
   check-lint = "ruff check .";
-  check-types = "mypy .";
+  check-types = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
   check-security = "bandit -c pyproject.toml --severity-level medium -r hooks plugins";
   check-shell = "shellcheck scripts/*.sh && shfmt --diff --indent 2 --case-indent scripts";
   # nixfmt is passed explicit files (not `.`): nixfmt deprecated directory args,
