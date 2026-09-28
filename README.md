@@ -190,8 +190,15 @@ development loop, and setup. Worked end-to-end examples live in
 holds one YAML file per Runpod concept (pod, network volume, machine, worker, …), with
 rules that each cite a public source. Every skill, reference doc and golden path lists the
 concepts it covers, so an agent can go from a question to the exact rule and to a verified
-example that uses it. Browse it as a graph or a tree with the tools in
-[`ontology/`](ontology/README.md).
+example that uses it.
+
+| To | Read |
+| --- | --- |
+| Browse, query, validate or serve the graph | [`ontology/README.md`](ontology/README.md) |
+| Understand the concept file format | [`concepts/README.md`](plugins/runpod/skills/runpod-usage/concepts/README.md) |
+| Add or change a concept | [`add-concept` skill](.claude/skills/add-concept/SKILL.md) |
+| Add or change a skill, reference doc or golden path | [`write-guide` skill](.claude/skills/write-guide/SKILL.md) |
+| Tag a golden path with lanes, MCP coverage and concepts | [`golden-paths/README.md`](plugins/runpod/skills/runpod/golden-paths/README.md) |
 
 ## Also on npm
 
