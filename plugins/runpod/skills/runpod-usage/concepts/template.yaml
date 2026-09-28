@@ -11,12 +11,8 @@ part_of: runpod-platform
 aliases: [Pod template, PodTemplate, Serverless template, official template, community template]
 
 surfaces:
-  rest_v2:
-    schema: Template
-    paths: [/v2/templates, "/v2/templates/{id}", /v2/catalog/templates]
-  graphql:
-    type: PodTemplate
-    mutations: [saveTemplate, deleteTemplate]
+  rest_v2: { schema: Template, paths: [/v2/templates, "/v2/templates/{id}", /v2/catalog/templates] }
+  graphql: { type: PodTemplate, mutations: [saveTemplate, deleteTemplate] }
   mcp: [create-template, list-templates, get-template, update-template, delete-template, list-public-templates]
   runpodctl: [template create, template list, template get, template search, template update, template delete]
   console: Templates
@@ -41,17 +37,17 @@ fields:
 
 relations:
   - { type: requires, target: container-image, cardinality: "1" }
-  - { type: uses, target: registry-credential, cardinality: "0..1" }
-  - { type: uses, target: runpod-secret, cardinality: "0..n" }
+  - { type: uses, target: registry-credential, cardinality: 0..1 }
+  - { type: uses, target: runpod-secret, cardinality: 0..n }
 
 rules:
   - id: template.snapshot-at-create
     applies_to: [field:image, field:env]
     statement: >
-      A pod or endpoint copies the template's settings when it is created.
-      Later template edits do not change existing pods or endpoints. A pod
-      created through REST v2 with `templateId` keeps no link to the template,
-      so its `template` field stays null.
+      A pod or endpoint copies the template's settings when it is created. Later
+      template edits do not change existing pods or endpoints. A pod created
+      through REST v2 with `templateId` keeps no link to the template, so its
+      `template` field stays null.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "PATCH /v2/templates/{id}; CreatePodRequest.templateId", seen: 2026-09-28 }
@@ -61,9 +57,8 @@ rules:
     applies_to: [field:env, field:allowedCudaVersions]
     statement: >
       When you create a pod from a template, fields in the create body override
-      the template's. `env` is merged per key, with body values winning.
-      Sending either CUDA field replaces the template's CUDA constraint
-      entirely.
+      the template's. `env` is merged per key, with body values winning. Sending
+      either CUDA field replaces the template's CUDA constraint entirely.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: CreatePodRequest.templateId, seen: 2026-09-28 }
@@ -73,7 +68,7 @@ rules:
       Deleting a template fails while a pod references it in its `template`
       field or a Serverless endpoint is bound to it. Editing a template that is
       in use is allowed.
-    on_violation: "400 Template is in use by a pod or serverless endpoint and cannot be deleted"
+    on_violation: 400 Template is in use by a pod or serverless endpoint and cannot be deleted
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "DELETE /v2/templates/{id}", seen: 2026-09-28 }
@@ -98,7 +93,7 @@ rules:
       apart.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/templates", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/catalog/templates, seen: 2026-09-28 }
 
   - id: template.catalog-registry-hidden
     applies_to: [field:registry]
@@ -107,7 +102,7 @@ rules:
       template never exposes its registry credential.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/templates", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/catalog/templates, seen: 2026-09-28 }
 
   - id: template.types-and-support
     applies_to: [field:public]
@@ -118,8 +113,8 @@ rules:
       `public`, which lists it for all Runpod users in Explore.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/templates/overview", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/templates/manage-templates", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/templates/overview, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/templates/manage-templates, seen: 2026-09-28 }
       - { source: rest-v2-spec, ref: Template.public, seen: 2026-09-28 }
 
   - id: template.no-network-mount
@@ -136,19 +131,19 @@ rules:
   - id: template.serverless-flag
     applies_to: [field:serverless]
     statement: >
-      A template with `serverless: true` is for Serverless workers and cannot
-      be used to create a pod.
+      A template with `serverless: true` is for Serverless workers and cannot be
+      used to create a pod.
     on_violation: 422
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreatePodRequest.templateId; Template.serverless", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreatePodRequest.templateId; Template.serverless, seen: 2026-09-28 }
 
   - id: template.category-console-only
     applies_to: [field:category]
     statement: >
       `category` (`CPU`, `NVIDIA` or `AMD`; default `NVIDIA`) only groups the
-      template in the console. It does not affect hardware selection,
-      scheduling or billing.
+      template in the console. It does not affect hardware selection, scheduling
+      or billing.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: TemplateCategory, seen: 2026-09-28 }
@@ -157,21 +152,21 @@ rules:
     applies_to: [field:startSsh, field:startJupyter]
     statement: >
       `startSsh` and `startJupyter` default to true. They inject `PUBLIC_KEY`
-      (your registered SSH keys) and a generated `JUPYTER_PASSWORD` unless
-      `env` already sets them. `startSsh` does nothing when the account has no
-      SSH keys registered, and only images that follow this convention act on
-      either variable.
+      (your registered SSH keys) and a generated `JUPYTER_PASSWORD` unless `env`
+      already sets them. `startSsh` does nothing when the account has no SSH
+      keys registered, and only images that follow this convention act on either
+      variable.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreateTemplateRequest.startSsh; CreateTemplateRequest.startJupyter", seen: 2026-09-28 }
-      - { source: live-probe, ref: "POST /v2/pods with startSsh and startJupyter on runpod/base:1.0.2-ubuntu2204; both variables injected and the registered keys reached authorized_keys", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreateTemplateRequest.startSsh; CreateTemplateRequest.startJupyter, seen: 2026-09-28 }
+      - { source: live-probe, ref: POST /v2/pods with startSsh and startJupyter on runpod/base:1.0.2-ubuntu2204; both variables injected and the registered keys reached authorized_keys, seen: 2026-09-28 }
 
   - id: template.cuda-ignored-on-cpu
     applies_to: [field:allowedCudaVersions]
     statement: >
-      `allowedCudaVersions` applies to GPU pods and Serverless endpoints
-      created from the template. An empty list means any version, and CPU pods
-      ignore the field.
+      `allowedCudaVersions` applies to GPU pods and Serverless endpoints created
+      from the template. An empty list means any version, and CPU pods ignore
+      the field.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: Template.allowedCudaVersions, seen: 2026-09-28 }

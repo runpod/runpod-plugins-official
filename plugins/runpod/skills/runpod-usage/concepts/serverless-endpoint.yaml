@@ -4,20 +4,16 @@ kind: resource
 summary: >
   A URL backed by autoscaling workers that run your container only while there
   is work. Requests go either through a managed job queue or straight to the
-  workers' own HTTP servers, and the worker count scales between a minimum and
-  a maximum.
+  workers' own HTTP servers, and the worker count scales between a minimum and a
+  maximum.
 product: serverless
 is_a: null
 part_of: runpod-platform
 aliases: [endpoint, Serverless, queue-based endpoint, load-balanced endpoint, load balancing endpoint]
 
 surfaces:
-  rest_v2:
-    schema: Endpoint
-    paths: [/v2/serverless, "/v2/serverless/{id}"]
-  graphql:
-    type: Endpoint
-    mutations: [saveEndpoint, deleteEndpoint]
+  rest_v2: { schema: Endpoint, paths: [/v2/serverless, "/v2/serverless/{id}"] }
+  graphql: { type: Endpoint, mutations: [saveEndpoint, deleteEndpoint] }
   mcp: [create-endpoint, list-endpoints, get-endpoint, update-endpoint, delete-endpoint, endpoint-health, set-endpoint-gpus, purge-endpoint-queue]
   runpodctl: [serverless create, serverless list, serverless get, serverless update, serverless delete, serverless health, serverless env, serverless model-status]
   console: Serverless
@@ -39,7 +35,7 @@ fields:
   - { name: dataCenterIds, type: "string[]", ref: data-center, set: "create,update", note: placement preference }
   - { name: workers.min, type: integer, default: 0, set: "create,update" }
   - { name: workers.max, type: integer, default: 3, set: "create,update" }
-  - { name: workers.idleTimeout, type: integer, unit: seconds, default: 10, set: "create,update", note: "1 to 3600" }
+  - { name: workers.idleTimeout, type: integer, unit: seconds, default: 10, set: "create,update", note: 1 to 3600 }
   - { name: scaling.type, type: enum, values: [QUEUE_DELAY, REQUEST_COUNT], set: "create,update", required: true }
   - { name: scaling.queueDelay, type: number, unit: seconds, set: "create,update", note: minimum 0.5 }
   - { name: scaling.requestCount, type: integer, set: "create,update", note: minimum 1 }
@@ -48,12 +44,12 @@ fields:
   - { name: requestUrls, type: EndpointRequestUrls, set: read, note: invoke URLs for the endpoint's type }
 
 relations:
-  - { type: uses, target: template, cardinality: "0..1" }
-  - { type: runs_on, target: gpu-pool, cardinality: "0..n" }
-  - { type: runs_on, target: cpu-flavor, cardinality: "0..n" }
-  - { type: uses, target: network-volume, cardinality: "0..n" }
-  - { type: located_in, target: data-center, cardinality: "0..n" }
-  - { type: uses, target: registry-credential, cardinality: "0..1" }
+  - { type: uses, target: template, cardinality: 0..1 }
+  - { type: runs_on, target: gpu-pool, cardinality: 0..n }
+  - { type: runs_on, target: cpu-flavor, cardinality: 0..n }
+  - { type: uses, target: network-volume, cardinality: 0..n }
+  - { type: located_in, target: data-center, cardinality: 0..n }
+  - { type: uses, target: registry-credential, cardinality: 0..1 }
   - { type: requires, target: container-image, cardinality: "1" }
   - { type: billed_by, target: serverless-billing, cardinality: "1" }
   - { type: constrained_by, target: gpu-availability, cardinality: "1" }
@@ -81,7 +77,7 @@ rules:
       link.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreateEndpointRequest.templateId; UpdateEndpointRequest.templateId", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreateEndpointRequest.templateId; UpdateEndpointRequest.templateId, seen: 2026-09-28 }
 
   - id: serverless-endpoint.type-fixed
     applies_to: [field:type, field:requestUrls]
@@ -93,7 +89,7 @@ rules:
       paths.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "EndpointType; CreateEndpointRequest.type; EndpointRequestUrls", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: EndpointType; CreateEndpointRequest.type; EndpointRequestUrls, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-mcp/SKILL.md, note: The routing type is fixed at creation. }
 
   - id: serverless-endpoint.lb-worker-ports
@@ -105,7 +101,7 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: EndpointType, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/build-a-worker", note: The example worker serves its health check at /ping. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/load-balancing/build-a-worker, note: The example worker serves its health check at /ping. }
 
   - id: serverless-endpoint.lb-no-queue
     applies_to: [field:type]
@@ -115,20 +111,20 @@ rules:
       when requests must be buffered.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview", note: "The comparison table lists backpressure as dropping requests when overloaded, against queue buffering." }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/load-balancing/overview, note: "The comparison table lists backpressure as dropping requests when overloaded, against queue buffering." }
 
   - id: serverless-endpoint.pools-not-types
     applies_to: [field:gpu.pools, field:gpu.excludedTypes]
     statement: >
-      `gpu.pools` takes serverless pool ids (the `pool` field of
-      `GET /v2/catalog/gpus`), not the GPU type ids that pods use.
+      `gpu.pools` takes serverless pool ids (the `pool` field of `GET
+      /v2/catalog/gpus`), not the GPU type ids that pods use.
       `gpu.excludedTypes` takes GPU type ids and removes them from those pools.
       A PATCH that sends `pools` without `excludedTypes` clears the exclusions.
     on_violation: 400 when an excluded type is not in any selected pool
     status: documented
     see: [gpu-pool.pool-vs-type-ids]
     evidence:
-      - { source: rest-v2-spec, ref: "BaseEndpointGpuConfig.pools; BaseEndpointGpuConfig.excludedTypes", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: BaseEndpointGpuConfig.pools; BaseEndpointGpuConfig.excludedTypes, seen: 2026-09-28 }
 
   - id: serverless-endpoint.cuda-constraints
     applies_to: [field:gpu.allowedCudaVersions, field:gpu.minCudaVersion]
@@ -139,7 +135,7 @@ rules:
     on_violation: 400
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreateEndpointGpuConfig; UpdateEndpointGpuConfig", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreateEndpointGpuConfig; UpdateEndpointGpuConfig, seen: 2026-09-28 }
 
   - id: serverless-endpoint.network-volume-pins-dc
     applies_to: [field:networkVolumes, field:dataCenterIds]
@@ -159,7 +155,7 @@ rules:
       data center leaves workers throttled and jobs waiting in `IN_QUEUE`.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "POST /v2/serverless (Checking what you can deploy)", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/serverless (Checking what you can deploy), seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
 
   - id: serverless-endpoint.accepts-jobs-before-workers
@@ -170,7 +166,7 @@ rules:
       later as jobs stuck in `IN_QUEUE`.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "POST /v2/serverless", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/serverless, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Describes how a broken image looks from the queue. }
 
   - id: serverless-endpoint.diagnose-with-health
@@ -199,15 +195,15 @@ rules:
   - id: serverless-endpoint.defaults-by-layer
     applies_to: [field:workers.idleTimeout, field:timeout, field:flashboot, field:workers.max]
     statement: >
-      Defaults depend on the tool that creates the endpoint. REST v2 create
-      uses `workers.max` 3, `idleTimeout` 10 seconds, `timeout` 300 seconds and
+      Defaults depend on the tool that creates the endpoint. REST v2 create uses
+      `workers.max` 3, `idleTimeout` 10 seconds, `timeout` 300 seconds and
       `flashboot` `OFF`. The console uses a 5-second idle timeout, a 600-second
       execution timeout and FlashBoot on. runpodctl and the Flash SDK set their
       own defaults, so set these values explicitly.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "CreateEndpointRequest (workers, timeout and flashboot defaults)", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: "Console defaults for idle timeout, execution timeout and FlashBoot." }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: "Console defaults for idle timeout, execution timeout and FlashBoot." }
       - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: The Flash SDK's defaults differ from the platform's. }
 
   - id: serverless-endpoint.max-zero-stops-workers
@@ -220,14 +216,13 @@ rules:
     status: documented
     see: [endpoint-autoscaling.idle-endpoint-scale-down]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/rolling-releases", note: Scale to zero before updating for strict version consistency. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle endpoint scale-down. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/rolling-releases, note: Scale to zero before updating for strict version consistency. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: Idle endpoint scale-down. }
 
   - id: serverless-endpoint.delete-is-total
     statement: >
       Deleting an endpoint also deletes its bound template, terminates all of
-      its workers, and cancels queued and in-progress jobs. It cannot be
-      undone.
+      its workers, and cancels queued and in-progress jobs. It cannot be undone.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "DELETE /v2/serverless/{id}", seen: 2026-09-28 }

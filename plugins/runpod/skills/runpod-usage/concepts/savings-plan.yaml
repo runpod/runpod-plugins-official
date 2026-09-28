@@ -10,15 +10,14 @@ part_of: runpod-platform
 aliases: [committed GPU, savingsPlan, savingsPlans]
 
 surfaces:
-  graphql:
-    type: SavingsPlan
+  graphql: { type: SavingsPlan }
   console: Savings plans
 
 fields: []
 
 relations:
   - { type: requires, target: gpu-type, cardinality: "1" }
-  - { type: uses, target: pod, cardinality: "0..1" }
+  - { type: uses, target: pod, cardinality: 0..1 }
 
 rules:
   - id: savings-plan.not-in-rest-v2
@@ -29,7 +28,7 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
-      - { source: rest-v2-spec, ref: "Pod; CreatePodRequest", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: Pod; CreatePodRequest, seen: 2026-09-28 }
 
   - id: savings-plan.discount-not-reservation
     statement: >
@@ -39,7 +38,7 @@ rules:
       GPU type.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, seen: 2026-09-28 }
 
   - id: savings-plan.scope
     statement: >
@@ -47,4 +46,4 @@ rules:
       and keeps accruing while the pod is stopped.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, seen: 2026-09-28 }

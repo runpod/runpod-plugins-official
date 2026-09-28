@@ -15,33 +15,35 @@ surfaces:
 
 relations:
   - { type: requires, target: pod, cardinality: "1" }
-  - { type: uses, target: network-volume, cardinality: "0..1" }
+  - { type: uses, target: network-volume, cardinality: 0..1 }
 
 rules:
   - id: pod-migration.not-in-rest-v2
     statement: >
-      REST v2 has no migrate action; the pod actions are `start`, `stop`, `restart`
-      and `terminate`. Migration is offered in the console when a stopped pod cannot
-      get its GPU back.
+      REST v2 has no migrate action; the pod actions are `start`, `stop`,
+      `restart` and `terminate`. Migration is offered in the console when a
+      stopped pod cannot get its GPU back.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: PodAction, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration" }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration }
 
   - id: pod-migration.new-id-and-address
     statement: >
       A migrated pod gets a new pod id, IP address and proxy URL. Update any API
-      calls, proxy URLs, firewall rules or VPN settings that use the old id or IP.
+      calls, proxy URLs, firewall rules or VPN settings that use the old id or
+      IP.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", note: Important considerations for migration. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, note: Important considerations for migration. }
 
   - id: pod-migration.options
     statement: >
-      When the GPU is taken, you can wait and retry, start the pod with CPUs only to
-      reach its data, or migrate to a new machine. Keeping data on a network volume
-      avoids the choice, because a new pod anywhere can attach it.
+      When the GPU is taken, you can wait and retry, start the pod with CPUs
+      only to reach its data, or migrate to a new machine. Keeping data on a
+      network volume avoids the choice, because a new pod anywhere can attach
+      it.
     status: documented
     see: [container-disk.what-survives, pod.stopped-pod-keeps-host]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", note: Your options when GPUs are unavailable. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, note: Your options when GPUs are unavailable. }

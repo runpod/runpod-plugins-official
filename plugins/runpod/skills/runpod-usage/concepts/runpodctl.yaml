@@ -2,10 +2,9 @@ id: runpodctl
 name: runpodctl
 kind: tool
 summary: >
-  Runpod's command-line tool for managing pods, Serverless endpoints,
-  templates, network volumes and models from a terminal, CI job or script. It
-  also covers Hub deploys, SSH keys, `send`/`receive` file transfer and
-  `doctor` setup.
+  Runpod's command-line tool for managing pods, Serverless endpoints, templates,
+  network volumes and models from a terminal, CI job or script. It also covers
+  Hub deploys, SSH keys, `send`/`receive` file transfer and `doctor` setup.
 product: null
 is_a: null
 part_of: runpod-platform
@@ -16,18 +15,19 @@ surfaces:
 
 relations:
   - { type: requires, target: api-key, cardinality: "1" }
-  - { type: uses, target: pod, cardinality: "0..n" }
-  - { type: uses, target: serverless-endpoint, cardinality: "0..n" }
-  - { type: uses, target: template, cardinality: "0..n" }
-  - { type: uses, target: network-volume, cardinality: "0..n" }
-  - { type: uses, target: hub-repo, cardinality: "0..n" }
+  - { type: uses, target: pod, cardinality: 0..n }
+  - { type: uses, target: serverless-endpoint, cardinality: 0..n }
+  - { type: uses, target: template, cardinality: 0..n }
+  - { type: uses, target: network-volume, cardinality: 0..n }
+  - { type: uses, target: hub-repo, cardinality: 0..n }
 
 rules:
   - id: runpodctl.update-first
     statement: >
       Older `runpodctl` builds lack newer flags and fail with confusing errors;
       `--model-reference` needs v2.4.0 or later. Check `runpodctl version`, run
-      `runpodctl update` before starting, and keep one version for the whole task.
+      `runpodctl update` before starting, and keep one version for the whole
+      task.
     status: documented
     see: [model-store.attach-by-reference]
     evidence:
@@ -35,13 +35,13 @@ rules:
 
   - id: runpodctl.help-is-authoritative
     statement: >
-      The command surface comes from the installed binary. Read
-      `runpodctl <resource> <action> --help` for the flags a command accepts,
-      rather than relying on a list written for another version.
+      The command surface comes from the installed binary. Read `runpodctl
+      <resource> <action> --help` for the flags a command accepts, rather than
+      relying on a list written for another version.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Install section. }
-      - { source: skill, path: plugins/runpod/skills/runpod/SKILL.md, note: "These skills are a snapshot; the tools are the source of truth." }
+      - { source: skill, path: plugins/runpod/skills/runpod/SKILL.md, note: These skills are a snapshot; the tools are the source of truth. }
 
   - id: runpodctl.credential-resolution
     statement: >

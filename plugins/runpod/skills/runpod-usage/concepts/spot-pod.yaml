@@ -10,9 +10,7 @@ part_of: null
 aliases: [spot, interruptible pod, bid pod]
 
 surfaces:
-  graphql:
-    type: Pod
-    mutations: [podRentInterruptable, podBidResume]
+  graphql: { type: Pod, mutations: [podRentInterruptable, podBidResume] }
 
 relations:
   - { type: runs_on, target: gpu-type, cardinality: "1" }
@@ -23,23 +21,23 @@ relations:
 rules:
   - id: spot-pod.not-in-rest-v2
     statement: >
-      REST v2 has no spot, interruptible or bid field, so REST v2, the Runpod MCP
-      and `runpodctl` create on-demand pods only. Spot pods are created with the
-      GraphQL mutation `podRentInterruptable` (with `bidPerGpu`) and resumed with
-      `podBidResume`. When migrating to REST v2, keep these calls on GraphQL or
-      move them to on-demand pods.
+      REST v2 has no spot, interruptible or bid field, so REST v2, the Runpod
+      MCP and `runpodctl` create on-demand pods only. Spot pods are created with
+      the GraphQL mutation `podRentInterruptable` (with `bidPerGpu`) and resumed
+      with `podBidResume`. When migrating to REST v2, keep these calls on
+      GraphQL or move them to on-demand pods.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: CreatePodRequest, seen: 2026-09-28, note: "No spot, interruptible or bid field." }
-      - { source: public-docs, url: "https://graphql-spec.runpod.io/#mutation-podRentInterruptable" }
+      - { source: public-docs, url: https://graphql-spec.runpod.io/#mutation-podRentInterruptable }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
 
   - id: spot-pod.checkpoint-work
     statement: >
-      A spot pod can be stopped at any time, and a stop clears the container disk.
-      Checkpoint work to the volume disk or a network volume.
+      A spot pod can be stopped at any time, and a stop clears the container
+      disk. Checkpoint work to the volume disk or a network volume.
     status: documented
     see: [pod.container-disk-ephemeral]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/maintenance-and-outages", note: "Data only on container storage is lost if the pod is interrupted, restarted, stopped or terminated." }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types" }
+      - { source: public-docs, url: https://docs.runpod.io/pods/maintenance-and-outages, note: "Data only on container storage is lost if the pod is interrupted, restarted, stopped or terminated." }
+      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types }

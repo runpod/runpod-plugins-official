@@ -11,15 +11,12 @@ part_of: runpod-platform
 aliases: [CpuType, CpuFlavor, CPU instance type, CPU type, cpu3c, cpu5c]
 
 surfaces:
-  rest_v2:
-    schema: CpuType
-    paths: [/v2/catalog/cpus, "/v2/catalog/cpus/{id}"]
-  graphql:
-    type: CpuFlavor
+  rest_v2: { schema: CpuType, paths: [/v2/catalog/cpus, "/v2/catalog/cpus/{id}"] }
+  graphql: { type: CpuFlavor }
   mcp: [list-cpu-types, get-cpu-type]
 
 fields:
-  - { name: id, type: string, set: read, note: "Pass as `cpu.id` on create." }
+  - { name: id, type: string, set: read, note: Pass as `cpu.id` on create. }
   - { name: name, type: string, set: read }
   - { name: group, type: string, set: read, note: CPU generation group. }
   - { name: vcpu.min, type: integer, set: read }
@@ -27,8 +24,8 @@ fields:
   - { name: ramGbPerVcpu, type: number, unit: GB, set: read }
   - { name: price.securePerVcpu, type: number, unit: USD per vCPU per hour, set: read }
   - { name: price.serverlessPerVcpu, type: number, unit: USD per vCPU per hour, set: read }
-  - { name: availability, type: AvailabilityLevel, set: read, note: "Returned only with `include=AVAILABILITY` and `product`." }
-  - { name: dataCenters, type: "DataCenterAvailability[]", set: read, note: "Returned only with `include=AVAILABILITY` and `product`." }
+  - { name: availability, type: AvailabilityLevel, set: read, note: Returned only with `include=AVAILABILITY` and `product`. }
+  - { name: dataCenters, type: "DataCenterAvailability[]", set: read, note: Returned only with `include=AVAILABILITY` and `product`. }
 
 relations:
   - { type: constrained_by, target: gpu-availability, cardinality: "1" }
@@ -41,7 +38,7 @@ rules:
       `cpu.id` and `cpu.vcpuCount`, and the API derives the memory.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CpuType.ramGbPerVcpu; CreatePodRequest", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CpuType.ramGbPerVcpu; CreatePodRequest, seen: 2026-09-28 }
 
   - id: cpu-flavor.vcpu-power-of-two
     applies_to: [field:vcpu.min, field:vcpu.max]
@@ -51,11 +48,13 @@ rules:
     on_violation: 400
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "BaseCpuConfig.vcpuCount; GET /v2/catalog/cpus vcpuCount", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: BaseCpuConfig.vcpuCount; GET /v2/catalog/cpus vcpuCount, seen: 2026-09-28 }
 
   - id: cpu-flavor.price-per-vcpu
     applies_to: [field:price.securePerVcpu, field:price.serverlessPerVcpu]
-    statement: Prices are per vCPU per hour. Multiply by the chosen `vcpuCount` for the hourly rate.
+    statement: >
+      Prices are per vCPU per hour. Multiply by the chosen `vcpuCount` for the
+      hourly rate.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: CpuType.price, seen: 2026-09-28 }
@@ -69,7 +68,7 @@ rules:
     status: documented
     see: [data-center.availability-on-request]
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/cpus parameters; CpuProduct", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/catalog/cpus parameters; CpuProduct, seen: 2026-09-28 }
 
   - id: cpu-flavor.id-field-names
     applies_to: [field:id]
@@ -79,4 +78,4 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: BaseCpuConfig.id, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://graphql-spec.runpod.io/", ref: "instanceIds; computeType", seen: 2026-09-28 }
+      - { source: public-docs, url: https://graphql-spec.runpod.io/, ref: instanceIds; computeType, seen: 2026-09-28 }

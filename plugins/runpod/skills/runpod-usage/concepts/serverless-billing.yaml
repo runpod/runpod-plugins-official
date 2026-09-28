@@ -11,9 +11,7 @@ part_of: null
 aliases: [flex pricing, active pricing, GPU-seconds, worker billing]
 
 surfaces:
-  rest_v2:
-    schema: ServerlessBillingRecord
-    paths: [/v2/billing/serverless]
+  rest_v2: { schema: ServerlessBillingRecord, paths: [/v2/billing/serverless] }
   mcp: [list-serverless-billing]
   runpodctl: [billing serverless]
 
@@ -39,7 +37,7 @@ rules:
       so a migrated call silently reads the wrong product.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/billing/serverless; GET /v2/billing/endpoints", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/billing/serverless; GET /v2/billing/endpoints, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md }
 
@@ -68,7 +66,7 @@ rules:
       idle cost, and reset it after testing.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
 
   - id: serverless-billing.idle-timeout-costs
@@ -78,7 +76,7 @@ rules:
       cost.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
 
   - id: serverless-billing.what-is-billed
@@ -90,7 +88,7 @@ rules:
     status: documented
     see: [serverless-billing.idle-timeout-costs]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
 
   - id: serverless-billing.cut-start-time
     statement: >
@@ -99,4 +97,4 @@ rules:
       jobs.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }

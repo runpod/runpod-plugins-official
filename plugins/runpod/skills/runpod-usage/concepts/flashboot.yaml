@@ -26,26 +26,26 @@ rules:
       cold-starts more slowly.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "FlashBoot; CreateEndpointRequest.flashboot", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: FlashBoot section. }
-      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: "Explains that `flashboot` changed from a boolean to an enum." }
+      - { source: rest-v2-spec, ref: FlashBoot; CreateEndpointRequest.flashboot, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: FlashBoot section. }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: Explains that `flashboot` changed from a boolean to an enum. }
 
   - id: flashboot.best-effort
     statement: >
-      FlashBoot revives a worker from state retained after it scaled down.
-      When no retained state is available, the worker cold-starts normally, so
+      FlashBoot revives a worker from state retained after it scaled down. When
+      no retained state is available, the worker cold-starts normally, so
       FlashBoot shortens starts without guaranteeing them. It helps most on
       endpoints with steady traffic, where workers often cycle between active
       and idle.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: FlashBoot section. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: FlashBoot section. }
 
   - id: flashboot.flash-sdk-default-on
     statement: >
-      The Flash SDK exposes FlashBoot as the `flashboot` argument of
-      `Endpoint`, and it defaults to `True`. FlashBoot itself is an endpoint
-      setting, not part of Flash.
+      The Flash SDK exposes FlashBoot as the `flashboot` argument of `Endpoint`,
+      and it defaults to `True`. FlashBoot itself is an endpoint setting, not
+      part of Flash.
     status: documented
     see: [flash.not-flashboot]
     evidence:

@@ -2,9 +2,8 @@ id: api-key
 name: API key
 kind: resource
 summary: >
-  A credential that authenticates your API, CLI and MCP calls. Each key
-  carries the permissions it was given at creation, and Runpod shows it only
-  once.
+  A credential that authenticates your API, CLI and MCP calls. Each key carries
+  the permissions it was given at creation, and Runpod shows it only once.
 product: account
 is_a: null
 part_of: runpod-platform
@@ -25,8 +24,8 @@ rules:
     on_violation: 401 missing or invalid key, 403 missing access
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "components.securitySchemes.bearerAuth; components.responses.ForbiddenError", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/api-reference-v2/overview", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: components.securitySchemes.bearerAuth; components.responses.ForbiddenError, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/api-reference-v2/overview, seen: 2026-09-28 }
 
   - id: api-key.graphql-query-parameter
     statement: >
@@ -35,7 +34,7 @@ rules:
       stops appearing in URLs and logs.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/sdks/graphql/configurations", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/sdks/graphql/configurations, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md }
 
   - id: api-key.shown-once
@@ -45,17 +44,16 @@ rules:
       disable it, re-enable it or revoke it from the Settings page.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/get-started/api-keys", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/get-started/api-keys, seen: 2026-09-28 }
 
   - id: api-key.permission-levels
     statement: >
       A key is created with **All**, **Restricted** or **Read Only** access. A
       Restricted key sets access per Runpod API and per Serverless endpoint
-      (None, Read Only or Read/Write), so grant only what the integration
-      needs.
+      (None, Read Only or Read/Write), so grant only what the integration needs.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/get-started/api-keys", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/get-started/api-keys, seen: 2026-09-28 }
 
   - id: api-key.legacy-keys
     statement: >
@@ -64,4 +62,4 @@ rules:
       Replace them with Restricted keys that carry the minimum permissions.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/get-started/api-keys", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/get-started/api-keys, seen: 2026-09-28 }

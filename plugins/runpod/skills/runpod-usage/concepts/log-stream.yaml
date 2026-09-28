@@ -2,16 +2,15 @@ id: log-stream
 name: Log stream (pod and worker logs)
 kind: capability
 summary: >
-  A pod's or serverless worker's container output and system events, streamed live with
-  a short backfill of recent lines.
+  A pod's or serverless worker's container output and system events, streamed
+  live with a short backfill of recent lines.
 product: pods
 is_a: null
 part_of: runpod-platform
 aliases: [pod logs, worker logs, container logs, system logs, SSE log stream]
 
 surfaces:
-  rest_v2:
-    paths: ["/v2/pods/{id}/logs", "/v2/serverless/{id}/workers/{workerId}/logs"]
+  rest_v2: { paths: ["/v2/pods/{id}/logs", "/v2/serverless/{id}/workers/{workerId}/logs"] }
   mcp: [stream-pod-logs, stream-worker-logs]
   runpodctl: [pod logs, serverless logs]
   console: Pods and Serverless (Logs tab)
@@ -19,37 +18,39 @@ surfaces:
 fields: []
 
 relations:
-  - { type: uses, target: pod, cardinality: "0..1" }
-  - { type: uses, target: worker, cardinality: "0..1" }
+  - { type: uses, target: pod, cardinality: 0..1 }
+  - { type: uses, target: worker, cardinality: 0..1 }
 
 rules:
   - id: log-stream.sse-parameters
     statement: >
-      Logs stream as Server-Sent Events of `{source, line, ts}`. `source` is `container` or
-      `system`; omit it to get both. `tail` backfills recent lines (default 100, maximum
-      5000, `0` for live only), and `since` takes an RFC 3339 time. `Last-Event-ID` resumes
-      a dropped stream and overrides `since` and `tail`.
+      Logs stream as Server-Sent Events of `{source, line, ts}`. `source` is
+      `container` or `system`; omit it to get both. `tail` backfills recent
+      lines (default 100, maximum 5000, `0` for live only), and `since` takes an
+      RFC 3339 time. `Last-Event-ID` resumes a dropped stream and overrides
+      `since` and `tail`.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "GET /v2/pods/{id}/logs; LogSource", seen: 2026-09-28 }
 
   - id: log-stream.system-source-for-stalls
     statement: >
-      The `system` source reports pod lifecycle events: image pull, container create and
-      container start. A stalled deploy usually shows there as repeated pull progress or a
-      create that never reaches start, so read it first when a pod stays in `STARTING`.
+      The `system` source reports pod lifecycle events: image pull, container
+      create and container start. A stalled deploy usually shows there as
+      repeated pull progress or a create that never reaches start, so read it
+      first when a pod stays in `STARTING`.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: LogSource, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods" }
-      - { source: other, ref: "runpodctl pod logs --help (runpodctl 2.14.0)", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods }
+      - { source: other, ref: runpodctl pod logs --help (runpodctl 2.14.0), seen: 2026-09-28 }
 
   - id: log-stream.worker-log-retention
     statement: >
-      Worker logs live only on the worker's machine and are removed when the worker
-      terminates. Endpoint logs are kept for 90 days. To keep logs longer, write them to a
-      network volume or an external logging service.
+      Worker logs live only on the worker's machine and are removed when the
+      worker terminates. Endpoint logs are kept for 90 days. To keep logs
+      longer, write them to a network volume or an external logging service.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/logs" }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/write-logs" }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/development/logs }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/development/write-logs }

@@ -2,17 +2,15 @@ id: cpu-pod
 name: CPU pod
 kind: resource
 summary: >
-  A pod on CPU-only hardware, priced by vCPU. It has the same networking, storage
-  options and lifecycle as a GPU pod, apart from the limits below.
+  A pod on CPU-only hardware, priced by vCPU. It has the same networking,
+  storage options and lifecycle as a GPU pod, apart from the limits below.
 product: pods
 is_a: pod
 part_of: null
 aliases: [CPU-only pod, CPU instance]
 
 surfaces:
-  rest_v2:
-    schema: Pod
-    paths: [/v2/pods, /v2/catalog/cpus]
+  rest_v2: { schema: Pod, paths: [/v2/pods, /v2/catalog/cpus] }
   mcp: [create-pod, list-cpu-types, get-cpu-type]
   runpodctl: [pod create --compute-type cpu]
   console: Pods
@@ -32,18 +30,18 @@ rules:
   - id: cpu-pod.flavor-and-vcpus
     applies_to: [field:cpu.id, field:cpu.vcpuCount, field:cpu.memory]
     statement: >
-      A CPU pod takes a CPU flavor id, not a GPU type id, and a `vcpuCount` that is
-      a power of two valid for that flavor. The API sets memory from the flavor, so
-      do not send it.
+      A CPU pod takes a CPU flavor id, not a GPU type id, and a `vcpuCount` that
+      is a power of two valid for that flavor. The API sets memory from the
+      flavor, so do not send it.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreatePodRequest; BaseCpuConfig; CpuConfig.memory", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreatePodRequest; BaseCpuConfig; CpuConfig.memory, seen: 2026-09-28 }
 
   - id: cpu-pod.storage-limits
     applies_to: [field:cpu]
     statement: >
-      CPU pods support the container disk and a network volume only. A persistent
-      (host-local) mount is rejected.
+      CPU pods support the container disk and a network volume only. A
+      persistent (host-local) mount is rejected.
     on_violation: 400
     status: documented
     see: [pod.persistent-mount-limits]
@@ -63,10 +61,10 @@ rules:
     applies_to: [field:cpu.id]
     statement: >
       `GET /v2/catalog/cpus` returns CPU flavor stock only with
-      `include=AVAILABILITY` and a `product`, because stock differs between pods and
-      Serverless.
+      `include=AVAILABILITY` and a `product`, because stock differs between pods
+      and Serverless.
     on_violation: 400
     status: verified
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/cpus", seen: 2026-09-28 }
-      - { source: live-probe, ref: "GET /v2/catalog/cpus?include=AVAILABILITY without product returned 400 (product is required with include=AVAILABILITY)", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/catalog/cpus, seen: 2026-09-28 }
+      - { source: live-probe, ref: GET /v2/catalog/cpus?include=AVAILABILITY without product returned 400 (product is required with include=AVAILABILITY), seen: 2026-09-28 }

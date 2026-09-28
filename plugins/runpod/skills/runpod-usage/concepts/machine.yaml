@@ -17,14 +17,14 @@ rules:
     statement: >
       A pod runs on exactly one machine. It is assigned when the pod is first
       deployed, stays assigned while the pod is stopped, and resumes on the same
-      machine. Moving to another machine means a new pod, through migration or
-      a fresh deploy, with a new pod id.
+      machine. Moving to another machine means a new pod, through migration or a
+      fresh deploy, with a new pod id.
     status: documented
     see: [pod.stopped-pod-keeps-host]
     evidence:
       - { source: rest-v2-spec, ref: Pod.cudaVersion, seen: 2026-09-28, note: A stopped pod keeps its machine assignment and resumes onto the same host. }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", seen: 2026-09-28, note: Pod ids are tied to physical machines. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, seen: 2026-09-28, note: Pod ids are tied to physical machines. }
 
   - id: machine.gpus-are-per-machine
     statement: >
@@ -33,8 +33,8 @@ rules:
       while the pod is stopped.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, seen: 2026-09-28 }
 
   - id: machine.largest-machine-caps-gpu-count
     statement: >
@@ -56,7 +56,7 @@ rules:
     see: [pod-volume-disk.deprecated-prefer-network]
     evidence:
       - { source: rest-v2-spec, ref: PersistentMount, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: 2026-09-28, note: Storage is not charged while the host machine is unavailable. }
+      - { source: public-docs, url: https://docs.runpod.io/accounts-billing/billing, seen: 2026-09-28, note: Storage is not charged while the host machine is unavailable. }
 
   - id: machine.cuda-is-per-machine
     statement: >
@@ -66,4 +66,4 @@ rules:
     status: documented
     see: [pod.cuda-discover-first]
     evidence:
-      - { source: rest-v2-spec, ref: "Pod.cudaVersion; GpuType.cudaVersions", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: Pod.cudaVersion; GpuType.cudaVersions, seen: 2026-09-28 }

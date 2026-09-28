@@ -13,14 +13,14 @@ surfaces:
   console: Templates
 
 relations:
-  - { type: uses, target: registry-credential, cardinality: "0..1" }
+  - { type: uses, target: registry-credential, cardinality: 0..1 }
 
 rules:
   - id: container-image.use-runpod-pytorch
     statement: >
-      For a GPU workload, build `FROM` an official `runpod/pytorch:<tag>`
-      image. Its PyTorch and CUDA builds match Runpod hosts, and Runpod caches
-      official base images on its hosts, so only the layers you add are pulled.
+      For a GPU workload, build `FROM` an official `runpod/pytorch:<tag>` image.
+      Its PyTorch and CUDA builds match Runpod hosts, and Runpod caches official
+      base images on its hosts, so only the layers you add are pulled.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
