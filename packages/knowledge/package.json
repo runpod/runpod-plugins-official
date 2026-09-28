@@ -1,0 +1,24 @@
+{
+  "name": "@runpod/knowledge",
+  "version": "1.4.0",
+  "description": "The Runpod plugin's skills, golden paths and concept graph as one JSON bundle",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./knowledge.json": "./knowledge.json"
+  },
+  "files": ["index.mjs", "index.cjs", "index.d.ts", "knowledge.json"],
+  "scripts": {
+    "prepack": "cd ../../ontology/tools && node --disable-warning=ExperimentalWarning src/build-bundle.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/runpod/runpod-plugins-official.git",
+    "directory": "packages/knowledge"
+  }
+}
