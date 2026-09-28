@@ -8,7 +8,7 @@ summary: >
 product: pods
 is_a: null
 part_of: runpod-platform
-aliases: [.runpod.internal, globalNetwork, private networking, pod-to-pod networking]
+aliases: [".runpod.internal", globalNetwork, private networking, pod-to-pod networking]
 
 surfaces:
   rest_v2: { schema: Pod }
@@ -26,7 +26,7 @@ relations:
 
 rules:
   - id: global-networking.internal-dns
-    applies_to: [field:globalNetworking.ip, field:globalNetworking.internalDns]
+    applies_to: ["field:globalNetworking.ip", "field:globalNetworking.internalDns"]
     statement: >
       Reach another enabled pod at its `globalNetworking.internalDns`
       (`<podId>.runpod.internal`) or `globalNetworking.ip`, including pods in
@@ -36,17 +36,17 @@ rules:
     status: documented
     see: [pod.global-networking-next-start, data-center.global-network]
     evidence:
-      - { source: rest-v2-spec, ref: PodGlobalNetworking; CreatePodRequest.globalNetworking, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/pods/networking }
+      - { source: rest-v2-spec, ref: "PodGlobalNetworking; CreatePodRequest.globalNetworking", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/networking" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }
 
   - id: global-networking.limits
-    applies_to: [field:globalNetworking]
+    applies_to: ["field:globalNetworking"]
     statement: >
       Global networking works on NVIDIA GPU pods only, in the data centers whose
       `globalNetwork` is `true`, at about 100 Mbps between pods.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/networking }
-      - { source: rest-v2-spec, ref: CreatePodRequest.globalNetworking; DataCenter.globalNetwork, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/networking" }
+      - { source: rest-v2-spec, ref: "CreatePodRequest.globalNetworking; DataCenter.globalNetwork", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }

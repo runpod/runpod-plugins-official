@@ -18,8 +18,8 @@ surfaces:
 fields: []
 
 relations:
-  - { type: uses, target: network-volume, cardinality: 0..1 }
-  - { type: uses, target: pod-ssh-access, cardinality: 0..1 }
+  - { type: uses, target: network-volume, cardinality: "0..1" }
+  - { type: uses, target: pod-ssh-access, cardinality: "0..1" }
 
 rules:
   - id: file-transfer.no-pod-file-api
@@ -30,8 +30,8 @@ rules:
     status: documented
     see: [pod-ssh-access.proxy-vs-direct]
     evidence:
-      - { source: rest-v2-spec, ref: paths under /v2, seen: 2026-09-28, note: No path uploads or downloads files. }
-      - { source: public-docs, url: https://docs.runpod.io/pods/configuration/use-ssh }
+      - { source: rest-v2-spec, ref: paths under /v2, seen: "2026-09-28", note: No path uploads or downloads files. }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/use-ssh" }
 
   - id: file-transfer.send-receive
     statement: >
@@ -44,8 +44,8 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: File Transfer section. }
-      - { source: public-docs, url: https://docs.runpod.io/runpodctl/reference/runpodctl-send }
-      - { source: other, ref: runpodctl send --help (runpodctl 2.14.0), seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/runpodctl/reference/runpodctl-send" }
+      - { source: other, ref: runpodctl send --help (runpodctl 2.14.0), seen: "2026-09-28" }
 
   - id: file-transfer.s3-api-per-data-center
     statement: >
@@ -58,5 +58,5 @@ rules:
     status: documented
     see: [network-volume.s3-api]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/storage/s3-api }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/s3-api" }
       - { source: skill, path: plugins/runpod/skills/companion-clis/SKILL.md }

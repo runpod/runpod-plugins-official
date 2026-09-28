@@ -38,7 +38,7 @@ relations: []
 
 rules:
   - id: billing-record.query-window
-    applies_to: [field:startTime, field:endTime]
+    applies_to: ["field:startTime", "field:endTime"]
     statement: >
       Billing is read-only history. `bucketSize` is `hour`, `day`, `week`,
       `month` or `year` (default `day`). The window defaults to the last 30 days
@@ -47,21 +47,21 @@ rules:
       progress.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: GET /v2/billing parameters; BillingBucketSize, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/billing parameters; BillingBucketSize", seen: "2026-09-28" }
 
   - id: billing-record.one-call-total
-    applies_to: [field:totalAmount]
+    applies_to: ["field:totalAmount"]
     statement: >
       `GET /v2/billing` returns total spend across every resource with each
       component broken out, so there is no need to add up the per-resource
       billing routes.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: GET /v2/billing, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/billing, seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/unlocks.md }
 
   - id: billing-record.component-breakdown
-    applies_to: [field:podDiskAmount, field:storageStandardAmount, field:storageHighPerformanceAmount, field:serverlessDiskAmount]
+    applies_to: ["field:podDiskAmount", "field:storageStandardAmount", "field:storageHighPerformanceAmount", "field:serverlessDiskAmount"]
     statement: >
       Storage spend is split into pod disk, serverless disk, and standard and
       high-performance network volume storage. `endpointAmount` is Public
@@ -69,16 +69,16 @@ rules:
     status: documented
     see: [serverless-billing.endpoints-route-is-public-endpoints]
     evidence:
-      - { source: rest-v2-spec, ref: BillingRecord, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: BillingRecord, seen: "2026-09-28" }
 
   - id: billing-record.fee-always-zero
-    applies_to: [field:serverlessFeeAmount]
+    applies_to: ["field:serverlessFeeAmount"]
     statement: >
       `serverlessFeeAmount` is always 0. Platform charges are included in the
       serverless compute amounts.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: BillingRecord.serverlessFeeAmount, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: BillingRecord.serverlessFeeAmount, seen: "2026-09-28" }
 
   - id: billing-record.per-second-billing
     statement: >
@@ -89,7 +89,7 @@ rules:
     status: documented
     see: [credit-balance.low-balance-actions, container-disk.billing]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/accounts-billing/billing, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
 
   - id: billing-record.cost-centers
     statement: >
@@ -100,5 +100,5 @@ rules:
       no cost-center filter.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/accounts-billing/cost-centers, seen: 2026-09-28 }
-      - { source: rest-v2-spec, ref: GET /v2/billing parameters, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/cost-centers", seen: "2026-09-28" }
+      - { source: rest-v2-spec, ref: GET /v2/billing parameters, seen: "2026-09-28" }

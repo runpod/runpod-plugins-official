@@ -28,7 +28,7 @@ rules:
       one tier.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: Cloud; CreatePodRequest.cloud, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "Cloud; CreatePodRequest.cloud", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
 
   - id: cloud-tier.default-to-secure
@@ -40,7 +40,7 @@ rules:
     status: documented
     see: [network-volume.secure-cloud-only]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/choose-a-pod, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/choose-a-pod", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
 
   - id: cloud-tier.price-and-offer-per-gpu
@@ -51,7 +51,7 @@ rules:
     status: documented
     see: [gpu-type.price-is-list-per-gpu]
     evidence:
-      - { source: rest-v2-spec, ref: GpuType.secure; GpuType.community; GpuType.price, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GpuType.secure; GpuType.community; GpuType.price", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gpu-selection.md }
 
   - id: cloud-tier.community-ip-changes
@@ -61,7 +61,7 @@ rules:
       are expected to stay stable.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/configuration/expose-ports, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
 
   - id: cloud-tier.community-absent-in-some-dcs
@@ -72,4 +72,4 @@ rules:
       pinning both Community Cloud and a data center.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: GET /v2/catalog/gpus cloud parameter; GpuCloudFilter, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus cloud parameter; GpuCloudFilter", seen: "2026-09-28" }

@@ -18,7 +18,7 @@ surfaces:
 
 fields:
   - { name: mounts.persistent.size, type: integer, unit: GB, set: create, note: Minimum 10. }
-  - { name: mounts.persistent.path, type: string, set: "create,update", note: Usually `/workspace`. }
+  - { name: mounts.persistent.path, type: string, set: "create,update", note: "Usually `/workspace`." }
 
 relations:
   - { type: located_in, target: machine, cardinality: "1" }
@@ -26,7 +26,7 @@ relations:
 
 rules:
   - id: pod-volume-disk.machine-level-not-data-center-level
-    applies_to: [field:mounts.persistent.size]
+    applies_to: ["field:mounts.persistent.size"]
     statement: >
       The volume disk lives on the pod's machine, not in the data center, and
       only that pod can use it. A network volume is the data-center-level
@@ -35,23 +35,23 @@ rules:
     status: documented
     see: [network-volume.data-center-level-not-machine-level, machine.host-local-storage]
     evidence:
-      - { source: rest-v2-spec, ref: PersistentMount; Mounts, seen: 2026-09-28, note: "The persistent mount is pinned to the pod's host machine, and it cannot be combined with a network mount." }
-      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types, seen: 2026-09-28, note: A network volume replaces the volume disk at `/workspace`. }
-      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus, seen: 2026-09-28, note: A stopped pod's volume storage remains on the physical machine. }
+      - { source: rest-v2-spec, ref: "PersistentMount; Mounts", seen: "2026-09-28", note: "The persistent mount is pinned to the pod's host machine, and it cannot be combined with a network mount." }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", seen: "2026-09-28", note: "A network volume replaces the volume disk at `/workspace`." }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28", note: "A stopped pod's volume storage remains on the physical machine." }
 
   - id: pod-volume-disk.lifetime-and-billing
-    applies_to: [field:mounts.persistent.size]
+    applies_to: ["field:mounts.persistent.size"]
     statement: >
       The volume disk survives stops and restarts and is deleted when the pod is
       terminated. It is billed while the pod runs and, at a higher rate, while
       the pod is stopped; billing ends when the pod is terminated.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 
   - id: pod-volume-disk.deprecated-prefer-network
-    applies_to: [field:mounts.persistent.size]
+    applies_to: ["field:mounts.persistent.size"]
     statement: >
       The volume disk is tied to one host and is lost if that host fails. REST
       v2 marks the persistent mount as deprecated; use a network volume for data
@@ -59,17 +59,17 @@ rules:
     status: documented
     see: [pod.persistent-mount-limits]
     evidence:
-      - { source: rest-v2-spec, ref: PersistentMount, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: PersistentMount, seen: "2026-09-28" }
 
   - id: pod-volume-disk.grow-only
-    applies_to: [field:mounts.persistent.size]
+    applies_to: ["field:mounts.persistent.size"]
     statement: >
       The volume disk can be increased but not decreased. Editing a running pod
       to resize it resets the pod.
     status: documented
     see: [pod.edits-apply-on-restart]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types, note: Modify storage capacity. }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", note: Modify storage capacity. }
 
   - id: pod-volume-disk.encryption
     statement: >
@@ -79,8 +79,8 @@ rules:
       disk or network volumes. REST v2 has no encryption field.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types, note: Encrypted volumes. }
-      - { source: rest-v2-spec, ref: PersistentMount, seen: 2026-09-28, note: Only size and path. }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", note: Encrypted volumes. }
+      - { source: rest-v2-spec, ref: PersistentMount, seen: "2026-09-28", note: Only size and path. }
 
   - id: pod-volume-disk.none-on-serverless
     statement: >
@@ -88,4 +88,4 @@ rules:
       container disk, network volumes and S3-compatible storage.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/storage/overview }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/storage/overview" }

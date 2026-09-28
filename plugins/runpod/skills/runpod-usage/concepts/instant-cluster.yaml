@@ -21,8 +21,8 @@ fields:
   - { name: name, type: string, set: "create,update", required: true }
   - { name: type, type: enum, values: [APPLICATION, TRAINING, SLURM, RAY], set: create, required: true }
   - { name: compute.gpuTypeId, type: string, ref: gpu-type, set: create, required: true }
-  - { name: compute.gpuCountPerPod, type: integer, set: create, required: true, note: 1 to the GPU type's `maxCount`. }
-  - { name: compute.podCount, type: integer, set: create, required: true, note: 2 to 250. }
+  - { name: compute.gpuCountPerPod, type: integer, set: create, required: true, note: "1 to the GPU type's `maxCount`." }
+  - { name: compute.podCount, type: integer, set: create, required: true, note: "2 to 250." }
   - { name: templateId, type: string, ref: template, set: create }
   - { name: dataCenterIds, type: "string[]", ref: data-center, set: create, note: Placement preference. }
   - { name: dataCenterId, type: string, ref: data-center, set: read }
@@ -33,26 +33,26 @@ fields:
   - { name: network, type: ClusterNetwork, set: read }
 
 relations:
-  - { type: runs_on, target: pod, cardinality: 1..n }
+  - { type: runs_on, target: pod, cardinality: "1..n" }
   - { type: runs_on, target: gpu-type, cardinality: "1" }
   - { type: located_in, target: data-center, cardinality: "1" }
-  - { type: uses, target: network-volume, cardinality: 0..1 }
-  - { type: uses, target: template, cardinality: 0..1 }
+  - { type: uses, target: network-volume, cardinality: "0..1" }
+  - { type: uses, target: template, cardinality: "0..1" }
   - { type: billed_by, target: billing-record, cardinality: "1" }
 
 rules:
   - id: instant-cluster.fixed-at-create
-    applies_to: [field:type, field:compute.gpuTypeId, field:compute.gpuCountPerPod, field:compute.podCount]
+    applies_to: ["field:type", "field:compute.gpuTypeId", "field:compute.gpuCountPerPod", "field:compute.podCount"]
     statement: >
       `PATCH /v2/clusters/{id}` only renames a cluster. The type, GPU type, GPUs
       per pod and container settings are fixed at creation; to change them,
       delete the cluster and create a new one.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "PATCH /v2/clusters/{id}; UpdateClusterRequest", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "PATCH /v2/clusters/{id}; UpdateClusterRequest", seen: "2026-09-28" }
 
   - id: instant-cluster.scale-in-console
-    applies_to: [field:compute.podCount]
+    applies_to: ["field:compute.podCount"]
     statement: >
       Add pods to a running cluster from the console with **Scale cluster**; new
       pods use the same GPU type, template and network storage. REST v2 has no
@@ -61,21 +61,21 @@ rules:
       scaled this way.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/instant-clusters/scale-clusters }
-      - { source: rest-v2-spec, ref: paths under /v2/clusters, seen: 2026-09-28, note: No path adds pods to an existing cluster. }
+      - { source: public-docs, url: "https://docs.runpod.io/instant-clusters/scale-clusters" }
+      - { source: rest-v2-spec, ref: paths under /v2/clusters, seen: "2026-09-28", note: No path adds pods to an existing cluster. }
 
   - id: instant-cluster.homogeneous-single-dc
-    applies_to: [field:compute.podCount, field:compute.gpuCountPerPod, field:dataCenterIds]
+    applies_to: ["field:compute.podCount", "field:compute.gpuCountPerPod", "field:dataCenterIds"]
     statement: >
       Every member pod is identical: `podCount` pods (2 to 250), each with
       `gpuCountPerPod` GPUs of `gpuTypeId`, up to the GPU type's `maxCount`. The
       whole cluster is placed in one data center.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: ClusterCompute; CreateClusterRequest.dataCenterIds, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "ClusterCompute; CreateClusterRequest.dataCenterIds", seen: "2026-09-28" }
 
   - id: instant-cluster.private-image-via-template
-    applies_to: [field:templateId]
+    applies_to: ["field:templateId"]
     statement: >
       A template is the only way to run a private image on a cluster; the create
       body has no registry field. `templateId` cannot be combined with `image`,
@@ -84,20 +84,20 @@ rules:
     on_violation: 400
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: CreateClusterRequest; CreateClusterRequest.templateId, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "CreateClusterRequest; CreateClusterRequest.templateId", seen: "2026-09-28" }
 
   - id: instant-cluster.members-managed-by-cluster
-    applies_to: [field:pods]
+    applies_to: ["field:pods"]
     statement: >
       Member pods are left out of `GET /v2/pods` unless you pass
       `includeClusterPods=true`, and the pod endpoints cannot change or delete
       them. `DELETE /v2/clusters/{id}` terminates every member pod.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "Pod.cluster; DELETE /v2/clusters/{id}", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "Pod.cluster; DELETE /v2/clusters/{id}", seen: "2026-09-28" }
 
   - id: instant-cluster.primary-node
-    applies_to: [field:primary]
+    applies_to: ["field:primary"]
     statement: >
       The primary node has `NODE_RANK` 0 and is the Slurm controller on Slurm
       clusters. Every member pod gets `NODE_RANK`, `PRIMARY_ADDR` and
@@ -106,9 +106,9 @@ rules:
       `22/tcp` exposed.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: PodCluster.rank; ClusterPrimary.sshEndpoint, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/instant-clusters/configuration }
-      - { source: public-docs, url: https://docs.runpod.io/instant-clusters/slurm-clusters }
+      - { source: rest-v2-spec, ref: "PodCluster.rank; ClusterPrimary.sshEndpoint", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/instant-clusters/configuration" }
+      - { source: public-docs, url: "https://docs.runpod.io/instant-clusters/slurm-clusters" }
 
   - id: instant-cluster.nccl-interface
     statement: >
@@ -117,8 +117,8 @@ rules:
       makes distributed training time out or hang.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/instant-clusters/configuration }
-      - { source: public-docs, url: https://docs.runpod.io/instant-clusters/pytorch }
+      - { source: public-docs, url: "https://docs.runpod.io/instant-clusters/configuration" }
+      - { source: public-docs, url: "https://docs.runpod.io/instant-clusters/pytorch" }
 
   - id: instant-cluster.shared-volume-same-dc
     applies_to: ["field:mounts.network[].volumeId"]
@@ -128,4 +128,4 @@ rules:
     status: documented
     see: [pod.network-volume-same-dc]
     evidence:
-      - { source: rest-v2-spec, ref: NetworkMount.volumeId, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: NetworkMount.volumeId, seen: "2026-09-28" }

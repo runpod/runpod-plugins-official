@@ -37,27 +37,27 @@ rules:
       so a migrated call silently reads the wrong product.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: GET /v2/billing/serverless; GET /v2/billing/endpoints, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/billing/serverless; GET /v2/billing/endpoints", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md }
 
   - id: serverless-billing.per-endpoint-per-bucket
-    applies_to: [field:serverlessId]
+    applies_to: ["field:serverlessId"]
     statement: >
       Records are one per endpoint per bucket. Pass `serverlessId` to narrow the
       results to one endpoint.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: ServerlessBillingRecord.serverlessId, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: ServerlessBillingRecord.serverlessId, seen: "2026-09-28" }
 
   - id: serverless-billing.fee-always-zero
-    applies_to: [field:feeAmount]
+    applies_to: ["field:feeAmount"]
     statement: >
       `feeAmount` is always 0. Platform charges are included in `gpuAmount` and
       `cpuAmount`.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: ServerlessBillingRecord.feeAmount, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: ServerlessBillingRecord.feeAmount, seen: "2026-09-28" }
 
   - id: serverless-billing.active-workers-bill-idle
     statement: >
@@ -66,7 +66,7 @@ rules:
       idle cost, and reset it after testing.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
 
   - id: serverless-billing.what-is-billed
@@ -79,7 +79,7 @@ rules:
     status: documented
     see: [endpoint-autoscaling.idle-timeout, container-disk.billing, worker.billing-by-state]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: "2026-09-28" }
 
   - id: serverless-billing.cut-start-time
     statement: >
@@ -88,4 +88,4 @@ rules:
       jobs.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: "2026-09-28" }

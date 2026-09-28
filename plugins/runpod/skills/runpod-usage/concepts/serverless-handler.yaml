@@ -22,7 +22,7 @@ rules:
       failure, and avoid `try`/`except` blocks that hide errors.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/handler-functions, note: Error handling. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/handler-functions", note: Error handling. }
 
   - id: serverless-handler.lb-vs-queue
     statement: >
@@ -33,8 +33,8 @@ rules:
     status: documented
     see: [serverless-endpoint.lb-worker-ports]
     evidence:
-      - { source: rest-v2-spec, ref: EndpointType, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/serverless/load-balancing/overview }
+      - { source: rest-v2-spec, ref: EndpointType, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview" }
 
   - id: serverless-handler.generator-for-streaming
     statement: >
@@ -70,4 +70,4 @@ rules:
       HTTP API for testing. Add `--rp_api_port` to change the port.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/development/local-testing }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/local-testing" }

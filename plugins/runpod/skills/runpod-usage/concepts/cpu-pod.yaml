@@ -28,7 +28,7 @@ relations:
 
 rules:
   - id: cpu-pod.flavor-and-vcpus
-    applies_to: [field:cpu.id, field:cpu.vcpuCount, field:cpu.memory]
+    applies_to: ["field:cpu.id", "field:cpu.vcpuCount", "field:cpu.memory"]
     statement: >
       A CPU pod takes a CPU flavor id in `cpu.id`, not a GPU type id, plus a
       `vcpuCount` for that flavor. Do not send memory; the API derives it from
@@ -36,10 +36,10 @@ rules:
     status: documented
     see: [cpu-flavor.vcpu-power-of-two, cpu-flavor.memory-is-derived]
     evidence:
-      - { source: rest-v2-spec, ref: CreatePodRequest; BaseCpuConfig; CpuConfig.memory, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "CreatePodRequest; BaseCpuConfig; CpuConfig.memory", seen: "2026-09-28" }
 
   - id: cpu-pod.storage-limits
-    applies_to: [field:cpu]
+    applies_to: ["field:cpu"]
     statement: >
       CPU pods support the container disk and a network volume only. A
       persistent (host-local) mount is rejected.
@@ -47,13 +47,13 @@ rules:
     status: documented
     see: [pod.persistent-mount-limits]
     evidence:
-      - { source: rest-v2-spec, ref: CreatePodRequest, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreatePodRequest, seen: "2026-09-28" }
 
   - id: cpu-pod.no-global-networking
-    applies_to: [field:cpu]
+    applies_to: ["field:cpu"]
     statement: >
       CPU pods cannot use global networking, which needs an NVIDIA GPU pod.
     status: documented
     see: [pod.global-networking-next-start]
     evidence:
-      - { source: rest-v2-spec, ref: CreatePodRequest.globalNetworking, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreatePodRequest.globalNetworking, seen: "2026-09-28" }

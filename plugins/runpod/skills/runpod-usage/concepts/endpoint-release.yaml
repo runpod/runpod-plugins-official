@@ -18,14 +18,14 @@ fields:
   - { name: id, type: string, set: read }
   - { name: version, type: integer, set: read, note: endpoint configuration version this release produced }
   - { name: source, type: enum, values: [GIT_BUILD, MANUAL], set: read }
-  - { name: buildId, type: string, ref: endpoint-build, set: read, note: set when `source` is `GIT_BUILD` }
+  - { name: buildId, type: string, ref: endpoint-build, set: read, note: "set when `source` is `GIT_BUILD`" }
   - { name: workerCount, type: integer, set: read, note: workers running this version }
   - { name: diff, type: "ReleaseDiffEntry[]", set: read, note: configuration fields that changed }
   - { name: createdAt, type: string, set: read }
 
 relations:
-  - { type: uses, target: endpoint-build, cardinality: 0..1 }
-  - { type: uses, target: template, cardinality: 0..1 }
+  - { type: uses, target: endpoint-build, cardinality: "0..1" }
+  - { type: uses, target: template, cardinality: "0..1" }
 
 rules:
   - id: endpoint-release.rollout
@@ -39,8 +39,8 @@ rules:
     status: documented
     see: [worker.status-vocabulary]
     evidence:
-      - { source: rest-v2-spec, ref: "PATCH /v2/serverless/{id}; GET /v2/serverless/{id}/releases; RolloutSummary", seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/rolling-releases, note: How idle and running workers are replaced. }
+      - { source: rest-v2-spec, ref: "PATCH /v2/serverless/{id}; GET /v2/serverless/{id}/releases; RolloutSummary", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/rolling-releases", note: How idle and running workers are replaced. }
 
   - id: endpoint-release.version-overlap
     statement: >
@@ -52,17 +52,17 @@ rules:
     status: documented
     see: [serverless-endpoint.max-zero-stops-workers]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/rolling-releases, note: Best practices. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/rolling-releases", note: Best practices. }
 
   - id: endpoint-release.source
-    applies_to: [field:source, field:buildId]
+    applies_to: ["field:source", "field:buildId"]
     statement: >
       `source` is `GIT_BUILD` for a release produced by a GitHub build, with
       `buildId` set, or `MANUAL` for a configuration change, with `buildId`
       null.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: Release.source; Release.buildId; ReleaseSource, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "Release.source; Release.buildId; ReleaseSource", seen: "2026-09-28" }
 
   - id: endpoint-release.rollout-summary-page-independent
     statement: >
@@ -71,4 +71,4 @@ rules:
       whichever page is requested.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/releases", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/releases", seen: "2026-09-28" }

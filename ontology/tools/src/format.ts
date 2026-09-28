@@ -11,10 +11,10 @@
 // transitions and evidence as one-line { key: value } entries; a blank line
 // between rules and between steps.
 
-import { isDeepStrictEqual } from "node:util";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import { parse, stringify } from "yaml";
 import { CONCEPTS_DIR } from "./load.ts";
 
@@ -35,16 +35,30 @@ const ordered = (object: Record<string, unknown>, preferred: string[]) => [
   ...Object.keys(object).filter((key) => !preferred.includes(key)),
 ];
 
-/** A scalar as it must be written inside [ ] or { }, where commas and brackets need quoting. */
+// Words YAML 1.1 parsers (PyYAML, used by yamllint and other Python tools) read as booleans or null.
+const RESERVED = /^(y|n|yes|no|on|off|true|false|null|~)$/i;
+// A string that every YAML parser reads as the same plain string inside [ ] or { }.
+const SAFE_PLAIN = /^[A-Za-z_/][A-Za-z0-9 _./()+=<>-]*$/;
+
+/**
+ * A scalar as it must be written inside [ ] or { }. Anything beyond plain words,
+ * paths and simple punctuation is double-quoted, so Python YAML parsers read the
+ * file the same way the Node one does (a `?`, `:`, `#`, quote or backtick in a
+ * plain flow scalar is valid YAML 1.2 but trips PyYAML).
+ */
 function flowScalar(value: Value): string {
-  const text = stringify([value], { flowCollectionPadding: false, lineWidth: 0, collectionStyle: "flow" }).trim();
-  return text.slice(1, -1);
+  if (typeof value !== "string") return stringify(value, { lineWidth: 0 }).trim();
+  const plain = SAFE_PLAIN.test(value) && !RESERVED.test(value) && !value.endsWith(" ") && !/^[-.]?\d/.test(value);
+  return plain ? value : JSON.stringify(value);
 }
 
 /** A value on one line: [a, b] for lists, { key: value } for maps. */
 function flow(value: Value): string {
   if (Array.isArray(value)) return `[${value.map(flow).join(", ")}]`;
-  if (isObject(value)) return `{ ${Object.entries(value).map(([k, v]) => `${flowScalar(k)}: ${flow(v)}`).join(", ")} }`;
+  if (isObject(value))
+    return `{ ${Object.entries(value)
+      .map(([k, v]) => `${flowScalar(k)}: ${flow(v)}`)
+      .join(", ")} }`;
   return flowScalar(value);
 }
 
@@ -79,7 +93,8 @@ function folded(key: string, text: string, indent: number): string[] {
 function entry(key: string, value: Value, indent: number): string[] {
   const pad = " ".repeat(indent);
   if (FOLDED.has(key) && typeof value === "string") return folded(key, value, indent);
-  if (Array.isArray(value) && value.some(isObject)) return [`${pad}${key}:`, ...value.map((item) => `${pad}  - ${flow(item)}`)];
+  if (Array.isArray(value) && value.some(isObject))
+    return [`${pad}${key}:`, ...value.map((item) => `${pad}  - ${flow(item)}`)];
   if (Array.isArray(value) || isObject(value)) return [`${pad}${key}: ${flow(value)}`];
   return [`${pad}${key}: ${scalar(value)}`];
 }
@@ -106,12 +121,14 @@ function section(key: string, value: Value): string[] {
     const lines = ["states:"];
     for (const k of ordered(value, STATE_KEYS)) {
       const v = value[k]!;
-      if (k === "values" && isObject(v)) lines.push("  values:", ...Object.entries(v).map(([s, d]) => `    ${scalar(s)}: ${scalar(d)}`));
+      if (k === "values" && isObject(v))
+        lines.push("  values:", ...Object.entries(v).map(([s, d]) => `    ${scalar(s)}: ${scalar(d)}`));
       else lines.push(...entry(k, v, 2));
     }
     return lines;
   }
-  if (key === "surfaces" && isObject(value)) return ["surfaces:", ...Object.entries(value).flatMap(([k, v]) => entry(k, v, 2))];
+  if (key === "surfaces" && isObject(value))
+    return ["surfaces:", ...Object.entries(value).flatMap(([k, v]) => entry(k, v, 2))];
   return entry(key, value, 0);
 }
 
@@ -136,7 +153,9 @@ export function formatConcept(text: string): string {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const check = process.argv.includes("--check");
   const changed: string[] = [];
-  for (const file of readdirSync(CONCEPTS_DIR).filter((f) => f.endsWith(".yaml")).sort()) {
+  for (const file of readdirSync(CONCEPTS_DIR)
+    .filter((f) => f.endsWith(".yaml"))
+    .sort()) {
     const path = join(CONCEPTS_DIR, file);
     const before = readFileSync(path, "utf8");
     let after: string;

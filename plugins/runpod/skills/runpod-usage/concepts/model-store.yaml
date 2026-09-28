@@ -14,8 +14,8 @@ surfaces:
   runpodctl: [model add, model list, model remove, serverless create --model-reference, serverless update --model-reference, serverless model-status]
 
 relations:
-  - { type: uses, target: serverless-endpoint, cardinality: 0..n }
-  - { type: uses, target: network-volume, cardinality: 0..1 }
+  - { type: uses, target: serverless-endpoint, cardinality: "0..n" }
+  - { type: uses, target: network-volume, cardinality: "0..1" }
 
 rules:
   - id: model-store.attach-by-reference
@@ -27,7 +27,7 @@ rules:
       `/runpod-volume/huggingface-cache/hub/`.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/model-caching, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
 
   - id: model-store.gpu-endpoints-only
@@ -45,7 +45,7 @@ rules:
       the queue and the endpoint can look stuck while it downloads.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/model-caching, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
 
   - id: model-store.best-effort-locality
@@ -57,7 +57,7 @@ rules:
       instead.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/model-caching, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
 
   - id: model-store.not-on-hugging-face
@@ -66,5 +66,5 @@ rules:
       Repository with `runpodctl model add`, or bake it into the image.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/model-caching, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
