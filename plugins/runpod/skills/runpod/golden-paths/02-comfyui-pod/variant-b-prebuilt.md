@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl]
+mcp: partial
+concepts: [pod, template, container-image, network-volume, exposed-port, container-disk]
+---
+
 # Golden path 02 — ComfyUI — Variant B: prebuilt official image
 
 **Status:** COVERED — live-verified 2026-07-07 on pod `7ydkt5vs4fst25` (RTX 4090,

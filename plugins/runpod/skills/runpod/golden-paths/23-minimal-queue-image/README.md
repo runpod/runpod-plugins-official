@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-handler, template, serverless-endpoint, container-image, worker]
+---
+
 # Golden path 23 — minimal serverless **queue** image
 
 ✅ **Live-verified** (built → pushed → deployed on a CPU worker → invoked `/runsync` → torn down).

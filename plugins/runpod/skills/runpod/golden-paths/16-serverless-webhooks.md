@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, rest]
+mcp: partial
+concepts: [job, serverless-endpoint, serverless-handler, template]
+---
+
 # Golden path 16 — serverless webhooks (get pushed the result instead of polling)
 
 **Goal:** from "tell me when the job is done" — submit an async `/run` job with a `webhook`

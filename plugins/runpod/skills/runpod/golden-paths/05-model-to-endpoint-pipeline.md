@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest, hf]
+mcp: partial
+concepts: [container-image, template, serverless-endpoint, serverless-handler, job, worker]
+---
+
 # Golden path 05 — custom model → serverless endpoint (hf → docker → runpodctl)
 
 **Goal:** from "serve this custom model as an endpoint", take a model, bake it into a

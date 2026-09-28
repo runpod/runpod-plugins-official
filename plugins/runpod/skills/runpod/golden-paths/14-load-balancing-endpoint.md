@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-endpoint, worker, template, container-image, endpoint-autoscaling]
+---
+
 # Golden path 14 — load-balancing serverless endpoint (custom HTTP worker)
 
 **Goal:** deploy a **load-balancing** Serverless endpoint — where your worker runs its own

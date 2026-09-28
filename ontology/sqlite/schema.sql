@@ -149,6 +149,35 @@ CREATE INDEX idx_evidence_rule ON evidence(rule_id);
 
 -- Every link between two concepts, whatever declared it. A process links to
 -- each concept its steps involve.
+-- The plugin's skills, reference docs and golden paths, and their links to concepts.
+-- mcp says whether an agent with only the Runpod MCP tools can finish a golden path.
+CREATE TABLE guides (
+  id          TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('skill', 'reference', 'golden-path')),
+  title       TEXT NOT NULL,
+  description TEXT NOT NULL,
+  path        TEXT NOT NULL,
+  mcp         TEXT CHECK (mcp IN ('full', 'partial', 'none')),
+  needs_shell INTEGER NOT NULL,
+  body        TEXT NOT NULL
+);
+
+CREATE TABLE guide_lanes (
+  guide_id TEXT NOT NULL REFERENCES guides(id),
+  lane     TEXT NOT NULL,
+  PRIMARY KEY (guide_id, lane)
+);
+
+-- uses: a golden path works with the concept. explains: a doc explains it.
+-- via says where the link comes from: the guide's frontmatter, or rule evidence.
+CREATE TABLE guide_links (
+  guide_id   TEXT NOT NULL REFERENCES guides(id),
+  concept_id TEXT NOT NULL REFERENCES concepts(id),
+  type       TEXT NOT NULL CHECK (type IN ('uses', 'explains')),
+  via        TEXT NOT NULL CHECK (via IN ('frontmatter', 'evidence')),
+  PRIMARY KEY (guide_id, concept_id, via)
+);
+
 CREATE VIEW edges AS
   SELECT id AS source_id, 'is_a' AS type, is_a AS target_id FROM concepts WHERE is_a IS NOT NULL
   UNION ALL

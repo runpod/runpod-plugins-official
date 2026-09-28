@@ -35,8 +35,29 @@ export interface ConceptRecord {
   rules: RuleRecord[];
   /** Rules on other concepts that this concept's rules point at with see:. */
   linked_rules: RuleRecord[];
+  /** Skills, reference docs and golden paths linked to the concept. */
+  guides: GuideRef[];
   /** Set when the reference matched more than one concept. */
   ambiguous?: string[];
+}
+
+export interface GuideRef {
+  id: string;
+  kind: "skill" | "reference" | "golden-path";
+  title: string;
+  mcp: "full" | "partial" | "none" | null;
+  /** uses (a golden path works with the concept) or explains (a doc explains it). */
+  type: "uses" | "explains";
+}
+
+export interface TreeNode {
+  id: string;
+  name: string;
+  kind: string;
+  /** How the node hangs off its parent: a kind of it (is_a) or a part of it (part_of). */
+  relation: "is_a" | "part_of" | null;
+  guides: GuideRef[];
+  children: TreeNode[];
 }
 
 export interface SearchHit {
@@ -127,6 +148,7 @@ export function getConcept(db: DatabaseSync, reference: string): ConceptRecord |
     edges_in: all("SELECT type, source_id FROM edges WHERE target_id = ? ORDER BY type, source_id") as ConceptRecord["edges_in"],
     rules,
     linked_rules,
+    guides: guidesFor(db, id),
     ...(ids.length > 1 ? { ambiguous: ids } : {}),
   };
 }
@@ -162,4 +184,46 @@ export function neighbors(db: DatabaseSync, id: string): { direction: "out" | "i
     ...out.map((row) => ({ direction: "out" as const, type: String(row.type), concept_id: String(row.concept_id) })),
     ...into.map((row) => ({ direction: "in" as const, type: String(row.type), concept_id: String(row.concept_id) })),
   ];
+}
+
+/** Guides linked to a concept: golden paths first, then skills, then reference docs. */
+export function guidesFor(db: DatabaseSync, conceptId: string): GuideRef[] {
+  const rows = db
+    .prepare(
+      `SELECT g.id, g.kind, g.title, g.mcp, min(l.type) AS type FROM guide_links l JOIN guides g ON g.id = l.guide_id
+       WHERE l.concept_id = ? GROUP BY g.id
+       ORDER BY CASE g.kind WHEN 'golden-path' THEN 0 WHEN 'skill' THEN 1 ELSE 2 END, g.id`,
+    )
+    .all(conceptId) as Row[];
+  return rows.map((row) => ({
+    id: String(row.id),
+    kind: row.kind as GuideRef["kind"],
+    title: String(row.title),
+    mcp: (row.mcp ?? null) as GuideRef["mcp"],
+    type: row.type as GuideRef["type"],
+  }));
+}
+
+/**
+ * The concept hierarchy as a tree. A concept hangs under its is_a parent when it
+ * has one, otherwise under its part_of parent. Without a root, returns every
+ * top-level concept (normally just the platform).
+ */
+export function tree(db: DatabaseSync, rootId?: string): TreeNode[] {
+  const rows = db.prepare("SELECT id, name, kind, is_a, part_of FROM concepts ORDER BY name").all() as Row[];
+  const children = new Map<string, Row[]>();
+  for (const row of rows) {
+    const parent = (row.is_a ?? row.part_of) as string | null;
+    if (parent) children.set(parent, [...(children.get(parent) ?? []), row]);
+  }
+  const build = (row: Row): TreeNode => ({
+    id: String(row.id),
+    name: String(row.name),
+    kind: String(row.kind),
+    relation: row.is_a ? "is_a" : row.part_of ? "part_of" : null,
+    guides: guidesFor(db, String(row.id)),
+    children: (children.get(String(row.id)) ?? []).map(build),
+  });
+  const roots = rootId ? rows.filter((row) => row.id === rootId) : rows.filter((row) => !row.is_a && !row.part_of);
+  return roots.map(build);
 }

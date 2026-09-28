@@ -6,11 +6,9 @@ export interface Guide {
   description: string;
   /** Repo-relative path of the source file. */
   path: string;
-  /** True when a golden path declares lanes, mcp and concepts in frontmatter. */
-  tagged: boolean;
-  /** Tools the guide drives: runpod-mcp, runpodctl, flash, ssh, docker, hf, aws, rest, console. */
+  /** Tools a golden path drives: runpod-mcp, runpodctl, flash, ssh, docker, hf, aws, rest, console. Empty for other guides. */
   lanes: string[];
-  /** Whether an agent with only the Runpod MCP tools can finish it. Null when not declared. */
+  /** Whether an agent with only the Runpod MCP tools can finish a golden path. Null for other guides. */
   mcp: "full" | "partial" | "none" | null;
   /** True when the guide needs a shell (runpodctl, flash, SSH, docker, hf, aws). */
   needs_shell: boolean;
@@ -21,7 +19,8 @@ export interface Guide {
 
 /**
  * A link from a guide to a concept. `uses`: a golden path works with the concept.
- * `explains`: a skill or reference doc is cited as evidence by the concept's rules.
+ * `explains`: a skill lists the concept under metadata.concepts, or a skill or
+ * reference doc is cited as evidence by the concept's rules.
  */
 export interface Link {
   from: string;

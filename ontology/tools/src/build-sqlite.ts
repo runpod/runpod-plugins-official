@@ -9,6 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { ONTOLOGY_DIR, REPO_ROOT, SPEC_PATH } from "./load.ts";
+import { collectGuides, type Guide, type Link } from "./build-bundle.ts";
 import type { Concept } from "./schema.ts";
 import { validate } from "./validate.ts";
 
@@ -25,7 +26,7 @@ function gitCommit(): string {
 
 const text = (value: unknown) => (value === undefined || value === null ? null : String(value));
 
-export function buildDatabase(concepts: Concept[], path: string): DatabaseSync {
+export function buildDatabase(concepts: Concept[], path: string, guides: Guide[] = [], guideLinks: Link[] = []): DatabaseSync {
   rmSync(path, { force: true });
   mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
@@ -107,6 +108,15 @@ export function buildDatabase(concepts: Concept[], path: string): DatabaseSync {
   // Links last: a rule may point at a rule defined in a later file.
   for (const c of concepts) for (const r of c.rules) for (const see of r.see) link.run(r.id, see);
 
+  const guide = insert("INSERT INTO guides VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  const lane = insert("INSERT INTO guide_lanes VALUES (?, ?)");
+  const guideLink = insert("INSERT OR IGNORE INTO guide_links VALUES (?, ?, ?, ?)");
+  for (const g of guides) {
+    guide.run(g.id, g.kind, g.title, g.description, g.path, g.mcp, g.needs_shell ? 1 : 0, g.body);
+    for (const name of g.lanes) lane.run(g.id, name);
+  }
+  for (const l of guideLinks) guideLink.run(l.from, l.to, l.type, l.via);
+
   const meta = insert("INSERT INTO meta VALUES (?, ?)");
   const spec = JSON.parse(readFileSync(SPEC_PATH, "utf8")) as { info: { version: string } };
   meta.run("built_at", new Date().toISOString());
@@ -114,6 +124,7 @@ export function buildDatabase(concepts: Concept[], path: string): DatabaseSync {
   meta.run("rest_v2_spec_version", spec.info.version);
   meta.run("concepts", String(concepts.length));
   meta.run("rules", String(concepts.reduce((total, c) => total + c.rules.length, 0)));
+  meta.run("guides", String(guides.length));
   db.exec("COMMIT");
   return db;
 }
@@ -121,14 +132,16 @@ export function buildDatabase(concepts: Concept[], path: string): DatabaseSync {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const out = resolve(process.argv[2] ?? DEFAULT_DB_PATH);
   const { concepts, errors } = validate();
-  if (errors.length) {
-    for (const error of errors) console.error(`error ${error}`);
-    console.error(`not building: ${errors.length} validation errors`);
+  const linked = errors.length ? { guides: [], links: [], errors: [] } : collectGuides(concepts);
+  const all = [...errors, ...linked.errors];
+  if (all.length) {
+    for (const error of all) console.error(`error ${error}`);
+    console.error(`not building: ${all.length} errors`);
     process.exit(1);
   }
-  const db = buildDatabase(concepts, out);
+  const db = buildDatabase(concepts, out, linked.guides, linked.links);
   const count = (table: string) => (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n;
-  const tables = ["concepts", "names", "surfaces", "fields", "states", "transitions", "process_steps", "relations", "rules", "evidence"];
+  const tables = ["concepts", "names", "surfaces", "fields", "states", "transitions", "process_steps", "relations", "rules", "evidence", "guides", "guide_links"];
   console.log(`wrote ${out}`);
   console.log(tables.map((table) => `${table} ${count(table)}`).join(", "));
   db.close();

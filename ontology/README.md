@@ -13,11 +13,12 @@ pnpm test
 pnpm build:sqlite        # build/ontology.sqlite
 pnpm build:graph         # build/graph.html, a force-directed graph with a panel per concept
 pnpm query concept pod   # or: search "<text>", neighbors <id>, sql "<query>"
+pnpm query tree          # the concept hierarchy with guide counts; tree <concept> lists its guides
 pnpm serve               # http://localhost:8787: the graph page plus the JSON API below
 ```
 
 The server is read-only: `GET /api/concepts`, `/api/concepts/<id|name|alias>`,
-`/api/concepts/<ref>/neighbors` and `/api/search?q=<text>`. It also deploys to Vercel
+`/api/concepts/<ref>/neighbors`, `/api/search?q=<text>` and `/api/tree?root=<ref>`. It also deploys to Vercel
 with the project's root directory set to `ontology/tools`: `vercel.json` compiles the
 tools, builds the SQLite file next to the function in `api/index.mjs`, and serves the
 graph page statically.
@@ -38,13 +39,18 @@ the links between them:
 ```
 concept ──rules──▶ facts with public evidence
    ▲  ▲
-   │  └── explains ── skill / reference doc   (a rule cites the doc as evidence)
+   │  └── explains ── skill / reference doc   (a rule cites the doc as evidence, or a skill
+   │                                           lists the concept under metadata.concepts)
    └───── uses ────── golden path             (the path's frontmatter lists the concept,
                                                or a rule cites the path as evidence)
 ```
 
-- Golden-path frontmatter declares `lanes`, `mcp` and `concepts`. `pnpm check:guides`
-  rejects an unknown lane, level or concept id, and CI runs it.
+- Golden-path frontmatter declares `lanes`, `mcp` and `concepts`, and each `SKILL.md` lists
+  `metadata.concepts`. `pnpm check:guides` rejects a missing tag or an unknown lane, level or
+  concept id, and CI runs it.
+- The graph page shows guides as squares linked to their concepts (golden paths and skills
+  by default; reference docs can be switched on), and `pnpm query tree` prints the same
+  links as a tree.
 - `pnpm build:bundle --suggest` lists the concepts each golden path mentions but does not
   declare, as candidates to review.
 - The build prints coverage: how many concepts have a guide and how many have an example.

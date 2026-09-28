@@ -10,6 +10,7 @@ description: >-
 metadata:
   author: runpod
   version: "1.5.0" # x-release-please-version
+  concepts: [pod, serverless-endpoint, network-volume, container-disk, pod-volume-disk, gpu-type, exposed-port, worker]
 license: Apache-2.0
 ---
 

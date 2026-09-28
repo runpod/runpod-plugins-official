@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl]
+mcp: partial
+concepts: [serverless-endpoint, endpoint-autoscaling, job, worker, serverless-handler, template]
+---
+
 # Golden path 13 — autoscaling tuning (scaler types + worker knobs under load)
 
 **Goal:** understand how serverless scaling *actually* behaves so you can trade cost

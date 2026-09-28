@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, docker, ssh, rest, runpod-mcp]
+mcp: partial
+concepts: [pod, template, serverless-endpoint, serverless-handler, container-image, worker, network-volume, log-stream]
+---
+
 # Golden path 09 — custom serverless the hard way (iterate in a pod, then flip to serverless)
 
 **Goal:** ship a **custom** serverless endpoint when the easy routes don't fit — no

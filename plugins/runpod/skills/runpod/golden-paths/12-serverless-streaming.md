@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-handler, serverless-endpoint, template, container-image, job, api-rate-limit]
+---
+
 # Golden path 12 — serverless streaming (`/stream`)
 
 **Goal:** get **incremental** output out of a serverless handler — each chunk visible
