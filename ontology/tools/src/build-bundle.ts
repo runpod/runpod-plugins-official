@@ -21,7 +21,17 @@ const PLUGIN_DIR = join(REPO_ROOT, "plugins/runpod");
 const SKILLS_DIR = join(PLUGIN_DIR, "skills");
 
 /** The tools a golden path can drive. Closed set, checked when a path declares `lanes`. */
-export const LANE_NAMES = ["runpod-mcp", "runpodctl", "flash", "ssh", "docker", "hf", "aws", "rest", "console"] as const;
+export const LANE_NAMES = [
+  "runpod-mcp",
+  "runpodctl",
+  "flash",
+  "ssh",
+  "docker",
+  "hf",
+  "aws",
+  "rest",
+  "console",
+] as const;
 /** Whether an agent with only the Runpod MCP tools can finish a golden path. */
 export const MCP_LEVELS = ["full", "partial", "none"] as const;
 const SHELL_LANES = new Set(["runpodctl", "flash", "ssh", "docker", "hf", "aws"]);
@@ -134,7 +144,9 @@ function guideFiles(skillsDir: string): { id: string; kind: Guide["kind"]; file:
   for (const file of markdownFiles(goldenDir)) {
     if (file === join(goldenDir, "README.md")) continue;
     // "02-comfyui-pod/README.md" -> "02-comfyui-pod"; "02-comfyui-pod/variant-a.md" -> "02-comfyui-pod/variant-a"
-    const name = relative(goldenDir, file).replace(/\/README\.md$/, "").replace(/\.md$/, "");
+    const name = relative(goldenDir, file)
+      .replace(/\/README\.md$/, "")
+      .replace(/\.md$/, "");
     files.push({ id: `golden-path/${name}`, kind: "golden-path", file });
   }
   return files;
@@ -189,9 +201,11 @@ export function collectGuides(
       if (!Array.isArray(meta.lanes) || !meta.lanes.length) errors.push(`${path}: lanes must be a non-empty list`);
       else lanes = meta.lanes.map(String);
       for (const lane of lanes) {
-        if (!(LANE_NAMES as readonly string[]).includes(lane)) errors.push(`${path}: lane "${lane}" is not one of ${LANE_NAMES.join(", ")}`);
+        if (!(LANE_NAMES as readonly string[]).includes(lane))
+          errors.push(`${path}: lane "${lane}" is not one of ${LANE_NAMES.join(", ")}`);
       }
-      if (!(MCP_LEVELS as readonly unknown[]).includes(meta.mcp)) errors.push(`${path}: mcp must be one of ${MCP_LEVELS.join(", ")}`);
+      if (!(MCP_LEVELS as readonly unknown[]).includes(meta.mcp))
+        errors.push(`${path}: mcp must be one of ${MCP_LEVELS.join(", ")}`);
       else mcp = meta.mcp as Guide["mcp"];
       declare(id, path, meta.concepts, "uses");
       for (const lane of lanes) {
@@ -239,15 +253,20 @@ export function collectGuides(
   for (const guide of guides) {
     guide.concepts = [...new Set(links.filter((link) => link.from === guide.id).map((link) => link.to))].sort();
     if (!guide.concepts.length) {
-      errors.push(`${guide.path}: links to no concept; list the concepts it covers under concepts (metadata.concepts for a SKILL.md)`);
+      errors.push(
+        `${guide.path}: links to no concept; list the concepts it covers under concepts (metadata.concepts for a SKILL.md)`,
+      );
     }
-    if (guide.parent && !guideIds.has(guide.parent)) errors.push(`${guide.path}: parent guide ${guide.parent} does not exist`);
+    if (guide.parent && !guideIds.has(guide.parent))
+      errors.push(`${guide.path}: parent guide ${guide.parent} does not exist`);
   }
   // The other direction: a concept no guide covers is a doc that has not been written.
   const covered = new Set(links.map((link) => link.to));
   for (const concept of concepts) {
     if (!covered.has(concept.id)) {
-      errors.push(`concept ${concept.id}: no skill, reference doc or golden path covers it; write or extend a doc that does (see .claude/skills/write-guide)`);
+      errors.push(
+        `concept ${concept.id}: no skill, reference doc or golden path covers it; write or extend a doc that does (see .claude/skills/write-guide)`,
+      );
     }
   }
   return { guides, links, errors };
@@ -257,7 +276,11 @@ export function collectGuides(
  * Concepts a golden path mentions by name or alias but does not declare, most
  * mentioned first: candidates for its `concepts` frontmatter, for a person to review.
  */
-export function suggestConcepts(guide: Guide, concepts: Concept[], minimum = 2): { concept: string; mentions: number }[] {
+export function suggestConcepts(
+  guide: Guide,
+  concepts: Concept[],
+  minimum = 2,
+): { concept: string; mentions: number }[] {
   const text = guide.body;
   return concepts
     .filter((concept) => concept.kind !== "platform" && !guide.concepts.includes(concept.id))
@@ -284,10 +307,20 @@ function gitCommit(): string {
 }
 
 export function buildBundle(concepts: Concept[]): { bundle: Bundle; errors: string[] } {
-  const { version } = JSON.parse(readFileSync(join(PLUGIN_DIR, ".claude-plugin/plugin.json"), "utf8")) as { version: string };
+  const { version } = JSON.parse(readFileSync(join(PLUGIN_DIR, ".claude-plugin/plugin.json"), "utf8")) as {
+    version: string;
+  };
   const { guides, links, errors } = collectGuides(concepts);
   return {
-    bundle: { format: BUNDLE_FORMAT, version, commit: gitCommit(), built_at: new Date().toISOString(), guides, concepts, links },
+    bundle: {
+      format: BUNDLE_FORMAT,
+      version,
+      commit: gitCommit(),
+      built_at: new Date().toISOString(),
+      guides,
+      concepts,
+      links,
+    },
     errors,
   };
 }
@@ -304,14 +337,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const paths = bundle.guides.filter((g) => g.kind === "golden-path");
   const linkedConcepts = new Set(bundle.links.map((link) => link.to));
-  const exampleConcepts = new Set(bundle.links.filter((link) => link.from.startsWith("golden-path/")).map((link) => link.to));
+  const exampleConcepts = new Set(
+    bundle.links.filter((link) => link.from.startsWith("golden-path/")).map((link) => link.to),
+  );
 
   if (args.includes("--suggest")) {
     // Candidate concepts for every golden path, to review before writing frontmatter.
     for (const guide of paths) {
       const hits = suggestConcepts(guide, concepts).slice(0, 8);
       const declared = guide.concepts.length ? ` linked: ${guide.concepts.join(", ")};` : "";
-      console.log(`${guide.id}${declared} mentions: ${hits.map((h) => `${h.concept}(${h.mentions})`).join(", ") || "-"}`);
+      console.log(
+        `${guide.id}${declared} mentions: ${hits.map((h) => `${h.concept}(${h.mentions})`).join(", ") || "-"}`,
+      );
     }
     process.exit(0);
   }
@@ -324,9 +361,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const text = JSON.stringify(bundle);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, text);
-  const counts = (["skill", "reference", "golden-path"] as const).map((kind) => `${bundle.guides.filter((g) => g.kind === kind).length} ${kind}s`);
-  console.log(`wrote ${basename(out)} ${bundle.version} (${counts.join(", ")}, ${concepts.length} concepts, ${(text.length / 1024).toFixed(0)} KB)`);
+  const counts = (["skill", "reference", "golden-path"] as const).map(
+    (kind) => `${bundle.guides.filter((g) => g.kind === kind).length} ${kind}s`,
+  );
+  console.log(
+    `wrote ${basename(out)} ${bundle.version} (${counts.join(", ")}, ${concepts.length} concepts, ${(text.length / 1024).toFixed(0)} KB)`,
+  );
   const unguided = concepts.filter((c) => !linkedConcepts.has(c.id)).map((c) => c.id);
   if (unguided.length) console.log(`concepts no guide covers yet: ${unguided.join(", ")}`);
-  console.log(`links: ${bundle.links.length}; concepts with a guide ${linkedConcepts.size}/${concepts.length}, with an example ${exampleConcepts.size}/${concepts.length}`);
+  console.log(
+    `links: ${bundle.links.length}; concepts with a guide ${linkedConcepts.size}/${concepts.length}, with an example ${exampleConcepts.size}/${concepts.length}`,
+  );
 }

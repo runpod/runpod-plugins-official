@@ -8,8 +8,8 @@ import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
-import { ONTOLOGY_DIR, REPO_ROOT, SPEC_PATH } from "./load.ts";
 import { collectGuides, type Guide, type Link } from "./build-bundle.ts";
+import { ONTOLOGY_DIR, REPO_ROOT, SPEC_PATH } from "./load.ts";
 import type { Concept } from "./schema.ts";
 import { validate } from "./validate.ts";
 
@@ -26,7 +26,12 @@ function gitCommit(): string {
 
 const text = (value: unknown) => (value === undefined || value === null ? null : String(value));
 
-export function buildDatabase(concepts: Concept[], path: string, guides: Guide[] = [], guideLinks: Link[] = []): DatabaseSync {
+export function buildDatabase(
+  concepts: Concept[],
+  path: string,
+  guides: Guide[] = [],
+  guideLinks: Link[] = [],
+): DatabaseSync {
   rmSync(path, { force: true });
   mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
@@ -47,7 +52,9 @@ export function buildDatabase(concepts: Concept[], path: string, guides: Guide[]
   const rule = insert("INSERT INTO rules VALUES (?, ?, ?, ?, ?, ?)");
   const target = insert("INSERT INTO rule_targets VALUES (?, ?, ?)");
   const link = insert("INSERT INTO rule_links VALUES (?, ?)");
-  const evidence = insert("INSERT INTO evidence (concept_id, rule_id, source, ref, url, path, seen, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  const evidence = insert(
+    "INSERT INTO evidence (concept_id, rule_id, source, ref, url, path, seen, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  );
   const fts = insert("INSERT INTO rules_fts VALUES (?, ?, ?, ?)");
 
   db.exec("BEGIN");
@@ -75,15 +82,25 @@ export function buildDatabase(concepts: Concept[], path: string, guides: Guide[]
 
     for (const f of c.fields) {
       field.run(
-        c.id, f.name, f.type, f.set, f.required ? 1 : 0, text(f.ref), text(f.unit), text(f.default),
-        f.values ? JSON.stringify(f.values) : null, text(f.note),
+        c.id,
+        f.name,
+        f.type,
+        f.set,
+        f.required ? 1 : 0,
+        text(f.ref),
+        text(f.unit),
+        text(f.default),
+        f.values ? JSON.stringify(f.values) : null,
+        text(f.note),
       );
     }
 
     if (c.states) {
-      for (const [value, description] of Object.entries(c.states.values)) state.run(c.id, c.states.field, value, description);
+      for (const [value, description] of Object.entries(c.states.values))
+        state.run(c.id, c.states.field, value, description);
       for (const t of c.states.transitions) for (const from of t.from) transition.run(c.id, t.action, from, t.to);
-      for (const e of c.states.evidence) evidence.run(c.id, null, e.source, text(e.ref), text(e.url), text(e.path), text(e.seen), text(e.note));
+      for (const e of c.states.evidence)
+        evidence.run(c.id, null, e.source, text(e.ref), text(e.url), text(e.path), text(e.seen), text(e.note));
     }
 
     for (const r of c.relations) relation.run(c.id, r.type, r.target, text(r.cardinality));
@@ -101,7 +118,8 @@ export function buildDatabase(concepts: Concept[], path: string, guides: Guide[]
         const split = t.indexOf(":");
         target.run(r.id, t.slice(0, split), t.slice(split + 1));
       }
-      for (const e of r.evidence) evidence.run(c.id, r.id, e.source, text(e.ref), text(e.url), text(e.path), text(e.seen), text(e.note));
+      for (const e of r.evidence)
+        evidence.run(c.id, r.id, e.source, text(e.ref), text(e.url), text(e.path), text(e.seen), text(e.note));
       fts.run(r.id, c.id, r.statement.trim(), conceptNames);
     }
   }
@@ -141,7 +159,20 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   const db = buildDatabase(concepts, out, linked.guides, linked.links);
   const count = (table: string) => (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n;
-  const tables = ["concepts", "names", "surfaces", "fields", "states", "transitions", "process_steps", "relations", "rules", "evidence", "guides", "guide_links"];
+  const tables = [
+    "concepts",
+    "names",
+    "surfaces",
+    "fields",
+    "states",
+    "transitions",
+    "process_steps",
+    "relations",
+    "rules",
+    "evidence",
+    "guides",
+    "guide_links",
+  ];
   console.log(`wrote ${out}`);
   console.log(tables.map((table) => `${table} ${count(table)}`).join(", "));
   db.close();

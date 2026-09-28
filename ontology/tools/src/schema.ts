@@ -125,9 +125,7 @@ export const Step = z.strictObject({
 });
 
 export const Surfaces = z.strictObject({
-  rest_v2: z
-    .strictObject({ schema: z.string().optional(), paths: z.array(z.string()).default([]) })
-    .optional(),
+  rest_v2: z.strictObject({ schema: z.string().optional(), paths: z.array(z.string()).default([]) }).optional(),
   graphql: z
     .strictObject({
       type: z.string().optional(),
