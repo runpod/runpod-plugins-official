@@ -14,7 +14,8 @@ for f in \
   plugins/runpod/.claude-plugin/plugin.json \
   plugins/runpod/.codex-plugin/plugin.json \
   plugins/runpod/gemini-extension.json \
-  .claude-plugin/marketplace.json; do
+  .claude-plugin/marketplace.json \
+  packages/knowledge/package.json; do
   python3 - "$f" "$NEW" <<'PY'
 import re,sys
 p,new=sys.argv[1],sys.argv[2]
