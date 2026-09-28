@@ -28,3 +28,27 @@ graph page statically.
 - Every `source: skill` evidence path must exist, so renaming or deleting a cited skill file fails the check.
 
 To add or change a concept, follow `.claude/skills/add-concept/SKILL.md`.
+
+## Guides, examples and concepts in one package
+
+`pnpm build:bundle` writes `packages/knowledge/knowledge.json`, the `@runpod/knowledge`
+package. It holds every skill, reference doc and golden path, the concept files, and
+the links between them:
+
+```
+concept ──rules──▶ facts with public evidence
+   ▲  ▲
+   │  └── explains ── skill / reference doc   (a rule cites the doc as evidence)
+   └───── uses ────── golden path             (the path's frontmatter lists the concept,
+                                               or a rule cites the path as evidence)
+```
+
+- Golden-path frontmatter declares `lanes`, `mcp` and `concepts`. `pnpm check:guides`
+  rejects an unknown lane, level or concept id, and CI runs it.
+- `pnpm build:bundle --suggest` lists the concepts each golden path mentions but does not
+  declare, as candidates to review.
+- The build prints coverage: how many concepts have a guide and how many have an example.
+  A concept with no example, or a path with no concepts, is a gap to fill.
+- The Runpod MCP server can depend on the package and serve the guides and concepts as
+  tools, and the same file can be ingested by other assistants.
+

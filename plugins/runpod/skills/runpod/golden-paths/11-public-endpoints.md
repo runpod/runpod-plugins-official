@@ -1,3 +1,9 @@
+---
+lanes: [rest]
+mcp: full
+concepts: [public-endpoint, job]
+---
+
 # Golden path 11 — call a Runpod Public Endpoint (ready hosted model, no deploy)
 
 **Goal:** from "I just need a model's output, not my own infrastructure", call a

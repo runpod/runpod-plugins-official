@@ -1,3 +1,9 @@
+---
+lanes: [runpod-mcp, rest, runpodctl, console]
+mcp: full
+concepts: [network-volume, network-volume-billing, data-center, pod, serverless-endpoint]
+---
+
 # 21 · Network volume storage tiers — standard vs high-performance
 
 **Goal:** launch a **standard** vs a **high-performance** network volume and attach it to a

@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, runpod-mcp, rest]
+mcp: full
+concepts: [serverless-endpoint, worker, job, log-stream, serverless-handler]
+---
+
 # Golden path 15 — monitor & debug serverless (is my endpoint healthy, why is a job failing)
 
 **Goal:** the observability toolkit for a running serverless endpoint — answer "are my

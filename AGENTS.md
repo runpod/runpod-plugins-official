@@ -132,6 +132,12 @@ editing the repo. Each is its own checkable rule.
      `NN-name/` with a `README.md` (goal, "which variant?", shared schema/gotchas/cost)
      plus one `variant-*.md` per approach.
    - Every golden-path doc follows the section template listed under *Golden paths & evals*.
+   - Every golden-path doc starts with frontmatter declaring `lanes` (from `runpod-mcp`, `runpodctl`,
+     `flash`, `ssh`, `docker`, `hf`, `aws`, `rest`, `console`), `mcp` (`full`, `partial` or `none`: can
+     an agent with only the Runpod MCP tools finish it) and `concepts` (the concept ids it works with).
+     `pnpm check:guides` in `ontology/tools/` checks them, and `pnpm build:bundle --suggest` lists
+     candidate concepts. A path without frontmatter still builds, with lanes read from its
+     `Lane` line and no `mcp` level, so add frontmatter whenever you touch one.
    - The per-path verification status is authoritative in `golden-paths/README.md`'s Status
      column; do not restate it in AGENTS.md (it drifts).
 6. **Evals** — add or update an `evals/*.eval.md` when you add or change routing/behavior.

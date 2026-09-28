@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh]
+mcp: partial
+concepts: [pod, network-volume, pod-ssh-access, ssh-key, exposed-port, template, pod-deployment]
+---
+
 # Golden path 06 — interactive dev pod (SSH / VS Code + persistent /workspace)
 
 **Goal:** from "give me a Runpod dev box I can SSH into / open in VS Code", an agent

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { collectGuides } from "../src/build-bundle.ts";
 import { graphData, renderGraph } from "../src/build-graph.ts";
 import { buildDatabase } from "../src/build-sqlite.ts";
 import { getConcept, neighbors, resolve, search } from "../src/query.ts";
@@ -167,4 +168,23 @@ test("the API routes concepts, neighbors and search, and rejects the rest", () =
   assert.equal(get("/api/concepts/unknown").status, 404);
   assert.equal(get("/api/concepts/site/extra/path").status, 404);
   assert.equal(get("/other").status, 404);
+});
+
+test("golden-path frontmatter links to concepts and rejects unknown lanes, levels and concepts", () => {
+  const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
+  const { guides, links, errors } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
+  assert.deepEqual(guides.map((g) => g.id), ["demo", "demo/intro", "golden-path/01-good", "golden-path/02-bad", "golden-path/03-untagged"]);
+
+  const good = guides.find((g) => g.id === "golden-path/01-good")!;
+  assert.deepEqual([good.tagged, good.mcp, good.needs_shell, good.concepts], [true, "full", false, ["site", "volume"]]);
+  assert.deepEqual(links.filter((l) => l.from === good.id).map((l) => `${l.type}:${l.to}:${l.via}`), ["uses:volume:frontmatter", "uses:site:frontmatter"]);
+
+  // An untagged path falls back to its Lane line and declares no mcp level.
+  const untagged = guides.find((g) => g.id === "golden-path/03-untagged")!;
+  assert.deepEqual([untagged.tagged, untagged.lanes, untagged.mcp, untagged.needs_shell], [false, ["runpodctl", "ssh"], null, true]);
+
+  for (const fragment of ['lane "telnet" is not one of', "mcp must be one of", 'concept "nowhere" is not a concept']) {
+    assertHasError(errors, `02-bad.md: ${fragment}`);
+  }
+  assert.equal(errors.length, 3);
 });
