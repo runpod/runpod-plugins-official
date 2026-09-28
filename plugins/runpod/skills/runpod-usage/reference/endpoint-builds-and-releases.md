@@ -11,7 +11,8 @@ also produce a **build**, and a completed build becomes a release.
 ## Releases and rolling releases
 
 - **What creates a release:** a change to `image`, `env`, `args`, `disk`, `ports` or
-  `registry`, or an update to the template the endpoint is bound to.
+  `registry`. These settings live in the endpoint's own bound template, created and deleted
+  with the endpoint. Editing a template you created the endpoint *from* does not affect it.
 - **How workers move:** idle workers on the old release are replaced right away. Busy
   workers finish their current job first, so the endpoint keeps serving while it rolls.
 - **Tracking a rollout:** the release list's rollout summary describes the endpoint's current
@@ -47,5 +48,4 @@ Use versioned image tags rather than `:latest`. Existing workers can keep servin
 
 These facts come from the concept files, which cite the REST v2 spec and the public docs:
 [`endpoint-release`](../concepts/endpoint-release.yaml) and
-[`endpoint-build`](../concepts/endpoint-build.yaml). With the Runpod MCP server, read them
-with `lookup-concept endpoint-release`.
+[`endpoint-build`](../concepts/endpoint-build.yaml).

@@ -61,10 +61,12 @@ steps:
   - id: recover
     title: Recover when the machine has no free GPU
     description: >
-      Wait and retry, start the pod with zero GPUs to copy data off, migrate it
-      to a new machine, or terminate it and deploy a new pod. A migrated or
-      redeployed pod gets a new id and address. Data on a network volume moves
-      with you; data on the volume disk stays on the old machine.
+      Wait and retry, start the pod with zero GPUs to copy data off, migrate it,
+      or terminate it and deploy a new pod. Migration creates a new pod on
+      another machine and moves the pod's data to it; terminating and
+      redeploying leaves the volume disk behind. Either way the new pod has a
+      new id and address, and data on a network volume can be attached to any
+      pod in its data center.
     concepts: [pod-migration, network-volume, pod-volume-disk]
     rules: [pod-migration.options, pod-migration.new-id-and-address, pod-deployment.keep-data-portable]
 

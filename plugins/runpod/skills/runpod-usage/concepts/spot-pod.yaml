@@ -37,7 +37,7 @@ rules:
       A spot pod can be stopped at any time, and a stop clears the container
       disk. Checkpoint work to the volume disk or a network volume.
     status: documented
-    see: [pod.container-disk-ephemeral]
+    see: [container-disk.what-survives]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/pods/maintenance-and-outages, note: "Data only on container storage is lost if the pod is interrupted, restarted, stopped or terminated." }
       - { source: public-docs, url: https://docs.runpod.io/pods/storage/types }

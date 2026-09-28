@@ -38,5 +38,4 @@ and delete it with `DELETE /v2/account/secrets/{id}`.
 ## Exact rules
 
 These facts come from [`runpod-secret`](../concepts/runpod-secret.yaml), which cites the
-REST v2 spec and the public docs. With the Runpod MCP server, read it with
-`lookup-concept runpod-secret`.
+REST v2 spec and the public docs.

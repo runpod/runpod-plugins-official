@@ -143,17 +143,9 @@ rules:
       `size` is the allocated size. The API returns no usage figure, so track
       how full a volume is from inside a pod or worker.
     status: documented
+    see: [network-volume-billing.price]
     evidence:
       - { source: rest-v2-spec, ref: NetworkVolume, note: The schema has no usage field., seen: 2026-09-28 }
-
-  - id: network-volume.billing
-    statement: >
-      A volume is billed per GB of allocated size from creation until deletion,
-      whether or not anything mounts it. Delete volumes you no longer need.
-    status: documented
-    evidence:
-      - { source: rest-v2-spec, ref: POST /v2/network-volumes, note: Storage charges accrue until the volume is deleted., seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, note: See the pricing section., seen: 2026-09-28 }
 
   - id: network-volume.low-balance-deletion
     statement: >
@@ -162,7 +154,7 @@ rules:
       If the balance stays at $0, the volume can be terminated and its data
       cannot be recovered. Turn on low-balance notifications.
     status: documented
-    see: [network-volume.delete-irreversible]
+    see: [network-volume.delete-irreversible, credit-balance.low-balance-actions]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
@@ -188,11 +180,10 @@ rules:
     applies_to: [field:id, field:dataCenter]
     statement: >
       In supported data centers, a volume is reachable through Runpod's
-      S3-compatible API without running a pod. The bucket is the volume `id`,
-      the endpoint is `https://s3api-<data-center>.runpod.io/`, and the
-      credentials are an S3 API key created in the console, not a Runpod API
-      key.
+      S3-compatible API without running a pod, with the volume `id` as the
+      bucket and an S3 API key created in the console.
     status: documented
+    see: [file-transfer.s3-api-per-data-center]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/storage/s3-api, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }

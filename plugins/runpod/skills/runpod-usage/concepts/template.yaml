@@ -44,11 +44,14 @@ rules:
   - id: template.snapshot-at-create
     applies_to: [field:image, field:env]
     statement: >
-      A pod or endpoint copies the template's settings when it is created. Later
-      template edits do not change existing pods or endpoints. A pod created
-      through REST v2 with `templateId` keeps no link to the template, so its
-      `template` field stays null.
+      A pod or endpoint copies the settings of the template you create it from,
+      and later edits to that template do not change it. A pod created through
+      REST v2 with `templateId` keeps no link to the template, so its `template`
+      field stays null. An endpoint also gets its own bound template, deleted
+      with the endpoint; changing the endpoint's container settings updates that
+      one and starts a rolling release.
     status: documented
+    see: [endpoint-release.rollout]
     evidence:
       - { source: rest-v2-spec, ref: "PATCH /v2/templates/{id}; CreatePodRequest.templateId", seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md }

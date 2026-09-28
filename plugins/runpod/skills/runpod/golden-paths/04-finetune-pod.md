@@ -1,7 +1,7 @@
 ---
 lanes: [runpodctl, ssh, hf]
 mcp: partial
-concepts: [pod, network-volume, pod-ssh-access, gpu-type, template, data-center]
+concepts: [pod, network-volume, pod-ssh-access, gpu-type, template, data-center, file-transfer]
 ---
 
 # Golden path 04 — LoRA fine-tune (training run) on a pod

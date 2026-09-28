@@ -69,24 +69,15 @@ rules:
       - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
 
-  - id: serverless-billing.idle-timeout-costs
-    statement: >
-      The idle timeout keeps a flex worker running after its last request, and
-      that time is billed. A longer timeout means fewer cold starts and a higher
-      cost.
-    status: documented
-    evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
-      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
-
   - id: serverless-billing.what-is-billed
     statement: >
       A worker is billed from the moment it starts until it fully stops, rounded
       up to the nearest second. That covers start time (loading the container
       and model), execution time, and the idle timeout after the last request.
-      Container disk and network volume storage are billed on top.
+      Container disk, billed in 5-minute intervals, and network volume storage
+      are billed on top.
     status: documented
-    see: [serverless-billing.idle-timeout-costs]
+    see: [endpoint-autoscaling.idle-timeout, container-disk.billing, worker.billing-by-state]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, seen: 2026-09-28 }
 

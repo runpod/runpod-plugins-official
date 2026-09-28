@@ -1,7 +1,7 @@
 ---
 lanes: [runpodctl, aws, rest]
 mcp: partial
-concepts: [network-volume, serverless-endpoint, data-center, gpu-type, worker, template, serverless-handler]
+concepts: [network-volume, serverless-endpoint, data-center, gpu-type, worker, template, serverless-handler, file-transfer]
 ---
 
 # Golden path 10 — high-availability serverless across regions (multi-volume + data sync)
