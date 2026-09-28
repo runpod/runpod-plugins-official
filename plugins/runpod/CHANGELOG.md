@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.0](https://github.com/runpod/runpod-plugins-official/compare/v1.3.0...v1.4.0) (2026-09-28)
+
+
+### Features
+
+* modular Nix static-analysis tree + typed/hardened Python & shell toolchain ([#63](https://github.com/runpod/runpod-plugins-official/issues/63)) ([7f9e9b4](https://github.com/runpod/runpod-plugins-official/commit/7f9e9b4c6944d332e3728e0b934072e7537f4b4a))
+
 ## [1.3.0](https://github.com/runpod/runpod-plugins-official/compare/v1.2.0...v1.3.0) (2026-09-28)
 
 
