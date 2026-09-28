@@ -11,8 +11,8 @@ part_of: runpod-platform
 aliases: [Runpod Flash, runpod-flash, flash CLI]
 
 relations:
-  - { type: runs_on, target: serverless-endpoint, cardinality: "1..n" }
-  - { type: uses, target: network-volume, cardinality: "0..n" }
+  - { type: runs_on, target: serverless-endpoint, cardinality: 1..n }
+  - { type: uses, target: network-volume, cardinality: 0..n }
   - { type: requires, target: api-key, cardinality: "1" }
 
 rules:
@@ -41,9 +41,9 @@ rules:
 
   - id: flash.artifact-limits
     statement: >
-      `flash build` packages an artifact of up to 1500 MB and leaves out
-      `torch` automatically. The CLI needs Python 3.10 to 3.13, and
-      `--python-version` picks the Python version the worker runs.
+      `flash build` packages an artifact of up to 1500 MB and leaves out `torch`
+      automatically. The CLI needs Python 3.10 to 3.13, and `--python-version`
+      picks the Python version the worker runs.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
@@ -72,8 +72,8 @@ rules:
   - id: flash.volume-sets-dc
     statement: >
       A `NetworkVolume` lives in one data center, so give the `Endpoint` the
-      same `datacenter` as its volume and pick a data center with stock for
-      the GPU you need.
+      same `datacenter` as its volume and pick a data center with stock for the
+      GPU you need.
     status: documented
     see: [serverless-endpoint.network-volume-pins-dc]
     evidence:
@@ -81,10 +81,10 @@ rules:
 
   - id: flash.cli-mediated
     statement: >
-      Deploy and tear down through the `flash` CLI (`flash deploy` and
-      `flash app delete`) rather than raw REST or GraphQL calls. `flash init`
-      writes an `AGENTS.md` that tells coding agents the same. `flash undeploy
-      list` can miss a deployed app.
+      Deploy and tear down through the `flash` CLI (`flash deploy` and `flash
+      app delete`) rather than raw REST or GraphQL calls. `flash init` writes an
+      `AGENTS.md` that tells coding agents the same. `flash undeploy list` can
+      miss a deployed app.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
@@ -92,9 +92,9 @@ rules:
 
   - id: flash.dev-ships-body-only
     statement: >
-      `flash dev` ships only the decorated function's body to the worker, so
-      put imports and helpers inside it. `flash deploy` imports the whole
-      module, which can hide this mistake.
+      `flash dev` ships only the decorated function's body to the worker, so put
+      imports and helpers inside it. `flash deploy` imports the whole module,
+      which can hide this mistake.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 1. }

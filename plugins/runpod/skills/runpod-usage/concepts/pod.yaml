@@ -10,12 +10,8 @@ part_of: runpod-platform
 aliases: [GPU pod, instance, rented machine, pod status, pod state, desiredStatus]
 
 surfaces:
-  rest_v2:
-    schema: Pod
-    paths: [/v2/pods, "/v2/pods/{id}", "/v2/pods/{id}/action", "/v2/pods/{id}/logs"]
-  graphql:
-    type: Pod
-    mutations: [podFindAndDeployOnDemand, podEditJob, podStop, podResume, podTerminate]
+  rest_v2: { schema: Pod, paths: [/v2/pods, "/v2/pods/{id}", "/v2/pods/{id}/action", "/v2/pods/{id}/logs"] }
+  graphql: { type: Pod, mutations: [podFindAndDeployOnDemand, podEditJob, podStop, podResume, podTerminate] }
   mcp: [create-pod, list-pods, get-pod, update-pod, pod-action, delete-pod, stream-pod-logs]
   runpodctl: [pod create, pod list, pod get, pod update, pod start, pod stop, pod restart, pod reset, pod delete, pod logs]
   console: Pods
@@ -30,7 +26,7 @@ fields:
   - { name: cpu, type: CreateCpuConfig, set: create, note: Present only on CPU pods. }
   - { name: image, type: string, set: "create,update" }
   - { name: templateId, type: string, ref: template, set: "create,update", note: Applied once. The pod keeps no link to the template. }
-  - { name: args, type: string, set: "create,update", note: "The container command. `entrypoint` and `cmd` are encoded into it." }
+  - { name: args, type: string, set: "create,update", note: The container command. `entrypoint` and `cmd` are encoded into it. }
   - { name: env, type: "map<string,string>", set: "create,update" }
   - { name: ports, type: "string[]", set: "create,update", note: "Each entry is port/protocol, for example `8888/http` or `22/tcp`." }
   - { name: registry, type: string, ref: registry-credential, set: "create,update", note: Credential id for a private image. }
@@ -47,7 +43,7 @@ fields:
   - { name: locked, type: boolean, set: update }
   - { name: cost, type: number, unit: USD/hour, set: read }
   - { name: cudaVersion, type: string, set: read, note: The CUDA version the host reports. Null means unknown. }
-  - { name: runtime, type: PodRuntime, set: read, note: "Null unless the pod is `RUNNING`." }
+  - { name: runtime, type: PodRuntime, set: read, note: Null unless the pod is `RUNNING`. }
   - { name: ssh, type: PodSsh, set: read }
   - { name: cluster, type: PodCluster, set: read, note: Present only on Instant Cluster member pods. }
   - { name: status, type: PodStatus, set: read }
@@ -73,15 +69,15 @@ states:
 
 relations:
   - { type: runs_on, target: machine, cardinality: "1" }
-  - { type: runs_on, target: gpu-type, cardinality: "0..1" }
-  - { type: runs_on, target: cpu-flavor, cardinality: "0..1" }
+  - { type: runs_on, target: gpu-type, cardinality: 0..1 }
+  - { type: runs_on, target: cpu-flavor, cardinality: 0..1 }
   - { type: located_in, target: data-center, cardinality: "1" }
-  - { type: uses, target: network-volume, cardinality: "0..1" }
-  - { type: uses, target: template, cardinality: "0..1" }
-  - { type: uses, target: registry-credential, cardinality: "0..1" }
+  - { type: uses, target: network-volume, cardinality: 0..1 }
+  - { type: uses, target: template, cardinality: 0..1 }
+  - { type: uses, target: registry-credential, cardinality: 0..1 }
   - { type: requires, target: container-image, cardinality: "1" }
   - { type: constrained_by, target: cloud-tier, cardinality: "1" }
-  - { type: constrained_by, target: gpu-availability, cardinality: "0..1" }
+  - { type: constrained_by, target: gpu-availability, cardinality: 0..1 }
   - { type: billed_by, target: pod-billing, cardinality: "1" }
   - { type: constrained_by, target: credit-balance, cardinality: "1" }
 
@@ -93,7 +89,7 @@ rules:
       does not create a CPU pod.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreatePodRequest; POST /v2/pods", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreatePodRequest; POST /v2/pods, seen: 2026-09-28 }
 
   - id: pod.image-or-template
     applies_to: [field:image, field:templateId]
@@ -102,28 +98,28 @@ rules:
       override the template's values.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "POST /v2/pods", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/pods, seen: 2026-09-28 }
 
   - id: pod.create-is-async
     applies_to: [state:PROVISIONING, state:RUNNING]
     statement: >
-      Create returns `201` while the pod is still `PROVISIONING`. Poll the pod until
-      `status` is `RUNNING` before you use it.
+      Create returns `201` while the pod is still `PROVISIONING`. Poll the pod
+      until `status` is `RUNNING` before you use it.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "POST /v2/pods", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/pods, seen: 2026-09-28 }
 
   - id: pod.no-capacity-fallback
     applies_to: [field:gpu.id, field:dataCenterIds]
     statement: >
       Create places exactly the GPU type you ask for. It does not search for
-      capacity or fall back to another GPU. Read catalog availability first, then
-      try your candidates in order; a `400` means that candidate could not be
-      placed, so move to the next one.
+      capacity or fall back to another GPU. Read catalog availability first,
+      then try your candidates in order; a `400` means that candidate could not
+      be placed, so move to the next one.
     on_violation: 400
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "POST /v2/pods (Checking what you can deploy)", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/pods (Checking what you can deploy), seen: 2026-09-28 }
 
   - id: pod.network-volume-same-dc
     applies_to: ["field:mounts.network[].volumeId", field:dataCenterIds]
@@ -138,23 +134,24 @@ rules:
     applies_to: ["field:mounts.network[].volumeId", field:mounts.persistent.size]
     statement: >
       The mount kind (network, persistent or none) is fixed when the pod is
-      created. A network volume cannot be swapped or detached later; only the mount
-      path can change. To use a different volume, create a new pod.
+      created. A network volume cannot be swapped or detached later; only the
+      mount path can change. To use a different volume, create a new pod.
     on_violation: 400
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: Mounts, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", note: Network volumes must be attached at creation and cannot be detached. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types, note: Network volumes must be attached at creation and cannot be detached. }
 
   - id: pod.persistent-mount-limits
     applies_to: [field:mounts.persistent.size, field:cpu]
     statement: >
-      A persistent (host-local) mount cannot be combined with a network mount, is
-      not allowed on CPU pods, has a 10 GB minimum, and is lost if the host fails.
+      A persistent (host-local) mount cannot be combined with a network mount,
+      is not allowed on CPU pods, has a 10 GB minimum, and is lost if the host
+      fails.
     on_violation: 400
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "Mounts; PersistentMount", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: Mounts; PersistentMount, seen: 2026-09-28 }
 
   - id: pod.container-disk-ephemeral
     applies_to: [field:disk]
@@ -165,15 +162,15 @@ rules:
     see: [pod.persistent-mount-limits]
     evidence:
       - { source: rest-v2-spec, ref: ContainerConfig.disk, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types" }
+      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types }
 
   - id: pod.cuda-constraints
     applies_to: [field:gpu.allowedCudaVersions, field:gpu.minCudaVersion]
     statement: >
       `gpu.allowedCudaVersions` matches exactly, so a version that no machine
       reports returns a capacity error instead of a fallback. It cannot be sent
-      together with a non-empty `gpu.minCudaVersion`. `gpu.minCudaVersion` compares
-      numerically, so 12.11 is above 12.2.
+      together with a non-empty `gpu.minCudaVersion`. `gpu.minCudaVersion`
+      compares numerically, so 12.11 is above 12.2.
     on_violation: 400 when both are sent
     status: documented
     evidence:
@@ -182,12 +179,13 @@ rules:
   - id: pod.cuda-discover-first
     applies_to: [field:gpu.allowedCudaVersions, field:cudaVersion]
     statement: >
-      Before you deploy, check which CUDA versions a GPU type's hosts report with
-      `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` (`cudaVersions`).
-      After deploy, `cudaVersion` shows what the pod's host reports.
+      Before you deploy, check which CUDA versions a GPU type's hosts report
+      with `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD`
+      (`cudaVersions`). After deploy, `cudaVersion` shows what the pod's host
+      reports.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "CreateGpuConfig.allowedCudaVersions; Pod.cudaVersion", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreateGpuConfig.allowedCudaVersions; Pod.cudaVersion, seen: 2026-09-28 }
 
   - id: pod.image-cuda-must-match-host
     applies_to: [field:image, field:gpu.minCudaVersion]
@@ -197,7 +195,7 @@ rules:
       `gpu.minCudaVersion` or `gpu.allowedCudaVersions` to match the image.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods", note: CUDA compatibility note in the create steps. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: CUDA compatibility note in the create steps. }
       - { source: rest-v2-spec, ref: CreateGpuConfig, seen: 2026-09-28 }
 
   - id: pod.cost-is-compute-only
@@ -208,7 +206,7 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: Pod.cost, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods", note: Stop a Pod section. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: Stop a Pod section. }
 
   - id: pod.global-networking-next-start
     applies_to: [field:globalNetworking]
@@ -219,26 +217,27 @@ rules:
     status: documented
     see: [data-center.global-network]
     evidence:
-      - { source: rest-v2-spec, ref: "CreatePodRequest.globalNetworking; UpdatePodRequest.globalNetworking", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreatePodRequest.globalNetworking; UpdatePodRequest.globalNetworking, seen: 2026-09-28 }
 
   - id: pod.edits-apply-on-restart
     applies_to: [field:image, field:args, field:env, field:ports, field:disk, field:registry]
     statement: >
-      Editing a running pod's `image`, `args`, `env`, `ports`, `disk` or `registry`
-      resets the pod, which erases everything outside `/workspace` or a network
-      volume. Set ports and environment variables at create time when you can.
+      Editing a running pod's `image`, `args`, `env`, `ports`, `disk` or
+      `registry` resets the pod, which erases everything outside `/workspace` or
+      a network volume. Set ports and environment variables at create time when
+      you can.
     status: documented
     see: [pod.container-disk-ephemeral]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods", note: Update a Pod warning. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: Update a Pod warning. }
       - { source: rest-v2-spec, ref: "PATCH /v2/pods/{id}", seen: 2026-09-28, note: "Some changes apply immediately and others on the next start, as noted per field." }
 
   - id: pod.env-pid1-only
     applies_to: [field:env]
     statement: >
-      Environment variables set at create time reach the container's main process
-      but not SSH login shells. Pass them explicitly in commands you run over SSH,
-      or export them in the shell profile.
+      Environment variables set at create time reach the container's main
+      process but not SSH login shells. Pass them explicitly in commands you run
+      over SSH, or export them in the shell profile.
     status: verified
     evidence:
       - { source: live-probe, ref: "Pod created with startSsh; PUBLIC_KEY present in /proc/1/environ, absent from the SSH session environment", seen: 2026-09-28 }
@@ -247,44 +246,44 @@ rules:
   - id: pod.lock-blocks-changes
     applies_to: [field:locked]
     statement: >
-      A locked pod cannot be stopped or reset until you set `locked` to false. It
-      keeps running, and billing, while it is locked.
+      A locked pod cannot be stopped or reset until you set `locked` to false.
+      It keeps running, and billing, while it is locked.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "Pod.locked; UpdatePodRequest.locked", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: Pod.locked; UpdatePodRequest.locked, seen: 2026-09-28 }
 
   - id: pod.scheduled-stop
     statement: >
       REST v2 has no field that stops a pod after a set time. To stop a pod on a
-      schedule, run `runpodctl pod stop $RUNPOD_POD_ID` from inside it, for example
-      `sleep 2h; runpodctl pod stop $RUNPOD_POD_ID &`.
+      schedule, run `runpodctl pod stop $RUNPOD_POD_ID` from inside it, for
+      example `sleep 2h; runpodctl pod stop $RUNPOD_POD_ID &`.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods", note: "Stop a Pod section, scheduled stop example." }
-      - { source: rest-v2-spec, ref: "CreatePodRequest; UpdatePodRequest", seen: 2026-09-28, note: No stop or terminate timer fields. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: "Stop a Pod section, scheduled stop example." }
+      - { source: rest-v2-spec, ref: CreatePodRequest; UpdatePodRequest, seen: 2026-09-28, note: No stop or terminate timer fields. }
 
   - id: pod.stopped-pod-keeps-host
     applies_to: [action:start, state:EXITED, field:cudaVersion]
     statement: >
       A stopped pod stays tied to its machine and resumes on the same host. If
-      another user has taken the GPU, the pod can only start with zero GPUs, which
-      is useful for copying data off. Keep important data on a network volume so
-      you can redeploy on any machine.
+      another user has taken the GPU, the pod can only start with zero GPUs,
+      which is useful for copying data off. Keep important data on a network
+      volume so you can redeploy on any machine.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: Pod.cudaVersion, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus" }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus }
 
   - id: pod.terminate-irreversible
     applies_to: [action:terminate, state:TERMINATED]
     statement: >
       Terminating a pod cannot be undone. It destroys the container and any
-      persistent mount; a network volume is only detached and keeps its data. The
-      pod no longer appears in the pod list.
+      persistent mount; a network volume is only detached and keeps its data.
+      The pod no longer appears in the pod list.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "DELETE /v2/pods/{id}", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods", note: Terminate a Pod warning. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: Terminate a Pod warning. }
 
   - id: pod.zero-balance-stops
     statement: >
@@ -293,7 +292,7 @@ rules:
       terminated and its data cannot be recovered.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", note: Minimum balance. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, note: Minimum balance. }
 
   - id: pod.running-is-not-ready
     applies_to: [state:RUNNING, field:runtime]
@@ -305,20 +304,20 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: PodStatus, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", note: Warning under Access your service. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/configuration/expose-ports, note: Warning under Access your service. }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
 
   - id: pod.status-vocabulary
     applies_to: [field:status]
     statement: >
       REST v2 status values (`PROVISIONING`, `STARTING`, `RUNNING`, `EXITED`,
-      `ERROR`, `TERMINATED`) differ from GraphQL `desiredStatus` values (`CREATED`,
-      `RUNNING`, `RESTARTING`, `EXITED`, `PAUSED`, `DEAD`, `TERMINATED`). Translate
-      between them when you use both APIs.
+      `ERROR`, `TERMINATED`) differ from GraphQL `desiredStatus` values
+      (`CREATED`, `RUNNING`, `RESTARTING`, `EXITED`, `PAUSED`, `DEAD`,
+      `TERMINATED`). Translate between them when you use both APIs.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: PodStatus, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://graphql-spec.runpod.io/#definition-PodStatus" }
+      - { source: public-docs, url: https://graphql-spec.runpod.io/#definition-PodStatus }
 
   - id: pod.cluster-pods-managed-elsewhere
     applies_to: [field:cluster]

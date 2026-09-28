@@ -10,11 +10,8 @@ part_of: serverless-endpoint
 aliases: [flex worker, active worker, serverless worker]
 
 surfaces:
-  rest_v2:
-    schema: Worker
-    paths: ["/v2/serverless/{id}/workers", "/v2/serverless/{id}/workers/{workerId}/logs"]
-  graphql:
-    type: WorkerState
+  rest_v2: { schema: Worker, paths: ["/v2/serverless/{id}/workers", "/v2/serverless/{id}/workers/{workerId}/logs"] }
+  graphql: { type: WorkerState }
   mcp: [list-endpoint-workers, stream-worker-logs]
   runpodctl: [serverless logs, serverless health]
   console: Serverless > Workers
@@ -43,8 +40,8 @@ states:
     - { source: rest-v2-spec, ref: WorkerStatus, seen: 2026-09-28 }
 
 relations:
-  - { type: runs_on, target: gpu-type, cardinality: "0..1" }
-  - { type: runs_on, target: cpu-flavor, cardinality: "0..1" }
+  - { type: runs_on, target: gpu-type, cardinality: 0..1 }
+  - { type: runs_on, target: cpu-flavor, cardinality: 0..1 }
   - { type: located_in, target: data-center, cardinality: "1" }
   - { type: requires, target: container-image, cardinality: "1" }
   - { type: billed_by, target: serverless-billing, cardinality: "1" }
@@ -53,22 +50,21 @@ rules:
   - id: worker.status-vocabulary
     applies_to: [field:status, field:isStale]
     statement: >
-      REST v2 reports a worker as `INITIALIZING`, `IDLE`, `RUNNING`,
-      `THROTTLED` or `UNHEALTHY`. The console's "Outdated" state is not a REST
-      v2 status: a worker on an older configuration has `isStale` set to true,
-      derived by comparing its `version` with the response's
-      `endpointVersion`.
+      REST v2 reports a worker as `INITIALIZING`, `IDLE`, `RUNNING`, `THROTTLED`
+      or `UNHEALTHY`. The console's "Outdated" state is not a REST v2 status: a
+      worker on an older configuration has `isStale` set to true, derived by
+      comparing its `version` with the response's `endpointVersion`.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "WorkerStatus; Worker.isStale", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: The console's worker states table lists Outdated. }
+      - { source: rest-v2-spec, ref: WorkerStatus; Worker.isStale, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: The console's worker states table lists Outdated. }
 
   - id: worker.status-derived
     applies_to: [field:status]
     statement: >
-      `status` combines the worker's lifecycle with the live job queue. When
-      the queue view is unavailable, `status` and the summary counts fall back
-      to the lifecycle alone. Workers that have scaled down are not listed.
+      `status` combines the worker's lifecycle with the live job queue. When the
+      queue view is unavailable, `status` and the summary counts fall back to
+      the lifecycle alone. Workers that have scaled down are not listed.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/workers", seen: 2026-09-28 }
@@ -84,8 +80,8 @@ rules:
     status: documented
     conflict: true
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: The worker states table marks only Running as billed. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", note: "Compute cost covers start time, execution time and the idle timeout." }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: The worker states table marks only Running as billed. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/pricing, note: "Compute cost covers start time, execution time and the idle timeout." }
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: A worker kept up by a minimum of 1 bills continuously. }
 
   - id: worker.crash-loop-looks-queued
@@ -108,15 +104,15 @@ rules:
       keeps producing unhealthy workers is scaled down automatically.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker states table and the note below it. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: Worker states table and the note below it. }
 
   - id: worker.cold-start
     statement: >
       A cold start happens when no warm worker is available: the container
-      starts and the model loads into GPU memory before the job runs. Time
-      spent waiting in the queue plus the cold start is reported as delay time,
+      starts and the model loads into GPU memory before the job runs. Time spent
+      waiting in the queue plus the cold start is reported as delay time,
       separately from execution time.
     status: documented
     see: [flashboot.modes]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states", note: Delay time and cold start time metrics. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/job-states, note: Delay time and cold start time metrics. }

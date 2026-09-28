@@ -15,11 +15,11 @@ surfaces:
   console: Serverless > Requests
 
 fields:
-  - { name: id, type: string, set: read, note: "returned by `/run` or `/runsync`" }
+  - { name: id, type: string, set: read, note: returned by `/run` or `/runsync` }
   - { name: input, type: object, set: create, required: true }
   - { name: status, type: enum, values: [IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT], set: read }
-  - { name: policy.executionTimeout, type: integer, unit: ms, default: 600000, set: create, note: "5 seconds to 7 days" }
-  - { name: policy.ttl, type: integer, unit: ms, default: 86400000, set: create, note: "10 seconds to 7 days" }
+  - { name: policy.executionTimeout, type: integer, unit: ms, default: 600000, set: create, note: 5 seconds to 7 days }
+  - { name: policy.ttl, type: integer, unit: ms, default: 86400000, set: create, note: 10 seconds to 7 days }
   - { name: policy.lowPriority, type: boolean, default: false, set: create }
   - { name: webhook, type: string, set: create }
   - { name: output, type: object, set: read }
@@ -37,12 +37,12 @@ states:
     - { action: cancel, from: [IN_QUEUE, IN_PROGRESS], to: CANCELLED }
     - { action: retry, from: [FAILED, TIMED_OUT], to: IN_QUEUE }
   evidence:
-    - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states" }
-    - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", note: The /cancel and /retry operations. }
-    - { source: rest-v2-spec, ref: "EndpointRequestUrls.cancel; EndpointRequestUrls.retry", seen: 2026-09-28 }
+    - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/job-states }
+    - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/operation-reference, note: The /cancel and /retry operations. }
+    - { source: rest-v2-spec, ref: EndpointRequestUrls.cancel; EndpointRequestUrls.retry, seen: 2026-09-28 }
 
 relations:
-  - { type: runs_on, target: worker, cardinality: "0..1" }
+  - { type: runs_on, target: worker, cardinality: 0..1 }
   - { type: billed_by, target: serverless-billing, cardinality: "1" }
 
 rules:
@@ -51,13 +51,13 @@ rules:
     statement: >
       Jobs move from `IN_QUEUE` to `IN_PROGRESS` and end as `COMPLETED`,
       `FAILED`, `CANCELLED` or `TIMED_OUT`. The public job-states page also
-      lists `RUNNING`, while observed jobs report `IN_PROGRESS`. Treat
-      `RUNNING` the same as `IN_PROGRESS` if it appears.
+      lists `RUNNING`, while observed jobs report `IN_PROGRESS`. Treat `RUNNING`
+      the same as `IN_PROGRESS` if it appears.
     status: documented
     conflict: true
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming.md, note: Observed jobs report IN_PROGRESS. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states", note: Lists both IN_PROGRESS and RUNNING. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/job-states, note: Lists both IN_PROGRESS and RUNNING. }
 
   - id: job.run-vs-runsync
     statement: >
@@ -68,8 +68,8 @@ rules:
       `/status` for the first call to a cold endpoint.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", note: The /runsync operation. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Result retention. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/operation-reference, note: The /runsync operation. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Result retention. }
       - { source: rest-v2-spec, ref: EndpointRequestUrls.runSync, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/command-reference.md }
 
@@ -83,7 +83,7 @@ rules:
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 10. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests" }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests }
 
   - id: job.cancel
     applies_to: [action:cancel]
@@ -92,7 +92,7 @@ rules:
       cancelled before a worker picks it up is not billed.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", note: The /cancel operation. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/operation-reference, note: The /cancel operation. }
 
   - id: job.ttl-and-timeout
     applies_to: [field:policy.ttl, field:policy.executionTimeout]
@@ -103,14 +103,16 @@ rules:
       `ttl` to at least the expected queue time plus `executionTimeout`.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Execution policies. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Execution policies. }
 
   - id: job.low-priority
     applies_to: [field:policy.lowPriority]
-    statement: A job submitted with `policy.lowPriority` set to true does not trigger worker scaling.
+    statement: >
+      A job submitted with `policy.lowPriority` set to true does not trigger
+      worker scaling.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Execution policies. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Execution policies. }
 
   - id: job.streaming-and-webhooks
     applies_to: [field:webhook]
@@ -122,32 +124,33 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md, note: Streaming section. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Webhook notifications. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Webhook notifications. }
 
   - id: job.api-host
     statement: >
       Jobs are not part of the REST v2 control API. They go to the serverless
       API host (`https://api.runpod.ai/v2/<endpoint-id>/run` and similar). Read
-      the exact URLs from the endpoint's `requestUrls` instead of building
-      them.
+      the exact URLs from the endpoint's `requestUrls` instead of building them.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: EndpointRequestUrls, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md, note: The requestUrls field. }
 
   - id: job.purge-queue
-    statement: "`/purge-queue` removes every pending job and leaves in-progress jobs running."
+    statement: >
+      `/purge-queue` removes every pending job and leaves in-progress jobs
+      running.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: EndpointRequestUrls.purgeQueue, seen: 2026-09-28 }
 
   - id: job.rate-limits
     statement: >
-      The job API is rate-limited per endpoint and operation, for example
-      `/run` at 1000 requests and `/runsync` at 2000 requests per 10 seconds,
-      and `/purge-queue` at 2 per 10 seconds. The limits rise with the
-      endpoint's worker count.
+      The job API is rate-limited per endpoint and operation, for example `/run`
+      at 1000 requests and `/runsync` at 2000 requests per 10 seconds, and
+      `/purge-queue` at 2 per 10 seconds. The limits rise with the endpoint's
+      worker count.
     status: documented
     see: [serverless-endpoint.diagnose-with-health]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Rate limits. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Rate limits. }

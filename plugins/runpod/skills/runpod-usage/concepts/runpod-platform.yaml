@@ -3,8 +3,8 @@ name: Runpod (the platform)
 kind: platform
 summary: >
   The GPU cloud where you rent Pods, deploy Serverless endpoints, call Public
-  Endpoints and attach storage. You manage it through the console, the REST
-  API, `runpodctl`, the SDKs and the Runpod MCP server.
+  Endpoints and attach storage. You manage it through the console, the REST API,
+  `runpodctl`, the SDKs and the Runpod MCP server.
 product: null
 is_a: null
 part_of: null
@@ -24,7 +24,7 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: servers, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/api-reference-v2/overview", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/api-reference-v2/overview, seen: 2026-09-28 }
 
   - id: runpod-platform.api-generations
     statement: >
@@ -33,14 +33,8 @@ rules:
       have announced retirement dates, so move existing code to REST v2.
     status: documented
     evidence:
-      - source: public-docs
-        url: "https://docs.runpod.io/api-reference-v2/migrate-from-v1"
-        seen: 2026-09-28
-        note: Gives November 15, 2026 as the REST v1 retirement date.
-      - source: public-docs
-        url: "https://docs.runpod.io/sdks/graphql/configurations"
-        seen: 2026-09-28
-        note: Gives early 2027 as the GraphQL retirement date.
+      - { source: public-docs, url: https://docs.runpod.io/api-reference-v2/migrate-from-v1, seen: 2026-09-28, note: "Gives November 15, 2026 as the REST v1 retirement date." }
+      - { source: public-docs, url: https://docs.runpod.io/sdks/graphql/configurations, seen: 2026-09-28, note: Gives early 2027 as the GraphQL retirement date. }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/SKILL.md }
 
   - id: runpod-platform.brand-spelling
@@ -49,4 +43,4 @@ rules:
       CLI command is `runpodctl`, all lower-case.
     status: documented
     evidence:
-      - { source: other, ref: "runpod-plugins-official AGENTS.md, Conventions", url: "https://github.com/runpod/runpod-plugins-official/blob/main/AGENTS.md" }
+      - { source: other, ref: "runpod-plugins-official AGENTS.md, Conventions", url: https://github.com/runpod/runpod-plugins-official/blob/main/AGENTS.md }

@@ -11,9 +11,7 @@ part_of: null
 aliases: [pod cost, costPerHr, adjustedCostPerHr]
 
 surfaces:
-  rest_v2:
-    schema: PodBillingRecord
-    paths: [/v2/billing/pods]
+  rest_v2: { schema: PodBillingRecord, paths: [/v2/billing/pods] }
   mcp: [list-pod-billing]
   runpodctl: [billing pods]
 
@@ -37,7 +35,7 @@ rules:
       `podId` to narrow the results to one pod.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "PodBillingRecord.podId; GET /v2/billing/pods", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: PodBillingRecord.podId; GET /v2/billing/pods, seen: 2026-09-28 }
 
   - id: pod-billing.live-rate-is-pod-cost
     applies_to: [field:totalAmount]
@@ -48,17 +46,17 @@ rules:
     status: documented
     see: [pod.cost-is-compute-only]
     evidence:
-      - { source: rest-v2-spec, ref: "Pod.cost; GpuType.price", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: Pod.cost; GpuType.price, seen: 2026-09-28 }
 
   - id: pod-billing.stopped-disk-rate
     applies_to: [field:diskAmount]
     statement: >
       A stopped pod keeps paying for its volume disk, at a higher per-GB rate
-      than while it runs; container disk is not billed while the pod is
-      stopped. Terminate the pod, rather than stopping it, to end all charges.
+      than while it runs; container disk is not billed while the pod is stopped.
+      Terminate the pod, rather than stopping it, to end all charges.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 
   - id: pod-billing.per-second
@@ -70,9 +68,9 @@ rules:
     status: documented
     conflict: true
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28, note: Says pods are billed per second. }
-      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: 2026-09-28, note: Says pods are billed per second. }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/overview", seen: 2026-09-28, note: Says pods are billed by the minute. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, seen: 2026-09-28, note: Says pods are billed per second. }
+      - { source: public-docs, url: https://docs.runpod.io/accounts-billing/billing, seen: 2026-09-28, note: Says pods are billed per second. }
+      - { source: public-docs, url: https://docs.runpod.io/pods/overview, seen: 2026-09-28, note: Says pods are billed by the minute. }
 
   - id: pod-billing.deploy-needs-an-hour
     statement: >
@@ -81,5 +79,5 @@ rules:
       configuration if the deploy is refused.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/accounts-billing/billing, seen: 2026-09-28 }

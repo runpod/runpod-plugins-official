@@ -10,19 +10,15 @@ part_of: runpod-platform
 aliases: [GPU, gpuTypeId, GpuType, GPU model]
 
 surfaces:
-  rest_v2:
-    schema: GpuType
-    paths: [/v2/catalog/gpus, "/v2/catalog/gpus/{id}"]
-  graphql:
-    type: GpuType
-    queries: [gpuTypes]
+  rest_v2: { schema: GpuType, paths: [/v2/catalog/gpus, "/v2/catalog/gpus/{id}"] }
+  graphql: { type: GpuType, queries: [gpuTypes] }
   mcp: [list-gpu-types, get-gpu-type]
   runpodctl: [gpu list]
 
 fields:
-  - { name: id, type: string, set: read, note: "Pass as `gpu.id` on pod create." }
+  - { name: id, type: string, set: read, note: Pass as `gpu.id` on pod create. }
   - { name: name, type: string, set: read }
-  - { name: pool, type: string, ref: gpu-pool, set: read, note: "Pass to serverless endpoints; null when the GPU is not in a serverless pool." }
+  - { name: pool, type: string, ref: gpu-pool, set: read, note: Pass to serverless endpoints; null when the GPU is not in a serverless pool. }
   - { name: manufacturer, type: enum, values: [NVIDIA, AMD, UNKNOWN], set: read }
   - { name: memory, type: integer, unit: GB, set: read, note: VRAM per GPU. }
   - { name: secure, type: boolean, set: read, note: Offered on Secure Cloud. }
@@ -32,14 +28,14 @@ fields:
   - { name: price.serverless, type: number, unit: USD per GPU per hour, set: read }
   - { name: maxCount.secure, type: integer, set: read }
   - { name: maxCount.community, type: integer, set: read }
-  - { name: availability, type: AvailabilityLevel, set: read, note: "Returned only with `include=AVAILABILITY` and `product`." }
-  - { name: dataCenters, type: "DataCenterAvailability[]", set: read, note: "Returned only with `include=AVAILABILITY` and `product`." }
-  - { name: cudaVersions, type: "CudaVersionAvailability[]", set: read, note: "Returned only with `include=AVAILABILITY`." }
+  - { name: availability, type: AvailabilityLevel, set: read, note: Returned only with `include=AVAILABILITY` and `product`. }
+  - { name: dataCenters, type: "DataCenterAvailability[]", set: read, note: Returned only with `include=AVAILABILITY` and `product`. }
+  - { name: cudaVersions, type: "CudaVersionAvailability[]", set: read, note: Returned only with `include=AVAILABILITY`. }
 
 relations:
-  - { type: uses, target: gpu-pool, cardinality: "0..1" }
+  - { type: uses, target: gpu-pool, cardinality: 0..1 }
   - { type: constrained_by, target: gpu-availability, cardinality: "1" }
-  - { type: constrained_by, target: cloud-tier, cardinality: "1..n" }
+  - { type: constrained_by, target: cloud-tier, cardinality: 1..n }
 
 rules:
   - id: gpu-type.id-vs-pool
@@ -50,7 +46,7 @@ rules:
       instead of reusing the type id.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GpuType.id; GpuType.pool", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GpuType.id; GpuType.pool, seen: 2026-09-28 }
 
   - id: gpu-type.price-is-list-per-gpu
     applies_to: [field:price.secure, field:price.community, field:price.serverless]
@@ -84,7 +80,7 @@ rules:
     on_violation: 400
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus parameters; GpuType.dataCenters", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/catalog/gpus parameters; GpuType.dataCenters, seen: 2026-09-28 }
 
   - id: gpu-type.cuda-is-per-machine
     applies_to: [field:cudaVersions]
@@ -96,4 +92,4 @@ rules:
       `cudaVersions` at all.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GpuType.cudaVersions; CudaVersionAvailability", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GpuType.cudaVersions; CudaVersionAvailability, seen: 2026-09-28 }

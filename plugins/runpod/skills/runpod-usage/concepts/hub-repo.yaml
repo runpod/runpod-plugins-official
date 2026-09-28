@@ -12,7 +12,7 @@ aliases: [Hub, Runpod Hub, hub listing, hub release, hubReleaseId, hub.json]
 
 surfaces:
   mcp: [list-hub-repos, deploy-hub-repo]
-  runpodctl: [hub list, hub search, hub get, "serverless create --hub-id"]
+  runpodctl: [hub list, hub search, hub get, serverless create --hub-id]
   console: Hub
 
 relations:
@@ -26,7 +26,7 @@ rules:
       builds and is tested, then Runpod reviews it before it is published.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/hub/publishing-guide, seen: 2026-09-28 }
 
   - id: hub-repo.hub-json-config
     statement: >
@@ -37,7 +37,7 @@ rules:
       it is deployed.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", note: "See the `hub.json` reference.", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/hub/publishing-guide, note: See the `hub.json` reference., seen: 2026-09-28 }
 
   - id: hub-repo.deploy-through-hub
     statement: >
@@ -58,4 +58,4 @@ rules:
       tiered by monthly compute hours, up to 7%.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/hub/revenue-sharing", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/hub/revenue-sharing, seen: 2026-09-28 }

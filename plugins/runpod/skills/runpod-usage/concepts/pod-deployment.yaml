@@ -77,8 +77,8 @@ rules:
     status: documented
     see: [gpu-availability.per-type-per-dc-per-product]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", seen: 2026-09-28, note: "A migration prompt does not mean the GPU type is unavailable on Runpod, only on the pod's machine." }
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, seen: 2026-09-28, note: "A migration prompt does not mean the GPU type is unavailable on Runpod, only on the pod's machine." }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus, seen: 2026-09-28 }
 
   - id: pod-deployment.keep-data-portable
     statement: >
@@ -88,4 +88,4 @@ rules:
     status: documented
     see: [pod.network-volume-same-dc]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: 2026-09-28, note: See "How do I prevent this?". }
+      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus, seen: 2026-09-28, note: See "How do I prevent this?". }

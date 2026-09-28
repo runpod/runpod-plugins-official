@@ -11,11 +11,8 @@ part_of: runpod-platform
 aliases: [volume, network storage, NV, NetworkVolume]
 
 surfaces:
-  rest_v2:
-    schema: NetworkVolume
-    paths: [/v2/network-volumes, "/v2/network-volumes/{id}"]
-  graphql:
-    type: NetworkVolume
+  rest_v2: { schema: NetworkVolume, paths: [/v2/network-volumes, "/v2/network-volumes/{id}"] }
+  graphql: { type: NetworkVolume }
   mcp: [create-network-volume, list-network-volumes, get-network-volume, update-network-volume, delete-network-volume]
   runpodctl: [network-volume create, network-volume list, network-volume get, network-volume update, network-volume delete]
   console: Storage
@@ -23,7 +20,7 @@ surfaces:
 fields:
   - { name: id, type: string, set: read, note: also the S3 bucket name }
   - { name: name, type: string, set: "create,update", required: true, note: not unique }
-  - { name: size, type: integer, unit: GB, set: "create,update", required: true, note: "10-4096 on create" }
+  - { name: size, type: integer, unit: GB, set: "create,update", required: true, note: 10-4096 on create }
   - { name: dataCenter, type: string, ref: data-center, set: create, required: true }
   - { name: type, type: enum, values: [STANDARD, HIGH_PERFORMANCE], set: create }
 
@@ -43,19 +40,19 @@ rules:
     status: documented
     see: [pod-volume-disk.machine-level-not-data-center-level, network-volume.same-dc-only]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", seen: 2026-09-28, note: "A network volume can be attached to multiple pods, moved between machines, and kept after the pod is deleted." }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types, seen: 2026-09-28, note: "A network volume can be attached to multiple pods, moved between machines, and kept after the pod is deleted." }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
   - id: network-volume.size-bounds
     applies_to: [field:size]
     statement: >
-      `size` is 10 to 4096 GB at creation. For a larger volume, contact
-      Runpod support.
+      `size` is 10 to 4096 GB at creation. For a larger volume, contact Runpod
+      support.
     on_violation: 422
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: CreateNetworkVolumeRequest.size, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
   - id: network-volume.size-grow-only
     applies_to: [field:size]
@@ -65,7 +62,7 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: UpdateNetworkVolumeRequest.size, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
   - id: network-volume.placement-immutable
     applies_to: [field:dataCenter, field:type]
@@ -75,20 +72,20 @@ rules:
     status: documented
     see: [pod.network-volume-same-dc, pod.mount-kind-fixed]
     evidence:
-      - { source: rest-v2-spec, ref: "NetworkVolume.dataCenter; NetworkVolume.type", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: NetworkVolume.dataCenter; NetworkVolume.type, seen: 2026-09-28 }
 
   - id: network-volume.type-per-dc
     applies_to: [field:type, field:dataCenter]
     statement: >
-      `type` must be a tier the data center lists in `networkVolumeTypes`.
-      When `type` is omitted, the data center's default tier is used.
+      `type` must be a tier the data center lists in `networkVolumeTypes`. When
+      `type` is omitted, the data center's default tier is used.
       `HIGH_PERFORMANCE` gives up to 3x the throughput and 4x the IOPS of
       `STANDARD`, at a higher price per GB, in select data centers.
     status: documented
     see: [data-center.volume-types]
     evidence:
-      - { source: rest-v2-spec, ref: "CreateNetworkVolumeRequest.type; DataCenter.networkVolumeTypes", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/high-performance-storage", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: CreateNetworkVolumeRequest.type; DataCenter.networkVolumeTypes, seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/high-performance-storage, seen: 2026-09-28 }
 
   - id: network-volume.same-dc-only
     applies_to: [field:dataCenter]
@@ -100,7 +97,7 @@ rules:
     see: [pod.network-volume-same-dc]
     evidence:
       - { source: rest-v2-spec, ref: NetworkMount.volumeId, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 
   - id: network-volume.serverless-one-per-dc
@@ -111,17 +108,17 @@ rules:
       Copy the data to each volume yourself, since volumes do not sync.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", note: See "Attach multiple volumes"., seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, note: See "Attach multiple volumes"., seen: 2026-09-28 }
 
   - id: network-volume.mount-path
     statement: >
       On a pod created through REST v2, the network mount path has no default
-      and must be sent. Pods conventionally use `/workspace`. Serverless
-      workers see the volume at `/runpod-volume`.
+      and must be sent. Pods conventionally use `/workspace`. Serverless workers
+      see the volume at `/runpod-volume`.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: NetworkMount.path, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
   - id: network-volume.concurrent-writes
     statement: >
@@ -130,14 +127,15 @@ rules:
       writes in your application.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 
   - id: network-volume.secure-cloud-only
-    statement: Network volumes can be attached only to Secure Cloud pods.
+    statement: >
+      Network volumes can be attached only to Secure Cloud pods.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
   - id: network-volume.allocated-size-only
     applies_to: [field:size]
@@ -146,7 +144,7 @@ rules:
       how full a volume is from inside a pod or worker.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: NetworkVolume, note: "The schema has no usage field.", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: NetworkVolume, note: The schema has no usage field., seen: 2026-09-28 }
 
   - id: network-volume.billing
     statement: >
@@ -154,8 +152,8 @@ rules:
       whether or not anything mounts it. Delete volumes you no longer need.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "POST /v2/network-volumes", note: "Storage charges accrue until the volume is deleted.", seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", note: See the pricing section., seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/network-volumes, note: Storage charges accrue until the volume is deleted., seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, note: See the pricing section., seen: 2026-09-28 }
 
   - id: network-volume.low-balance-deletion
     statement: >
@@ -166,7 +164,7 @@ rules:
     status: documented
     see: [network-volume.delete-irreversible]
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/network-volumes, seen: 2026-09-28 }
 
   - id: network-volume.no-status-field
     statement: >
@@ -196,5 +194,5 @@ rules:
       key.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/storage/s3-api", seen: 2026-09-28 }
+      - { source: public-docs, url: https://docs.runpod.io/storage/s3-api, seen: 2026-09-28 }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }

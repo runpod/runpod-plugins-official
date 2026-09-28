@@ -10,9 +10,7 @@ part_of: serverless-endpoint
 aliases: [build, GitHub build, GitHub integration build]
 
 surfaces:
-  rest_v2:
-    schema: Build
-    paths: ["/v2/serverless/{id}/builds", "/v2/serverless/{id}/builds/{buildId}"]
+  rest_v2: { schema: Build, paths: ["/v2/serverless/{id}/builds", "/v2/serverless/{id}/builds/{buildId}"] }
   mcp: [list-endpoint-builds, get-endpoint-build]
   console: Serverless > Builds
 
@@ -22,7 +20,7 @@ fields:
   - { name: commitHash, type: string, set: read }
   - { name: branch, type: string, set: read }
   - { name: imageName, type: string, ref: container-image, set: read }
-  - { name: error, type: string, set: read, note: "set for `FAILED` and `TEST_FAILED`" }
+  - { name: error, type: string, set: read, note: set for `FAILED` and `TEST_FAILED` }
   - { name: startedAt, type: string, set: read }
   - { name: completedAt, type: string, set: read }
 
@@ -52,12 +50,12 @@ rules:
       running. `error` explains a `FAILED` or `TEST_FAILED` build.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "BuildState; Build.error", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: BuildState; Build.error, seen: 2026-09-28 }
 
   - id: endpoint-build.feeds-release
     statement: >
-      A completed build produces a release with `source` set to `GIT_BUILD`
-      and its `buildId`. Workers move to it as they are replaced.
+      A completed build produces a release with `source` set to `GIT_BUILD` and
+      its `buildId`. Workers move to it as they are replaced.
     status: documented
     see: [endpoint-release.source, endpoint-release.rollout]
     evidence:

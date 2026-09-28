@@ -11,12 +11,8 @@ part_of: runpod-platform
 aliases: [stock, stockStatus, availability, capacity]
 
 surfaces:
-  rest_v2:
-    schema: AvailabilityLevel
-    paths: [/v2/catalog/gpus, /v2/catalog/cpus, /v2/catalog/datacenters]
-  graphql:
-    type: GpuAvailability
-    queries: [gpuTypes]
+  rest_v2: { schema: AvailabilityLevel, paths: [/v2/catalog/gpus, /v2/catalog/cpus, /v2/catalog/datacenters] }
+  graphql: { type: GpuAvailability, queries: [gpuTypes] }
   mcp: [get-capacity, list-gpu-types, list-data-centers]
   runpodctl: [gpu list, datacenter list]
 
@@ -36,7 +32,7 @@ rules:
     status: documented
     see: [gpu-type.availability-needs-product]
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus product; GpuType.dataCenters; DataCenter.gpuAvailability", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GET /v2/catalog/gpus product; GpuType.dataCenters; DataCenter.gpuAvailability, seen: 2026-09-28 }
 
   - id: gpu-availability.levels-and-case
     statement: >

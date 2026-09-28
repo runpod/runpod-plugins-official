@@ -22,34 +22,34 @@ rules:
       failure, and avoid `try`/`except` blocks that hide errors.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/handler-functions", note: Error handling. }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/handler-functions, note: Error handling. }
 
   - id: serverless-handler.lb-vs-queue
     statement: >
       A load-balanced worker runs its own HTTP server on the port in `PORT`
-      (default 80), with a health check on `PORT_HEALTH` at
-      `HEALTH_CHECK_PATH` (default `/ping`). A queue-based worker calls
-      `runpod.serverless.start` and receives jobs from the queue.
+      (default 80), with a health check on `PORT_HEALTH` at `HEALTH_CHECK_PATH`
+      (default `/ping`). A queue-based worker calls `runpod.serverless.start`
+      and receives jobs from the queue.
     status: documented
     see: [serverless-endpoint.lb-worker-ports]
     evidence:
       - { source: rest-v2-spec, ref: EndpointType, seen: 2026-09-28 }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview" }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/load-balancing/overview }
 
   - id: serverless-handler.generator-for-streaming
     statement: >
       Streaming needs a generator handler that yields output. Pass
-      `return_aggregate_stream=True` to `runpod.serverless.start` to also
-      return the full list from `/run`, `/runsync` and `/status`. A single
-      chunk is capped at 1 MB.
+      `return_aggregate_stream=True` to `runpod.serverless.start` to also return
+      the full list from `/run`, `/runsync` and `/status`. A single chunk is
+      capped at 1 MB.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md, note: Streaming section. }
 
   - id: serverless-handler.load-model-once
     statement: >
-      Load the model at module level or once per worker, not inside the
-      handler, so warm workers reuse it between jobs.
+      Load the model at module level or once per worker, not inside the handler,
+      so warm workers reuse it between jobs.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md, note: Cold starts and timeouts. }
@@ -70,4 +70,4 @@ rules:
       HTTP API for testing. Add `--rp_api_port` to change the port.
     status: documented
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/local-testing" }
+      - { source: public-docs, url: https://docs.runpod.io/serverless/development/local-testing }
