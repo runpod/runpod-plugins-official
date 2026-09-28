@@ -37,6 +37,6 @@ Read the one reference file that matches the question:
 | Build a Docker image Runpod can run (handler contract, Dockerfile, `--platform=linux/amd64`) | `reference/docker.md` |
 | **How to build an image well** — base image, layering, bake-in vs volume, pod vs serverless (queue/LB) contract | `reference/building-images.md` |
 | Where data lives — container disk vs network volume, model caching, S3 access | `reference/storage.md` |
-| Which GPU / how much VRAM / cost & availability / data centers | `reference/gpu-selection.md` |
+| Which GPU / how much VRAM / **which CUDA version** / cost & availability / data centers | `reference/gpu-selection.md` |
 | Reaching a pod or endpoint over HTTP (proxy URLs, exposed ports) | `reference/networking.md` |
 | Common mistakes and how to avoid them | `reference/gotchas.md` |

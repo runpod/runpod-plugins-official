@@ -14,6 +14,9 @@ Resolve the choices before creating anything (see `concepts.md`, `gpu-selection.
 - **Pod or serverless?** Long-lived / interactive / a persistent server → pod.
   Request/response that scales to zero → serverless (different lane).
 - **GPU / VRAM** for the workload.
+- **CUDA floor** — set `--min-cuda-version 12.8` on the create unless the image needs
+  otherwise, so a modern image can't land on a host too old to run it
+  ([`gpu-selection.md`](gpu-selection.md#step-3-pin-the-cuda-floor)).
 - **Storage** — default to a **network volume** for anything worth keeping
   (models, datasets, checkpoints, envs). See `storage.md`.
 - **Which ports** the service listens on. These must be declared **at creation**.

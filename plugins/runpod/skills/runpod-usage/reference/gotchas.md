@@ -11,6 +11,31 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 - **Fix:** rebuild with `docker build --platform=linux/amd64 ...` and re-push.
   This is the #1 deploy failure.
 
+## CUDA / driver mismatch — container dies at startup, or silently runs on CPU
+
+- **Symptom:** the image pulls fine but the container exits immediately with a CUDA
+  init / driver error (`CUDA driver version is insufficient for CUDA runtime version`,
+  `no kernel image is available for execution on the device`, a cuDNN load failure), or
+  it *starts* and `torch.cuda.is_available()` is `False` so everything crawls on CPU.
+  Most common on the first run of a newly created pod, and on Blackwell cards
+  (RTX 5090, RTX PRO 6000 Blackwell, B200).
+- **Cause:** the host machine's CUDA version is **older than the image was built for**.
+  A create with no CUDA constraint accepts any host, so an image built for 12.8 or 13.0
+  can be scheduled onto an older host. Nothing at create time rejects the pairing.
+- **Diagnose:** read the host's version off the pod itself — `runpodctl pod get <id>`
+  (v2 `GET /v2/pods/{id}`) returns `cudaVersion`, e.g. `"12.8"`. Compare it to the `cu`
+  tag in the image name (`…-cu1281-…` = 12.8.1, `runpod/comfyui:cuda13.0` = 13.0).
+  Host older than the image is the bug. `runpodctl pod logs <id> --source container`
+  shows the actual init error.
+- **Fix:** recreate with a floor — `runpodctl pod create … --min-cuda-version 12.8`
+  (or `gpu.minCudaVersion` on REST v2). Editing a running pod won't move it to a
+  different host. Default the floor to `12.8`; use `13.0` only for a CUDA-13 image.
+  Full rule, the `allowedCudaVersions` variant, and how to check which versions have
+  capacity: [`gpu-selection.md`](gpu-selection.md#step-3-pin-the-cuda-floor).
+- **Related trap:** picking the wrong CUDA-line *variant* of a template (the ComfyUI
+  12.8 image does not support Blackwell / CUDA 13) — see
+  `../../runpod-templates/reference/comfyui.md`.
+
 ## Using the `latest` tag
 
 - **Symptom:** you push new code but workers keep running old behavior; you can't

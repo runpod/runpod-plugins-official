@@ -46,7 +46,7 @@ runpodctl datacenter list           # GPU availability per data center (use to c
 runpodctl hub search vllm           # Find a hub repo
 runpodctl serverless create --hub-id <id> --name "my-vllm"  # Deploy from hub
 runpodctl template search pytorch   # Find a template
-runpodctl pod create --template-id runpod-torch-v21 --gpu-id "NVIDIA GeForce RTX 4090"  # Create from template
+runpodctl pod create --template-id runpod-torch-v280 --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8  # Create from template
 runpodctl pod list                  # List your pods
 ```
 
@@ -129,6 +129,14 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
 - Do not pass GPU flags when creating CPU pods. Check `runpodctl pod create --help` for the current valid flag set.
+- **Set a CUDA floor on every GPU create: `--min-cuda-version 12.8`.** It exists on both
+  `pod create` and `serverless create` (not `template create`) and it is the only thing
+  keeping a modern image off a host too old to run it — the create itself will not reject
+  the combination, the container just dies at startup or silently drops to CPU. Use `13.0`
+  only when the image is a CUDA-13 build (`runpod/comfyui:cuda13.0`, the `cu1300` cluster
+  PyTorch image), and omit it for CPU pods or a deliberately old image. Full rule, the
+  `allowedCudaVersions` exact-match variant, and how to check what has capacity:
+  [`runpod-usage` gpu-selection "pin the CUDA floor"](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 - **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
 - Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` **at creation** (they can't be added to a running pod without a reset), then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
@@ -152,8 +160,8 @@ Essentials below. **For flags, ask the binary** — `runpodctl <resource> <actio
 ```bash
 runpodctl pod list                                   # running pods (+ --all / --status / --since / --created-after)
 runpodctl pod get <pod-id>                           # details incl. SSH info + runtimeStatus
-runpodctl pod create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090"   # from template
-runpodctl pod create --image <img> --gpu-id "NVIDIA GeForce RTX 4090"        # from image
+runpodctl pod create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8   # from template
+runpodctl pod create --image <img> --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8        # from image
 runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (lowercase `cpu`; serverless uses `CPU`)
 runpodctl pod create --image <img> --gpu-id <id> --wait                      # block until ssh answers, then print the pod (v2.9.0+)
 runpodctl pod {start|stop|restart|reset|update|delete} <pod-id>              # lifecycle (delete aliases: rm/remove)
@@ -184,7 +192,7 @@ runpodctl hub get <listing-id|owner/name>            # repo details
 
 ```bash
 runpodctl serverless list | get <endpoint-id> | delete <endpoint-id>
-runpodctl serverless create --name "x" --template-id <id>       # from template
+runpodctl serverless create --name "x" --template-id <id> --min-cuda-version 12.8   # from template
 runpodctl serverless create --name "x" --hub-id <listing-id>    # from hub (+ --env KEY=VAL to override defaults)
 runpodctl serverless create --hub-id <id> --gpu-id "NVIDIA GeForce RTX 4090" \
   --model-reference https://huggingface.co/<org>/<model>:main   # attach & host-cache a HF model (GPU only)

@@ -33,8 +33,10 @@ This is the biggest lever for speed and reliability:
 
 ## 3. Plan resources
 
-GPU/VRAM (`gpu-selection.md`), storage (**default a network volume** —
-`storage.md`), and the execution lane (`../../runpod/SKILL.md` router:
+GPU/VRAM and the **CUDA floor** (`gpu-selection.md` — default
+`--min-cuda-version 12.8` on any GPU create; a create with no floor accepts any host
+CUDA version and a modern image can land on one too old to run it), storage
+(**default a network volume** — `storage.md`), and the execution lane (`../../runpod/SKILL.md` router:
 runpod-mcp / runpodctl / flash).
 
 ## 4. Provision & 5. Set up

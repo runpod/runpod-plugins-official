@@ -104,6 +104,16 @@ Structured tools, grouped by resource:
 - **Use runpodctl instead** for: **`send`/`receive`** file transfer, **SSH** key
   management, **`doctor`** setup, **model cache** — or any shell-only agent, or
   when the user wants a reproducible command.
+- **Hand the create to runpodctl (or a direct v2 POST) when the workload needs a CUDA
+  floor.** Checked 2026-09-02, no MCP tool takes a CUDA constraint: `create-pod`,
+  `create-endpoint` and `create-template` expose no `minCudaVersion` /
+  `allowedCudaVersions`, even though REST v2 has `gpu.minCudaVersion` on pod and endpoint
+  create. So an MCP-created GPU pod accepts **any** host CUDA version, and a modern image
+  can land on a host too old to run it. Re-check the live schema first — then use
+  `runpodctl pod create --min-cuda-version 12.8`, `POST /v2/pods` with
+  `gpu.minCudaVersion`, or deploy an existing template that already carries
+  `allowedCudaVersions` (the official ComfyUI templates do). Why 12.8 and when to use 13.0:
+  [`runpod-usage` gpu-selection](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 - **Hand pod creation to runpodctl** for a **multi-GPU priority list** (MCP's v2
   create-pod takes one GPU type; extra `gpuTypeIds` are dropped with a `_warning`
   on success), or for a **template + CPU** pod together — `create-pod` rejects that
