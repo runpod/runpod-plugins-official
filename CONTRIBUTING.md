@@ -2,7 +2,9 @@
 
 This repo is a **plugin marketplace**. It ships one plugin, `runpod`, whose skills
 also install via [skills.sh](https://skills.sh/) — both read the same
-`.claude-plugin/marketplace.json`.
+`.claude-plugin/marketplace.json`. Each release also publishes the same content to npm
+as [`@runpod/knowledge`](packages/knowledge/README.md), for programs such as the Runpod
+MCP server.
 
 ## Layout
 
@@ -16,7 +18,10 @@ plugins/runpod/
   .mcp.json                       hosted Runpod MCP server config
   README.md  CHANGELOG.md
   skills/<name>/SKILL.md          the skills (+ reference/, evals/)
-  golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
+  skills/runpod/golden-paths/     worked end-to-end reference tasks (no SKILL.md)
+  skills/runpod-usage/concepts/   the concept graph: one YAML file per concept
+packages/knowledge/               @runpod/knowledge, the npm package built from all of the above
+ontology/                         Node 24 tooling: validator, bundle, SQLite build, graph page
 hooks/                            validation scripts
 testdata/runpod-migrate/          fixture repos for the scanner regression check
 ```
@@ -28,8 +33,12 @@ testdata/runpod-migrate/          fixture repos for the scanner regression check
 2. When you **add** a skill:
    - list its path in the `skills` array of `.claude-plugin/marketplace.json`;
    - confirm the skill directory lives under the plugin's `skills/` dir (required for Codex).
-3. Add or update an `evals/*.eval.md` when you change routing or behavior.
-4. To ship the change, cut a release (see **Cutting a release** below) — don't bump
+3. List the concepts the skill covers under `metadata.concepts` in its frontmatter, and in a
+   `concepts:` line at the top of any new reference doc. A new golden path declares `lanes`,
+   `mcp` and `concepts` (see `plugins/runpod/skills/runpod/golden-paths/README.md`).
+   `pnpm check:guides` in `ontology/tools/` checks them.
+4. Add or update an `evals/*.eval.md` when you change routing or behavior.
+5. To ship the change, cut a release (see **Cutting a release** below) — don't bump
    the manifests by hand.
 
 ## Conventions
@@ -94,6 +103,19 @@ release-please runs on every push to `main` (`.github/workflows/release-please.y
 - the two `plugin.json`s, `gemini-extension.json`, top-level `marketplace.json` (via the JSON `jsonpath` updater),
 - each skill's `SKILL.md` `metadata.version` (via the `# x-release-please-version` annotation on that line) — there is **no** independent per-skill versioning; a skill's version just mirrors the plugin version so a reader of any single `SKILL.md` sees which release it shipped in.
 
+- `packages/knowledge/package.json`, so `@runpod/knowledge` is published at the plugin's version.
+
+**Merging the release PR also publishes `@runpod/knowledge` to npm.** The `publish-knowledge`
+job in `release-please.yml` runs when a release is cut: it checks the concepts and guides,
+builds `knowledge.json` from the release commit and runs `npm publish`. It authenticates with
+npm trusted publishing (GitHub OIDC), so no npm token is stored, and it skips a version that
+is already on npm. After a break-glass release, run the workflow by hand
+(*Actions → release-please → Run workflow*) to publish.
+
+One-time setup, by an npm admin of the `@runpod` scope: publish the first version by hand
+(`cd packages/knowledge && npm publish`, which builds the bundle first), then on npmjs.com add
+a trusted publisher for `runpod/runpod-plugins-official` with workflow `release-please.yml`.
+
 `hooks/check_versions.py` runs in CI as a drift guard and **fails the build if any of these disagree**. `scripts/bump-version.sh` does the same bump locally but is an **emergency/local fallback only** — normal releases go through release-please.
 
 **Release invariants (do not violate):**
@@ -130,6 +152,8 @@ python3 hooks/check_links.py               # relative Markdown links resolve
 python3 hooks/check_migrate_scanner.py     # runpod-migrate scanner vs. its corpora
 python3 hooks/check_migrate_tables.py      # runpod-migrate path claims vs. the spec
 python3 hooks/check_migrate_class3.py      # runpod-migrate Class-3 table vs. the spec
+# concept graph and guide links (Node 24; also run in CI)
+cd ontology/tools && pnpm install && pnpm test && pnpm validate --strict && pnpm check:guides && cd ../..
 # skill helper unittests (also run in CI)
 python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p "test_*.py"
 ```
