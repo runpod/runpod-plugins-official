@@ -40,3 +40,20 @@ Read the one reference file that matches the question:
 | Which GPU / how much VRAM / cost & availability / data centers | `reference/gpu-selection.md` |
 | Reaching a pod or endpoint over HTTP (proxy URLs, exposed ports) | `reference/networking.md` |
 | Common mistakes and how to avoid them | `reference/gotchas.md` |
+
+## Exact facts: the concept files
+
+The reference files explain. For a precise fact, or a rule an action must satisfy, read
+the concept files in `concepts/` next to this file. There is one YAML file per concept
+(`pod.yaml`, `network-volume.yaml`, `machine.yaml`, …), each with its fields, states,
+relations and rules, and every rule cites the public source it comes from.
+
+```bash
+grep -il "volume disk" concepts/*.yaml    # find the concept by name or alias
+grep -n "statement:" concepts/pod-volume-disk.yaml
+```
+
+- `rules[].statement` is the fact. `see:` points at related rules on other concepts.
+- A rule with `conflict: true` records two public sources that disagree. Give both readings.
+- A `kind: process` file explains a flow step by step. `pod-deployment.yaml` covers deploy,
+  stop and restart, including why a restart can fail while the data center has stock.

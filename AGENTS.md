@@ -35,6 +35,8 @@ hooks/                            validate_marketplace / check_versions / check_
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
 testdata/runpodctl/command-surface.json   vendored runpodctl command surface the absence check gates against
+ontology/                         Node 24 tooling for the concept files: validator, SQLite build, graph page
+.claude/skills/add-concept/       contributor procedure for adding or changing a concept
 .github/workflows/validate.yml    runs the hooks + the ComfyUI workflow helper unittests on PRs
 .github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API + the latest runpodctl release
 ```
@@ -53,6 +55,7 @@ skills/flash/             write & deploy your own code on Runpod serverless (@re
 skills/companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
 skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a tool
   reference/*.md          detailed topics, loaded on demand
+  concepts/*.yaml         the concept graph: one file per concept, rules with public evidence
 skills/runpod-templates/  official prebuilt pod templates + ComfyUI model-repair guide
   reference/*.md          one file per template (fixed question shape) + comfyui-model-repair.md usage guide
   scripts/                the ComfyUI repair helpers (CI-gated unittests)
@@ -170,6 +173,14 @@ editing the repo. Each is its own checkable rule.
    - Use Conventional Commits.
 11. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
    move long tables and deep explanations into `reference/*.md` linked from the body.
+12. **Concept files** — `skills/runpod-usage/concepts/*.yaml` hold exact facts; the reference
+   docs explain them.
+   - Follow `.claude/skills/add-concept/SKILL.md`, and run `pnpm validate --strict` in
+     `ontology/tools/` before committing.
+   - Every file is public-facing: cite only the REST v2 spec, the public docs, a skill file in
+     this repo, or a live probe. The validator rejects internal names and time-bound wording.
+   - When you change a skill doc that a concept cites, re-read the citing rules (grep the
+     concepts for the path) so the two do not disagree.
 
 ## Conventions
 

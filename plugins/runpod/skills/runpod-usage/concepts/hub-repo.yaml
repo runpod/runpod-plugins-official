@@ -1,0 +1,61 @@
+id: hub-repo
+name: Hub repo
+kind: catalog
+summary: >
+  A GitHub repository listed on the Runpod Hub, configured by `hub.json` and a
+  `Dockerfile`. Each GitHub release is built into an image that you can deploy
+  in one click.
+product: hub
+is_a: null
+part_of: runpod-platform
+aliases: [Hub, Runpod Hub, hub listing, hub release, hubReleaseId, hub.json]
+
+surfaces:
+  mcp: [list-hub-repos, deploy-hub-repo]
+  runpodctl: [hub list, hub search, hub get, "serverless create --hub-id"]
+  console: Hub
+
+relations:
+  - { type: requires, target: container-image, cardinality: "1" }
+
+rules:
+  - id: hub-repo.releases-not-commits
+    statement: >
+      The Hub indexes GitHub releases, not commits. Creating a new release
+      rebuilds and retests the listing. A new repo shows as Pending while it
+      builds and is tested, then Runpod reviews it before it is published.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", seen: 2026-09-28 }
+
+  - id: hub-repo.hub-json-config
+    statement: >
+      `.runpod/hub.json` sets the listing's metadata and deployment defaults:
+      `runsOn` (`GPU` or `CPU`), `gpuIds` (pool ids), `gpuCount`,
+      `containerDiskInGb`, `allowedCudaVersions`, `env` and `presets`. Endpoint
+      settings such as timeouts and worker counts are set on the endpoint after
+      it is deployed.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", note: "See the `hub.json` reference.", seen: 2026-09-28 }
+
+  - id: hub-repo.deploy-through-hub
+    statement: >
+      Deploy a Hub repo with `deploy-hub-repo` or `runpodctl serverless create
+      --hub-id <id>`. The Hub path resolves the listing, takes its built image
+      and config (GPU ids, container disk, env), and creates the endpoint from
+      them. On that path, `--gpu-id` takes a GPU pool id such as `ADA_24`, not a
+      display name.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: See "Create from hub". }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/evals/hub-deploy-serverless.eval.md }
+
+  - id: hub-repo.creator-revenue
+    statement: >
+      Maintainers of published repos earn a share of the compute that users run
+      from their listings, paid to their Runpod credit balance. The share is
+      tiered by monthly compute hours, up to 7%.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/hub/revenue-sharing", seen: 2026-09-28 }

@@ -5,3 +5,7 @@
 result
 result-*
 .direnv/
+
+# Concept graph tooling (ontology/)
+node_modules/
+ontology/build/

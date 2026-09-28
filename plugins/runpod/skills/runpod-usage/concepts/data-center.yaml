@@ -1,0 +1,112 @@
+id: data-center
+name: Data center
+kind: catalog
+summary: >
+  A physical location where pods and workers run and network volumes live.
+  Each data center lists the GPUs, CPUs, volume tiers, networking and
+  compliance certifications it offers.
+product: null
+is_a: null
+part_of: runpod-platform
+aliases: [datacenter, DC, dataCenterId, location, US-TX-3, EU-RO-1]
+
+surfaces:
+  rest_v2:
+    schema: DataCenter
+    paths: [/v2/catalog/datacenters, "/v2/catalog/datacenters/{id}"]
+  graphql:
+    type: DataCenter
+    queries: [dataCenters]
+  mcp: [list-data-centers, get-data-center]
+  runpodctl: [datacenter list]
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: name, type: string, set: read }
+  - name: region
+    type: enum
+    values: [NORTH_AMERICA, SOUTH_AMERICA, EUROPE, ASIA, MIDDLE_EAST, AFRICA, OCEANIA, ANTARCTICA, UNKNOWN]
+    set: read
+  - { name: networkVolumeTypes, type: "VolumeType[]", set: read }
+  - { name: globalNetwork, type: boolean, set: read }
+  - name: compliance
+    type: "enum[]"
+    values: [GDPR, ISO_IEC_27001, ISO_14001, PCI_DSS, HITRUST, SOC_1_TYPE_2, SOC_2_TYPE_2, SOC_3_TYPE_2, ITAR, FISMA_HIGH, HIPAA, RENEWABLE]
+    set: read
+  - { name: gpuAvailability, type: "CatalogResourceAvailability[]", set: read, note: "only with include=GPU_AVAILABILITY" }
+  - { name: cpuAvailability, type: "CatalogResourceAvailability[]", set: read, note: "only with include=CPU_AVAILABILITY" }
+
+relations:
+  - { type: constrained_by, target: cloud-tier, cardinality: "1..n" }
+
+rules:
+  - id: data-center.availability-on-request
+    applies_to: [field:gpuAvailability, field:cpuAvailability]
+    statement: >
+      `gpuAvailability` and `cpuAvailability` are returned only when requested
+      with `include`. A missing field means "not requested" or "this data
+      center offers none", not "out of stock".
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "DataCenter.gpuAvailability; DataCenter.cpuAvailability", seen: 2026-09-28 }
+
+  - id: data-center.volume-types
+    applies_to: [field:networkVolumeTypes]
+    statement: >
+      An empty `networkVolumeTypes` means no network volume can be created in
+      this data center.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: DataCenter.networkVolumeTypes, seen: 2026-09-28 }
+
+  - id: data-center.global-network
+    applies_to: [field:globalNetwork]
+    statement: >
+      Only data centers with `globalNetwork: true` can host pods that use
+      global networking.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "DataCenter.globalNetwork; CreatePodRequest.globalNetworking", seen: 2026-09-28 }
+
+  - id: data-center.region-is-coarse
+    applies_to: [field:region]
+    statement: >
+      `region` is only a continental grouping. Placement, stock and storage are
+      all per data center, so choose `dataCenterIds`, not a region. The GraphQL
+      region hint (for example `"US"`) has no REST v2 equivalent.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "DataCenterRegion; CreatePodRequest.dataCenterIds", seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md }
+
+  - id: data-center.list-filters
+    applies_to: [field:region, field:compliance, field:networkVolumeTypes, field:globalNetwork]
+    statement: >
+      The list filters combine with AND across filter types. Within a type,
+      regions match with OR, while `compliance` and `networkVolumeTypes` match
+      with AND, so `compliance=GDPR,SOC_2_TYPE_2` requires both.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/datacenters parameters", seen: 2026-09-28 }
+
+  - id: data-center.compliance-filter
+    applies_to: [field:compliance]
+    statement: >
+      For data residency or certification requirements, filter data centers by
+      `compliance` and pass the matching ids as `dataCenterIds`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: DataCenter.compliance, seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/unlocks.md }
+
+  - id: data-center.s3-api-per-dc
+    statement: >
+      The S3-compatible API for network volumes is available only in some data
+      centers, each with its own endpoint. REST v2 `DataCenter` has no field
+      for it, so check the S3 API docs before creating a volume you plan to
+      reach over S3.
+    status: documented
+    see: [network-volume.s3-api]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/s3-api", note: See the data center availability section., seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: DataCenter, seen: 2026-09-28 }

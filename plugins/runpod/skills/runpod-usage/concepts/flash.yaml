@@ -1,0 +1,118 @@
+id: flash
+name: Flash
+kind: tool
+summary: >
+  Runpod's Python SDK and CLI (`runpod-flash`) for code-first serverless. You
+  write decorated functions or routes, iterate with `flash dev` against remote
+  workers, and ship with `flash deploy`.
+product: flash
+is_a: null
+part_of: runpod-platform
+aliases: [Runpod Flash, runpod-flash, flash CLI]
+
+relations:
+  - { type: runs_on, target: serverless-endpoint, cardinality: "1..n" }
+  - { type: uses, target: network-volume, cardinality: "0..n" }
+  - { type: requires, target: api-key, cardinality: "1" }
+
+rules:
+  - id: flash.not-flashboot
+    statement: >
+      Flash is the `runpod-flash` SDK and CLI. FlashBoot is a separate endpoint
+      setting for faster restarts; Flash exposes it through the `flashboot`
+      argument but does not depend on it.
+    status: documented
+    see: [flashboot.flash-sdk-default-on]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: The flashboot argument of Endpoint. }
+
+  - id: flash.modes
+    statement: >
+      Flash has three modes. A bare `@Endpoint` decorator is queue-based with
+      its own worker pool. Routes such as `@api.post` are load-balanced and
+      share one pool. Passing `image=` or `id=` is client mode, against a
+      prebuilt image or an existing endpoint. `gpu=` and `cpu=` cannot be used
+      together.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Modes section and Gotchas 4 and 7. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md }
+
+  - id: flash.artifact-limits
+    statement: >
+      `flash build` packages an artifact of up to 1500 MB and leaves out
+      `torch` automatically. The CLI needs Python 3.10 to 3.13, and
+      `--python-version` picks the Python version the worker runs.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
+
+  - id: flash.sdk-defaults
+    statement: >
+      The SDK uses its own defaults: `workers` (0, 1), `idle_timeout` 60
+      seconds, unlimited execution time, `flashboot` `True` and
+      `min_cuda_version` 12.8. They differ from the platform's defaults, so set
+      them explicitly when they matter.
+    status: documented
+    see: [serverless-endpoint.defaults-by-layer]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Endpoint constructor. }
+
+  - id: flash.cuda-floor
+    statement: >
+      Flash endpoints default to `min_cuda_version` 12.8 because the
+      `runpod/flash` image needs it; on older hosts that image crash-loops.
+      Lower `min_cuda_version` only with an image that supports the older CUDA
+      version.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md }
+
+  - id: flash.volume-sets-dc
+    statement: >
+      A `NetworkVolume` lives in one data center, so give the `Endpoint` the
+      same `datacenter` as its volume and pick a data center with stock for
+      the GPU you need.
+    status: documented
+    see: [serverless-endpoint.network-volume-pins-dc]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/patterns.md, note: The volume and the endpoint share one data center. }
+
+  - id: flash.cli-mediated
+    statement: >
+      Deploy and tear down through the `flash` CLI (`flash deploy` and
+      `flash app delete`) rather than raw REST or GraphQL calls. `flash init`
+      writes an `AGENTS.md` that tells coding agents the same. `flash undeploy
+      list` can miss a deployed app.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 15. }
+
+  - id: flash.dev-ships-body-only
+    statement: >
+      `flash dev` ships only the decorated function's body to the worker, so
+      put imports and helpers inside it. `flash deploy` imports the whole
+      module, which can hide this mistake.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 1. }
+
+  - id: flash.api-key-precedence
+    statement: >
+      A set `RUNPOD_API_KEY` overrides the token from `flash login`. A bad key
+      fails quietly with "GraphQL request failed: 401" in the provisioning log
+      while `flash dev` still reports that it is ready.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 13. }
+
+  - id: flash.client-limits
+    statement: >
+      Payloads are limited to 10 MB, so pass URLs or write to a volume. The
+      SDK's `runsync` times out after 60 seconds, so use `run()` and
+      `job.wait()` when a cold start is likely.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotchas 6 and 9. }

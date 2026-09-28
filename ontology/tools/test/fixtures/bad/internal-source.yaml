@@ -1,0 +1,13 @@
+id: internal-source
+name: Internal source
+kind: resource
+summary: Uses a status and source that public files cannot have.
+product: null
+is_a: null
+part_of: null
+rules:
+  - id: internal-source.reported
+    statement: Only an internal source supports this.
+    status: reported
+    evidence:
+      - { source: context-mcp, ref: x }

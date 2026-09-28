@@ -1,0 +1,50 @@
+id: savings-plan
+name: Savings plan
+kind: billing
+summary: >
+  A discounted, prepaid commitment to GPU compute for a pod, bought upfront for
+  a fixed term of 3 or 6 months.
+product: billing
+is_a: null
+part_of: runpod-platform
+aliases: [committed GPU, savingsPlan, savingsPlans]
+
+surfaces:
+  graphql:
+    type: SavingsPlan
+  console: Savings plans
+
+fields: []
+
+relations:
+  - { type: requires, target: gpu-type, cardinality: "1" }
+  - { type: uses, target: pod, cardinality: "0..1" }
+
+rules:
+  - id: savings-plan.not-in-rest-v2
+    statement: >
+      REST v2 does not expose savings plans; GraphQL's `Pod.savingsPlans` and
+      `adjustedCostPerHr` have no REST v2 equivalent. Manage plans in the
+      console or through GraphQL.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
+      - { source: rest-v2-spec, ref: "Pod; CreatePodRequest", seen: 2026-09-28 }
+
+  - id: savings-plan.discount-not-reservation
+    statement: >
+      A savings plan is a prepaid discount on GPU compute, not a hold on
+      hardware. Plans are non-refundable and expire on a fixed date. When the
+      pod is stopped, the plan applies to the next pod deployed with the same
+      GPU type.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28 }
+
+  - id: savings-plan.scope
+    statement: >
+      Savings plans cover GPU compute only. Storage is billed at standard rates
+      and keeps accruing while the pod is stopped.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: 2026-09-28 }

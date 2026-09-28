@@ -1,0 +1,70 @@
+id: gpu-availability
+name: GPU availability
+kind: catalog
+summary: >
+  How much stock a GPU type or CPU flavor has in each data center for a given
+  product (pod, cluster or serverless), reported as `NONE`, `LOW`, `MEDIUM` or
+  `HIGH`.
+product: null
+is_a: null
+part_of: runpod-platform
+aliases: [stock, stockStatus, availability, capacity]
+
+surfaces:
+  rest_v2:
+    schema: AvailabilityLevel
+    paths: [/v2/catalog/gpus, /v2/catalog/cpus, /v2/catalog/datacenters]
+  graphql:
+    type: GpuAvailability
+    queries: [gpuTypes]
+  mcp: [get-capacity, list-gpu-types, list-data-centers]
+  runpodctl: [gpu list, datacenter list]
+
+fields: []
+
+relations:
+  - { type: requires, target: gpu-type, cardinality: "1" }
+  - { type: requires, target: data-center, cardinality: "1" }
+
+rules:
+  - id: gpu-availability.per-type-per-dc-per-product
+    statement: >
+      Stock is reported per GPU type per data center, and it differs by product
+      (`POD`, `CLUSTER` or `SERVERLESS`): the same GPU type can be scarce for
+      pods and plentiful for serverless. Check stock for the product you are
+      about to create, in the data center you intend to use.
+    status: documented
+    see: [gpu-type.availability-needs-product]
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus product; GpuType.dataCenters; DataCenter.gpuAvailability", seen: 2026-09-28 }
+
+  - id: gpu-availability.levels-and-case
+    statement: >
+      REST v2 levels are `NONE`, `LOW`, `MEDIUM` and `HIGH`, in upper case.
+      GraphQL's `stockStatus` uses `High`, `Medium`, `Low` and `None`, so string
+      comparisons carried over from GraphQL stop matching without any error.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: AvailabilityLevel, seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
+
+  - id: gpu-availability.cuda-filter
+    statement: >
+      The GPU catalog accepts `cudaVersions` or `minCudaVersion` together with
+      `include=AVAILABILITY`. Use them to see which CUDA versions have stock
+      before creating a pod with a CUDA constraint.
+    status: documented
+    see: [gpu-type.cuda-is-per-machine]
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus cudaVersions, minCudaVersion", seen: 2026-09-28 }
+
+  - id: gpu-availability.cli-best-status
+    statement: >
+      In `runpodctl gpu list`, the top-level `stockStatus` is the best status
+      across all data centers, and GPUs with no stock are hidden by default.
+      When a pod must run in a specific data center, read the per-data-center
+      breakdown and pass `--include-unavailable`.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gpu-selection.md }

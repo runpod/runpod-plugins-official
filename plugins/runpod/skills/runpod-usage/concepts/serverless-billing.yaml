@@ -1,0 +1,102 @@
+id: serverless-billing
+name: Serverless billing
+kind: billing
+summary: >
+  What serverless endpoints cost: per-second worker time at the GPU pool's rate,
+  plus storage. Active workers bill around the clock; flex workers bill from the
+  moment they start until they fully stop.
+product: billing
+is_a: billing-record
+part_of: null
+aliases: [flex pricing, active pricing, GPU-seconds, worker billing]
+
+surfaces:
+  rest_v2:
+    schema: ServerlessBillingRecord
+    paths: [/v2/billing/serverless]
+  mcp: [list-serverless-billing]
+  runpodctl: [billing serverless]
+
+fields:
+  - { name: serverlessId, type: string, ref: serverless-endpoint, set: read }
+  - { name: startTime, type: string, set: read }
+  - { name: endTime, type: string, set: read }
+  - { name: totalAmount, type: number, unit: USD, set: read }
+  - { name: gpuAmount, type: number, unit: USD, set: read }
+  - { name: cpuAmount, type: number, unit: USD, set: read }
+  - { name: diskAmount, type: number, unit: USD, set: read }
+  - { name: feeAmount, type: number, unit: USD, set: read, note: Always 0. }
+
+relations:
+  - { type: requires, target: serverless-endpoint, cardinality: "1" }
+
+rules:
+  - id: serverless-billing.endpoints-route-is-public-endpoints
+    statement: >
+      Serverless spend is `GET /v2/billing/serverless`. `GET
+      /v2/billing/endpoints` is Public Endpoint spend. In REST v1,
+      `/billing/endpoints` meant serverless, and both REST v2 routes return 200,
+      so a migrated call silently reads the wrong product.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/billing/serverless; GET /v2/billing/endpoints", seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md }
+
+  - id: serverless-billing.per-endpoint-per-bucket
+    applies_to: [field:serverlessId]
+    statement: >
+      Records are one per endpoint per bucket. Pass `serverlessId` to narrow the
+      results to one endpoint.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: ServerlessBillingRecord.serverlessId, seen: 2026-09-28 }
+
+  - id: serverless-billing.fee-always-zero
+    applies_to: [field:feeAmount]
+    statement: >
+      `feeAmount` is always 0. Platform charges are included in `gpuAmount` and
+      `cpuAmount`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: ServerlessBillingRecord.feeAmount, seen: 2026-09-28 }
+
+  - id: serverless-billing.active-workers-bill-idle
+    statement: >
+      Active workers, set with a minimum worker count of 1 or more, run and bill
+      continuously even when idle. Set the minimum to 0 to scale to zero with no
+      idle cost, and reset it after testing.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
+
+  - id: serverless-billing.idle-timeout-costs
+    statement: >
+      The idle timeout keeps a flex worker running after its last request, and
+      that time is billed. A longer timeout means fewer cold starts and a higher
+      cost.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
+
+  - id: serverless-billing.what-is-billed
+    statement: >
+      A worker is billed from the moment it starts until it fully stops, rounded
+      up to the nearest second. That covers start time (loading the container
+      and model), execution time, and the idle timeout after the last request.
+      Container disk and network volume storage are billed on top.
+    status: documented
+    see: [serverless-billing.idle-timeout-costs]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }
+
+  - id: serverless-billing.cut-start-time
+    statement: >
+      Start time is billed, so shortening it lowers cost. Use FlashBoot or model
+      caching to cut start time, and set an execution timeout to stop runaway
+      jobs.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: 2026-09-28 }

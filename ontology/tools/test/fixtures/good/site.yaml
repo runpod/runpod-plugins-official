@@ -1,0 +1,20 @@
+id: site
+name: Site
+kind: catalog
+summary: A place where things run.
+product: null
+is_a: null
+part_of: null
+aliases: [datacenter]
+states:
+  field: status
+  values: { OPEN: accepting work, CLOSED: not accepting work }
+  transitions:
+    - { action: close, from: [OPEN], to: CLOSED }
+rules:
+  - id: site.capacity-hidden
+    applies_to: [state:OPEN]
+    statement: Capacity is only returned when requested.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: Site.capacity }

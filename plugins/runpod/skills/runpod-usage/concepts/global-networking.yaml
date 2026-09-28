@@ -1,0 +1,52 @@
+id: global-networking
+name: Global networking
+kind: capability
+summary: >
+  A private network between an account's pods. Each enabled pod gets a private IP and an
+  internal DNS name, `<podId>.runpod.internal`, so services can talk without public ports.
+product: pods
+is_a: null
+part_of: null
+aliases: [.runpod.internal, globalNetwork, private networking, pod-to-pod networking]
+
+surfaces:
+  rest_v2:
+    schema: Pod
+  mcp: [create-pod, update-pod, get-pod]
+  console: Pods (deploy options)
+
+fields:
+  - { name: globalNetworking, type: "boolean (write) / PodGlobalNetworking (read)", set: "create,update" }
+  - { name: globalNetworking.ip, type: string, set: read, note: "Present only when enabled." }
+  - { name: globalNetworking.internalDns, type: string, set: read, note: "`<podId>.runpod.internal`. Present only when enabled." }
+
+relations:
+  - { type: constrained_by, target: data-center, cardinality: "1" }
+  - { type: constrained_by, target: gpu-type, cardinality: "1" }
+
+rules:
+  - id: global-networking.internal-dns
+    applies_to: [field:globalNetworking.ip, field:globalNetworking.internalDns]
+    statement: >
+      Reach another enabled pod at its `globalNetworking.internalDns`
+      (`<podId>.runpod.internal`) or `globalNetworking.ip`, including pods in other data
+      centers. Only pods in the same account can reach each other. Bind services to
+      `0.0.0.0`, and use this network instead of public ports for internal services such as
+      databases.
+    status: documented
+    see: [pod.global-networking-next-start, data-center.global-network]
+    evidence:
+      - { source: rest-v2-spec, ref: "PodGlobalNetworking; CreatePodRequest.globalNetworking", seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/networking" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }
+
+  - id: global-networking.limits
+    applies_to: [field:globalNetworking]
+    statement: >
+      Global networking works on NVIDIA GPU pods only, in the data centers whose
+      `globalNetwork` is `true`, at about 100 Mbps between pods.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/networking" }
+      - { source: rest-v2-spec, ref: "CreatePodRequest.globalNetworking; DataCenter.globalNetwork", seen: 2026-09-28 }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }

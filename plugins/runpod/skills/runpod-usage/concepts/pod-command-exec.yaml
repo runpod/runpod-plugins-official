@@ -1,0 +1,39 @@
+id: pod-command-exec
+name: Command execution inside a pod
+kind: capability
+summary: >
+  Running a command in a pod without opening an interactive shell. Customers and agents
+  do this over SSH.
+product: pods
+is_a: null
+part_of: null
+aliases: [exec, runpodctl exec, pod commands, SSH exec]
+
+surfaces:
+  mcp: []
+  runpodctl: [exec python]
+
+fields: []
+
+relations:
+  - { type: requires, target: pod-ssh-access, cardinality: "1" }
+
+rules:
+  - id: pod-command-exec.use-ssh
+    statement: >
+      REST v2 and the Runpod MCP server have no route that runs a command in a pod. Run
+      commands over SSH with `ssh <user>@<host> -p <port> "<command>"` from the pod's `ssh`
+      block, and prefer `ssh.direct`.
+    status: documented
+    see: [pod-ssh-access.proxy-vs-direct]
+    evidence:
+      - { source: rest-v2-spec, ref: "paths under /v2/pods", seen: 2026-09-28, note: "The pod paths cover CRUD, actions and logs only." }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/use-ssh" }
+
+  - id: pod-command-exec.runpodctl-exec-deprecated
+    statement: >
+      `runpodctl exec python` runs a local Python file on a pod over SSH. It is deprecated
+      in favor of plain `ssh`, and it needs the same SSH access.
+    status: documented
+    evidence:
+      - { source: other, ref: "runpodctl exec --help (runpodctl 2.14.0)", seen: 2026-09-28 }

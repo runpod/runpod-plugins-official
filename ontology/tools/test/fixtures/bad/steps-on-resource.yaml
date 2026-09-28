@@ -1,0 +1,16 @@
+id: steps-on-resource
+name: Steps on a resource
+kind: resource
+summary: A resource cannot have steps.
+product: null
+is_a: null
+part_of: null
+steps:
+  - id: one
+    title: One
+    description: First.
+    concepts: [steps-on-resource]
+  - id: two
+    title: Two
+    description: Second.
+    concepts: [steps-on-resource]
