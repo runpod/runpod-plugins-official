@@ -113,9 +113,11 @@ curl -s https://api.runpod.ai/v2/<endpoint-id>/status/<job-id> \
   repeated `start container` with no `container` output is the crash-loop tell this run
   had to infer. (MCP `stream-worker-logs` does the same when it's connected.)
 - **`serverless update` has no `--gpu-id` flag.** To change an existing endpoint's
-  GPU pool you must `PATCH https://rest.runpod.io/v1/endpoints/<id>` with
-  `{"gpuTypeIds":[...]}`. (To *override* the pool at create time, pass `--gpu-id` on
-  `serverless create`.)
+  GPU pools, `PATCH https://api.runpod.io/v2/serverless/<id>` with
+  `{"gpu":{"pools":["ADA_24"]}}` (MCP: `set-endpoint-gpus`). Sending `pools` without
+  `excludedTypes` clears any exclusions. (To *override* the pool at create time, pass
+  `--gpu-id` on `serverless create`; it accepts a GPU name such as
+  `"NVIDIA GeForce RTX 4090"` and stores the matching pool.)
 - **`--workers-min 0` is scale-to-zero** and is the default when omitted; the Hub
   config controls the GPU pool unless you override with `--gpu-id`.
 
