@@ -25,6 +25,8 @@ export const LANE_NAMES = ["runpod-mcp", "runpodctl", "flash", "ssh", "docker", 
 /** Whether an agent with only the Runpod MCP tools can finish a golden path. */
 export const MCP_LEVELS = ["full", "partial", "none"] as const;
 const SHELL_LANES = new Set(["runpodctl", "flash", "ssh", "docker", "hf", "aws"]);
+/** Lanes that are Runpod tools with their own concept: a path in that lane uses the tool. */
+const LANE_CONCEPTS: Record<string, string> = { runpodctl: "runpodctl", flash: "flash" };
 
 export interface Guide {
   /** skill: "runpod-usage"; reference: "runpod-usage/storage"; golden path: "golden-path/06-dev-pod". */
@@ -47,7 +49,8 @@ export interface Guide {
 
 /**
  * A link from a guide to a concept.
- * - uses: a golden path works with the concept (declared in its frontmatter, or it is cited as a rule's evidence).
+ * - uses: a golden path works with the concept (declared in its frontmatter, drives it as a lane,
+ *   or is cited as a rule's evidence).
  * - explains: a skill declares the concept under metadata.concepts, or a skill or
  *   reference doc is cited as evidence by the concept's rules.
  */
@@ -55,7 +58,7 @@ export interface Link {
   from: string;
   to: string;
   type: "uses" | "explains";
-  via: "frontmatter" | "evidence";
+  via: "frontmatter" | "lane" | "evidence";
   /** For via: evidence, the rules that cite the guide. */
   rules?: string[];
 }
@@ -185,6 +188,10 @@ export function collectGuides(
       if (!(MCP_LEVELS as readonly unknown[]).includes(meta.mcp)) errors.push(`${path}: mcp must be one of ${MCP_LEVELS.join(", ")}`);
       else mcp = meta.mcp as Guide["mcp"];
       declare(id, path, meta.concepts, "uses");
+      for (const lane of lanes) {
+        const tool = LANE_CONCEPTS[lane];
+        if (tool && conceptIds.has(tool)) links.push({ from: id, to: tool, type: "uses", via: "lane" });
+      }
     } else if (kind === "skill") {
       // Skills keep their links under metadata, which skill loaders pass through.
       const metadata = (meta.metadata ?? {}) as Record<string, unknown>;

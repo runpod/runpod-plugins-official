@@ -25,9 +25,14 @@ export interface GraphLink {
   type: string;
 }
 
-/** A guide drawn as a node, shaped like a concept so the page treats both alike. */
+/**
+ * A guide drawn as a node, shaped like a concept so the page treats both alike.
+ * Its id is prefixed with "guide:" because guide and concept ids can clash
+ * (the flash skill and the Flash concept are both "flash").
+ */
 export interface GuideNode {
   id: string;
+  guideId: string;
   name: string;
   kind: "skill" | "reference" | "golden-path";
   summary: string;
@@ -58,9 +63,10 @@ export function graphData(
     for (const field of concept.fields) add(concept.id, field.ref, "field_ref");
     for (const step of concept.steps) for (const target of step.concepts) add(concept.id, target, "involves");
   }
-  for (const link of guideLinks) add(link.from, link.to, link.type === "uses" ? "example" : "explains");
+  for (const link of guideLinks) add(`guide:${link.from}`, link.to, link.type === "uses" ? "example" : "explains");
   const guideNodes: GuideNode[] = guides.map((guide) => ({
-    id: guide.id,
+    id: `guide:${guide.id}`,
+    guideId: guide.id,
     name: shortName(guide),
     kind: guide.kind,
     summary: guide.description,
@@ -220,7 +226,7 @@ function renderGuide(g) {
   const concepts = DATA.links.filter((l) => l.source === g.id);
   document.getElementById("side").innerHTML =
     "<h2>" + esc(g.guide.title) + "</h2>"
-    + '<div class="meta"><code>' + esc(g.id) + "</code> · " + esc(g.kind) + mcpBadge(g.guide.mcp) + "</div>"
+    + '<div class="meta"><code>' + esc(g.guideId) + "</code> · " + esc(g.kind) + mcpBadge(g.guide.mcp) + "</div>"
     + '<div class="summary">' + esc(g.summary) + "</div>"
     + (g.guide.lanes.length ? '<div class="meta">Lanes: ' + g.guide.lanes.map((x) => "<code>" + esc(x) + "</code>").join(" ") + "</div>" : "")
     + '<div class="meta">Written with shell steps: ' + (g.guide.needs_shell ? "yes" : "no") + "</div>"

@@ -169,12 +169,13 @@ CREATE TABLE guide_lanes (
 );
 
 -- uses: a golden path works with the concept. explains: a doc explains it.
--- via says where the link comes from: the guide's frontmatter, or rule evidence.
+-- via says where the link comes from: the guide's frontmatter, a golden path's lane
+-- (runpodctl, flash), or rule evidence.
 CREATE TABLE guide_links (
   guide_id   TEXT NOT NULL REFERENCES guides(id),
   concept_id TEXT NOT NULL REFERENCES concepts(id),
   type       TEXT NOT NULL CHECK (type IN ('uses', 'explains')),
-  via        TEXT NOT NULL CHECK (via IN ('frontmatter', 'evidence')),
+  via        TEXT NOT NULL CHECK (via IN ('frontmatter', 'lane', 'evidence')),
   PRIMARY KEY (guide_id, concept_id, via)
 );
 
