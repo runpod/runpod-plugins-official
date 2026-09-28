@@ -5,7 +5,7 @@ summary: >
   Ways to move datasets into Runpod and results out: `runpodctl send` and
   `receive`, SCP or rsync over SSH to a pod, and the S3-compatible API on
   network volumes.
-product: pods
+product: null
 is_a: null
 part_of: runpod-platform
 aliases: [runpodctl send, runpodctl receive, croc, S3 upload, s3api, cloud sync, datasets in, checkpoints out]
@@ -56,7 +56,7 @@ rules:
       API keys are separate from Runpod API keys and are created in the console
       under Settings.
     status: documented
-    see: [network-volume.placement-immutable]
+    see: [network-volume.s3-api]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/storage/s3-api }
       - { source: skill, path: plugins/runpod/skills/companion-clis/SKILL.md }

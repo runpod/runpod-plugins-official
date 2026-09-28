@@ -153,17 +153,6 @@ rules:
     evidence:
       - { source: rest-v2-spec, ref: Mounts; PersistentMount, seen: 2026-09-28 }
 
-  - id: pod.container-disk-ephemeral
-    applies_to: [field:disk]
-    statement: >
-      The container disk is wiped when the pod stops or restarts. Keep data you
-      need on the volume disk or a network volume.
-    status: documented
-    see: [pod.persistent-mount-limits]
-    evidence:
-      - { source: rest-v2-spec, ref: ContainerConfig.disk, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/pods/storage/types }
-
   - id: pod.cuda-constraints
     applies_to: [field:gpu.allowedCudaVersions, field:gpu.minCudaVersion]
     statement: >
@@ -204,6 +193,7 @@ rules:
       `cost` reads 0.0 when a pod is `EXITED`, but a stopped pod is still billed
       for its volume disk. Terminate the pod when you no longer need its data.
     status: documented
+    see: [credit-balance.low-balance-actions]
     evidence:
       - { source: rest-v2-spec, ref: Pod.cost, seen: 2026-09-28 }
       - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: Stop a Pod section. }
@@ -227,7 +217,7 @@ rules:
       a network volume. Set ports and environment variables at create time when
       you can.
     status: documented
-    see: [pod.container-disk-ephemeral]
+    see: [container-disk.what-survives]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: Update a Pod warning. }
       - { source: rest-v2-spec, ref: "PATCH /v2/pods/{id}", seen: 2026-09-28, note: "Some changes apply immediately and others on the next start, as noted per field." }
@@ -254,22 +244,25 @@ rules:
 
   - id: pod.scheduled-stop
     statement: >
-      REST v2 has no field that stops a pod after a set time. To stop a pod on a
-      schedule, run `runpodctl pod stop $RUNPOD_POD_ID` from inside it, for
-      example `sleep 2h; runpodctl pod stop $RUNPOD_POD_ID &`.
+      REST v2 has no field that stops a pod after a set time. `runpodctl pod
+      create` takes `--stop-after` and `--terminate-after` for that. For a pod
+      created another way, run `runpodctl pod stop $RUNPOD_POD_ID` from inside
+      it, for example `sleep 2h; runpodctl pod stop $RUNPOD_POD_ID &`.
     status: documented
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: "Stop a Pod section, scheduled stop example." }
       - { source: rest-v2-spec, ref: CreatePodRequest; UpdatePodRequest, seen: 2026-09-28, note: No stop or terminate timer fields. }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: pod create --stop-after and --terminate-after }
 
   - id: pod.stopped-pod-keeps-host
     applies_to: [action:start, state:EXITED, field:cudaVersion]
     statement: >
       A stopped pod stays tied to its machine and resumes on the same host. If
-      another user has taken the GPU, the pod can only start with zero GPUs,
-      which is useful for copying data off. Keep important data on a network
-      volume so you can redeploy on any machine.
+      another user has taken the GPU, you can wait, start the pod with zero GPUs
+      to copy data off, or migrate it to a new machine. Keep important data on a
+      network volume so you can redeploy on any machine.
     status: documented
+    see: [pod-migration.options, machine.pod-is-bound]
     evidence:
       - { source: rest-v2-spec, ref: Pod.cudaVersion, seen: 2026-09-28 }
       - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/zero-gpus }
@@ -284,15 +277,6 @@ rules:
     evidence:
       - { source: rest-v2-spec, ref: "DELETE /v2/pods/{id}", seen: 2026-09-28 }
       - { source: public-docs, url: https://docs.runpod.io/pods/manage-pods, note: Terminate a Pod warning. }
-
-  - id: pod.zero-balance-stops
-    statement: >
-      When the account balance reaches $0, pods are stopped automatically. A pod
-      with a network volume is stopped and keeps its data; a pod without one is
-      terminated and its data cannot be recovered.
-    status: documented
-    evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/pricing, note: Minimum balance. }
 
   - id: pod.running-is-not-ready
     applies_to: [state:RUNNING, field:runtime]
@@ -322,9 +306,10 @@ rules:
   - id: pod.cluster-pods-managed-elsewhere
     applies_to: [field:cluster]
     statement: >
-      Pods that belong to an Instant Cluster are left out of the pod list unless
-      you pass `includeClusterPods=true`, and the pod endpoints cannot update or
-      delete them. Manage them through `/v2/clusters/{id}`.
+      The pod endpoints cannot update or delete a pod that belongs to an Instant
+      Cluster, and the pod list leaves such pods out unless you pass
+      `includeClusterPods=true`. Manage them through `/v2/clusters/{id}`.
     status: documented
+    see: [instant-cluster.members-managed-by-cluster]
     evidence:
       - { source: rest-v2-spec, ref: "Pod.cluster; GET /v2/pods; PATCH /v2/pods/{id}", seen: 2026-09-28 }

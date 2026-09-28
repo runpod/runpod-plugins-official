@@ -65,10 +65,11 @@ rules:
       CPU availability differs between `POD` and `SERVERLESS`. Request it with
       `include=AVAILABILITY` and `product`. Per data center, the same figures
       appear as `DataCenter.cpuAvailability`.
-    status: documented
+    status: verified
     see: [data-center.availability-on-request]
     evidence:
       - { source: rest-v2-spec, ref: GET /v2/catalog/cpus parameters; CpuProduct, seen: 2026-09-28 }
+      - { source: live-probe, ref: GET /v2/catalog/cpus?include=AVAILABILITY without product returned 400 (product is required with include=AVAILABILITY), seen: 2026-09-28 }
 
   - id: cpu-flavor.id-field-names
     applies_to: [field:id]

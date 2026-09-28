@@ -44,12 +44,16 @@ rules:
       Deploy a Hub repo with `deploy-hub-repo` or `runpodctl serverless create
       --hub-id <id>`. The Hub path resolves the listing, takes its built image
       and config (GPU ids, container disk, env), and creates the endpoint from
-      them. On that path, `--gpu-id` takes a GPU pool id such as `ADA_24`, not a
-      display name.
+      them. Sources disagree on what `--gpu-id` takes on that path: one live run
+      needed a GPU pool id such as `ADA_24`, while golden path 20 passed a GPU
+      type name. Omit `--gpu-id` to use the listing's GPU config, or pass a pool
+      id.
     status: documented
+    conflict: true
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: See "Create from hub". }
       - { source: skill, path: plugins/runpod/skills/runpodctl/evals/hub-deploy-serverless.eval.md }
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/20-model-caching-endpoint.md, note: Passes --gpu-id "NVIDIA GeForce RTX 4090" with --hub-id. }
 
   - id: hub-repo.creator-revenue
     statement: >

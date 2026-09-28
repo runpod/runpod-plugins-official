@@ -2,9 +2,9 @@ id: gpu-availability
 name: GPU availability
 kind: catalog
 summary: >
-  How much stock a GPU type or CPU flavor has in each data center for a given
-  product (pod, cluster or serverless), reported as `NONE`, `LOW`, `MEDIUM` or
-  `HIGH`.
+  How much stock a GPU type has in each data center for a given product (pod,
+  cluster or serverless), reported as `NONE`, `LOW`, `MEDIUM` or `HIGH`. CPU
+  flavor stock is reported the same way; see the CPU flavor concept.
 product: null
 is_a: null
 part_of: runpod-platform
@@ -50,7 +50,7 @@ rules:
       `include=AVAILABILITY`. Use them to see which CUDA versions have stock
       before creating a pod with a CUDA constraint.
     status: documented
-    see: [gpu-type.cuda-is-per-machine]
+    see: [gpu-type.cuda-versions-with-capacity]
     evidence:
       - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus cudaVersions, minCudaVersion", seen: 2026-09-28 }
 

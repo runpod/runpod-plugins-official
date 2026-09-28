@@ -86,9 +86,9 @@ works).
 
 ## Cross-cutting gotchas (shared)
 
-- **Cold-start vs the `runsync` 60 s window.** The first request after idle
+- **Cold-start vs the `runsync` window (90 s by default).** The first request after idle
   cold-starts (image pull + model load) — ~20–90 s on the Hub, ~55–75 s on flash —
-  which can exceed `runsync`'s 60 s sync window. Use `/run` + poll `/status/<id>`
+  which can exceed `runsync`'s sync window (90 s by default). Use `/run` + poll `/status/<id>`
   for the first call, then `runsync` once warm. **Bound any poll loop.** More in
   [../../../runpod-usage/reference/gotchas.md](../../../runpod-usage/reference/gotchas.md)
   ("Cold starts and timeouts").

@@ -4,7 +4,7 @@ kind: capability
 summary: >
   A pod's or serverless worker's container output and system events, streamed
   live with a short backfill of recent lines.
-product: pods
+product: null
 is_a: null
 part_of: runpod-platform
 aliases: [pod logs, worker logs, container logs, system logs, SSE log stream]

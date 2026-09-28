@@ -89,7 +89,7 @@ created equal.
 ```
 
 First request cold-starts (image pull + model load) ~20–90 s, which can exceed
-`runsync`'s 60 s sync window — for the first call use `/run` and poll
+`runsync`'s sync window (90 s by default) — for the first call use `/run` and poll
 `/status/<job-id>`, then switch to `runsync` once warm:
 
 ```bash

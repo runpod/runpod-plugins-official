@@ -30,10 +30,11 @@ rules:
   - id: cpu-pod.flavor-and-vcpus
     applies_to: [field:cpu.id, field:cpu.vcpuCount, field:cpu.memory]
     statement: >
-      A CPU pod takes a CPU flavor id, not a GPU type id, and a `vcpuCount` that
-      is a power of two valid for that flavor. The API sets memory from the
-      flavor, so do not send it.
+      A CPU pod takes a CPU flavor id in `cpu.id`, not a GPU type id, plus a
+      `vcpuCount` for that flavor. Do not send memory; the API derives it from
+      the flavor.
     status: documented
+    see: [cpu-flavor.vcpu-power-of-two, cpu-flavor.memory-is-derived]
     evidence:
       - { source: rest-v2-spec, ref: CreatePodRequest; BaseCpuConfig; CpuConfig.memory, seen: 2026-09-28 }
 
@@ -56,15 +57,3 @@ rules:
     see: [pod.global-networking-next-start]
     evidence:
       - { source: rest-v2-spec, ref: CreatePodRequest.globalNetworking, seen: 2026-09-28 }
-
-  - id: cpu-pod.availability-needs-product
-    applies_to: [field:cpu.id]
-    statement: >
-      `GET /v2/catalog/cpus` returns CPU flavor stock only with
-      `include=AVAILABILITY` and a `product`, because stock differs between pods
-      and Serverless.
-    on_violation: 400
-    status: verified
-    evidence:
-      - { source: rest-v2-spec, ref: GET /v2/catalog/cpus, seen: 2026-09-28 }
-      - { source: live-probe, ref: GET /v2/catalog/cpus?include=AVAILABILITY without product returned 400 (product is required with include=AVAILABILITY), seen: 2026-09-28 }

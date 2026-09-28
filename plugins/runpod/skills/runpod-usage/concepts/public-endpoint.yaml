@@ -44,6 +44,7 @@ rules:
     statement: >
       Public Endpoint spend appears in `GET /v2/billing/endpoints`.
     status: documented
+    see: [serverless-billing.endpoints-route-is-public-endpoints]
     evidence:
       - { source: rest-v2-spec, ref: EndpointBillingRecord; GET /v2/billing/endpoints, seen: 2026-09-28 }
 

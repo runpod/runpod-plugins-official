@@ -38,16 +38,6 @@ relations:
   - { type: constrained_by, target: cloud-tier, cardinality: 1..n }
 
 rules:
-  - id: gpu-type.id-vs-pool
-    applies_to: [field:id, field:pool]
-    statement: >
-      Pods take a GPU type id in `gpu.id`, while serverless endpoints take pool
-      ids. The two are different id spaces, so read `pool` from the catalog
-      instead of reusing the type id.
-    status: documented
-    evidence:
-      - { source: rest-v2-spec, ref: GpuType.id; GpuType.pool, seen: 2026-09-28 }
-
   - id: gpu-type.price-is-list-per-gpu
     applies_to: [field:price.secure, field:price.community, field:price.serverless]
     statement: >
@@ -82,14 +72,15 @@ rules:
     evidence:
       - { source: rest-v2-spec, ref: GET /v2/catalog/gpus parameters; GpuType.dataCenters, seen: 2026-09-28 }
 
-  - id: gpu-type.cuda-is-per-machine
+  - id: gpu-type.cuda-versions-with-capacity
     applies_to: [field:cudaVersions]
     statement: >
-      The CUDA version depends on the host machine's driver, not on the GPU
-      type. Read `cudaVersions` to see which versions have free capacity; a pod
+      `cudaVersions` lists the CUDA versions that have free capacity for a GPU
+      type, because machines of the same type can run different drivers. A pod
       pinned to a version marked `available: false` fails on capacity. A GPU
       type whose machines report no CUDA version, such as an AMD GPU, has no
       `cudaVersions` at all.
     status: documented
+    see: [machine.cuda-is-per-machine, gpu-pool.pool-vs-type-ids]
     evidence:
       - { source: rest-v2-spec, ref: GpuType.cudaVersions; CudaVersionAvailability, seen: 2026-09-28 }

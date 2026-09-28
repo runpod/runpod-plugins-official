@@ -51,8 +51,7 @@ A concept is covered by at least one guide. `pnpm check:guides` enforces both li
 
 4. **Point to the rules** when a doc is the main explanation of a concept. End it with a short
    "Exact rules" section with a Markdown link to each concept file (from a reference doc the
-   target is `../concepts/<id>.yaml`), and mention that MCP users can read them with
-   `lookup-concept <id>`.
+   target is `../concepts/<id>.yaml`).
 
 5. **Route it.** A new reference doc gets a row in its skill's `SKILL.md` table. A new golden
    path gets rows in the router's table and `golden-paths/README.md`.

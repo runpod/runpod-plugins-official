@@ -42,20 +42,22 @@ rules:
 
   - id: endpoint-autoscaling.min-max
     statement: >
-      `workers.min` 0 scales to zero, with no compute charge while idle.
-      `workers.min` above 0 keeps that many workers running and billing, even
-      with no traffic. `workers.max` is a hard cap: extra jobs wait in the queue
-      and are not dropped.
+      `workers.min` 0 lets the endpoint scale to zero, with no compute charge
+      once the idle timeout ends. `workers.min` above 0 keeps that many workers
+      running and billing, even with no traffic. `workers.max` is a hard cap: on
+      a `QUEUE` endpoint extra jobs wait in the queue, while a load-balanced
+      endpoint has no queue.
     status: documented
+    see: [serverless-billing.active-workers-bill-idle, serverless-endpoint.lb-no-queue, endpoint-autoscaling.idle-timeout]
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Decision rules and serverless facts. }
 
   - id: endpoint-autoscaling.active-worker-means-min
     statement: >
       An "active worker" is one kept warm by `workers.min`, not `workers.max`.
-      Set `workers.min` back to 0 after development, or those workers keep
-      billing.
+      Set `workers.min` back to 0 after development.
     status: documented
+    see: [serverless-billing.active-workers-bill-idle]
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Active worker means minimum workers. }
       - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: Worker types. }

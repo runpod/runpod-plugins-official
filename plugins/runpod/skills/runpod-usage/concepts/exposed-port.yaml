@@ -75,9 +75,9 @@ rules:
     statement: >
       The external TCP port differs from the internal one and is reassigned on
       every reset and on every stop and start, so read it again after each
-      restart. Secure Cloud public IPs are stable; Community Cloud IPs can
-      change when the pod is migrated or restarted.
+      restart.
     status: documented
+    see: [cloud-tier.community-ip-changes]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/pods/configuration/expose-ports, note: TCP access via public IP. }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }

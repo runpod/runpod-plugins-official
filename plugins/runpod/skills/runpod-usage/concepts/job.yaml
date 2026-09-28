@@ -67,6 +67,7 @@ rules:
       it takes longer, and keeps the result for 1 minute. Use `/run` and poll
       `/status` for the first call to a cold endpoint.
     status: documented
+    see: [api-rate-limit.serverless-job-routes]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/operation-reference, note: The /runsync operation. }
       - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Result retention. }
@@ -143,14 +144,3 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: EndpointRequestUrls.purgeQueue, seen: 2026-09-28 }
-
-  - id: job.rate-limits
-    statement: >
-      The job API is rate-limited per endpoint and operation, for example `/run`
-      at 1000 requests and `/runsync` at 2000 requests per 10 seconds, and
-      `/purge-queue` at 2 per 10 seconds. The limits rise with the endpoint's
-      worker count.
-    status: documented
-    see: [serverless-endpoint.diagnose-with-health]
-    evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/send-requests, note: Rate limits. }

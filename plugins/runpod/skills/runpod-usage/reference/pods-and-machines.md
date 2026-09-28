@@ -26,7 +26,10 @@ data center shows plenty of stock.
 1. **Wait and retry** if the pod's machine may free up.
 2. **Start it with zero GPUs** to reach the data on its volume disk, copy what you need off,
    then deploy a new pod.
-3. **Deploy a new pod** anywhere in the data center. This is only painless when the data you
+3. **Migrate it** from the console. Runpod creates a new pod with the same configuration on
+   a machine with free GPUs and moves the pod's data to it. The new pod has a new id, IP
+   address and proxy URL.
+4. **Deploy a new pod** anywhere in the data center. This is only painless when the data you
    need is on a **network volume**, which any pod in that data center can attach.
 
 The habit that avoids the problem: keep data you need on a network volume, not only on the
@@ -45,5 +48,4 @@ pod's volume disk. See [`storage.md`](storage.md) for the storage layers.
 The facts above come from the concept files, which cite their public sources:
 [`machine`](../concepts/machine.yaml), [`pod-deployment`](../concepts/pod-deployment.yaml)
 (deploy, stop, restart and recover as ordered steps), [`pod-migration`](../concepts/pod-migration.yaml)
-and [`pod-volume-disk`](../concepts/pod-volume-disk.yaml). With the Runpod MCP server, read
-them with `lookup-concept machine`.
+and [`pod-volume-disk`](../concepts/pod-volume-disk.yaml).

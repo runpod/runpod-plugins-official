@@ -28,7 +28,6 @@ rules:
       edit, or is terminated. Keep anything you need in `/workspace` on the
       volume disk or on a network volume.
     status: documented
-    see: [pod.container-disk-ephemeral]
     evidence:
       - { source: public-docs, url: https://docs.runpod.io/pods/storage/types, note: Container disk data is lost on stop and restart. }
       - { source: rest-v2-spec, ref: ContainerConfig.disk, seen: 2026-09-28, note: Wiped on restart. }
@@ -47,9 +46,8 @@ rules:
   - id: container-disk.resize
     applies_to: [field:disk]
     statement: >
-      `disk` can be changed on an existing pod, but editing a running pod resets
-      it and erases everything outside `/workspace` or a network volume. Size
-      the disk for model downloads at create time.
+      `disk` can be changed on an existing pod, but that edit resets a running
+      pod. Size the disk for model downloads at create time.
     status: documented
     see: [pod.edits-apply-on-restart]
     evidence:

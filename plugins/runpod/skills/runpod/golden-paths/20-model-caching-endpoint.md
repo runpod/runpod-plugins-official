@@ -1,7 +1,7 @@
 ---
 lanes: [runpodctl, rest]
 mcp: partial
-concepts: [serverless-endpoint, model-store, worker, container-image, job]
+concepts: [serverless-endpoint, model-store, worker, container-image, job, log-stream]
 ---
 
 # Golden path 20 — serverless endpoint with a host-cached HF model (`--model-reference`)

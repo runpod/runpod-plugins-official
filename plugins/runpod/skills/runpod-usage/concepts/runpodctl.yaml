@@ -47,7 +47,8 @@ rules:
     statement: >
       `runpodctl` reads the API key from `RUNPOD_API_KEY`, then a `.env` file,
       then `~/.runpod/config.toml`. `flash login` saves a key to that file, so
-      one key serves `runpodctl`, Flash and the hosted MCP server.
+      one key serves `runpodctl` and Flash, and the same key can be sent to the
+      hosted MCP server as a Bearer token.
     status: documented
     see: [api-key.bearer-only]
     evidence:
