@@ -61,16 +61,17 @@ rules:
 
   - id: pod-billing.per-second
     statement: >
-      The pricing and billing pages say pods are billed per second for compute
-      and storage, while the Pods overview page says by the minute. Estimate
-      cost per second. There is no charge for storage while the pod's host
-      machine is unavailable.
+      Pods are billed per second for compute and storage. Pages that quote
+      per-minute or hourly rates express the same price in a larger unit for
+      readability. There is no charge for storage while the pod's host machine
+      is unavailable.
     status: documented
-    conflict: true
+    conflict: false
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: "2026-09-28", note: Says pods are billed per second. }
       - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28", note: Says pods are billed per second. }
       - { source: public-docs, url: "https://docs.runpod.io/pods/overview", seen: "2026-09-28", note: Says pods are billed by the minute. }
+      - { source: other, note: "Confirmed by Runpod, 2026-09-28: billing is per second; other units are used only to make prices easier to read.", seen: "2026-09-28" }
 
   - id: pod-billing.deploy-needs-an-hour
     statement: >

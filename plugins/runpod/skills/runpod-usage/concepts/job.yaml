@@ -49,15 +49,16 @@ rules:
   - id: job.status-vocabulary
     applies_to: ["field:status"]
     statement: >
-      Jobs move from `IN_QUEUE` to `IN_PROGRESS` and end as `COMPLETED`,
-      `FAILED`, `CANCELLED` or `TIMED_OUT`. The public job-states page also
-      lists `RUNNING`, while observed jobs report `IN_PROGRESS`. Treat `RUNNING`
-      the same as `IN_PROGRESS` if it appears.
+      The job API reports `IN_QUEUE`, then `IN_PROGRESS`, and ends as
+      `COMPLETED`, `FAILED`, `CANCELLED` or `TIMED_OUT`. The public job-states
+      page also lists `RUNNING`, which the API does not return; use
+      `IN_PROGRESS`.
     status: documented
-    conflict: true
+    conflict: false
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming.md, note: Observed jobs report IN_PROGRESS. }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states", note: Lists both IN_PROGRESS and RUNNING. }
+      - { source: other, note: "Confirmed by Runpod, 2026-09-28: the job API's statuses are IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED and TIMED_OUT; there is no RUNNING job status.", seen: "2026-09-28" }
 
   - id: job.run-vs-runsync
     statement: >
