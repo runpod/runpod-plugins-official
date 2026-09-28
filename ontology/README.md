@@ -8,6 +8,7 @@ the tooling that checks them and builds them into other forms. It needs Node 24 
 ```bash
 cd ontology/tools
 pnpm install
+pnpm format              # rewrite the concept files in the canonical style (CI: format:check)
 pnpm validate --strict   # schema, cross-file, spec and public-only checks (CI runs this)
 pnpm test
 pnpm build:sqlite        # build/ontology.sqlite

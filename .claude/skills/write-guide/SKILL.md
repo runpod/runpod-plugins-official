@@ -83,7 +83,7 @@ checked by `hooks/check_cli_absence_claims.py`).
 
 ```bash
 cd ontology/tools
-pnpm validate --strict && pnpm check:guides && pnpm test
+pnpm format && pnpm validate --strict && pnpm check:guides && pnpm test
 cd ../.. && python3 hooks/check_links.py && python3 hooks/check_runpod_branding.py
 ```
 

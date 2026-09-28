@@ -60,7 +60,9 @@ rules:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 ```
 
-Inside `[ ]` or `{ }`, quote any item that contains `[]`, `{}`, `: ` or `#`.
+Run `pnpm format` in `ontology/tools/` after editing. It rewrites every file in this style
+(key order, folded text wrapped at 80 columns, one-line list entries, quoting where YAML needs
+it) without changing the data, and CI runs `pnpm format:check`.
 
 ## Kinds
 
