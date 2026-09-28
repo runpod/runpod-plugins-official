@@ -60,13 +60,14 @@ runpodctl pod create --name devbox-demo \
   --data-center-ids EU-RO-1 \
   --network-volume-id <vol-id> --volume-mount-path /workspace \
   --ports "22/tcp" \
-  --ssh --terminate-after <iso8601 ~1-2h out>       # TEST guard — see note below
+  --ssh
 ```
-> **`--terminate-after` vs `--stop-after`.** This live run used `--terminate-after` as a
-> **cost guard for a throwaway test** (it deletes the pod at the deadline). For a **real dev
-> box the user returns to**, use `--stop-after` instead — `stop` preserves the pod and its
-> `/workspace`; `terminate`/`remove` **deletes** the pod (the network volume still survives
-> either way, since it's a separate resource). Verified image on `runpod-torch-v280`:
+> **Stop vs remove.** For a **throwaway test**, `runpodctl pod remove` the pod when done.
+> For a **real dev box the user returns to**, `runpodctl pod stop` it between sessions:
+> `stop` preserves the pod and its `/workspace`, `remove` **deletes** the pod (the network
+> volume survives either way, since it's a separate resource). Don't use `--stop-after` /
+> `--terminate-after`: they were never enforced, and runpodctl v2.12.0 removed them.
+> Verified image on `runpod-torch-v280`:
 > `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, RTX 4090 at **$0.69/hr**.
 
 ### 3. Poll until the runtime is up, then read the SSH-over-TCP connection
@@ -187,8 +188,8 @@ runpodctl network-volume delete <vol-id>      # pod must be removed first
 runpodctl pod list && runpodctl network-volume list   # confirm clean
 ```
 Live cost: RTX 4090 pod at **$0.69/hr** + 10 GB volume (negligible). For a real dev box you
-keep, `--stop-after` (stopped pods still bill for disk + the volume) instead of
-`--terminate-after`; `remove` + volume `delete` when done for good. A CPU pod is cheaper if you
+keep, `pod stop` between sessions (stopped pods still bill for disk + the volume);
+`remove` + volume `delete` when done for good. A CPU pod is cheaper if you
 don't need the GPU — drop `--gpu-id` and use `--compute-type cpu` (not exercised in this run).
 
 ## Skill gaps folded back

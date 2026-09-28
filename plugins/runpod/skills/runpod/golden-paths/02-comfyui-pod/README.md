@@ -43,8 +43,8 @@ Both variants must satisfy the same delivery bar:
 
 1. **Auth** resolved (`export RUNPOD_API_KEY=...`).
 2. GPU pod, GPU with **≥16 GB VRAM** (RTX 4090 is ideal), **port `8188/http`
-   exposed at creation**, SSH enabled, on a **network volume**, with a
-   `--terminate-after` cost guard.
+   exposed at creation**, SSH enabled, on a **network volume**, and removed
+   when done.
 3. ComfyUI running, **bound to `0.0.0.0`** on port `8188`.
 4. Agent **polls the proxy URL until the UI answers** (expect proxy 502s during
    boot — see per-variant timings); it **escalates on any manual step** rather
@@ -82,9 +82,9 @@ These bite both variants (details and the fix per variant are in each file):
 
 ## Cost & cleanup (shared)
 
-- **Cost guard at creation:** `--terminate-after <iso8601 a few hours out>`
-  *deletes* the pod at that time. Prefer it over `--stop-after`, which only
-  *stops* the pod so you keep paying for disk/volume.
+- **Cost guard:** the pod bills until you remove it. Don't use
+  `--terminate-after` / `--stop-after`: they were never enforced, and runpodctl
+  v2.12.0 removed them.
 - **Tear down when done:** `runpodctl pod remove <pod-id>`, then delete the
   network volume (`runpodctl network-volume delete <volume-id>`) if it was only
   for this test — the pod must be removed first.

@@ -56,7 +56,7 @@ runpodctl pod create --name ft-train \
   --template-id runpod-torch-v280 --gpu-id "NVIDIA GeForce RTX 4090" \
   --data-center-ids <dc> \
   --network-volume-id <vol-id> --volume-mount-path /workspace \
-  --ssh --terminate-after <iso8601 a few hours out>          # no --ports: training serves nothing
+  --ssh                                                      # no --ports: training serves nothing
 ```
 Poll until the runtime is up, then read ip / port / key from `ssh info` into shell vars — the
 SSH-over-TCP form from golden path [07](07-network-volume-handoff.md)/[06](06-dev-pod.md).
@@ -214,7 +214,7 @@ input. For high-throughput serving, swap the transformers handler for **vLLM wit
 runpodctl serverless delete <endpoint-id>     # (undeploy+redeploy for fresh workers if a code change is stuck — see 07)
 runpodctl network-volume delete <vol-id>      # pod already removed; deletes the adapter + cache
 ```
-Pod cost guard: `--terminate-after` (deletes the pod), not `--stop-after`. Endpoint is
+Pod cost guard: `runpodctl pod remove <pod-id>` when done (`--terminate-after` never worked). Endpoint is
 scale-to-zero (`workers=(0,1)`), ~$0 idle. Keep the volume only while iterating.
 
 ## Gotchas this path inherits

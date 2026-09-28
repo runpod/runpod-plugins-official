@@ -72,7 +72,8 @@ blocked**. Don't spin or fake progress.
 
 ## 9. Cost-guard + teardown
 
-- Pod → `--terminate-after <ts>` at creation (deletes it), not `--stop-after`.
+- Pod → `runpodctl pod remove <pod-id>` when done. Not `--terminate-after` /
+  `--stop-after`: they were never enforced and v2.12.0 removed them.
 - Serverless → `--workers-min 0` (scale-to-zero, ~$0 idle).
 - Delete test resources when done (`runpodctl pod remove` / `serverless delete` /
   `flash app delete`; then any network volume).

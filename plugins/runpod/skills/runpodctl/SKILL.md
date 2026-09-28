@@ -134,7 +134,8 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
 - Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
 - Clean up paid resources after tests: delete serverless endpoints, pods, and temporary volumes created for validation.
-  - **Cost guard on creation:** use `--terminate-after` (deletes the pod); `--stop-after` only *stops* it, so disk/volume keep billing.
+  - **Cost guard:** remove the pod when the work is done (`runpodctl pod remove <pod-id>`). For an unattended deadline, schedule a stop from inside the pod: Runpod pods ship `runpodctl` and a pod-scoped API key ([Manage Pods](https://docs.runpod.io/pods/manage-pods)). A stopped pod still bills for disk and any volume.
+  - **`--stop-after` / `--terminate-after` never worked.** runpodctl before v2.12.0 accepts both `pod create` flags, but the backend never enforced them, so the pod keeps running and billing past the deadline. v2.12.0 removed them. If `runpodctl pod create --help` still lists them, run `runpodctl update`. Never offer them as a cost guard.
   - **Attached volume:** to delete a network volume, remove the pod using it first.
 
 ### Serverless facts (context, not rules)

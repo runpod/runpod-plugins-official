@@ -60,7 +60,7 @@ runpodctl pod create --name ft-train \
   --template-id runpod-torch-v280 --gpu-id "NVIDIA GeForce RTX 4090" \
   --data-center-ids EU-RO-1 \
   --network-volume-id <vol-id> --volume-mount-path /workspace \
-  --ssh --terminate-after <iso8601 well past the run>   # deletes the pod; set past the run
+  --ssh
 
 runpodctl pod get <pod-id>                              # poll until it has a runtime
 # once the runtime is up, read ip / port / key from `ssh info` (JSON) into shell vars —
@@ -200,10 +200,9 @@ runpodctl network-volume list          # confirm the volume is still listed
 - **Gated base model / dataset** needs `HF_TOKEN` + an accepted license (a manual
   step). If `hf download` 401/403s, **stop and ask** for the token/license —
   TinyLlama + the alpaca test set are ungated, so the verified run needed neither.
-- **`--terminate-after` must exceed the run.** It *deletes* the pod at that time; a
-  mid-run kill wastes the compute (the volume's files survive, but the run doesn't
-  finish). Use `--terminate-after`, not `--stop-after` (which only pauses billing
-  for compute but keeps the pod).
+- **Remove the pod as soon as the run finishes.** It bills until removed. Don't use
+  `--terminate-after` / `--stop-after`: they were never enforced, and runpodctl
+  v2.12.0 removed them.
 
 ## Scaling up (what changes — and what doesn't)
 **Changes:** `BASE` (model id), the `--gpu-id` to a bigger-VRAM tier, and the
@@ -219,7 +218,7 @@ runpodctl pod remove <pod-id>                 # already done above — frees the
 runpodctl network-volume delete <vol-id>      # deletes the adapter + model cache
 runpodctl pod list && runpodctl network-volume list   # confirm clean
 ```
-Pod cost guard: `--terminate-after` (deletes the pod), not `--stop-after`. Keep the
+Pod cost guard: `runpodctl pod remove <pod-id>` when done (`--terminate-after` never worked). Keep the
 volume only while you still need the adapter (e.g. until 08 has served it); it bills
 for stored GB.
 
