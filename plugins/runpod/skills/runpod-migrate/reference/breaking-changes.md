@@ -199,7 +199,6 @@ or the behavior changes. Decide with the user; do not silently drop them.
 | **Server-side list filters / expansions** | `?desiredStatus=`, `?includeMachine=`, … | filter client-side |
 | **Host machine identity** | `machineId`, `machine { podHostId }` | only `dataCenterId` |
 | **Account identity / balance** | `myself { email clientBalance currentSpendPerHr }` | no v2 route — keep GraphQL |
-| **Secrets** | `secretCreate` / `secretDelete` | no v2 route — keep GraphQL |
 | **Volume encryption flag** | `volumeEncrypted` | not exposed |
 
 ### Replacing the GPU fallback list (pods only)
