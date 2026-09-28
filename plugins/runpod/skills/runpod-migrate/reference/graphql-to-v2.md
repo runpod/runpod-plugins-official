@@ -72,7 +72,7 @@ say so in the summary rather than leaving the user to wonder if you missed somet
 | `cloudType: SECURE \| COMMUNITY` | `cloud` — **`ALL` is gone**, pick one |
 | `minVcpuCount`, `minMemoryInGb` | removed — GPU pods size RAM/vCPU from the GPU type |
 | `allowedCudaVersions` | `gpu.allowedCudaVersions` — moved under `gpu`, not removed (GPU pods only). Mutually exclusive with a non-empty `gpu.minCudaVersion`. |
-| `startSsh`, `startJupyter` | removed — express these through `ports` / `args` / the image |
+| `startSsh`, `startJupyter` | `startSsh`, `startJupyter` — same names, still create-time flags. `startSsh` puts the account's registered SSH keys in `PUBLIC_KEY` (no keys registered, no SSH); `startJupyter` generates `JUPYTER_PASSWORD`. Neither overrides a value already in `env`, and neither is returned by GET or changeable by PATCH. |
 | `templateId` | `templateId` — still accepted, but resolved once with no link retained ([Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone)) |
 
 A full conversion, showing the four shape changes that a field-by-field rename misses —
