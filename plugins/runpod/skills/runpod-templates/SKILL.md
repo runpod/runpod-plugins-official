@@ -14,7 +14,7 @@ description: >-
 allowed-tools: Bash(python3:*), Bash(curl:*)
 metadata:
   author: runpod
-  version: "1.2.0" # x-release-please-version
+  version: "1.3.0" # x-release-please-version
 license: Apache-2.0
 ---
 
