@@ -1,0 +1,122 @@
+id: worker
+name: Serverless worker
+kind: component
+summary: >
+  One running copy of an endpoint's container. Workers start on demand, process
+  jobs or HTTP requests, and scale down when idle.
+product: serverless
+is_a: null
+part_of: serverless-endpoint
+aliases: [flex worker, active worker, serverless worker]
+
+surfaces:
+  rest_v2:
+    schema: Worker
+    paths: ["/v2/serverless/{id}/workers", "/v2/serverless/{id}/workers/{workerId}/logs"]
+  graphql:
+    type: WorkerState
+  mcp: [list-endpoint-workers, stream-worker-logs]
+  runpodctl: [serverless logs, serverless health]
+  console: Serverless > Workers
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: status, type: WorkerStatus, set: read }
+  - { name: isStale, type: boolean, set: read, note: running an older endpoint configuration }
+  - { name: version, type: integer, set: read, note: endpoint configuration version }
+  - { name: gpuCount, type: integer, set: read }
+  - { name: gpuTypeId, type: string, ref: gpu-type, set: read, note: null until placed }
+  - { name: dataCenterId, type: string, ref: data-center, set: read, note: null until placed }
+  - { name: image, type: string, set: read }
+  - { name: uptimeSeconds, type: integer, set: read }
+  - { name: startedAt, type: string, set: read }
+
+states:
+  field: status
+  values:
+    INITIALIZING: Starting up; not ready for jobs.
+    IDLE: Ready and waiting for jobs.
+    RUNNING: Processing a job.
+    THROTTLED: Waiting for compute capacity on the host.
+    UNHEALTHY: Failing health checks.
+  evidence:
+    - { source: rest-v2-spec, ref: WorkerStatus, seen: 2026-09-28 }
+
+relations:
+  - { type: runs_on, target: gpu-type, cardinality: "0..1" }
+  - { type: runs_on, target: cpu-flavor, cardinality: "0..1" }
+  - { type: located_in, target: data-center, cardinality: "1" }
+  - { type: requires, target: container-image, cardinality: "1" }
+  - { type: billed_by, target: serverless-billing, cardinality: "1" }
+
+rules:
+  - id: worker.status-vocabulary
+    applies_to: [field:status, field:isStale]
+    statement: >
+      REST v2 reports a worker as `INITIALIZING`, `IDLE`, `RUNNING`,
+      `THROTTLED` or `UNHEALTHY`. The console's "Outdated" state is not a REST
+      v2 status: a worker on an older configuration has `isStale` set to true,
+      derived by comparing its `version` with the response's
+      `endpointVersion`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "WorkerStatus; Worker.isStale", seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: The console's worker states table lists Outdated. }
+
+  - id: worker.status-derived
+    applies_to: [field:status]
+    statement: >
+      `status` combines the worker's lifecycle with the live job queue. When
+      the queue view is unavailable, `status` and the summary counts fall back
+      to the lifecycle alone. Workers that have scaled down are not listed.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/workers", seen: 2026-09-28 }
+
+  - id: worker.billing-by-state
+    applies_to: [state:RUNNING, state:IDLE, state:INITIALIZING, state:THROTTLED, state:UNHEALTHY]
+    statement: >
+      The public docs disagree on what a worker bills for. The worker states
+      table bills only workers that are processing requests, while the pricing
+      page also bills start time and the idle timeout after a request. Estimate
+      cost with the pricing page's reading, and remember that a worker kept up
+      by `workers.min` bills continuously.
+    status: documented
+    conflict: true
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: The worker states table marks only Running as billed. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", note: "Compute cost covers start time, execution time and the idle timeout." }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: A worker kept up by a minimum of 1 bills continuously. }
+
+  - id: worker.crash-loop-looks-queued
+    applies_to: [state:INITIALIZING, state:RUNNING]
+    statement: >
+      A worker that crash-loops on an image pull or a CUDA mismatch can show as
+      `INITIALIZING` or `RUNNING` while its job stays in `IN_QUEUE`. Read the
+      worker's logs with `source=system`. Repeated "start container" lines with
+      no container output mean the container exits before the handler runs.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/command-reference.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
+      - { source: rest-v2-spec, ref: LogSource, seen: 2026-09-28 }
+
+  - id: worker.unhealthy-scale-down
+    applies_to: [state:UNHEALTHY]
+    statement: >
+      Runpod retries an unhealthy worker for up to 7 days. An endpoint that
+      keeps producing unhealthy workers is scaled down automatically.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker states table and the note below it. }
+
+  - id: worker.cold-start
+    statement: >
+      A cold start happens when no warm worker is available: the container
+      starts and the model loads into GPU memory before the job runs. Time
+      spent waiting in the queue plus the cold start is reported as delay time,
+      separately from execution time.
+    status: documented
+    see: [flashboot.modes]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states", note: Delay time and cold start time metrics. }

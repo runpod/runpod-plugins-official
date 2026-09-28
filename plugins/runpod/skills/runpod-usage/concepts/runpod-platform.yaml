@@ -1,0 +1,52 @@
+id: runpod-platform
+name: Runpod (the platform)
+kind: platform
+summary: >
+  The GPU cloud where you rent Pods, deploy Serverless endpoints, call Public
+  Endpoints and attach storage. You manage it through the console, the REST
+  API, `runpodctl`, the SDKs and the Runpod MCP server.
+product: null
+is_a: null
+part_of: null
+aliases: [Runpod, Runpod console, Runpod API]
+
+surfaces:
+  console: Home
+
+relations: []
+
+rules:
+  - id: runpod-platform.rest-base-url
+    statement: >
+      The REST v2 base URL is `https://api.runpod.io/v2`, for example
+      `https://api.runpod.io/v2/pods`. The OpenAPI spec is served at
+      `https://api.runpod.io/v2/openapi.json`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: servers, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/api-reference-v2/overview", seen: 2026-09-28 }
+
+  - id: runpod-platform.api-generations
+    statement: >
+      Build new integrations on REST v2. REST v1 (`https://rest.runpod.io/v1`)
+      and the GraphQL API (`https://api.runpod.io/graphql`) are deprecated and
+      have announced retirement dates, so move existing code to REST v2.
+    status: documented
+    evidence:
+      - source: public-docs
+        url: "https://docs.runpod.io/api-reference-v2/migrate-from-v1"
+        seen: 2026-09-28
+        note: Gives November 15, 2026 as the REST v1 retirement date.
+      - source: public-docs
+        url: "https://docs.runpod.io/sdks/graphql/configurations"
+        seen: 2026-09-28
+        note: Gives early 2027 as the GraphQL retirement date.
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/SKILL.md }
+
+  - id: runpod-platform.brand-spelling
+    statement: >
+      Write the brand as "Runpod": one word, with only the R capitalized. The
+      CLI command is `runpodctl`, all lower-case.
+    status: documented
+    evidence:
+      - { source: other, ref: "runpod-plugins-official AGENTS.md, Conventions", url: "https://github.com/runpod/runpod-plugins-official/blob/main/AGENTS.md" }

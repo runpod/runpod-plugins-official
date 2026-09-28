@@ -1,0 +1,39 @@
+id: broken
+name: Broken
+kind: resource
+summary: Points at things that do not exist.
+product: null
+is_a: missing-parent
+part_of: null
+fields:
+  - { name: size, type: integer, set: create }
+relations:
+  - { type: located_in, target: nowhere }
+rules:
+  - id: broken.bad-target
+    applies_to: [field:color, state:GONE]
+    statement: Refers to a field and state that are not declared.
+    status: documented
+    see: [nothing.here]
+    evidence:
+      - { source: rest-v2-spec, ref: x }
+  - id: other.wrong-prefix
+    statement: Rule id does not start with the concept id.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: x }
+  - id: broken.leaks-internals
+    statement: Sizes are stored in PlanetScale and enforced by the host daemon.
+    status: documented
+    evidence:
+      - { source: other, ref: "learning:1781616865511" }
+  - id: broken.time-bound
+    statement: Resizing is currently not supported.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: x }
+  - id: broken.missing-skill-file
+    statement: Cites a skill file that does not exist.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/nowhere/SKILL.md }

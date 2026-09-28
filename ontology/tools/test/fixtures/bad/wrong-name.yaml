@@ -1,0 +1,8 @@
+id: not-the-file-name
+name: Wrong
+kind: gadget
+summary: Bad kind and mismatched id.
+product: null
+is_a: null
+part_of: null
+owner: { team: unknown }

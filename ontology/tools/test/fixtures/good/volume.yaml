@@ -1,0 +1,27 @@
+id: volume
+name: Volume
+kind: resource
+summary: Storage pinned to one site.
+product: storage
+is_a: null
+part_of: null
+aliases: [disk store]
+fields:
+  - { name: site, type: string, ref: site, set: create }
+relations:
+  - { type: located_in, target: site, cardinality: "1" }
+rules:
+  - id: volume.site-fixed
+    applies_to: [field:site]
+    statement: The site cannot change after creation.
+    status: documented
+    see: [site.capacity-hidden]
+    evidence:
+      - { source: rest-v2-spec, ref: Volume.site }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", note: Docs page for volumes }
+      - { source: other, path: notes/volume-probe.md }
+  - id: volume.backups
+    statement: Back up data you cannot recreate, because a volume has no snapshots.
+    status: verified
+    evidence:
+      - { source: live-probe, ref: "GET /v2/volumes/{id}", seen: 2026-09-28 }

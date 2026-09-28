@@ -1,0 +1,27 @@
+{
+  "name": "@runpod/ontology-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validate the concept files and build them into SQLite",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "validate": "node --disable-warning=ExperimentalWarning src/validate.ts",
+    "build:sqlite": "node --disable-warning=ExperimentalWarning src/build-sqlite.ts",
+    "build:graph": "node --disable-warning=ExperimentalWarning src/build-graph.ts",
+    "query": "node --disable-warning=ExperimentalWarning src/cli.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

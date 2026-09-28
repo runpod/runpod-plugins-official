@@ -1,0 +1,13 @@
+id: empty-evidence
+name: Empty evidence
+kind: resource
+summary: Has an evidence entry with nothing in it.
+product: null
+is_a: null
+part_of: null
+rules:
+  - id: empty-evidence.nothing
+    statement: Evidence with nothing in it.
+    status: documented
+    evidence:
+      - { source: other }

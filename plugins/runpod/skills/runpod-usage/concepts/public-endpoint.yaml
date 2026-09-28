@@ -1,0 +1,55 @@
+id: public-endpoint
+name: Public Endpoint
+kind: catalog
+summary: >
+  A model API hosted by Runpod, for image, video, audio or text, that you call
+  with your API key and pay for per output, with nothing to deploy.
+product: public-endpoints
+is_a: null
+part_of: runpod-platform
+aliases: [public endpoints, pay-per-use model API]
+
+surfaces:
+  mcp: [list-public-endpoints, run-endpoint, runsync-endpoint, get-job-status]
+  console: Public Endpoints
+
+relations:
+  - { type: requires, target: api-key, cardinality: "1" }
+  - { type: billed_by, target: serverless-billing, cardinality: "1" }
+  - { type: constrained_by, target: api-rate-limit, cardinality: "1" }
+
+rules:
+  - id: public-endpoint.no-deploy
+    statement: >
+      There is nothing to create. List the available models, then call
+      `https://api.runpod.ai/v2/<model-slug>/run` or `/runsync` with your API
+      key. Requests use the same job API as your own endpoints.
+    status: documented
+    see: [job.run-vs-runsync]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/public-endpoints/overview" }
+      - { source: public-docs, url: "https://docs.runpod.io/public-endpoints/requests" }
+      - { source: skill, path: plugins/runpod/skills/runpod-mcp/SKILL.md, note: Public endpoints section. }
+
+  - id: public-endpoint.pay-per-output
+    statement: >
+      Pricing is per output (per megapixel, per second of video, per million
+      tokens or per thousand characters), not per GPU time. Failed generations
+      are not charged.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/public-endpoints/overview", note: See the pricing section. }
+
+  - id: public-endpoint.spend-in-billing
+    statement: Public Endpoint spend appears in `GET /v2/billing/endpoints`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "EndpointBillingRecord; GET /v2/billing/endpoints", seen: 2026-09-28 }
+
+  - id: public-endpoint.output-urls-expire
+    statement: >
+      Output URLs (`image_url`, `video_url` and `audio_url`) expire after 7
+      days. Download anything you need to keep.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/public-endpoints/requests" }

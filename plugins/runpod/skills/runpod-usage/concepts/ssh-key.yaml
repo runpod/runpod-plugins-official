@@ -1,0 +1,44 @@
+id: ssh-key
+name: SSH key
+kind: resource
+summary: >
+  An SSH public key registered on the account. Registered keys are injected into pods
+  created with `startSsh` and authenticate SSH connections to them.
+product: account
+is_a: null
+part_of: runpod-platform
+aliases: [SSH public key, authorized key, PUBLIC_KEY]
+
+surfaces:
+  rest_v2:
+    schema: SshKeys
+    paths: [/v2/account/ssh-keys]
+  mcp: [get-ssh-keys, update-ssh-keys]
+  runpodctl: [ssh list-keys, ssh add-key, ssh remove-key]
+  console: Settings (SSH public keys)
+
+fields:
+  - { name: keys, type: "string[]", set: update, required: true, note: "One `authorized_keys` line per entry: `<type> <base64-key> [comment]`." }
+
+relations: []
+
+rules:
+  - id: ssh-key.put-replaces-all
+    applies_to: [field:keys]
+    statement: >
+      `PUT /v2/account/ssh-keys` replaces the full set. Keys missing from the request are
+      removed, and `[]` removes them all. To add one key, read the current set and send it
+      back with the new key appended.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "PUT /v2/account/ssh-keys; UpdateSshKeysRequest.keys", seen: 2026-09-28 }
+
+  - id: ssh-key.new-pods-only
+    applies_to: [field:keys]
+    statement: >
+      Key changes apply to pods created afterwards with `startSsh`. Running pods keep the
+      keys they were created with.
+    status: documented
+    see: [pod-ssh-access.start-ssh-needs-keys]
+    evidence:
+      - { source: rest-v2-spec, ref: "PUT /v2/account/ssh-keys", seen: 2026-09-28 }
