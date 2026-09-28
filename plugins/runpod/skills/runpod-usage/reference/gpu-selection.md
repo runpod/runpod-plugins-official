@@ -1,3 +1,7 @@
+---
+concepts: [gpu-type, gpu-availability, data-center, reservation-pool]
+---
+
 # GPU selection
 
 How to pick a GPU: size VRAM to the model first, then choose a tier/pool, then
@@ -116,3 +120,11 @@ GPU supply fluctuates by tier and region. To avoid throttling:
 - Regions span US (CA, GA, IL, KS, NC, TX, WA, etc.), EU (CZ, RO, IS, NO, SE, FR,
   NL), and others. See `docs/pods/networking.mdx` for the current data-center list
   and `companion-clis/SKILL.md` for datacenter IDs used with S3.
+
+## Guaranteed capacity: reserved pricing
+
+On-Demand pods take whatever GPUs are free when you deploy. For capacity held for your
+account, choose the **Reserved** pricing option; it is arranged with Runpod's sales team, not
+created through the API, so the console's deploy flow points to *Talk to sales* instead of
+deploying. The rule is in [`reservation-pool`](../concepts/reservation-pool.yaml).
+
