@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { collectGuides } from "../src/build-bundle.ts";
+import { formatConcept } from "../src/format.ts";
 import { graphData, renderGraph } from "../src/build-graph.ts";
 import { buildDatabase } from "../src/build-sqlite.ts";
 import { getConcept, guidesFor, neighbors, resolve, search, tree } from "../src/query.ts";
@@ -229,4 +230,33 @@ test("a concept that no guide covers is an error", () => {
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
   const { errors } = collectGuides([...concepts, { ...concepts[0]!, id: "orphan", rules: [] }], join(fixtures, "skills"), fixtures);
   assertHasError(errors, "concept orphan: no skill, reference doc or golden path covers it");
+});
+
+test("the formatter is stable and never changes the data", () => {
+  const messy = [
+    "rules:",
+    "  - evidence: [{source: rest-v2-spec, ref: x}]",
+    "    statement: Short one-line statement.",
+    "    id: volume.x",
+    "    status: documented",
+    "name: Volume",
+    "id: volume",
+    "kind: resource",
+    "aliases: [ disk, 'store, backup' ]",
+    "summary: A long summary that goes on and on so that it has to be folded across more than one line of the file.",
+    "product: null",
+    "is_a: null",
+    "part_of: null",
+    "",
+  ].join("\n");
+  const once = formatConcept(messy);
+  assert.equal(formatConcept(once), once);
+  assert.ok(once.startsWith("id: volume\nname: Volume\nkind: resource\nsummary: >\n"));
+  assert.ok(once.includes('aliases: [disk, "store, backup"]'));
+  assert.ok(once.includes("  - id: volume.x\n    statement: >\n      Short one-line statement.\n    status: documented\n    evidence:\n      - { source: rest-v2-spec, ref: x }"));
+  assert.ok(once.split("\n").every((line) => line.length <= 80 || line.includes("{") || line.includes("[")));
+  for (const file of ["volume.yaml", "site.yaml", "volume-setup.yaml"]) {
+    const text = readFileSync(join(fixtures, "good", file), "utf8");
+    assert.equal(formatConcept(formatConcept(text)), formatConcept(text));
+  }
 });

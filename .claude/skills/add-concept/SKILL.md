@@ -87,6 +87,7 @@ correctly, and no words like "currently" or "not yet". The full list is in
 
 ```bash
 cd ontology/tools
+pnpm format              # canonical style; CI runs format:check
 pnpm validate --strict   # must report 0 errors and 0 warnings
 pnpm test
 pnpm build:graph         # open ../build/graph.html

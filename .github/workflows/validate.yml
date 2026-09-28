@@ -76,6 +76,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm format:check
       - run: pnpm validate --strict
       - run: pnpm check:guides
       - run: pnpm build:sqlite

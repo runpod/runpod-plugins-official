@@ -10,6 +10,8 @@
   },
   "scripts": {
     "validate": "node --disable-warning=ExperimentalWarning src/validate.ts",
+    "format": "node --disable-warning=ExperimentalWarning src/format.ts",
+    "format:check": "node --disable-warning=ExperimentalWarning src/format.ts --check",
     "build:sqlite": "node --disable-warning=ExperimentalWarning src/build-sqlite.ts",
     "build:graph": "node --disable-warning=ExperimentalWarning src/build-graph.ts",
     "build:bundle": "node --disable-warning=ExperimentalWarning src/build-bundle.ts",
