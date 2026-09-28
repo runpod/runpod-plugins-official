@@ -1,0 +1,116 @@
+id: exposed-port
+name: Exposed port
+kind: component
+summary: >
+  A container port opened to the outside. HTTP ports are served through the
+  Runpod proxy at `https://<pod-id>-<port>.proxy.runpod.net`; TCP ports get a
+  public IP and an external port. Ports that are not exposed cannot be reached
+  from outside the pod.
+product: pods
+is_a: null
+part_of: pod
+aliases: [ports, port mappings, proxy URL, HTTP proxy, TCP port, public IP]
+
+surfaces:
+  rest_v2: { schema: Pod }
+  runpodctl: [pod create --ports, pod update --ports]
+  console: Pods (Connect menu)
+
+fields:
+  - { name: ports, type: "string[]", set: "create,update", note: "Each entry is port/protocol, for example `8888/http` or `22/tcp`." }
+  - { name: runtime.ports, type: "PodRuntimePort[]", set: read, note: "The live mapping: `private`, `public`, `type` and `ip`." }
+
+relations:
+  - { type: constrained_by, target: cloud-tier, cardinality: "1" }
+
+rules:
+  - id: exposed-port.http-proxy
+    applies_to: ["field:ports"]
+    statement: >
+      An HTTP port N is served at `https://<pod-id>-<N>.proxy.runpod.net`, over
+      HTTPS only. The service must listen on `0.0.0.0`, not `localhost`. A pod
+      can expose at most 10 HTTP ports.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }
+
+  - id: exposed-port.proxy-100s-timeout
+    applies_to: ["field:ports"]
+    statement: >
+      Requests through the HTTP proxy time out after 100 seconds with a `524`
+      error. For longer work, return a job id and let the client poll, or use a
+      TCP port.
+    on_violation: 524
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", note: Proxy limitations and behavior. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
+
+  - id: exposed-port.proxy-is-public
+    applies_to: ["field:ports"]
+    statement: >
+      A proxy URL is public and unauthenticated; a hard-to-guess pod id is not
+      access control. Tell the user when you hand out a proxy URL, and add
+      authentication inside the service if it handles anything sensitive.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", note: Public accessibility. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }
+
+  - id: exposed-port.mappings-appear-late
+    applies_to: ["field:runtime.ports"]
+    statement: >
+      `runtime.ports` shows a public IP and external port only once the pod is
+      running and the mapping is ready. A null `public` or `ip` right after
+      start is expected; read the pod again, or check the console's **Connect**
+      menu.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "PodRuntimePort.public; Pod.runtime", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
+
+  - id: exposed-port.tcp-port-changes
+    applies_to: ["field:runtime.ports"]
+    statement: >
+      The external TCP port differs from the internal one and is reassigned on
+      every reset and on every stop and start, so read it again after each
+      restart.
+    status: documented
+    see: [cloud-tier.community-ip-changes]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", note: TCP access via public IP. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
+
+  - id: exposed-port.symmetric-ports
+    applies_to: ["field:ports"]
+    statement: >
+      To get the same internal and external TCP port, request a port number
+      above 70000. The assigned port is available inside the pod as an
+      environment variable such as `RUNPOD_TCP_PORT_70000`.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", note: Symmetrical port mapping. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/networking.md }
+
+  - id: exposed-port.proxy-502-not-ready
+    applies_to: ["field:ports"]
+    statement: >
+      A proxy `502` or `404` on an HTTP port usually means the service behind it
+      is still starting or has crashed, not that the pod is gone. Check the pod
+      logs and retry.
+    status: documented
+    see: [pod.running-is-not-ready]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/troubleshooting-502-errors" }
+
+  - id: exposed-port.no-udp
+    applies_to: ["field:ports"]
+    statement: >
+      Only `http` and `tcp` ports work; pods do not support UDP. Some official
+      templates list `22/udp`, which has no effect.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", note: TCP access via public IP. }
+      - { source: skill, path: plugins/runpod/skills/runpod-templates/reference/pytorch.md, note: "The template's ports include 22/udp." }

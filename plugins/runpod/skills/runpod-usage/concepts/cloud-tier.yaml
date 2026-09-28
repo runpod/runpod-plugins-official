@@ -1,0 +1,75 @@
+id: cloud-tier
+name: Cloud tier
+kind: catalog
+summary: >
+  Where a pod's hardware comes from: Secure Cloud, which runs in T3/T4 data
+  centers and is the default, or Community Cloud, which uses vetted independent
+  providers at lower prices.
+product: null
+is_a: null
+part_of: runpod-platform
+aliases: [Secure Cloud, Community Cloud, cloud, cloudType, SECURE, COMMUNITY]
+
+surfaces:
+  rest_v2: { schema: Cloud, paths: [] }
+  graphql: { type: CloudTypeEnum }
+  runpodctl: [pod create --cloud-type]
+
+fields: []
+
+relations:
+  - { type: constrained_by, target: gpu-availability, cardinality: "1" }
+
+rules:
+  - id: cloud-tier.enum-and-default
+    statement: >
+      In REST v2, `cloud` is `SECURE` or `COMMUNITY` and defaults to `SECURE` on
+      pod create. GraphQL's `cloudType: ALL` has no REST v2 equivalent, so pick
+      one tier.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "Cloud; CreatePodRequest.cloud", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
+
+  - id: cloud-tier.default-to-secure
+    statement: >
+      Use Secure Cloud unless the user asks for Community Cloud. Secure Cloud
+      runs in T3/T4 data centers with high redundancy; Community Cloud is
+      cheaper but less predictable. Community Cloud does not accept new hosts,
+      and its existing capacity remains available.
+    status: documented
+    see: [network-volume.secure-cloud-only]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/choose-a-pod", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/concepts.md }
+
+  - id: cloud-tier.price-and-offer-per-gpu
+    statement: >
+      Each GPU type states whether each cloud offers it and lists a price per
+      cloud. A `false` for a cloud means that cloud does not offer the GPU. Do
+      not assume Community Cloud is always cheaper; compare the two prices.
+    status: documented
+    see: [gpu-type.price-is-list-per-gpu]
+    evidence:
+      - { source: rest-v2-spec, ref: "GpuType.secure; GpuType.community; GpuType.price", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gpu-selection.md }
+
+  - id: cloud-tier.community-ip-changes
+    statement: >
+      A Community Cloud pod's public IP address can change when the pod is
+      migrated or restarted, so do not hard-code it. Secure Cloud IP addresses
+      are expected to stay stable.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/expose-ports", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
+
+  - id: cloud-tier.community-absent-in-some-dcs
+    statement: >
+      Stock differs by cloud and by data center, and catalog availability
+      defaults to Secure Cloud. Pass `cloud=COMMUNITY` with
+      `include=AVAILABILITY` to see where Community Cloud has capacity before
+      pinning both Community Cloud and a data center.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus cloud parameter; GpuCloudFilter", seen: "2026-09-28" }

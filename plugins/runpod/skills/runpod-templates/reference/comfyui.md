@@ -1,3 +1,7 @@
+---
+concepts: [template, pod, container-image, network-volume, exposed-port]
+---
+
 # Official ComfyUI templates
 
 ComfyUI + dependencies + custom nodes baked in, **auto-starting on boot**. No SSH, no

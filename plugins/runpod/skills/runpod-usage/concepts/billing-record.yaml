@@ -1,0 +1,104 @@
+id: billing-record
+name: Billing record
+kind: billing
+summary: >
+  A time bucket of spend (an hour, day, week, month or year) with the total and
+  each cost component broken out: pods, serverless, storage, Public Endpoints
+  and Instant Clusters.
+product: billing
+is_a: null
+part_of: runpod-platform
+aliases: [billing, spend, usage, billing history, UserBilling]
+
+surfaces:
+  rest_v2: { schema: BillingRecord, paths: [/v2/billing, /v2/billing/endpoints, /v2/billing/clusters] }
+  graphql: { type: UserBilling }
+  mcp: [list-billing, list-endpoint-billing, list-cluster-billing]
+  console: Billing
+
+fields:
+  - { name: startTime, type: string, set: read, note: "Inclusive, RFC 3339." }
+  - { name: endTime, type: string, set: read, note: "Exclusive, RFC 3339." }
+  - { name: totalAmount, type: number, unit: USD, set: read }
+  - { name: podGpuAmount, type: number, unit: USD, set: read }
+  - { name: podCpuAmount, type: number, unit: USD, set: read }
+  - { name: podDiskAmount, type: number, unit: USD, set: read }
+  - { name: serverlessGpuAmount, type: number, unit: USD, set: read }
+  - { name: serverlessCpuAmount, type: number, unit: USD, set: read }
+  - { name: serverlessDiskAmount, type: number, unit: USD, set: read }
+  - { name: serverlessFeeAmount, type: number, unit: USD, set: read, note: Always 0. }
+  - { name: storageStandardAmount, type: number, unit: USD, set: read }
+  - { name: storageHighPerformanceAmount, type: number, unit: USD, set: read }
+  - { name: endpointAmount, type: number, unit: USD, set: read, note: Public Endpoint spend. }
+  - { name: clusterGpuAmount, type: number, unit: USD, set: read }
+  - { name: clusterDiskAmount, type: number, unit: USD, set: read }
+  - { name: clusterNetworkingAmount, type: number, unit: USD, set: read }
+
+relations: []
+
+rules:
+  - id: billing-record.query-window
+    applies_to: ["field:startTime", "field:endTime"]
+    statement: >
+      Billing is read-only history. `bucketSize` is `hour`, `day`, `week`,
+      `month` or `year` (default `day`). The window defaults to the last 30 days
+      and snaps to bucket boundaries, with `endTime` exclusive. Use `lastN` with
+      `bucketSize` for the most recent buckets; the last bucket is still in
+      progress.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/billing parameters; BillingBucketSize", seen: "2026-09-28" }
+
+  - id: billing-record.one-call-total
+    applies_to: ["field:totalAmount"]
+    statement: >
+      `GET /v2/billing` returns total spend across every resource with each
+      component broken out, so there is no need to add up the per-resource
+      billing routes.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/billing, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/unlocks.md }
+
+  - id: billing-record.component-breakdown
+    applies_to: ["field:podDiskAmount", "field:storageStandardAmount", "field:storageHighPerformanceAmount", "field:serverlessDiskAmount"]
+    statement: >
+      Storage spend is split into pod disk, serverless disk, and standard and
+      high-performance network volume storage. `endpointAmount` is Public
+      Endpoint spend, not serverless spend.
+    status: documented
+    see: [serverless-billing.endpoints-route-is-public-endpoints]
+    evidence:
+      - { source: rest-v2-spec, ref: BillingRecord, seen: "2026-09-28" }
+
+  - id: billing-record.fee-always-zero
+    applies_to: ["field:serverlessFeeAmount"]
+    statement: >
+      `serverlessFeeAmount` is always 0. Platform charges are included in the
+      serverless compute amounts.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: BillingRecord.serverlessFeeAmount, seen: "2026-09-28" }
+
+  - id: billing-record.per-second-billing
+    statement: >
+      Compute and storage are billed per second, charges are deducted from the
+      account's prepaid credits as resources run, and data transfer is free.
+      Billing runs every 5 minutes. A Serverless worker's container disk is the
+      exception: it is billed in 5-minute intervals.
+    status: documented
+    see: [credit-balance.low-balance-actions, container-disk.billing]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
+
+  - id: billing-record.cost-centers
+    statement: >
+      Cost centers attribute spend to a team, project or department. Each pod,
+      serverless endpoint, network volume or Instant Cluster belongs to at most
+      one cost center, and unassigned resources are reported as uncategorized.
+      Cost centers are managed in the console; the REST v2 billing routes take
+      no cost-center filter.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/cost-centers", seen: "2026-09-28" }
+      - { source: rest-v2-spec, ref: GET /v2/billing parameters, seen: "2026-09-28" }

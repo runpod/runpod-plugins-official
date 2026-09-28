@@ -1,3 +1,7 @@
+---
+concepts: [template, pod]
+---
+
 # Use ComfyUI-RunpodDirect
 
 RunpodDirect is the last-mile executor for an approved model manifest. The skill remains

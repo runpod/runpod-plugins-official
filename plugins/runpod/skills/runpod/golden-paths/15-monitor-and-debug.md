@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, runpod-mcp, rest]
+mcp: full
+concepts: [serverless-endpoint, worker, job, log-stream, serverless-handler]
+---
+
 # Golden path 15 — monitor & debug serverless (is my endpoint healthy, why is a job failing)
 
 **Goal:** the observability toolkit for a running serverless endpoint — answer "are my
@@ -42,7 +48,7 @@ endpoint up; this one tells you whether it's healthy and why a job did what it d
 | Are workers healthy / how many? | worker state counts | `runpodctl serverless health <id>` · MCP `endpoint-health` | `GET api.runpod.ai/v2/<id>/health` |
 | Where is *this* job? | job state + timings | `runpodctl serverless status <id> <job-id>` · MCP `get-job-status` | `GET api.runpod.ai/v2/<id>/status/<job-id>` |
 | What did the worker *do*? | container/system logs | `runpodctl serverless logs <id>` · MCP `stream-worker-logs` | `GET v2-rest.runpod.io/v2/serverless/<id>/workers/<worker-id>/logs` (SSE) · Console Workers tab |
-| Did my config change take? | endpoint config | `runpodctl serverless update <id> …` then `serverless get <id>` | v1 `PATCH`/`GET rest.runpod.io/v1/endpoints/<id>` |
+| Did my config change take? | endpoint config | `runpodctl serverless update <id> …` then `serverless get <id>` | `PATCH`/`GET api.runpod.io/v2/serverless/<id>` |
 
 All four signals are free to read. The raw HTTP column is what you hand a user for copy-paste,
 what a non-Runpod client speaks, and what you fall back to on an older binary.
@@ -55,8 +61,8 @@ subcommand, and the worker-log signal has to come from the v2 REST SSE path, the
 `stream-worker-logs` tool, or the Console **Workers** tab. Check `runpodctl version` first.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable (the same key authorizes `api.runpod.ai/v2`, `rest.runpod.io/v1`,
-  and `v2-rest.runpod.io/v2`). `runpodctl` also reads the key saved by `runpodctl doctor`.
+- `RUNPOD_API_KEY` resolvable (the same key authorizes `api.runpod.ai/v2` and the REST v2
+  API at `api.runpod.io/v2`, also served as `v2-rest.runpod.io/v2`). `runpodctl` also reads the key saved by `runpodctl doctor`.
 - A deployed endpoint id. Below uses a tiny CPU echo endpoint (build any handler; see
   [05](05-model-to-endpoint-pipeline.md) for the two-step template→endpoint pattern).
 
@@ -307,10 +313,9 @@ MCP is already connected and you want parsed frames without shelling out.
 
 ## 4. Config-change events (max-workers / region changes fire alerts)
 
-Endpoint config is edited with a v1 `PATCH`; each applied change is a config-change event
+Endpoint config is edited with a `PATCH`; each applied change is a config-change event
 (the same events surface as endpoint alerts/notifications). `runpodctl serverless update` is
-the first-class wrapper — source-verified in the v2.9.0 tree, it issues exactly that
-`PATCH /endpoints/<id>` against `rest.runpod.io/v1`:
+the first-class wrapper; the raw call is `PATCH https://api.runpod.io/v2/serverless/<id>`:
 ```bash
 # scale ceiling — CLI
 runpodctl serverless update <endpoint-id> --workers-max 3
@@ -319,18 +324,18 @@ runpodctl serverless update <endpoint-id> --workers-max 3
 # confirm
 runpodctl serverless get <endpoint-id>
 ```
-The CLI has **no data-center flag**, so a region change is still a raw `PATCH` (verified live
-2026-07-13, HTTP 200 each):
+The CLI has **no data-center flag**, so a region change is a raw `PATCH` against REST v2
+(`UpdateEndpointRequest`: `dataCenterIds`, and `workers.max` for the ceiling):
 ```bash
 # network region / data-center set
-curl -s -X PATCH https://rest.runpod.io/v1/endpoints/<endpoint-id> \
+curl -s -X PATCH https://api.runpod.io/v2/serverless/<endpoint-id> \
   -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
   -d '{"dataCenterIds":["EU-RO-1","EU-CZ-1"]}'
 # ...and the curl equivalent of the CLI call above
-curl -s -X PATCH https://rest.runpod.io/v1/endpoints/<endpoint-id> \
+curl -s -X PATCH https://api.runpod.io/v2/serverless/<endpoint-id> \
   -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
-  -d '{"workersMax":3}'
-curl -s https://rest.runpod.io/v1/endpoints/<endpoint-id> -H "Authorization: Bearer $RUNPOD_API_KEY"
+  -d '{"workers":{"max":3}}'
+curl -s https://api.runpod.io/v2/serverless/<endpoint-id> -H "Authorization: Bearer $RUNPOD_API_KEY"
 ```
 Changing **max workers** (capacity) or the **network region / data-center** set are the two
 config changes worth watching — they directly move the `/health` worker counts and where jobs

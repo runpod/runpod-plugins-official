@@ -1,0 +1,53 @@
+id: network-volume-billing
+name: Network volume billing
+kind: billing
+summary: >
+  What network volumes cost over time, split into standard and high-performance
+  storage, with one record per volume per time bucket.
+product: billing
+is_a: billing-record
+part_of: null
+aliases: [storage billing, volume cost]
+
+surfaces:
+  rest_v2: { schema: NetworkVolumeBillingRecord, paths: [/v2/billing/network-volumes] }
+  mcp: [list-network-volume-billing]
+  runpodctl: [billing network-volume]
+
+fields:
+  - { name: networkVolumeId, type: string, ref: network-volume, set: read }
+  - { name: startTime, type: string, set: read }
+  - { name: endTime, type: string, set: read }
+  - { name: totalAmount, type: number, unit: USD, set: read }
+  - { name: standardAmount, type: number, unit: USD, set: read }
+  - { name: highPerformanceAmount, type: number, unit: USD, set: read }
+
+relations:
+  - { type: requires, target: network-volume, cardinality: "1" }
+
+rules:
+  - id: network-volume-billing.per-volume-per-bucket
+    applies_to: ["field:networkVolumeId", "field:standardAmount", "field:highPerformanceAmount"]
+    statement: >
+      Records are one per volume per bucket, split into standard and
+      high-performance storage. Pass `networkVolumeId` to narrow the results to
+      one volume. The path is hyphenated (`/v2/billing/network-volumes`), unlike
+      REST v1's `/billing/networkvolumes`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "NetworkVolumeBillingRecord; GET /v2/billing/network-volumes", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md }
+
+  - id: network-volume-billing.price
+    applies_to: ["field:totalAmount"]
+    statement: >
+      Network volume storage is billed hourly per GB of allocated size from
+      creation until deletion, whether or not anything is attached. The per-GB
+      rate is lower for the part of a volume above 1 TB. Delete volumes you no
+      longer need.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
+      - { source: rest-v2-spec, ref: POST /v2/network-volumes }

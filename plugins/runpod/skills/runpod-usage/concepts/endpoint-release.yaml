@@ -1,0 +1,74 @@
+id: endpoint-release
+name: Endpoint release
+kind: component
+summary: >
+  A versioned snapshot of an endpoint's configuration. Each change to the
+  endpoint's container creates one, and workers move to it as they are replaced.
+product: serverless
+is_a: null
+part_of: serverless-endpoint
+aliases: [release, rollout, rolling release, rolling update, endpoint version]
+
+surfaces:
+  rest_v2: { schema: Release, paths: ["/v2/serverless/{id}/releases"] }
+  mcp: [list-endpoint-releases]
+  console: Serverless > Releases
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: version, type: integer, set: read, note: endpoint configuration version this release produced }
+  - { name: source, type: enum, values: [GIT_BUILD, MANUAL], set: read }
+  - { name: buildId, type: string, ref: endpoint-build, set: read, note: "set when `source` is `GIT_BUILD`" }
+  - { name: workerCount, type: integer, set: read, note: workers running this version }
+  - { name: diff, type: "ReleaseDiffEntry[]", set: read, note: configuration fields that changed }
+  - { name: createdAt, type: string, set: read }
+
+relations:
+  - { type: uses, target: endpoint-build, cardinality: "0..1" }
+  - { type: uses, target: template, cardinality: "0..1" }
+
+rules:
+  - id: endpoint-release.rollout
+    statement: >
+      A container change (`image`, `env`, `args`, `disk`, `ports`, `registry`,
+      or an update to the bound template) creates a new release and starts a
+      rolling release. Idle workers on the old version are replaced right away;
+      busy workers finish their current job first, so the endpoint keeps serving
+      requests. Track progress with the rollout summary and each worker's
+      `isStale`.
+    status: documented
+    see: [worker.status-vocabulary]
+    evidence:
+      - { source: rest-v2-spec, ref: "PATCH /v2/serverless/{id}; GET /v2/serverless/{id}/releases; RolloutSummary", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/rolling-releases", note: How idle and running workers are replaced. }
+
+  - id: endpoint-release.version-overlap
+    statement: >
+      During a rollout some workers run the old version and some the new one.
+      For strict version consistency, set `workers.max` to 0, wait for the
+      workers to stop, update the endpoint, then restore `workers.max`. Use
+      versioned image tags instead of `:latest`, because existing workers can
+      keep serving a cached `:latest` image.
+    status: documented
+    see: [serverless-endpoint.max-zero-stops-workers]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/rolling-releases", note: Best practices. }
+
+  - id: endpoint-release.source
+    applies_to: ["field:source", "field:buildId"]
+    statement: >
+      `source` is `GIT_BUILD` for a release produced by a GitHub build, with
+      `buildId` set, or `MANUAL` for a configuration change, with `buildId`
+      null.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "Release.source; Release.buildId; ReleaseSource", seen: "2026-09-28" }
+
+  - id: endpoint-release.rollout-summary-page-independent
+    statement: >
+      The release list is paginated newest first, with a default limit of 1000.
+      Its rollout summary always describes the endpoint's current state,
+      whichever page is requested.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/releases", seen: "2026-09-28" }

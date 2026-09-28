@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-handler, worker, job, serverless-endpoint, template, endpoint-autoscaling]
+---
+
 # Golden path 18 — concurrent handler (one worker serving many requests at once)
 
 **Goal:** from "make each worker do more" — write an **async** handler with a

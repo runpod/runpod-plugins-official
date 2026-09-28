@@ -1,0 +1,115 @@
+id: endpoint-autoscaling
+name: Endpoint autoscaling
+kind: capability
+summary: >
+  How an endpoint adds and removes workers. A scaler watches queue delay or
+  in-flight requests and keeps the worker count between `workers.min` and
+  `workers.max`.
+product: serverless
+is_a: null
+part_of: serverless-endpoint
+aliases: [scaler, scale to zero, min workers, max workers, idle timeout, workersMin, workersMax, workersStandby]
+
+surfaces:
+  mcp: [create-endpoint, update-endpoint]
+  runpodctl: [serverless create, serverless update]
+  console: Serverless > Edit endpoint
+
+relations:
+  - { type: constrained_by, target: gpu-availability, cardinality: "1" }
+  - { type: constrained_by, target: credit-balance, cardinality: "1" }
+
+rules:
+  - id: endpoint-autoscaling.scalers
+    statement: >
+      `QUEUE_DELAY` adds workers when jobs wait longer than `scaling.queueDelay`
+      seconds (minimum 0.5) and applies only to `QUEUE` endpoints.
+      `REQUEST_COUNT` targets `scaling.requestCount` in-flight requests per
+      worker and is required for `LOAD_BALANCER` endpoints. Both stay within
+      `workers.min` and `workers.max`, and the scaler can be switched on update.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "EndpointScaling; QueueDelayScaling; RequestCountScaling", seen: "2026-09-28" }
+
+  - id: endpoint-autoscaling.scaler-math
+    statement: >
+      The console's default queue delay is 4 seconds. `REQUEST_COUNT` aims for
+      `ceil((requests in queue + requests in progress) / requestCount)` workers,
+      so a value of 1 scales most aggressively.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Auto-scaling type. }
+
+  - id: endpoint-autoscaling.min-max
+    statement: >
+      `workers.min` 0 lets the endpoint scale to zero, with no compute charge
+      once the idle timeout ends. `workers.min` above 0 keeps that many workers
+      running and billing, even with no traffic. `workers.max` is a hard cap: on
+      a `QUEUE` endpoint extra jobs wait in the queue, while a load-balanced
+      endpoint has no queue.
+    status: documented
+    see: [serverless-billing.active-workers-bill-idle, serverless-endpoint.lb-no-queue, endpoint-autoscaling.idle-timeout]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Decision rules and serverless facts. }
+
+  - id: endpoint-autoscaling.active-worker-means-min
+    statement: >
+      An "active worker" is one kept warm by `workers.min`, not `workers.max`.
+      Set `workers.min` back to 0 after development.
+    status: documented
+    see: [serverless-billing.active-workers-bill-idle]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Active worker means minimum workers. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker types. }
+
+  - id: endpoint-autoscaling.idle-timeout
+    statement: >
+      `workers.idleTimeout` (1 to 3600 seconds) is how long a worker stays up
+      after its last request, and that time is billed. It is rejected on a
+      `QUEUE` endpoint that scales on `REQUEST_COUNT`. A short timeout makes
+      batch or evaluation workloads cold-start between requests, so raise it for
+      them.
+    on_violation: 422
+    status: documented
+    see: [serverless-endpoint.defaults-by-layer]
+    evidence:
+      - { source: rest-v2-spec, ref: EndpointWorkers.idleTimeout, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: "Explains when `idleTimeout` is rejected." }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle timeout is billed. }
+
+  - id: endpoint-autoscaling.account-worker-quota
+    statement: >
+      The total `workers.max` across all of your endpoints is capped by your
+      account balance. The cap starts at 5 and rises with balance; the public
+      docs list the tiers, and support can raise it further. The cap is checked
+      at create and whenever `workers.max` goes up.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Max worker limits. }
+
+  - id: endpoint-autoscaling.gpu-auto-switch-needs-five
+    statement: >
+      With several GPU pools listed, the platform switches between them based on
+      supply only when `workers.max` is at least 5.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 8. }
+
+  - id: endpoint-autoscaling.extra-workers
+    statement: >
+      During traffic spikes the platform can add extra workers on hosts that
+      already have the image cached.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker types. }
+
+  - id: endpoint-autoscaling.idle-endpoint-scale-down
+    statement: >
+      An endpoint that receives no requests for 3 days has `workers.max` lowered
+      to 2, and Runpod emails the owner. After 7 days without requests,
+      `workers.max` is set to 0. It stays there until you raise it, and any
+      request resets the timer.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle endpoint scale-down. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/troubleshooting", note: Prolonged inactivity. }

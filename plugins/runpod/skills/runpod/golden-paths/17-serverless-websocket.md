@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-endpoint, worker, template, exposed-port, container-image, endpoint-autoscaling]
+---
+
 # Golden path 17 — serverless WebSocket worker (load-balancing endpoint)
 
 **Goal:** serve a **bidirectional, persistent WebSocket** from a serverless worker — a

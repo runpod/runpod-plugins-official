@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh, flash, runpod-mcp]
+mcp: partial
+concepts: [pod, network-volume, data-center, serverless-endpoint, worker, serverless-handler, flash, log-stream]
+---
+
 # Golden path 07 — network-volume handoff (pod → volume → serverless)
 
 **Goal:** produce data on a **pod**, persist it to a **network volume**, and have a

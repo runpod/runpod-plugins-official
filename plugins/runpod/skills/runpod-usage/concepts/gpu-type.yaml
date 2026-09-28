@@ -1,0 +1,86 @@
+id: gpu-type
+name: GPU type
+kind: catalog
+summary: >
+  A GPU hardware model, such as NVIDIA RTX A6000, with its VRAM, the clouds that
+  offer it, its list prices, and the most GPUs one pod can use.
+product: null
+is_a: null
+part_of: runpod-platform
+aliases: [GPU, gpuTypeId, GpuType, GPU model]
+
+surfaces:
+  rest_v2: { schema: GpuType, paths: [/v2/catalog/gpus, "/v2/catalog/gpus/{id}"] }
+  graphql: { type: GpuType, queries: [gpuTypes] }
+  mcp: [list-gpu-types, get-gpu-type]
+  runpodctl: [gpu list]
+
+fields:
+  - { name: id, type: string, set: read, note: "Pass as `gpu.id` on pod create." }
+  - { name: name, type: string, set: read }
+  - { name: pool, type: string, ref: gpu-pool, set: read, note: "Pass to serverless endpoints; null when the GPU is not in a serverless pool." }
+  - { name: manufacturer, type: enum, values: [NVIDIA, AMD, UNKNOWN], set: read }
+  - { name: memory, type: integer, unit: GB, set: read, note: VRAM per GPU. }
+  - { name: secure, type: boolean, set: read, note: Offered on Secure Cloud. }
+  - { name: community, type: boolean, set: read, note: Offered on Community Cloud. }
+  - { name: price.secure, type: number, unit: USD per GPU per hour, set: read }
+  - { name: price.community, type: number, unit: USD per GPU per hour, set: read }
+  - { name: price.serverless, type: number, unit: USD per GPU per hour, set: read }
+  - { name: maxCount.secure, type: integer, set: read }
+  - { name: maxCount.community, type: integer, set: read }
+  - { name: availability, type: AvailabilityLevel, set: read, note: "Returned only with `include=AVAILABILITY` and `product`." }
+  - { name: dataCenters, type: "DataCenterAvailability[]", set: read, note: "Returned only with `include=AVAILABILITY` and `product`." }
+  - { name: cudaVersions, type: "CudaVersionAvailability[]", set: read, note: "Returned only with `include=AVAILABILITY`." }
+
+relations:
+  - { type: uses, target: gpu-pool, cardinality: "0..1" }
+  - { type: constrained_by, target: gpu-availability, cardinality: "1" }
+  - { type: constrained_by, target: cloud-tier, cardinality: "1..n" }
+
+rules:
+  - id: gpu-type.price-is-list-per-gpu
+    applies_to: ["field:price.secure", "field:price.community", "field:price.serverless"]
+    statement: >
+      `price` is the hourly list price for one GPU, quoted per cloud for pods
+      and as the pool rate for serverless. Multiply it by `gpu.count` for the
+      rate of a pod or worker. The rate actually billed for a pod is the pod's
+      own `cost` field.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GpuType.price, seen: "2026-09-28" }
+
+  - id: gpu-type.max-count-not-stock
+    applies_to: ["field:maxCount.secure", "field:maxCount.community"]
+    statement: >
+      `maxCount` is the most GPUs one pod of this type can have in that cloud,
+      which is the GPU count of the largest machine. It is a ceiling, not stock.
+      Read `availability` for what is free.
+    status: documented
+    see: [gpu-type.availability-needs-product]
+    evidence:
+      - { source: rest-v2-spec, ref: GpuType.maxCount, seen: "2026-09-28" }
+
+  - id: gpu-type.availability-needs-product
+    applies_to: ["field:availability", "field:dataCenters", "field:cudaVersions"]
+    statement: >
+      Availability is returned only with `include=AVAILABILITY`, which requires
+      `product` (`POD`, `CLUSTER` or `SERVERLESS`). Sending either parameter
+      without the other returns 400. A missing `dataCenters` list means the
+      requested configuration is unavailable everywhere.
+    on_violation: 400
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus parameters; GpuType.dataCenters", seen: "2026-09-28" }
+
+  - id: gpu-type.cuda-versions-with-capacity
+    applies_to: ["field:cudaVersions"]
+    statement: >
+      `cudaVersions` lists the CUDA versions that have free capacity for a GPU
+      type, because machines of the same type can run different drivers. A pod
+      pinned to a version marked `available: false` fails on capacity. A GPU
+      type whose machines report no CUDA version, such as an AMD GPU, has no
+      `cudaVersions` at all.
+    status: documented
+    see: [machine.cuda-is-per-machine, gpu-pool.pool-vs-type-ids]
+    evidence:
+      - { source: rest-v2-spec, ref: "GpuType.cudaVersions; CudaVersionAvailability", seen: "2026-09-28" }

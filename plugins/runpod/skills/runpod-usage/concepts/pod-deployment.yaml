@@ -1,0 +1,93 @@
+id: pod-deployment
+name: How pod deployment works
+kind: process
+summary: >
+  What happens from creating a pod to restarting it. A pod is placed on one
+  machine in a data center and stays tied to that machine. Stopping it releases
+  the machine's GPUs to other customers, so a later start can find no GPU on
+  that machine even when the data center has stock.
+product: pods
+is_a: null
+part_of: pod
+aliases: [pod placement, deploying a pod, pod scheduling, zero GPU pods]
+
+steps:
+  - id: request
+    title: Request a pod
+    description: >
+      You choose a GPU type and count (or a CPU flavor), a cloud tier, and
+      optionally a list of data centers. Attaching a network volume limits the
+      pod to the volume's data center.
+    concepts: [pod, gpu-type, cloud-tier, data-center, network-volume]
+    rules: [pod.gpu-xor-cpu, cloud-tier.default-to-secure, pod.network-volume-same-dc]
+
+  - id: place
+    title: Runpod places it on a machine
+    description: >
+      Runpod looks for one machine, in an allowed data center, with that many
+      free GPUs of exactly the type you asked for. It does not substitute
+      another GPU type. If no machine qualifies, the create call fails.
+    concepts: [machine, data-center, gpu-availability, gpu-type]
+    rules: [pod.no-capacity-fallback, machine.largest-machine-caps-gpu-count]
+
+  - id: run
+    title: The pod runs on that machine
+    description: >
+      The pod's GPUs on that machine are reserved for it while it runs, and
+      compute is billed. Create returns before the pod is ready, so poll its
+      status and then check the service inside it.
+    concepts: [pod, machine, pod-billing]
+    rules: [pod.create-is-async, pod.running-is-not-ready, machine.gpus-are-per-machine]
+
+  - id: stop
+    title: Stopping releases the GPUs
+    description: >
+      Stopping the pod releases its GPUs, and another customer can rent them.
+      The pod stays tied to the same machine. Its volume disk stays on the
+      machine and is still billed, and its container disk is cleared.
+    concepts: [pod, machine, pod-volume-disk, container-disk, pod-billing]
+    rules: [pod.stopped-pod-keeps-host, container-disk.what-survives, pod.cost-is-compute-only]
+
+  - id: restart
+    title: Restarting needs a GPU on the same machine
+    description: >
+      Starting the pod again resumes it on its original machine. If that
+      machine's GPUs were rented while the pod was stopped, the pod cannot get a
+      GPU, even when the data center or region reports stock for the same GPU
+      type on other machines.
+    concepts: [pod, machine, gpu-availability]
+    rules: [machine.pod-is-bound, pod-deployment.stock-is-not-your-machine]
+
+  - id: recover
+    title: Recover when the machine has no free GPU
+    description: >
+      Wait and retry, start the pod with zero GPUs to copy data off, migrate it,
+      or terminate it and deploy a new pod. Migration creates a new pod on
+      another machine and moves the pod's data to it; terminating and
+      redeploying leaves the volume disk behind. Either way the new pod has a
+      new id and address, and data on a network volume can be attached to any
+      pod in its data center.
+    concepts: [pod-migration, network-volume, pod-volume-disk]
+    rules: [pod-migration.options, pod-migration.new-id-and-address, pod-deployment.keep-data-portable]
+
+rules:
+  - id: pod-deployment.stock-is-not-your-machine
+    statement: >
+      Catalog availability describes free GPUs across a data center's machines,
+      but a stopped pod can only resume on its own machine. High stock for your
+      GPU type does not mean your stopped pod can start with a GPU.
+    status: documented
+    see: [gpu-availability.per-type-per-dc-per-product]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", seen: "2026-09-28", note: "A migration prompt does not mean the GPU type is unavailable on Runpod, only on the pod's machine." }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28" }
+
+  - id: pod-deployment.keep-data-portable
+    statement: >
+      Keep data you need on a network volume. Then a pod that cannot get a GPU
+      on its machine can be terminated and redeployed on any machine with free
+      GPUs in the volume's data center, with the data attached.
+    status: documented
+    see: [pod.network-volume-same-dc]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28", note: "See \"How do I prevent this?\"." }

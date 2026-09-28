@@ -1,3 +1,7 @@
+---
+concepts: [runpod-platform]
+---
+
 # Rollback flag: keeping v1 one env var away
 
 While v2 is new to a team, an env-var switch that returns to the old code path is cheap
@@ -77,7 +81,7 @@ def _list_pods_v1():
 
 Marked sites still appear in the report — under *kept on purpose* — but drop out of the
 migration plan and out of `--fail-on-legacy`. Use the same markers for the GraphQL calls
-that have no v2 equivalent (`myself`, secrets, spot pods, clusters), so a clean exit code
+that have no v2 equivalent (`myself` and spot pods), so a clean exit code
 means "everything that can be migrated has been".
 
 Deleting the markers is how you find the rollback code again when it is time to remove

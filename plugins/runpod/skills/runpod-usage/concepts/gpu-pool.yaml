@@ -1,0 +1,54 @@
+id: gpu-pool
+name: GPU pool
+kind: catalog
+summary: >
+  A serverless GPU tier, such as `ADA_24`, that groups GPU types with similar
+  memory. Endpoints select pools rather than individual GPU types, and
+  serverless prices are set per pool.
+product: serverless
+is_a: null
+part_of: runpod-platform
+aliases: [GPU group, GPU tier, pool id, GpuGroup, AMPERE_24, ADA_24, ADA_80_PRO]
+
+surfaces:
+  rest_v2: { paths: [/v2/catalog/gpus] }
+  mcp: [list-gpu-types, create-endpoint, set-endpoint-gpus]
+  runpodctl: [gpu list]
+
+fields:
+  - { name: id, type: string, set: read, note: "pool id, read from `GpuType.pool` in `GET /v2/catalog/gpus`" }
+
+relations:
+  - { type: constrained_by, target: gpu-availability, cardinality: "1" }
+
+rules:
+  - id: gpu-pool.pool-vs-type-ids
+    applies_to: ["field:id"]
+    statement: >
+      Pool ids (`ADA_24`) and GPU type ids (`NVIDIA GeForce RTX 4090`) are
+      different. Read a GPU type's pool from the `pool` field of `GET
+      /v2/catalog/gpus`, where null means the type is in no serverless pool.
+      Endpoints take pools; pods take GPU types.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GpuType.pool; BaseEndpointGpuConfig.pools", seen: "2026-09-28" }
+
+  - id: gpu-pool.pricing
+    statement: >
+      The serverless list price per GPU per hour comes from the pool
+      (`GpuType.price.serverless`). Multiply it by `gpu.count` for the
+      per-worker rate. Negotiated discounts are not shown, and the price is
+      absent when the pool is not available to the caller.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GpuType.price.serverless, seen: "2026-09-28" }
+
+  - id: gpu-pool.pin-a-card
+    statement: >
+      To run on one specific card, select the pool that contains it and list the
+      pool's other GPU types in `gpu.excludedTypes`. At least one type must
+      remain.
+    status: documented
+    see: [serverless-endpoint.pools-not-types]
+    evidence:
+      - { source: rest-v2-spec, ref: POST /v2/serverless (Checking what you can deploy), seen: "2026-09-28" }

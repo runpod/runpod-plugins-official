@@ -1,0 +1,175 @@
+id: template
+name: Template
+kind: resource
+summary: >
+  A saved container configuration (image, command, disk, ports, environment
+  variables, registry credential and startup options) that pods and Serverless
+  endpoints copy when they are created.
+product: templates
+is_a: null
+part_of: runpod-platform
+aliases: [Pod template, PodTemplate, Serverless template, official template, community template]
+
+surfaces:
+  rest_v2: { schema: Template, paths: [/v2/templates, "/v2/templates/{id}", /v2/catalog/templates] }
+  graphql: { type: PodTemplate, mutations: [saveTemplate, deleteTemplate] }
+  mcp: [create-template, list-templates, get-template, update-template, delete-template, list-public-templates]
+  runpodctl: [template create, template list, template get, template search, template update, template delete]
+  console: Templates
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: name, type: string, set: "create,update", required: true }
+  - { name: image, type: string, ref: container-image, set: "create,update", required: true }
+  - { name: args, type: string, set: "create,update", note: container command in stored form }
+  - { name: disk, type: integer, unit: GB, set: "create,update", note: "container disk, minimum 1" }
+  - { name: env, type: object, set: "create,update" }
+  - { name: ports, type: "string[]", set: "create,update", note: "port/protocol, e.g. 8888/http" }
+  - { name: registry, type: string, ref: registry-credential, set: "create,update" }
+  - { name: mounts.persistent.size, type: integer, unit: GB, set: "create,update" }
+  - { name: mounts.persistent.path, type: string, set: "create,update" }
+  - { name: serverless, type: boolean, default: false, set: "create,update" }
+  - { name: public, type: boolean, default: false, set: "create,update" }
+  - { name: category, type: enum, values: [CPU, NVIDIA, AMD], default: NVIDIA, set: "create,update" }
+  - { name: startSsh, type: boolean, default: true, set: "create,update" }
+  - { name: startJupyter, type: boolean, default: true, set: "create,update" }
+  - { name: allowedCudaVersions, type: "string[]", set: "create,update" }
+
+relations:
+  - { type: requires, target: container-image, cardinality: "1" }
+  - { type: uses, target: registry-credential, cardinality: "0..1" }
+  - { type: uses, target: runpod-secret, cardinality: "0..n" }
+
+rules:
+  - id: template.snapshot-at-create
+    applies_to: ["field:image", "field:env"]
+    statement: >
+      A pod or endpoint copies the settings of the template you create it from,
+      and later edits to that template do not change it. A pod created through
+      REST v2 with `templateId` keeps no link to the template, so its `template`
+      field stays null. An endpoint also gets its own bound template, deleted
+      with the endpoint; changing the endpoint's container settings updates that
+      one and starts a rolling release.
+    status: documented
+    see: [endpoint-release.rollout]
+    evidence:
+      - { source: rest-v2-spec, ref: "PATCH /v2/templates/{id}; CreatePodRequest.templateId", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md }
+
+  - id: template.body-overrides-template
+    applies_to: ["field:env", "field:allowedCudaVersions"]
+    statement: >
+      When you create a pod from a template, fields in the create body override
+      the template's. `env` is merged per key, with body values winning. Sending
+      either CUDA field replaces the template's CUDA constraint entirely.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: CreatePodRequest.templateId, seen: "2026-09-28" }
+
+  - id: template.delete-blocked-in-use
+    statement: >
+      Deleting a template fails while a pod references it in its `template`
+      field or a Serverless endpoint is bound to it. Editing a template that is
+      in use is allowed.
+    on_violation: 400 Template is in use by a pod or serverless endpoint and cannot be deleted
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "DELETE /v2/templates/{id}", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md }
+
+  - id: template.owner-only-writes
+    statement: >
+      `GET /v2/templates/{id}` reads your own templates and public catalog
+      templates, but only the owner can update or delete a template. `PATCH` or
+      `DELETE` on a catalog template returns 404.
+    on_violation: 404
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET, PATCH and DELETE /v2/templates/{id}", seen: "2026-09-28" }
+
+  - id: template.catalog-sources
+    statement: >
+      `GET /v2/catalog/templates` returns at most 100 templates, with no
+      pagination. The `source` parameter selects `official` (the default,
+      curated by Runpod), `verified` or `community`. Pod and Serverless
+      templates are mixed in the results; the `serverless` flag tells them
+      apart.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/catalog/templates, seen: "2026-09-28" }
+
+  - id: template.catalog-registry-hidden
+    applies_to: ["field:registry"]
+    statement: >
+      `registry` is always null on templates you do not own, so a catalog
+      template never exposes its registry credential.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/catalog/templates, seen: "2026-09-28" }
+
+  - id: template.types-and-support
+    applies_to: ["field:public"]
+    statement: >
+      Official templates are curated, tested and supported by Runpod. Community
+      templates are made by users and are supported only by their creators and
+      the community Discord. A template you create is private unless you set
+      `public`, which lists it for all Runpod users in Explore.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/templates/overview", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/templates/manage-templates", seen: "2026-09-28" }
+      - { source: rest-v2-spec, ref: Template.public, seen: "2026-09-28" }
+
+  - id: template.no-network-mount
+    applies_to: ["field:mounts.persistent.size"]
+    statement: >
+      A template can carry only a single persistent mount. A network volume
+      cannot be set on a template and is rejected, so attach network volumes
+      when you create the pod or endpoint.
+    on_violation: 422
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: TemplateMounts, seen: "2026-09-28" }
+
+  - id: template.serverless-flag
+    applies_to: ["field:serverless"]
+    statement: >
+      A template with `serverless: true` is for Serverless workers and cannot be
+      used to create a pod.
+    on_violation: 422
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreatePodRequest.templateId; Template.serverless", seen: "2026-09-28" }
+
+  - id: template.category-console-only
+    applies_to: ["field:category"]
+    statement: >
+      `category` (`CPU`, `NVIDIA` or `AMD`; default `NVIDIA`) only groups the
+      template in the console. It does not affect hardware selection, scheduling
+      or billing.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: TemplateCategory, seen: "2026-09-28" }
+
+  - id: template.startup-injection
+    applies_to: ["field:startSsh", "field:startJupyter"]
+    statement: >
+      `startSsh` and `startJupyter` default to true. They inject `PUBLIC_KEY`
+      (your registered SSH keys) and a generated `JUPYTER_PASSWORD` unless `env`
+      already sets them. `startSsh` does nothing when the account has no SSH
+      keys registered, and only images that follow this convention act on either
+      variable.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateTemplateRequest.startSsh; CreateTemplateRequest.startJupyter", seen: "2026-09-28" }
+      - { source: live-probe, ref: "POST /v2/pods with startSsh and startJupyter on runpod/base:1.0.2-ubuntu2204; both variables injected and the registered keys reached authorized_keys", seen: "2026-09-28" }
+
+  - id: template.cuda-ignored-on-cpu
+    applies_to: ["field:allowedCudaVersions"]
+    statement: >
+      `allowedCudaVersions` applies to GPU pods and Serverless endpoints created
+      from the template. An empty list means any version, and CPU pods ignore
+      the field.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: Template.allowedCudaVersions, seen: "2026-09-28" }

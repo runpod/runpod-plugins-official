@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, ssh]
+mcp: partial
+concepts: [network-volume, container-image, pod, container-disk, template]
+---
+
 # Golden path 25 — bake into the image vs mount a network volume
 
 ✅ **Live-verified** (built an image with a baked-in file → launched a CPU pod with a standard

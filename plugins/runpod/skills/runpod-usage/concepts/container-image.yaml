@@ -1,0 +1,54 @@
+id: container-image
+name: Container image
+kind: external
+summary: >
+  The Docker image a pod or Serverless worker runs, pulled from Docker Hub,
+  GHCR, a private registry, or Runpod's registry for Hub builds.
+product: templates
+is_a: null
+part_of: null
+aliases: [image, imageName, Docker image, worker image, runpod/pytorch, runpod/base]
+
+surfaces:
+  console: Templates
+
+relations:
+  - { type: uses, target: registry-credential, cardinality: "0..1" }
+
+rules:
+  - id: container-image.use-runpod-pytorch
+    statement: >
+      For a GPU workload, build `FROM` an official `runpod/pytorch:<tag>` image.
+      Its PyTorch and CUDA builds match Runpod hosts, and Runpod caches official
+      base images on its hosts, so only the layers you add are pulled.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+
+  - id: container-image.pin-exact-tag
+    statement: >
+      Pin an exact image tag, for example
+      `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, so builds and deploys
+      are reproducible.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+
+  - id: container-image.build-for-amd64
+    statement: >
+      Runpod hosts are x86_64. Build with `docker build --platform=linux/amd64`,
+      especially on an Apple Silicon machine, or the image will not start.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/docker.md }
+
+  - id: container-image.ssh-on-custom-base
+    statement: >
+      Official Runpod images start SSH from `/start.sh`, which reads
+      `PUBLIC_KEY` into `authorized_keys` and starts `sshd`. An image built on a
+      non-Runpod base has to do the same itself, or you cannot SSH into the pod.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/22-minimal-pod-image/README.md }

@@ -1,3 +1,7 @@
+---
+concepts: [pod, serverless-endpoint, container-image, job]
+---
+
 # The Runpod development loop (golden loop)
 
 Every Runpod task an agent runs follows the same spine — proven across the golden

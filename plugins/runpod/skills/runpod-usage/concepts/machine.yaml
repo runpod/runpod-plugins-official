@@ -1,0 +1,69 @@
+id: machine
+name: Machine
+kind: infrastructure
+summary: >
+  A physical server in a data center that hosts pods and workers. A pod is
+  assigned to one machine when it is first deployed and stays tied to it, even
+  while it is stopped.
+product: null
+is_a: null
+part_of: data-center
+aliases: [host, host machine, physical machine, server]
+
+relations: []
+
+rules:
+  - id: machine.pod-is-bound
+    statement: >
+      A pod runs on exactly one machine. It is assigned when the pod is first
+      deployed, stays assigned while the pod is stopped, and resumes on the same
+      machine. Moving to another machine means a new pod, through migration or a
+      fresh deploy, with a new pod id.
+    status: documented
+    see: [pod.stopped-pod-keeps-host]
+    evidence:
+      - { source: rest-v2-spec, ref: Pod.cudaVersion, seen: "2026-09-28", note: A stopped pod keeps its machine assignment and resumes onto the same host. }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", seen: "2026-09-28", note: Pod ids are tied to physical machines. }
+
+  - id: machine.gpus-are-per-machine
+    statement: >
+      A running pod reserves GPUs on its machine for as long as it runs.
+      Stopping the pod releases those GPUs, and another customer can rent them
+      while the pod is stopped.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", seen: "2026-09-28" }
+
+  - id: machine.largest-machine-caps-gpu-count
+    statement: >
+      Because a pod runs on one machine, the most GPUs one pod can use is the
+      GPU count of the largest machine of that type. `maxCount` on the GPU type
+      reports that ceiling for each cloud.
+    status: documented
+    see: [gpu-type.max-count-not-stock]
+    evidence:
+      - { source: rest-v2-spec, ref: GpuType.maxCount, seen: "2026-09-28" }
+
+  - id: machine.host-local-storage
+    statement: >
+      The pod's volume disk is stored on its machine. The data stays there while
+      the pod is stopped, is lost if the machine fails, and is not billed while
+      the machine is unavailable. Use a network volume for data that must
+      outlive the machine.
+    status: documented
+    see: [pod-volume-disk.deprecated-prefer-network]
+    evidence:
+      - { source: rest-v2-spec, ref: PersistentMount, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28", note: Storage is not charged while the host machine is unavailable. }
+
+  - id: machine.cuda-is-per-machine
+    statement: >
+      The CUDA version is a property of the machine's driver, not of the GPU
+      type. Machines with the same GPU type can report different versions, and
+      `cudaVersion` on a pod shows what its machine reports.
+    status: documented
+    see: [pod.cuda-discover-first]
+    evidence:
+      - { source: rest-v2-spec, ref: "Pod.cudaVersion; GpuType.cudaVersions", seen: "2026-09-28" }

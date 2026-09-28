@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh]
+mcp: partial
+concepts: [pod, template, container-image, network-volume, exposed-port, gpu-type]
+---
+
 # Golden path 02 — ComfyUI server on a pod + access URL
 
 **Goal / Status: COVERED — live-verified 2026-07-07 / Kind: pod, server / Lane: runpodctl**

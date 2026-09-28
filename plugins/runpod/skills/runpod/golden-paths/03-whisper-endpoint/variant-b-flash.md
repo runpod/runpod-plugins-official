@@ -1,3 +1,9 @@
+---
+lanes: [flash]
+mcp: none
+concepts: [flash, serverless-endpoint, worker, serverless-handler, gpu-type]
+---
+
 # Golden path 03 — Whisper — Variant B: from scratch with flash
 
 **Status:** COVERED — live-verified 2026-07-07. **Lane:** flash (code-first

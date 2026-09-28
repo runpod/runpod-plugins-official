@@ -3,9 +3,15 @@ name: release-please
 # Automated releases. Write Conventional Commits (feat:/fix:/feat!:) and this
 # opens/maintains a "release PR" that bumps every version file + regenerates the
 # CHANGELOG. Merging that PR tags the release (vX.Y.Z). No manual version edits.
+#
+# When a release is cut, publish-knowledge publishes runpod-official-plugin-knowledge (the
+# skills, golden paths and concept graph as one JSON bundle) to npm at the same
+# version. Run this workflow by hand (workflow_dispatch) to publish after a
+# break-glass release made with scripts/release.sh.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,8 +20,50 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - uses: googleapis/release-please-action@v5
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  publish-knowledge:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # npm trusted publishing (OIDC) and provenance; no npm token is stored
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          # Node 24 ships npm 11.5.1 or later, which trusted publishing needs.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: ontology/tools/pnpm-lock.yaml
+      - name: Check the concepts and guides
+        working-directory: ontology/tools
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm test
+          pnpm validate --strict
+          pnpm check:guides
+      - name: Publish runpod-official-plugin-knowledge
+        working-directory: packages/knowledge
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "runpod-official-plugin-knowledge@${version}" version >/dev/null 2>&1; then
+            echo "runpod-official-plugin-knowledge@${version} is already published; nothing to do."
+            exit 0
+          fi
+          # prepack builds knowledge.json from this commit.
+          npm publish

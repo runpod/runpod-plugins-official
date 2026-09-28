@@ -1,3 +1,7 @@
+---
+concepts: [template, pod]
+---
+
 # Repair a ComfyUI workflow for RunpodDirect
 
 This is a **usage guide** in the `runpod-templates` skill — a repair procedure, not a

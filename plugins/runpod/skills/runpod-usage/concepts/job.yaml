@@ -1,0 +1,147 @@
+id: job
+name: Serverless job
+kind: component
+summary: >
+  One request submitted to a queue-based endpoint. It waits in the queue, runs
+  on one worker, and its result is kept for a short time after it finishes.
+product: serverless
+is_a: null
+part_of: serverless-endpoint
+aliases: [request, request ID, job ID]
+
+surfaces:
+  mcp: [run-endpoint, runsync-endpoint, get-job-status, stream-job, cancel-job, retry-job, purge-endpoint-queue]
+  runpodctl: [serverless run, serverless status]
+  console: Serverless > Requests
+
+fields:
+  - { name: id, type: string, set: read, note: "returned by `/run` or `/runsync`" }
+  - { name: input, type: object, set: create, required: true }
+  - { name: status, type: enum, values: [IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT], set: read }
+  - { name: policy.executionTimeout, type: integer, unit: ms, default: 600000, set: create, note: "5 seconds to 7 days" }
+  - { name: policy.ttl, type: integer, unit: ms, default: 86400000, set: create, note: "10 seconds to 7 days" }
+  - { name: policy.lowPriority, type: boolean, default: false, set: create }
+  - { name: webhook, type: string, set: create }
+  - { name: output, type: object, set: read }
+
+states:
+  field: status
+  values:
+    IN_QUEUE: Waiting for a worker.
+    IN_PROGRESS: Picked up by a worker and running.
+    COMPLETED: Finished and returned a result.
+    FAILED: The handler raised an error.
+    CANCELLED: Cancelled through `/cancel`.
+    TIMED_OUT: Expired before a worker picked it up, or the worker did not report back in time.
+  transitions:
+    - { action: cancel, from: [IN_QUEUE, IN_PROGRESS], to: CANCELLED }
+    - { action: retry, from: [FAILED, TIMED_OUT], to: IN_QUEUE }
+  evidence:
+    - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states" }
+    - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", note: The /cancel and /retry operations. }
+    - { source: rest-v2-spec, ref: "EndpointRequestUrls.cancel; EndpointRequestUrls.retry", seen: "2026-09-28" }
+
+relations:
+  - { type: runs_on, target: worker, cardinality: "0..1" }
+  - { type: billed_by, target: serverless-billing, cardinality: "1" }
+
+rules:
+  - id: job.status-vocabulary
+    applies_to: ["field:status"]
+    statement: >
+      The job API reports `IN_QUEUE`, then `IN_PROGRESS`, and ends as
+      `COMPLETED`, `FAILED`, `CANCELLED` or `TIMED_OUT`. The public job-states
+      page also lists `RUNNING`, which the API does not return; use
+      `IN_PROGRESS`.
+    status: documented
+    conflict: false
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming.md, note: Observed jobs report IN_PROGRESS. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states", note: Lists both IN_PROGRESS and RUNNING. }
+      - { source: other, note: "Confirmed by Runpod, 2026-09-28: the job API's statuses are IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED and TIMED_OUT; there is no RUNNING job status.", seen: "2026-09-28" }
+
+  - id: job.run-vs-runsync
+    statement: >
+      `/run` returns a job id in `IN_QUEUE` right away and keeps the result for
+      30 minutes. `/runsync` waits up to 90 seconds by default (adjustable with
+      `?wait=` from 1000 to 300000 ms), returns while the job keeps running if
+      it takes longer, and keeps the result for 1 minute. Use `/run` and poll
+      `/status` for the first call to a cold endpoint.
+    status: documented
+    see: [api-rate-limit.serverless-job-routes]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", note: The /runsync operation. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Result retention. }
+      - { source: rest-v2-spec, ref: EndpointRequestUrls.runSync, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/command-reference.md }
+
+  - id: job.input-envelope
+    applies_to: ["field:input"]
+    statement: >
+      The request body is always `{"input": {...}}`, and `input` must not be
+      empty. `/run` accepts payloads up to about 10 MB and `/runsync` up to
+      about 20 MB, so pass large inputs as URLs.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 10. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests" }
+
+  - id: job.cancel
+    applies_to: ["action:cancel"]
+    statement: >
+      `/cancel` stops an in-progress job or removes a queued one. A job
+      cancelled before a worker picks it up is not billed.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", note: The /cancel operation. }
+
+  - id: job.ttl-and-timeout
+    applies_to: ["field:policy.ttl", "field:policy.executionTimeout"]
+    statement: >
+      `ttl` (default 24 hours, maximum 7 days) starts at submission and covers
+      both queue and run time. When it expires, the job is deleted in any state
+      and `/status` returns 404. `executionTimeout` limits only run time, so set
+      `ttl` to at least the expected queue time plus `executionTimeout`.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Execution policies. }
+
+  - id: job.low-priority
+    applies_to: ["field:policy.lowPriority"]
+    statement: >
+      A job submitted with `policy.lowPriority` set to true does not trigger
+      worker scaling.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Execution policies. }
+
+  - id: job.streaming-and-webhooks
+    applies_to: ["field:webhook"]
+    statement: >
+      `/stream` works only when the handler is a generator, and a client
+      disconnect does not stop the worker. A `webhook` receives the result when
+      the job reaches a terminal state. It must return 200; otherwise Runpod
+      retries up to 2 more times, 10 seconds apart.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md, note: Streaming section. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: Webhook notifications. }
+
+  - id: job.api-host
+    statement: >
+      Jobs are not part of the REST v2 control API. They go to the serverless
+      API host (`https://api.runpod.ai/v2/<endpoint-id>/run` and similar). Read
+      the exact URLs from the endpoint's `requestUrls` instead of building them.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: EndpointRequestUrls, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md, note: The requestUrls field. }
+
+  - id: job.purge-queue
+    statement: >
+      `/purge-queue` removes every pending job and leaves in-progress jobs
+      running.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: EndpointRequestUrls.purgeQueue, seen: "2026-09-28" }

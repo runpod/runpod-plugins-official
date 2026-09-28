@@ -51,6 +51,34 @@ jobs:
       - name: Test runpod-migrate scanner helpers
         run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p "test_*.py"
 
+  concepts:
+    # The concept files under runpod-usage/concepts: schema, cross-file refs,
+    # REST v2 snapshot, public-only wording, and that every cited skill file exists.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ontology/tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: ontology/tools/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm format:check
+      - run: pnpm validate --strict
+      - run: pnpm check:guides
+      - run: pnpm build:sqlite
+      - name: Pack runpod-official-plugin-knowledge (what release-please publishes)
+        working-directory: packages/knowledge
+        run: npm pack --dry-run
+
   nix-checks:
     # Runs the full static-analysis gate (ruff, mypy, bandit, unittest,
     # shellcheck, shfmt, biome, nixfmt, deadnix, statix) hermetically. The

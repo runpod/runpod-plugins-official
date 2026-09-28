@@ -1,0 +1,45 @@
+{
+  "name": "runpod-official-plugin-knowledge",
+  "version": "1.4.0",
+  "description": "The Runpod plugin's skills, reference docs, golden paths and concept graph as one JSON bundle, for programs such as the Runpod MCP server",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    },
+    "./knowledge.json": "./knowledge.json"
+  },
+  "files": [
+    "index.mjs",
+    "index.cjs",
+    "index.d.ts",
+    "knowledge.json",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "prepack": "cd ../../ontology/tools && node --disable-warning=ExperimentalWarning src/build-bundle.ts"
+  },
+  "keywords": [
+    "runpod",
+    "mcp",
+    "skills",
+    "knowledge-graph",
+    "agents"
+  ],
+  "homepage": "https://github.com/runpod/runpod-plugins-official/tree/main/packages/knowledge#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/runpod/runpod-plugins-official.git",
+    "directory": "packages/knowledge"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

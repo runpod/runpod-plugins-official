@@ -1,0 +1,65 @@
+id: api-key
+name: API key
+kind: resource
+summary: >
+  A credential that authenticates your API, CLI and MCP calls. Each key carries
+  the permissions it was given at creation, and Runpod shows it only once.
+product: account
+is_a: null
+part_of: runpod-platform
+aliases: [Runpod API key]
+
+surfaces:
+  console: Settings
+
+relations:
+  - { type: constrained_by, target: api-rate-limit, cardinality: "1" }
+
+rules:
+  - id: api-key.bearer-only
+    statement: >
+      REST v2 accepts the key only in the header `Authorization: Bearer <key>`.
+      A request without a valid key returns 401. A valid key that lacks access
+      to the resource or action returns 403.
+    on_violation: 401 missing or invalid key, 403 missing access
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "components.securitySchemes.bearerAuth; components.responses.ForbiddenError", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/api-reference-v2/overview", seen: "2026-09-28" }
+
+  - id: api-key.graphql-query-parameter
+    statement: >
+      The GraphQL API takes the key as the `api_key` query parameter. When
+      migrating to REST v2, move the key into the `Authorization` header so it
+      stops appearing in URLs and logs.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdks/graphql/configurations", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md }
+
+  - id: api-key.shown-once
+    statement: >
+      Runpod does not store the key, so copy it when you create it and keep it
+      in a password manager or secret store. You can edit a key's permissions,
+      disable it, re-enable it or revoke it from the Settings page.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/get-started/api-keys", seen: "2026-09-28" }
+
+  - id: api-key.permission-levels
+    statement: >
+      A key is created with **All**, **Restricted** or **Read Only** access. A
+      Restricted key sets access per Runpod API and per Serverless endpoint
+      (None, Read Only or Read/Write), so grant only what the integration needs.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/get-started/api-keys", seen: "2026-09-28" }
+
+  - id: api-key.legacy-keys
+    statement: >
+      Keys generated before November 11, 2024 have either Read/Write or Read
+      Only access to GraphQL, plus full access to the Serverless job API.
+      Replace them with Restricted keys that carry the minimum permissions.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/get-started/api-keys", seen: "2026-09-28" }

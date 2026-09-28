@@ -1,3 +1,7 @@
+---
+concepts: [pod, serverless-endpoint, gpu-availability, flashboot]
+---
+
 # Worked example: a mixed v1 + GraphQL codebase
 
 A representative "we wrote this with an agent 18 months ago" repo: a Python batch

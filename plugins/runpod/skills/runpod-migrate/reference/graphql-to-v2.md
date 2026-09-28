@@ -37,6 +37,11 @@ does not exist just because that page omits it.
 | `createNetworkVolume(input:)` | `POST /v2/network-volumes` |
 | `updateNetworkVolume(input:)` | `PATCH /v2/network-volumes/{id}` |
 | `deleteNetworkVolume(input:)` | `DELETE /v2/network-volumes/{id}` |
+| `secretCreate` | `POST /v2/account/secrets` — the value is write-only: no v2 response returns it |
+| `secretValueUpdate` / `secretDescriptionUpdate` | `PATCH /v2/account/secrets/{id}` — one request can carry both fields, but the value is applied first, so send them separately if a failed description update must not leave a new value live |
+| `secretDelete` | `DELETE /v2/account/secrets/{id}` — **by ID**; list names and ids with `GET /v2/account/secrets` |
+| `createCluster` | `POST /v2/clusters` |
+| `deleteCluster` | `DELETE /v2/clusters/{id}` |
 
 `saveEndpoint` is an upsert keyed on `id`; REST splits that into POST and PATCH. If the
 code branches on "did I pass an id", that branch becomes the method choice.
@@ -46,9 +51,7 @@ code branches on "did I pass an id", that branch becomes the method choice.
 | GraphQL | Why it stays |
 | --- | --- |
 | `myself { id email clientBalance currentSpendPerHr }` | v2 has no user/account route. (Spend *history* is `/v2/billing`; live balance is not.) |
-| `secretCreate` / `secretDelete` | no v2 secrets API |
 | `podRentInterruptable`, `podBidResume` | v2 has no spot/interruptible pods |
-| `createCluster` / `deleteCluster` | v2 exposes cluster **billing** only |
 
 A codebase that uses these ends up bilingual after the migration. That is expected —
 say so in the summary rather than leaving the user to wonder if you missed something.

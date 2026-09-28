@@ -13,6 +13,7 @@ compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
   version: "1.4.0" # x-release-please-version
+  concepts: [registry-credential, pod, serverless-endpoint, job, template, network-volume, gpu-type, log-stream]
 license: Apache-2.0
 ---
 

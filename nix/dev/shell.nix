@@ -61,7 +61,8 @@ let
       ""
       "    Hermetic gate (sandboxed, no network):"
       "      ${pad "nix flake check"}ruff, mypy, bandit, unittest, shellcheck,"
-      "                       shfmt, biome, nixfmt, deadnix, statix"
+      "                       shfmt, biome, yamllint, actionlint, nixfmt,"
+      "                       deadnix, statix"
       ""
       "    ${pad "rpp-help"}show this message"
     ]
