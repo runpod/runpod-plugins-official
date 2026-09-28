@@ -146,6 +146,33 @@ readiness loop. If interactive SSH isn't available, execute remotely via
 `ssh remove-key` takes `--name` **or** `--fingerprint`; use the fingerprint to disambiguate
 keys that share a name.
 
+### Pod host key trust
+
+Affects only the **hidden, deprecated** `project` subcommands and `exec python`, which share
+one Go SSH client. **`ssh info` is unchanged**: it prints an ordinary
+`ssh -i <key> root@<ip> -p <port>` and leaves verification to OpenSSH's defaults against your
+own `~/.ssh/known_hosts`.
+
+Those two paths pin a pod's host key in `~/.runpod/ssh/known_hosts`, keyed by `runpod-<podID>`
+rather than by address, because Runpod recycles pod SSH addresses. The Go client enrolls the
+key on first contact, printing the fingerprint to **stderr**, and refuses a key that does not
+match an existing entry. The `rsync` invocation always runs after that, so it **requires** the
+pin rather than creating one: `StrictHostKeyChecking=yes` with `UpdateHostKeys=no`, so it can
+neither enroll a key itself nor let the server add further keys to the entry.
+
+A mismatch is reported, never repaired. **Never delete the offending entry automatically, and
+never advise a user to.** It means either the pod's container was recreated and so generated a
+new host key, or the connection is being intercepted — and deleting the entry to clear the error
+destroys the only signal that separates the two. A recreated container is the common case: stopping
+and starting a pod clears its container disk, as do `pod update` and a reset, and Runpod's images
+generate fresh host keys at boot. The pod id stays the same, so the pin does not survive a stop and
+start. Surface the fingerprint, ask whether the pod was stopped, updated, or reset since the last
+connection, and let the operator decide.
+
+Trust on first use closes silent key substitution on **later** connections. It does **not**
+prevent interception of the **first** connection to a pod; that needs the host key delivered
+over an authenticated Runpod channel, which is separate and unstarted work.
+
 ## File Transfer
 
 `send`/`receive` do encrypted, incremental, compressed transfer — don't pre-tar or
