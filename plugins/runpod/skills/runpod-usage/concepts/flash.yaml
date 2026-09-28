@@ -11,8 +11,8 @@ part_of: runpod-platform
 aliases: [Runpod Flash, runpod-flash, flash CLI]
 
 relations:
-  - { type: runs_on, target: serverless-endpoint, cardinality: 1..n }
-  - { type: uses, target: network-volume, cardinality: 0..n }
+  - { type: runs_on, target: serverless-endpoint, cardinality: "1..n" }
+  - { type: uses, target: network-volume, cardinality: "0..n" }
   - { type: requires, target: api-key, cardinality: "1" }
 
 rules:

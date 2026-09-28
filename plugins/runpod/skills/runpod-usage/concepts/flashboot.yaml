@@ -26,9 +26,9 @@ rules:
       cold-starts more slowly.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: FlashBoot; CreateEndpointRequest.flashboot, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: FlashBoot section. }
-      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: Explains that `flashboot` changed from a boolean to an enum. }
+      - { source: rest-v2-spec, ref: "FlashBoot; CreateEndpointRequest.flashboot", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: FlashBoot section. }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: "Explains that `flashboot` changed from a boolean to an enum." }
 
   - id: flashboot.best-effort
     statement: >
@@ -39,7 +39,7 @@ rules:
       and idle.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: FlashBoot section. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: FlashBoot section. }
 
   - id: flashboot.flash-sdk-default-on
     statement: >

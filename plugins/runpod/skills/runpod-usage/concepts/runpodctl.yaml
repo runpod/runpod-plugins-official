@@ -15,11 +15,11 @@ surfaces:
 
 relations:
   - { type: requires, target: api-key, cardinality: "1" }
-  - { type: uses, target: pod, cardinality: 0..n }
-  - { type: uses, target: serverless-endpoint, cardinality: 0..n }
-  - { type: uses, target: template, cardinality: 0..n }
-  - { type: uses, target: network-volume, cardinality: 0..n }
-  - { type: uses, target: hub-repo, cardinality: 0..n }
+  - { type: uses, target: pod, cardinality: "0..n" }
+  - { type: uses, target: serverless-endpoint, cardinality: "0..n" }
+  - { type: uses, target: template, cardinality: "0..n" }
+  - { type: uses, target: network-volume, cardinality: "0..n" }
+  - { type: uses, target: hub-repo, cardinality: "0..n" }
 
 rules:
   - id: runpodctl.update-first
@@ -41,7 +41,7 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Install section. }
-      - { source: skill, path: plugins/runpod/skills/runpod/SKILL.md, note: These skills are a snapshot; the tools are the source of truth. }
+      - { source: skill, path: plugins/runpod/skills/runpod/SKILL.md, note: "These skills are a snapshot; the tools are the source of truth." }
 
   - id: runpodctl.credential-resolution
     statement: >

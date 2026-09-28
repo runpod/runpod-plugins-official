@@ -23,7 +23,7 @@ relations:
 
 rules:
   - id: gpu-pool.pool-vs-type-ids
-    applies_to: [field:id]
+    applies_to: ["field:id"]
     statement: >
       Pool ids (`ADA_24`) and GPU type ids (`NVIDIA GeForce RTX 4090`) are
       different. Read a GPU type's pool from the `pool` field of `GET
@@ -31,7 +31,7 @@ rules:
       Endpoints take pools; pods take GPU types.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: GpuType.pool; BaseEndpointGpuConfig.pools, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GpuType.pool; BaseEndpointGpuConfig.pools", seen: "2026-09-28" }
 
   - id: gpu-pool.pricing
     statement: >
@@ -41,7 +41,7 @@ rules:
       absent when the pool is not available to the caller.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: GpuType.price.serverless, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: GpuType.price.serverless, seen: "2026-09-28" }
 
   - id: gpu-pool.pin-a-card
     statement: >
@@ -51,4 +51,4 @@ rules:
     status: documented
     see: [serverless-endpoint.pools-not-types]
     evidence:
-      - { source: rest-v2-spec, ref: POST /v2/serverless (Checking what you can deploy), seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: POST /v2/serverless (Checking what you can deploy), seen: "2026-09-28" }

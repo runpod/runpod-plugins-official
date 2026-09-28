@@ -15,7 +15,7 @@ surfaces:
 
 relations:
   - { type: requires, target: pod, cardinality: "1" }
-  - { type: uses, target: network-volume, cardinality: 0..1 }
+  - { type: uses, target: network-volume, cardinality: "0..1" }
 
 rules:
   - id: pod-migration.not-in-rest-v2
@@ -25,8 +25,8 @@ rules:
       stopped pod cannot get its GPU back.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: PodAction, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration }
+      - { source: rest-v2-spec, ref: PodAction, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration" }
 
   - id: pod-migration.new-id-and-address
     statement: >
@@ -35,7 +35,7 @@ rules:
       IP.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, note: Important considerations for migration. }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", note: Important considerations for migration. }
 
   - id: pod-migration.options
     statement: >
@@ -46,4 +46,4 @@ rules:
     status: documented
     see: [container-disk.what-survives, pod.stopped-pod-keeps-host]
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/troubleshooting/pod-migration, note: Your options when GPUs are unavailable. }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/pod-migration", note: Your options when GPUs are unavailable. }

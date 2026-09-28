@@ -26,7 +26,7 @@ rules:
       builds and is tested, then Runpod reviews it before it is published.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/hub/publishing-guide, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", seen: "2026-09-28" }
 
   - id: hub-repo.hub-json-config
     statement: >
@@ -37,7 +37,7 @@ rules:
       it is deployed.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/hub/publishing-guide, note: See the `hub.json` reference., seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", note: "See the `hub.json` reference.", seen: "2026-09-28" }
 
   - id: hub-repo.deploy-through-hub
     statement: >
@@ -51,9 +51,9 @@ rules:
     status: documented
     conflict: true
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: See "Create from hub". }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: "See \"Create from hub\"." }
       - { source: skill, path: plugins/runpod/skills/runpodctl/evals/hub-deploy-serverless.eval.md }
-      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/20-model-caching-endpoint.md, note: Passes --gpu-id "NVIDIA GeForce RTX 4090" with --hub-id. }
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/20-model-caching-endpoint.md, note: "Passes --gpu-id \"NVIDIA GeForce RTX 4090\" with --hub-id." }
 
   - id: hub-repo.creator-revenue
     statement: >
@@ -62,4 +62,4 @@ rules:
       tiered by monthly compute hours, up to 7%.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/hub/revenue-sharing, seen: 2026-09-28 }
+      - { source: public-docs, url: "https://docs.runpod.io/hub/revenue-sharing", seen: "2026-09-28" }

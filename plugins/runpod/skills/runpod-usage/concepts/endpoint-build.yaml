@@ -20,7 +20,7 @@ fields:
   - { name: commitHash, type: string, set: read }
   - { name: branch, type: string, set: read }
   - { name: imageName, type: string, ref: container-image, set: read }
-  - { name: error, type: string, set: read, note: set for `FAILED` and `TEST_FAILED` }
+  - { name: error, type: string, set: read, note: "set for `FAILED` and `TEST_FAILED`" }
   - { name: startedAt, type: string, set: read }
   - { name: completedAt, type: string, set: read }
 
@@ -36,21 +36,21 @@ states:
     CANCELLED: The build was cancelled.
     TEST_FAILED: The tests failed.
   evidence:
-    - { source: rest-v2-spec, ref: BuildState, seen: 2026-09-28 }
+    - { source: rest-v2-spec, ref: BuildState, seen: "2026-09-28" }
 
 relations:
   - { type: requires, target: container-image, cardinality: "1" }
 
 rules:
   - id: endpoint-build.terminal-states
-    applies_to: [field:status, field:error]
+    applies_to: ["field:status", "field:error"]
     statement: >
       `COMPLETED`, `FAILED`, `CANCELLED` and `TEST_FAILED` are terminal.
       `PENDING`, `BUILDING`, `UPLOADING` and `TESTING` mean the build is still
       running. `error` explains a `FAILED` or `TEST_FAILED` build.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: BuildState; Build.error, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "BuildState; Build.error", seen: "2026-09-28" }
 
   - id: endpoint-build.feeds-release
     statement: >
@@ -59,7 +59,7 @@ rules:
     status: documented
     see: [endpoint-release.source, endpoint-release.rollout]
     evidence:
-      - { source: rest-v2-spec, ref: Release.buildId, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: Release.buildId, seen: "2026-09-28" }
 
   - id: endpoint-build.listing
     statement: >
@@ -67,4 +67,4 @@ rules:
       older build directly by its id.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/builds; GET /v2/serverless/{id}/builds/{buildId}", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/builds; GET /v2/serverless/{id}/builds/{buildId}", seen: "2026-09-28" }

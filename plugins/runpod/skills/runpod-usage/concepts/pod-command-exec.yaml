@@ -27,8 +27,8 @@ rules:
     status: documented
     see: [pod-ssh-access.proxy-vs-direct]
     evidence:
-      - { source: rest-v2-spec, ref: paths under /v2/pods, seen: 2026-09-28, note: "The pod paths cover CRUD, actions and logs only." }
-      - { source: public-docs, url: https://docs.runpod.io/pods/configuration/use-ssh }
+      - { source: rest-v2-spec, ref: paths under /v2/pods, seen: "2026-09-28", note: "The pod paths cover CRUD, actions and logs only." }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/use-ssh" }
 
   - id: pod-command-exec.runpodctl-exec-deprecated
     statement: >
@@ -36,4 +36,4 @@ rules:
       deprecated in favor of plain `ssh`, and it needs the same SSH access.
     status: documented
     evidence:
-      - { source: other, ref: runpodctl exec --help (runpodctl 2.14.0), seen: 2026-09-28 }
+      - { source: other, ref: runpodctl exec --help (runpodctl 2.14.0), seen: "2026-09-28" }

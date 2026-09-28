@@ -19,17 +19,17 @@ surfaces:
 
 fields:
   - { name: startSsh, type: boolean, set: create, note: "Write-only. GET never returns it, and PATCH cannot change it." }
-  - { name: ports, type: "string[]", set: "create,update", note: Include `22/tcp` for direct SSH. }
+  - { name: ports, type: "string[]", set: "create,update", note: "Include `22/tcp` for direct SSH." }
   - { name: ssh.proxy, type: PodSshEndpoint, set: read, note: Null until the pod is assigned a machine. }
-  - { name: ssh.direct, type: PodSshEndpoint, set: read, note: Null unless `22/tcp` is in `ports` and the running pod has a public port for it. }
+  - { name: ssh.direct, type: PodSshEndpoint, set: read, note: "Null unless `22/tcp` is in `ports` and the running pod has a public port for it." }
 
 relations:
-  - { type: requires, target: ssh-key, cardinality: 1..n }
-  - { type: uses, target: exposed-port, cardinality: 0..1 }
+  - { type: requires, target: ssh-key, cardinality: "1..n" }
+  - { type: uses, target: exposed-port, cardinality: "0..1" }
 
 rules:
   - id: pod-ssh-access.start-ssh-needs-keys
-    applies_to: [field:startSsh]
+    applies_to: ["field:startSsh"]
     statement: >
       Set `startSsh` on create to inject the account's registered SSH public
       keys into the pod as `PUBLIC_KEY`. A pod created without it has no SSH
@@ -38,11 +38,11 @@ rules:
       all official Runpod images do.
     status: verified
     evidence:
-      - { source: rest-v2-spec, ref: CreatePodRequest.startSsh; PodSsh, seen: 2026-09-28 }
-      - { source: live-probe, ref: "POST /v2/pods with startSsh: true on runpod/base:1.0.2-ubuntu2204 (CPU pod)", seen: 2026-09-28, note: "The pod's env held `PUBLIC_KEY`, `authorized_keys` held every registered key, and SSH over `ssh.direct` succeeded.\n" }
+      - { source: rest-v2-spec, ref: "CreatePodRequest.startSsh; PodSsh", seen: "2026-09-28" }
+      - { source: live-probe, ref: "POST /v2/pods with startSsh: true on runpod/base:1.0.2-ubuntu2204 (CPU pod)", seen: "2026-09-28", note: "The pod's env held `PUBLIC_KEY`, `authorized_keys` held every registered key, and SSH over `ssh.direct` succeeded.\n" }
 
   - id: pod-ssh-access.proxy-vs-direct
-    applies_to: [field:ssh.proxy, field:ssh.direct, field:ports]
+    applies_to: ["field:ssh.proxy", "field:ssh.direct", "field:ports"]
     statement: >
       The proxy connection needs no public IP or exposed port but carries an
       interactive shell only. SCP, SFTP, rsync and port forwarding need
@@ -50,8 +50,8 @@ rules:
       is provisioning or stopped. Prefer `ssh.direct` when it is available.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: PodSsh, seen: 2026-09-28 }
-      - { source: public-docs, url: https://docs.runpod.io/pods/configuration/use-ssh }
+      - { source: rest-v2-spec, ref: PodSsh, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/use-ssh" }
       - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/06-dev-pod.md }
 
   - id: pod-ssh-access.web-terminal-is-session-based
@@ -61,4 +61,4 @@ rules:
       `tmux` or a similar tool so they survive a dropped connection.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/pods/connect-to-a-pod }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/connect-to-a-pod" }

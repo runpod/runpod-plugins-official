@@ -29,7 +29,7 @@ rules:
       `workers.min` and `workers.max`, and the scaler can be switched on update.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: EndpointScaling; QueueDelayScaling; RequestCountScaling, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "EndpointScaling; QueueDelayScaling; RequestCountScaling", seen: "2026-09-28" }
 
   - id: endpoint-autoscaling.scaler-math
     statement: >
@@ -38,7 +38,7 @@ rules:
       so a value of 1 scales most aggressively.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: Auto-scaling type. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Auto-scaling type. }
 
   - id: endpoint-autoscaling.min-max
     statement: >
@@ -60,7 +60,7 @@ rules:
     see: [serverless-billing.active-workers-bill-idle]
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Active worker means minimum workers. }
-      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: Worker types. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker types. }
 
   - id: endpoint-autoscaling.idle-timeout
     statement: >
@@ -73,9 +73,9 @@ rules:
     status: documented
     see: [serverless-endpoint.defaults-by-layer]
     evidence:
-      - { source: rest-v2-spec, ref: EndpointWorkers.idleTimeout, seen: 2026-09-28 }
-      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: Explains when `idleTimeout` is rejected. }
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: Idle timeout is billed. }
+      - { source: rest-v2-spec, ref: EndpointWorkers.idleTimeout, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: "Explains when `idleTimeout` is rejected." }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle timeout is billed. }
 
   - id: endpoint-autoscaling.account-worker-quota
     statement: >
@@ -85,7 +85,7 @@ rules:
       at create and whenever `workers.max` goes up.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: Max worker limits. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Max worker limits. }
 
   - id: endpoint-autoscaling.gpu-auto-switch-needs-five
     statement: >
@@ -101,7 +101,7 @@ rules:
       already have the image cached.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/workers/overview, note: Worker types. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker types. }
 
   - id: endpoint-autoscaling.idle-endpoint-scale-down
     statement: >
@@ -111,5 +111,5 @@ rules:
       request resets the timer.
     status: documented
     evidence:
-      - { source: public-docs, url: https://docs.runpod.io/serverless/endpoints/endpoint-configurations, note: Idle endpoint scale-down. }
-      - { source: public-docs, url: https://docs.runpod.io/serverless/troubleshooting, note: Prolonged inactivity. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle endpoint scale-down. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/troubleshooting", note: Prolonged inactivity. }

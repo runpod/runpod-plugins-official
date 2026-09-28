@@ -13,7 +13,7 @@ surfaces:
   console: Templates
 
 relations:
-  - { type: uses, target: registry-credential, cardinality: 0..1 }
+  - { type: uses, target: registry-credential, cardinality: "0..1" }
 
 rules:
   - id: container-image.use-runpod-pytorch

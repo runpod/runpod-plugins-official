@@ -22,21 +22,21 @@ relations: []
 
 rules:
   - id: ssh-key.put-replaces-all
-    applies_to: [field:keys]
+    applies_to: ["field:keys"]
     statement: >
       `PUT /v2/account/ssh-keys` replaces the full set. Keys missing from the
       request are removed, and `[]` removes them all. To add one key, read the
       current set and send it back with the new key appended.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: PUT /v2/account/ssh-keys; UpdateSshKeysRequest.keys, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "PUT /v2/account/ssh-keys; UpdateSshKeysRequest.keys", seen: "2026-09-28" }
 
   - id: ssh-key.new-pods-only
-    applies_to: [field:keys]
+    applies_to: ["field:keys"]
     statement: >
       Key changes apply to pods created afterwards with `startSsh`. Running pods
       keep the keys they were created with.
     status: documented
     see: [pod-ssh-access.start-ssh-needs-keys]
     evidence:
-      - { source: rest-v2-spec, ref: PUT /v2/account/ssh-keys, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: PUT /v2/account/ssh-keys, seen: "2026-09-28" }

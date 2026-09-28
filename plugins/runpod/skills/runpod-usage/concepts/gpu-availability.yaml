@@ -32,7 +32,7 @@ rules:
     status: documented
     see: [gpu-type.availability-needs-product]
     evidence:
-      - { source: rest-v2-spec, ref: GET /v2/catalog/gpus product; GpuType.dataCenters; DataCenter.gpuAvailability, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus product; GpuType.dataCenters; DataCenter.gpuAvailability", seen: "2026-09-28" }
 
   - id: gpu-availability.levels-and-case
     statement: >
@@ -41,7 +41,7 @@ rules:
       comparisons carried over from GraphQL stop matching without any error.
     status: documented
     evidence:
-      - { source: rest-v2-spec, ref: AvailabilityLevel, seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: AvailabilityLevel, seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md }
 
   - id: gpu-availability.cuda-filter
@@ -52,7 +52,7 @@ rules:
     status: documented
     see: [gpu-type.cuda-versions-with-capacity]
     evidence:
-      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus cudaVersions, minCudaVersion", seen: 2026-09-28 }
+      - { source: rest-v2-spec, ref: "GET /v2/catalog/gpus cudaVersions, minCudaVersion", seen: "2026-09-28" }
 
   - id: gpu-availability.cli-best-status
     statement: >
