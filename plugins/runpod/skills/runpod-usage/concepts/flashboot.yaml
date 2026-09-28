@@ -6,7 +6,7 @@ summary: >
   scales down, so it can start again faster than after a fresh cold start.
 product: serverless
 is_a: null
-part_of: null
+part_of: serverless-endpoint
 aliases: [FlashBoot, Priority FlashBoot, flashBootType]
 
 surfaces:

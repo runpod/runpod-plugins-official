@@ -1,3 +1,7 @@
+---
+concepts: [runpodctl, registry-credential]
+---
+
 # runpodctl — behavior reference
 
 **This file does not list flags.** `runpodctl <resource> <action> --help` does, it is always

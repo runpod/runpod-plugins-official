@@ -1,3 +1,7 @@
+---
+concepts: [pod-migration]
+---
+
 # Common gotchas
 
 Cross-cutting mistakes that bite people deploying on Runpod, as

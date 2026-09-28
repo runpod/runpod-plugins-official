@@ -1,3 +1,7 @@
+---
+concepts: [cpu-flavor]
+---
+
 # Flash — Endpoint API & compute-type reference
 
 ## Endpoint Constructor

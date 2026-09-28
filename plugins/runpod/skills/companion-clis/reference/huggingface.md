@@ -1,3 +1,7 @@
+---
+concepts: [container-image]
+---
+
 # HuggingFace CLI
 
 The HuggingFace CLI (`hf`) is used to download models from the Hub to your local machine so they are cached and available when you build and run the Docker container. For example, to deploy `openai/gpt-oss-20b` to a Runpod serverless endpoint: download the model locally first, build a Docker image that includes or mounts it, validate the container locally, then push the image to Docker Hub for Runpod to pull.

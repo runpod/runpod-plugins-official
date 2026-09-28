@@ -6,7 +6,7 @@ compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
   version: "1.5.0" # x-release-please-version
-  concepts: [container-image, network-volume, registry-credential]
+  concepts: [container-image, network-volume, hub-repo]
 license: Apache-2.0
 ---
 

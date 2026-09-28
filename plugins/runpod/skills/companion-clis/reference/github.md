@@ -1,3 +1,7 @@
+---
+concepts: [hub-repo, serverless-handler]
+---
+
 # GitHub CLI
 
 The GitHub CLI (`gh`) is used to manage repositories for Runpod serverless workers. This includes cloning repos into local Docker containers for testing, versioning source code so changes can be tracked and shared with teammates or collaborators, and creating GitHub releases that publish listings to the Runpod Hub. The Hub indexes releases — not commits — so every deployment update requires a new release.

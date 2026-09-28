@@ -159,6 +159,7 @@ CREATE TABLE guides (
   path        TEXT NOT NULL,
   mcp         TEXT CHECK (mcp IN ('full', 'partial', 'none')),
   needs_shell INTEGER NOT NULL,
+  parent      TEXT,           -- the skill or golden path this guide belongs to
   body        TEXT NOT NULL
 );
 

@@ -44,6 +44,12 @@ export interface Guide {
   needs_shell: boolean;
   /** Concepts the guide is linked to, by any link below. */
   concepts: string[];
+  /**
+   * The guide this one belongs to: a reference doc's skill, a golden-path
+   * variant's parent path, or the router skill ("runpod") for a top-level golden
+   * path, which it indexes. Null for skills.
+   */
+  parent: string | null;
   body: string;
 }
 
@@ -196,6 +202,8 @@ export function collectGuides(
       // Skills keep their links under metadata, which skill loaders pass through.
       const metadata = (meta.metadata ?? {}) as Record<string, unknown>;
       declare(id, path, metadata.concepts, "explains");
+    } else if ("concepts" in meta) {
+      declare(id, path, meta.concepts, "explains");
     }
 
     for (const [target, rules] of citing.get(path) ?? []) {
@@ -203,6 +211,15 @@ export function collectGuides(
     }
 
     const skillShell = kind !== "golden-path" && /^(runpodctl|flash|companion-clis)(\/|$)/.test(id);
+    // golden-path/02-comfyui-pod/variant-a -> golden-path/02-comfyui-pod; golden-path/06-dev-pod -> runpod
+    const parent =
+      kind === "skill"
+        ? null
+        : kind === "reference"
+          ? id.split("/")[0]!
+          : id.split("/").length > 2
+            ? id.split("/").slice(0, 2).join("/")
+            : "runpod";
     return {
       id,
       kind,
@@ -213,12 +230,18 @@ export function collectGuides(
       mcp,
       needs_shell: skillShell || lanes.some((lane) => SHELL_LANES.has(lane)),
       concepts: [],
+      parent,
       body: body.trim(),
     };
   });
 
+  const guideIds = new Set(guides.map((guide) => guide.id));
   for (const guide of guides) {
     guide.concepts = [...new Set(links.filter((link) => link.from === guide.id).map((link) => link.to))].sort();
+    if (!guide.concepts.length) {
+      errors.push(`${guide.path}: links to no concept; list the concepts it covers under concepts (metadata.concepts for a SKILL.md)`);
+    }
+    if (guide.parent && !guideIds.has(guide.parent)) errors.push(`${guide.path}: parent guide ${guide.parent} does not exist`);
   }
   return { guides, links, errors };
 }
@@ -296,5 +319,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   writeFileSync(out, text);
   const counts = (["skill", "reference", "golden-path"] as const).map((kind) => `${bundle.guides.filter((g) => g.kind === kind).length} ${kind}s`);
   console.log(`wrote ${basename(out)} ${bundle.version} (${counts.join(", ")}, ${concepts.length} concepts, ${(text.length / 1024).toFixed(0)} KB)`);
+  const unguided = concepts.filter((c) => !linkedConcepts.has(c.id)).map((c) => c.id);
+  if (unguided.length) console.log(`concepts no guide covers yet: ${unguided.join(", ")}`);
   console.log(`links: ${bundle.links.length}; concepts with a guide ${linkedConcepts.size}/${concepts.length}, with an example ${exampleConcepts.size}/${concepts.length}`);
 }

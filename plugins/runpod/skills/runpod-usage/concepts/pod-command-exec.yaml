@@ -6,7 +6,7 @@ summary: >
   do this over SSH.
 product: pods
 is_a: null
-part_of: null
+part_of: pod
 aliases: [exec, runpodctl exec, pod commands, SSH exec]
 
 surfaces:

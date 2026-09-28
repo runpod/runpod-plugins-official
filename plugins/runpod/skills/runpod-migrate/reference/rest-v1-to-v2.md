@@ -1,3 +1,7 @@
+---
+concepts: [cpu-flavor, cpu-pod, registry-credential]
+---
+
 # REST v1 → REST v2 mapping
 
 Base URL: `https://rest.runpod.io/v1` → **`https://api.runpod.io/v2`**

@@ -1,3 +1,7 @@
+---
+concepts: [container-image, template]
+---
+
 # Docker
 
 Docker is used to build and validate container images locally before pushing to Docker Hub. Runpod uses Docker Hub as its default image registry — serverless endpoints, pods, and templates all reference images by their Docker Hub tag. Once an image is pushed, Runpod workers pull it automatically when the endpoint or pod is started.

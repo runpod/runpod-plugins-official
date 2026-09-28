@@ -12,8 +12,10 @@ export interface Guide {
   mcp: "full" | "partial" | "none" | null;
   /** True when the guide needs a shell (runpodctl, flash, SSH, docker, hf, aws). */
   needs_shell: boolean;
-  /** Concepts the guide is linked to. */
+  /** Concepts the guide is linked to. Every guide has at least one. */
   concepts: string[];
+  /** The skill or golden path this guide belongs to ("runpod" for a top-level golden path). Null for skills. */
+  parent: string | null;
   body: string;
 }
 

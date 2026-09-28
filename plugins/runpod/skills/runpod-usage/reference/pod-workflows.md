@@ -1,3 +1,7 @@
+---
+concepts: [pod, pod-ssh-access, pod-command-exec, exposed-port, network-volume]
+---
+
 # The pod development loop
 
 A repeatable loop for standing up, iterating on, and delivering **any** workload

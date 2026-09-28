@@ -6,7 +6,7 @@ summary: >
   public IP, or directly to the pod's SSH daemon over its published `22/tcp` port.
 product: pods
 is_a: null
-part_of: null
+part_of: pod
 aliases: [SSH, web terminal, ssh.runpod.io, startSsh]
 
 surfaces:

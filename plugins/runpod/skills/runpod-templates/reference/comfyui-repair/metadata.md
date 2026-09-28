@@ -1,3 +1,7 @@
+---
+concepts: [template, pod]
+---
+
 # Apply ComfyUI model metadata
 
 Use this reference after identity resolution. A request to repair authorizes `verified`

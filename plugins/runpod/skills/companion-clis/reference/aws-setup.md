@@ -1,3 +1,7 @@
+---
+concepts: [file-transfer]
+---
+
 # AWS CLI — one-time setup
 
 Install the AWS CLI (only needed once, if `aws --version` fails). Credentials, region

@@ -8,7 +8,7 @@ summary: >
   that machine even when the data center has stock.
 product: pods
 is_a: null
-part_of: null
+part_of: pod
 aliases: [pod placement, deploying a pod, pod scheduling, zero GPU pods]
 
 steps:

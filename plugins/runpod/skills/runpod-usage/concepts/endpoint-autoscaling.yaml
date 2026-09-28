@@ -7,7 +7,7 @@ summary: >
   `workers.max`.
 product: serverless
 is_a: null
-part_of: null
+part_of: serverless-endpoint
 aliases: [scaler, scale to zero, min workers, max workers, idle timeout, workersMin, workersMax, workersStandby]
 
 surfaces:

@@ -1,3 +1,7 @@
+---
+concepts: [api-key, ssh-key, runpodctl, flash, pod-ssh-access]
+---
+
 # Getting started (auth & first-run setup)
 
 Before any lane can act, its credential has to resolve. Everything Runpod-side

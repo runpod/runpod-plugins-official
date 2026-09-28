@@ -12,7 +12,7 @@ compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
   version: "1.5.0" # x-release-please-version
-  concepts: [runpod-platform, api-key]
+  concepts: [runpod-platform, pod, serverless-endpoint, template, network-volume]
 license: Apache-2.0
 ---
 

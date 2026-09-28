@@ -137,7 +137,9 @@ editing the repo. Each is its own checkable rule.
      an agent with only the Runpod MCP tools finish it) and `concepts` (the concept ids it works with).
      `pnpm check:guides` in `ontology/tools/` checks them, and `pnpm build:bundle --suggest` lists
      candidate concepts. A path without this frontmatter fails the check.
-   - Each skill's `SKILL.md` lists the concepts it covers under `metadata.concepts`.
+   - Each skill's `SKILL.md` lists the concepts it covers under `metadata.concepts`, and a
+     reference doc lists them in a `concepts:` frontmatter line unless a concept rule already
+     cites it. Every skill, reference doc and golden path must link to at least one concept.
    - The per-path verification status is authoritative in `golden-paths/README.md`'s Status
      column; do not restate it in AGENTS.md (it drifts).
 6. **Evals** — add or update an `evals/*.eval.md` when you add or change routing/behavior.
