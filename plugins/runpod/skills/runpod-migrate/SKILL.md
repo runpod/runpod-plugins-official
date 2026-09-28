@@ -51,9 +51,9 @@ step 3, when the inventory shows the code depends on a capability v2 removed. Th
 is a real fork and you cannot answer it for them.
 
 Some things **have no v2 equivalent and must stay on GraphQL regardless of scope**:
-account/billing identity (`myself`), secrets, spot/interruptible pods, cluster
-create/delete. A "full" migration still leaves those calls in place — say so up front
-rather than letting the user discover it at the end.
+account/billing identity (`myself`) and spot/interruptible pods. A "full" migration still
+leaves those calls in place — say so up front rather than letting the user discover it at
+the end.
 
 **Never rewrite the serverless job API.** `https://api.runpod.ai/v2/<endpointId>/run`,
 `/runsync`, `/status`, `/stream`, `/cancel` is a *different API* that happens to have
@@ -278,7 +278,7 @@ Most users read the summary and not the diff. Structure it exactly like this:
 the same-name-different-meaning items that applied
 
 ## Still on GraphQL (no v2 equivalent)
-myself / secrets / spot pods / clusters — and why
+myself / spot pods — and why
 
 ## Unlocks: what you can build now
 tied to what this codebase already does
