@@ -164,9 +164,6 @@ runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image
 
 `runpodctl pod reset <pod-id>` returns an unsupported-by-API-v2 error. Use `pod restart` only when a restart is intended.
 
-```bash
-```
-
 **A stalled deploy shows up in `--source system`** (v2.10.0+): repeated pull progress, or a
 `create container` that never reaches `start`. Use `--source container` for your workload's own
 output. Each line is one `{source,line,ts}` object, so pipe it straight to `jq`.
