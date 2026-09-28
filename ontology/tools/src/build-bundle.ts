@@ -243,6 +243,13 @@ export function collectGuides(
     }
     if (guide.parent && !guideIds.has(guide.parent)) errors.push(`${guide.path}: parent guide ${guide.parent} does not exist`);
   }
+  // The other direction: a concept no guide covers is a doc that has not been written.
+  const covered = new Set(links.map((link) => link.to));
+  for (const concept of concepts) {
+    if (!covered.has(concept.id)) {
+      errors.push(`concept ${concept.id}: no skill, reference doc or golden path covers it; write or extend a doc that does (see .claude/skills/write-guide)`);
+    }
+  }
   return { guides, links, errors };
 }
 

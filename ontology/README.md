@@ -32,7 +32,7 @@ To add or change a concept, follow `.claude/skills/add-concept/SKILL.md`.
 
 ## Guides, examples and concepts in one package
 
-`pnpm build:bundle` writes `packages/knowledge/knowledge.json`, the `@runpod/knowledge`
+`pnpm build:bundle` writes `packages/knowledge/knowledge.json`, the `runpod-official-plugin-knowledge`
 package. It holds every skill, reference doc and golden path, the concept files, and
 the links between them:
 
@@ -56,8 +56,11 @@ concept ──rules──▶ facts with public evidence
   links as a tree.
 - `pnpm build:bundle --suggest` lists the concepts each golden path mentions but does not
   declare, as candidates to review.
-- The build prints coverage: how many concepts have a guide and how many have an example.
-  A concept with no example, or a path with no concepts, is a gap to fill.
+- The link is checked both ways: every guide covers at least one concept, and every concept is
+  covered by at least one guide. The build also prints how many concepts have a golden-path
+  example, which is the gap to fill next.
+- To add or change a skill, reference doc or golden path, follow
+  `.claude/skills/write-guide/SKILL.md`; for a concept, `.claude/skills/add-concept/SKILL.md`.
 - The Runpod MCP server can depend on the package and serve the guides and concepts as
   tools, and the same file can be ingested by other assistants.
 
