@@ -3,7 +3,7 @@
 This repo is a **plugin marketplace**. It ships one plugin, `runpod`, whose skills
 also install via [skills.sh](https://skills.sh/) — both read the same
 `.claude-plugin/marketplace.json`. Each release also publishes the same content to npm
-as [`@runpod/knowledge`](packages/knowledge/README.md), for programs such as the Runpod
+as [`runpod-official-plugin-knowledge`](packages/knowledge/README.md), for programs such as the Runpod
 MCP server.
 
 ## Layout
@@ -20,7 +20,7 @@ plugins/runpod/
   skills/<name>/SKILL.md          the skills (+ reference/, evals/)
   skills/runpod/golden-paths/     worked end-to-end reference tasks (no SKILL.md)
   skills/runpod-usage/concepts/   the concept graph: one YAML file per concept
-packages/knowledge/               @runpod/knowledge, the npm package built from all of the above
+packages/knowledge/               runpod-official-plugin-knowledge, the npm package built from all of the above
 ontology/                         Node 24 tooling: validator, bundle, SQLite build, graph page
 hooks/                            validation scripts
 testdata/runpod-migrate/          fixture repos for the scanner regression check
@@ -36,7 +36,9 @@ testdata/runpod-migrate/          fixture repos for the scanner regression check
 3. List the concepts the skill covers under `metadata.concepts` in its frontmatter, and in a
    `concepts:` line at the top of any new reference doc. A new golden path declares `lanes`,
    `mcp` and `concepts` (see `plugins/runpod/skills/runpod/golden-paths/README.md`).
-   `pnpm check:guides` in `ontology/tools/` checks them.
+   `pnpm check:guides` in `ontology/tools/` checks them. The `write-guide` skill
+   (`.claude/skills/write-guide/SKILL.md`) is the full procedure for keeping docs and concepts
+   in agreement.
 4. Add or update an `evals/*.eval.md` when you change routing or behavior.
 5. To ship the change, cut a release (see **Cutting a release** below) — don't bump
    the manifests by hand.
@@ -103,16 +105,16 @@ release-please runs on every push to `main` (`.github/workflows/release-please.y
 - the two `plugin.json`s, `gemini-extension.json`, top-level `marketplace.json` (via the JSON `jsonpath` updater),
 - each skill's `SKILL.md` `metadata.version` (via the `# x-release-please-version` annotation on that line) — there is **no** independent per-skill versioning; a skill's version just mirrors the plugin version so a reader of any single `SKILL.md` sees which release it shipped in.
 
-- `packages/knowledge/package.json`, so `@runpod/knowledge` is published at the plugin's version.
+- `packages/knowledge/package.json`, so `runpod-official-plugin-knowledge` is published at the plugin's version.
 
-**Merging the release PR also publishes `@runpod/knowledge` to npm.** The `publish-knowledge`
+**Merging the release PR also publishes `runpod-official-plugin-knowledge` to npm.** The `publish-knowledge`
 job in `release-please.yml` runs when a release is cut: it checks the concepts and guides,
 builds `knowledge.json` from the release commit and runs `npm publish`. It authenticates with
 npm trusted publishing (GitHub OIDC), so no npm token is stored, and it skips a version that
 is already on npm. After a break-glass release, run the workflow by hand
 (*Actions → release-please → Run workflow*) to publish.
 
-One-time setup, by an npm admin of the `@runpod` scope: publish the first version by hand
+One-time setup, by someone who can publish packages for Runpod on npm: publish the first version by hand
 (`cd packages/knowledge && npm publish`, which builds the bundle first), then on npmjs.com add
 a trusted publisher for `runpod/runpod-plugins-official` with workflow `release-please.yml`.
 

@@ -36,7 +36,7 @@ testdata/runpod-migrate/          fixture repos the scanner regression check run
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
 testdata/runpodctl/command-surface.json   vendored runpodctl command surface the absence check gates against
 ontology/                         Node 24 tooling for the concept files: validator, bundle, SQLite build, graph page
-packages/knowledge/               @runpod/knowledge: the skills, golden paths and concepts as one JSON bundle, published to npm on release
+packages/knowledge/               runpod-official-plugin-knowledge: the skills, golden paths and concepts as one JSON bundle, published to npm on release
 .claude/skills/add-concept/       contributor procedure for adding or changing a concept
 .github/workflows/validate.yml    runs the hooks + the ComfyUI workflow helper unittests on PRs
 .github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API + the latest runpodctl release
@@ -178,15 +178,18 @@ editing the repo. Each is its own checkable rule.
      falsifying claims the skills stated as fact.
 10. **Releases** —
    - Never hand-bump versions; release-please cuts the release (see `CONTRIBUTING.md` →
-     Cutting a release). Cutting a release also publishes `@runpod/knowledge` to npm at the
+     Cutting a release). Cutting a release also publishes `runpod-official-plugin-knowledge` to npm at the
      same version, so plugin content changes reach the MCP server through that package.
    - Use Conventional Commits.
 11. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
    move long tables and deep explanations into `reference/*.md` linked from the body.
 12. **Concept files** — `skills/runpod-usage/concepts/*.yaml` hold exact facts; the reference
    docs explain them.
-   - Follow `.claude/skills/add-concept/SKILL.md`, and run `pnpm validate --strict` in
-     `ontology/tools/` before committing.
+   - Follow `.claude/skills/add-concept/SKILL.md` for concepts and `.claude/skills/write-guide/SKILL.md`
+     for skills, reference docs and golden paths, and run `pnpm validate --strict` and
+     `pnpm check:guides` in `ontology/tools/` before committing.
+   - Guides state only facts the concept rules support; a fact a guide needs goes into a rule
+     first. Every concept is covered by at least one guide, and `check:guides` fails otherwise.
    - Every file is public-facing: cite only the REST v2 spec, the public docs, a skill file in
      this repo, or a live probe. The validator rejects internal names and time-bound wording.
    - When you change a skill doc that a concept cites, re-read the citing rules (grep the

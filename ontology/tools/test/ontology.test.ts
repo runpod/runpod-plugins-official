@@ -179,8 +179,8 @@ test("golden-path and skill frontmatter link to concepts and reject bad or missi
   assert.deepEqual(guides.map((g) => g.parent), [null, "demo", null, "runpod", "runpod", "runpod"]);
 
   const good = guides.find((g) => g.id === "golden-path/01-good")!;
-  assert.deepEqual([good.lanes, good.mcp, good.needs_shell, good.concepts], [["runpod-mcp", "rest"], "full", false, ["site", "volume"]]);
-  assert.deepEqual(links.filter((l) => l.from === good.id).map((l) => `${l.type}:${l.to}:${l.via}`), ["uses:volume:frontmatter", "uses:site:frontmatter"]);
+  assert.deepEqual([good.lanes, good.mcp, good.needs_shell, good.concepts], [["runpod-mcp", "rest"], "full", false, ["site", "volume", "volume-setup"]]);
+  assert.deepEqual(links.filter((l) => l.from === good.id).map((l) => `${l.type}:${l.to}:${l.via}`), ["uses:volume:frontmatter", "uses:site:frontmatter", "uses:volume-setup:frontmatter"]);
   assert.deepEqual(links.filter((l) => l.from === "demo").map((l) => `${l.type}:${l.to}`), ["explains:volume"]);
   assert.equal(guides.find((g) => g.id === "demo/intro")!.mcp, null);
 
@@ -223,4 +223,10 @@ test("a guide whose id matches a concept id stays a separate graph node", () => 
   assert.ok(ids.includes("volume") && ids.includes("guide:volume"));
   assert.ok(graphLinks.some((l) => l.source === "guide:volume" && l.target === "site" && l.type === "explains"));
   assert.ok(links.length > 0);
+});
+
+test("a concept that no guide covers is an error", () => {
+  const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
+  const { errors } = collectGuides([...concepts, { ...concepts[0]!, id: "orphan", rules: [] }], join(fixtures, "skills"), fixtures);
+  assertHasError(errors, "concept orphan: no skill, reference doc or golden path covers it");
 });

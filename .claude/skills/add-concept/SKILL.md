@@ -1,6 +1,6 @@
 ---
 name: add-concept
-description: Add or change a node in the Runpod concept graph (plugins/runpod/skills/runpod-usage/concepts/*.yaml), including process nodes that explain how something works step by step. Use when asked to add a concept, add a rule to one, document how a Runpod flow works, or fix a node. Covers duplicate checks, choosing the kind, finding public sources, writing the file, validating, and checking the graph.
+description: Add or change a node in the Runpod concept graph (plugins/runpod/skills/runpod-usage/concepts/*.yaml), including process nodes that explain how something works step by step. Use when asked to add a concept, add a rule to one, document how a Runpod flow works, or fix a node. Covers duplicate checks, choosing the kind, finding public sources, writing the file, validating, and checking the graph. Pairs with the write-guide skill, which keeps the skills and docs linked to the concepts.
 ---
 
 # Add a concept to the graph
@@ -105,7 +105,14 @@ Common validator errors:
 In the graph, find the node, check that its links make sense, and read its
 panel once as a customer would.
 
-## 6. Commit
+## 6. Link a guide
+
+Every concept must be covered by at least one skill, reference doc or golden path;
+`pnpm check:guides` fails otherwise. Follow the `write-guide` skill
+(`.claude/skills/write-guide/SKILL.md`) to extend an existing doc or write a new one, and to
+check that the docs already covering the concept still agree with its rules.
+
+## 7. Commit
 
 Commit the concept file, plus any other files you linked from or to, with a
 Conventional Commits message that says what the node explains, for example
