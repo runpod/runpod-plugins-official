@@ -195,7 +195,7 @@ example that uses it. Browse it as a graph or a tree with the tools in
 
 ## Also on npm
 
-Every release also publishes [`@runpod/knowledge`](packages/knowledge/README.md): all the
+Every release also publishes [`runpod-official-plugin-knowledge`](packages/knowledge/README.md): all the
 skills, reference docs, golden paths and concepts as one JSON file, at the plugin's
 version. It is for programs, not for installing the plugin. The Runpod MCP server can
 depend on it to serve the same guides and concepts to agents that don't have the plugin.
@@ -232,7 +232,7 @@ where the commands that were actually run against a real account live.
 .agents/plugins/marketplace.json  Codex marketplace manifest
 plugins/runpod/                   the plugin (skills/ incl. runpod/golden-paths/ and
                                   runpod-usage/concepts/, .mcp.json, manifests)
-packages/knowledge/               @runpod/knowledge, the npm package built from the plugin
+packages/knowledge/               runpod-official-plugin-knowledge, the npm package built from the plugin
 ontology/                         concept graph tooling: validator, bundle, SQLite, graph page
 hooks/                            marketplace, branding & link validation
 ```

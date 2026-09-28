@@ -23,7 +23,7 @@ for f in [
     "plugins/runpod/.codex-plugin/plugin.json",
     "plugins/runpod/gemini-extension.json",
     ".claude-plugin/marketplace.json",
-    # The @runpod/knowledge npm package is published at the plugin's version.
+    # The runpod-official-plugin-knowledge npm package is published at the plugin's version.
     "packages/knowledge/package.json",
 ]:
     seen[f] = json.loads((ROOT / f).read_text()).get("version")
