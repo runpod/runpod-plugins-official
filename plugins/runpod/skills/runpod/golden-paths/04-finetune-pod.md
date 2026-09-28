@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh, hf]
+mcp: partial
+concepts: [pod, network-volume, pod-ssh-access, gpu-type, template, data-center]
+---
+
 # Golden path 04 — LoRA fine-tune (training run) on a pod
 
 **Goal:** the standalone **training half** — LoRA-fine-tune a small LLM on a GPU

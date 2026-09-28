@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh, flash, runpod-mcp]
+mcp: partial
+concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool]
+---
+
 # Golden path 08 — fine-tune → serve (LoRA on a pod → serverless)
 
 **Goal:** the smallest end-to-end **train-then-serve** loop: LoRA-fine-tune a tiny LLM

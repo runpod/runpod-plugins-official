@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, aws]
+mcp: partial
+concepts: [network-volume, data-center, serverless-endpoint, serverless-handler, worker, template]
+---
+
 # Golden path 19 — three-region same-file endpoint (prove the HA promise with a real served payload)
 
 **Goal:** take the multi-region HA pattern from golden path

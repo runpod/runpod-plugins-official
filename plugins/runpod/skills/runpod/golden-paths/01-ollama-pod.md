@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh]
+mcp: partial
+concepts: [pod, network-volume, pod-ssh-access, template, exposed-port, gpu-type]
+---
+
 # Golden path 01 — Ollama server on a pod + access URL
 
 **Goal:** from a plain request ("stand up an Ollama server on Runpod and give me

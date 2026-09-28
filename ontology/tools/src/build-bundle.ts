@@ -4,7 +4,7 @@
 //
 //   node src/build-bundle.ts [out.json]   write the bundle (default: packages/knowledge/knowledge.json)
 //   node src/build-bundle.ts --check      check golden-path frontmatter and links, write nothing (CI)
-//   node src/build-bundle.ts --suggest    list concepts each golden path mentions but does not declare
+//   node src/build-bundle.ts --suggest    list concepts each golden path mentions but does not link
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -34,11 +34,9 @@ export interface Guide {
   description: string;
   /** Repo-relative path of the source file. */
   path: string;
-  /** True when a golden path declares lanes, mcp and concepts in frontmatter. */
-  tagged: boolean;
-  /** Tools the guide drives: from frontmatter, or read from the "Lane" line of an untagged golden path. */
+  /** Tools a golden path drives, from its frontmatter. Empty for skills and reference docs. */
   lanes: string[];
-  /** Whether an agent with only the MCP tools can finish it. Null when not declared. */
+  /** Whether an agent with only the MCP tools can finish a golden path. Null for skills and reference docs. */
   mcp: (typeof MCP_LEVELS)[number] | null;
   /** True when the guide needs a shell (runpodctl, flash, SSH, docker, hf, aws). */
   needs_shell: boolean;
@@ -50,7 +48,8 @@ export interface Guide {
 /**
  * A link from a guide to a concept.
  * - uses: a golden path works with the concept (declared in its frontmatter, or it is cited as a rule's evidence).
- * - explains: a skill or reference doc is cited as evidence by the concept's rules.
+ * - explains: a skill declares the concept under metadata.concepts, or a skill or
+ *   reference doc is cited as evidence by the concept's rules.
  */
 export interface Link {
   from: string;
@@ -70,18 +69,6 @@ export interface Bundle {
   concepts: Concept[];
   links: Link[];
 }
-
-// Lane names as they appear in the "Lane" line of an untagged golden path.
-const LANE_PATTERNS: [string, RegExp][] = [
-  ["runpodctl", /runpodctl/i],
-  ["runpod-mcp", /\bMCP\b/],
-  ["flash", /\bflash\b/i],
-  ["ssh", /\bSSH\b/i],
-  ["docker", /\bdocker\b/i],
-  ["hf", /\bhf\b/],
-  ["aws", /\baws\b/i],
-  ["rest", /\bREST\b/],
-];
 
 const title = (body: string, fallback: string) => body.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? fallback;
 
@@ -145,8 +132,9 @@ function guideFiles(skillsDir: string): { id: string; kind: Guide["kind"]; file:
 }
 
 /**
- * Reads every guide and links it to the concepts. Errors name a golden path whose
- * frontmatter uses an unknown lane, mcp level or concept id.
+ * Reads every guide and links it to the concepts. Errors name a golden path with
+ * missing frontmatter or an unknown lane, mcp level or concept id, and a skill
+ * with missing or unknown metadata.concepts.
  */
 export function collectGuides(
   concepts: Concept[],
@@ -171,30 +159,36 @@ export function collectGuides(
     }
   }
 
+  const declare = (id: string, path: string, value: unknown, type: Link["type"]) => {
+    if (!Array.isArray(value) || !value.length) {
+      errors.push(`${path}: concepts must be a non-empty list`);
+      return;
+    }
+    for (const target of value.map(String)) {
+      if (!conceptIds.has(target)) errors.push(`${path}: concept "${target}" is not a concept`);
+      else links.push({ from: id, to: target, type, via: "frontmatter" });
+    }
+  };
+
   const guides = guideFiles(skillsDir).map(({ id, kind, file }): Guide => {
     const { meta, body } = splitFrontmatter(readFileSync(file, "utf8"));
     const path = relative(root, file);
-    const tagged = kind === "golden-path" && ("lanes" in meta || "mcp" in meta || "concepts" in meta);
     let lanes: string[] = [];
     let mcp: Guide["mcp"] = null;
 
-    if (tagged) {
-      const declared = { lanes: meta.lanes, mcp: meta.mcp, concepts: meta.concepts };
-      if (!Array.isArray(declared.lanes) || !declared.lanes.length) errors.push(`${path}: lanes must be a non-empty list`);
-      else lanes = declared.lanes.map(String);
+    if (kind === "golden-path") {
+      if (!Array.isArray(meta.lanes) || !meta.lanes.length) errors.push(`${path}: lanes must be a non-empty list`);
+      else lanes = meta.lanes.map(String);
       for (const lane of lanes) {
         if (!(LANE_NAMES as readonly string[]).includes(lane)) errors.push(`${path}: lane "${lane}" is not one of ${LANE_NAMES.join(", ")}`);
       }
-      if (!(MCP_LEVELS as readonly unknown[]).includes(declared.mcp)) errors.push(`${path}: mcp must be one of ${MCP_LEVELS.join(", ")}`);
-      else mcp = declared.mcp as Guide["mcp"];
-      if (!Array.isArray(declared.concepts) || !declared.concepts.length) errors.push(`${path}: concepts must be a non-empty list`);
-      for (const target of Array.isArray(declared.concepts) ? declared.concepts.map(String) : []) {
-        if (!conceptIds.has(target)) errors.push(`${path}: concept "${target}" is not a concept`);
-        else links.push({ from: id, to: target, type: "uses", via: "frontmatter" });
-      }
-    } else if (kind === "golden-path") {
-      const laneLine = body.match(/\*\*Lane(?:\(s\))?:?\*\*:?[^\n]*|Lane:[^*\n]*/)?.[0] ?? "";
-      lanes = LANE_PATTERNS.filter(([, pattern]) => pattern.test(laneLine)).map(([lane]) => lane);
+      if (!(MCP_LEVELS as readonly unknown[]).includes(meta.mcp)) errors.push(`${path}: mcp must be one of ${MCP_LEVELS.join(", ")}`);
+      else mcp = meta.mcp as Guide["mcp"];
+      declare(id, path, meta.concepts, "uses");
+    } else if (kind === "skill") {
+      // Skills keep their links under metadata, which skill loaders pass through.
+      const metadata = (meta.metadata ?? {}) as Record<string, unknown>;
+      declare(id, path, metadata.concepts, "explains");
     }
 
     for (const [target, rules] of citing.get(path) ?? []) {
@@ -208,7 +202,6 @@ export function collectGuides(
       title: title(body, id),
       description: typeof meta.description === "string" ? meta.description.trim() : summary(body),
       path,
-      tagged,
       lanes,
       mcp,
       needs_shell: skillShell || lanes.some((lane) => SHELL_LANES.has(lane)),
@@ -273,7 +266,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
 
   const paths = bundle.guides.filter((g) => g.kind === "golden-path");
-  const tagged = paths.filter((g) => g.tagged);
   const linkedConcepts = new Set(bundle.links.map((link) => link.to));
   const exampleConcepts = new Set(bundle.links.filter((link) => link.from.startsWith("golden-path/")).map((link) => link.to));
 
@@ -281,13 +273,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     // Candidate concepts for every golden path, to review before writing frontmatter.
     for (const guide of paths) {
       const hits = suggestConcepts(guide, concepts).slice(0, 8);
-      const declared = guide.concepts.length ? ` declared: ${guide.concepts.join(", ")};` : "";
-      console.log(`${guide.id} [${guide.tagged ? "tagged" : "untagged"}]${declared} mentions: ${hits.map((h) => `${h.concept}(${h.mentions})`).join(", ") || "-"}`);
+      const declared = guide.concepts.length ? ` linked: ${guide.concepts.join(", ")};` : "";
+      console.log(`${guide.id}${declared} mentions: ${hits.map((h) => `${h.concept}(${h.mentions})`).join(", ") || "-"}`);
     }
     process.exit(0);
   }
   if (args.includes("--check")) {
-    console.log(`links ok: ${bundle.links.length} links, ${tagged.length}/${paths.length} golden paths tagged`);
+    console.log(`links ok: ${bundle.links.length} links across ${bundle.guides.length} guides`);
     process.exit(0);
   }
 
@@ -297,5 +289,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   writeFileSync(out, text);
   const counts = (["skill", "reference", "golden-path"] as const).map((kind) => `${bundle.guides.filter((g) => g.kind === kind).length} ${kind}s`);
   console.log(`wrote ${basename(out)} ${bundle.version} (${counts.join(", ")}, ${concepts.length} concepts, ${(text.length / 1024).toFixed(0)} KB)`);
-  console.log(`links: ${bundle.links.length}; golden paths tagged ${tagged.length}/${paths.length}; concepts with a guide ${linkedConcepts.size}/${concepts.length}, with an example ${exampleConcepts.size}/${concepts.length}`);
+  console.log(`links: ${bundle.links.length}; concepts with a guide ${linkedConcepts.size}/${concepts.length}, with an example ${exampleConcepts.size}/${concepts.length}`);
 }

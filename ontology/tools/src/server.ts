@@ -9,6 +9,7 @@
 //   GET /api/concepts/<ref>           one concept by id, name or alias, with its rules
 //   GET /api/concepts/<ref>/neighbors the concepts it links to and from
 //   GET /api/search?q=<text>&limit=N  rules ranked by full-text match
+//   GET /api/tree?root=<ref>          the concept hierarchy with linked guides
 
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -16,7 +17,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_GRAPH_PATH } from "./build-graph.ts";
 import { DEFAULT_DB_PATH } from "./build-sqlite.ts";
-import { getConcept, neighbors, openOntology, search } from "./query.ts";
+import { getConcept, neighbors, openOntology, search, tree } from "./query.ts";
 
 export interface Reply {
   status: number;
@@ -28,6 +29,7 @@ const ROUTES = [
   "GET /api/concepts/<id|name|alias>",
   "GET /api/concepts/<id|name|alias>/neighbors",
   "GET /api/search?q=<text>&limit=<1-50>",
+  "GET /api/tree?root=<id|name|alias>",
 ];
 
 const notFound = (message: string): Reply => ({ status: 404, body: { error: message } });
@@ -61,6 +63,13 @@ export function route(db: DatabaseSync, url: URL): Reply {
     if (!query) return { status: 400, body: { error: "q is required" } };
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 10, 1), 50);
     return { status: 200, body: search(db, query, { limit }) };
+  }
+
+  if (resource === "tree" && !ref) {
+    const rootRef = url.searchParams.get("root")?.trim();
+    const root = rootRef ? getConcept(db, rootRef)?.id : undefined;
+    if (rootRef && !root) return notFound(`no concept matches "${rootRef}"`);
+    return { status: 200, body: tree(db, root) };
   }
 
   return notFound(`no route for ${url.pathname}`);

@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, ssh]
+mcp: partial
+concepts: [container-image, pod, pod-ssh-access, ssh-key, template, cpu-pod]
+---
+
 # Golden path 22 — minimal **pod** image (and don't kill SSH)
 
 ✅ **Live-verified** (built → pushed → CPU pod launched → **SSH'd in** → HTTP proxy `200` → torn down).

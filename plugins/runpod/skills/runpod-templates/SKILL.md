@@ -15,6 +15,7 @@ allowed-tools: Bash(python3:*), Bash(curl:*)
 metadata:
   author: runpod
   version: "1.4.0" # x-release-please-version
+  concepts: [template, container-image, pod, exposed-port]
 license: Apache-2.0
 ---
 

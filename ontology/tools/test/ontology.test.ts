@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { collectGuides } from "../src/build-bundle.ts";
 import { graphData, renderGraph } from "../src/build-graph.ts";
 import { buildDatabase } from "../src/build-sqlite.ts";
-import { getConcept, neighbors, resolve, search } from "../src/query.ts";
+import { getConcept, guidesFor, neighbors, resolve, search, tree } from "../src/query.ts";
 import { route } from "../src/server.ts";
 import { validate } from "../src/validate.ts";
 
@@ -168,23 +168,44 @@ test("the API routes concepts, neighbors and search, and rejects the rest", () =
   assert.equal(get("/api/concepts/unknown").status, 404);
   assert.equal(get("/api/concepts/site/extra/path").status, 404);
   assert.equal(get("/other").status, 404);
+  assert.ok(Array.isArray(get("/api/tree").body));
+  assert.equal(get("/api/tree?root=nowhere").status, 404);
 });
 
-test("golden-path frontmatter links to concepts and rejects unknown lanes, levels and concepts", () => {
+test("golden-path and skill frontmatter link to concepts and reject bad or missing tags", () => {
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
   const { guides, links, errors } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
   assert.deepEqual(guides.map((g) => g.id), ["demo", "demo/intro", "golden-path/01-good", "golden-path/02-bad", "golden-path/03-untagged"]);
 
   const good = guides.find((g) => g.id === "golden-path/01-good")!;
-  assert.deepEqual([good.tagged, good.mcp, good.needs_shell, good.concepts], [true, "full", false, ["site", "volume"]]);
+  assert.deepEqual([good.lanes, good.mcp, good.needs_shell, good.concepts], [["runpod-mcp", "rest"], "full", false, ["site", "volume"]]);
   assert.deepEqual(links.filter((l) => l.from === good.id).map((l) => `${l.type}:${l.to}:${l.via}`), ["uses:volume:frontmatter", "uses:site:frontmatter"]);
+  assert.deepEqual(links.filter((l) => l.from === "demo").map((l) => `${l.type}:${l.to}`), ["explains:volume"]);
+  assert.equal(guides.find((g) => g.id === "demo/intro")!.mcp, null);
 
-  // An untagged path falls back to its Lane line and declares no mcp level.
-  const untagged = guides.find((g) => g.id === "golden-path/03-untagged")!;
-  assert.deepEqual([untagged.tagged, untagged.lanes, untagged.mcp, untagged.needs_shell], [false, ["runpodctl", "ssh"], null, true]);
-
-  for (const fragment of ['lane "telnet" is not one of', "mcp must be one of", 'concept "nowhere" is not a concept']) {
-    assertHasError(errors, `02-bad.md: ${fragment}`);
+  for (const fragment of [
+    '02-bad.md: lane "telnet" is not one of',
+    "02-bad.md: mcp must be one of",
+    '02-bad.md: concept "nowhere" is not a concept',
+    "03-untagged.md: lanes must be a non-empty list",
+    "03-untagged.md: mcp must be one of",
+    "03-untagged.md: concepts must be a non-empty list",
+  ]) {
+    assertHasError(errors, fragment);
   }
-  assert.equal(errors.length, 3);
+  assert.equal(errors.length, 6);
+});
+
+test("the database stores guides and the tree hangs concepts and their guides off their parents", () => {
+  const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
+  const { guides, links } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
+  const good = guides.filter((g) => g.id !== "golden-path/02-bad" && g.id !== "golden-path/03-untagged");
+  const db = buildDatabase(concepts, join(mkdtempSync(join(tmpdir(), "ontology-")), "guides.sqlite"), good, links.filter((l) => good.some((g) => g.id === l.from)));
+
+  assert.deepEqual(guidesFor(db, "volume").map((g) => `${g.kind}:${g.id}:${g.mcp}`), ["golden-path:golden-path/01-good:full", "skill:demo:null"]);
+  assert.deepEqual(getConcept(db, "site")!.guides.map((g) => g.id), ["golden-path/01-good"]);
+
+  const roots = tree(db);
+  assert.deepEqual(roots.map((node) => node.id).sort(), ["site", "volume", "volume-setup"]);
+  assert.deepEqual(tree(db, "volume")[0]!.guides.map((g) => g.id), ["golden-path/01-good", "demo"]);
 });
