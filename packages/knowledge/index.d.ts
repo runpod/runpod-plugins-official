@@ -26,7 +26,7 @@ export interface Link {
   from: string;
   to: string;
   type: "uses" | "explains";
-  via: "frontmatter" | "evidence";
+  via: "frontmatter" | "lane" | "evidence";
   /** For via: evidence, the rules that cite the guide. */
   rules?: string[];
 }

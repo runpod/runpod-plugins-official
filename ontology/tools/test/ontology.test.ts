@@ -209,3 +209,16 @@ test("the database stores guides and the tree hangs concepts and their guides of
   assert.deepEqual(roots.map((node) => node.id).sort(), ["site", "volume", "volume-setup"]);
   assert.deepEqual(tree(db, "volume")[0]!.guides.map((g) => g.id), ["golden-path/01-good", "demo"]);
 });
+
+test("a guide whose id matches a concept id stays a separate graph node", () => {
+  const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
+  const { guides, links } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
+  // A skill named like a concept, as the flash skill and the Flash concept are.
+  const clash = { ...guides[0]!, id: "volume" };
+  const { nodes, links: graphLinks } = graphData(concepts, [clash], [{ from: "volume", to: "site", type: "explains", via: "frontmatter" }]);
+  const ids = nodes.map((node) => node.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.includes("volume") && ids.includes("guide:volume"));
+  assert.ok(graphLinks.some((l) => l.source === "guide:volume" && l.target === "site" && l.type === "explains"));
+  assert.ok(links.length > 0);
+});
