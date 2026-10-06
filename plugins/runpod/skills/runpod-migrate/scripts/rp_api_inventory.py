@@ -307,8 +307,20 @@ SIGNALS: list[Signal] = [
     Signal(
         Gen.V1_FIELD,
         "pod",
-        r"\bdocker(StartCmd|Args|Entrypoint)\b",
-        "→ `args` (a single string). v2 has no separate entrypoint override.",
+        r"\bdocker(StartCmd|Args)\b",
+        "→ `args` (a single string) or `cmd` (an exec-form array, no quoting needed).",
+    ),
+    Signal(
+        Gen.V1_FIELD,
+        "pod",
+        r"\bdockerEntrypoint\b",
+        "→ `entrypoint` (an exec-form array). v2 encodes it with `cmd` into `args`.",
+    ),
+    Signal(
+        Gen.V1_FIELD,
+        "pod",
+        r"\b(minRAMPerGPU|minVCPUPerGPU)\b",
+        "→ `gpu.minRamPerGpu` / `gpu.minVcpuCountPerGpu` (note the case change).",
     ),
     Signal(
         Gen.V1_FIELD,
@@ -327,7 +339,7 @@ SIGNALS: list[Signal] = [
     Signal(
         Gen.V1_FIELD,
         "pod",
-        r"\b(minRAMPerGPU|minVCPUPerGPU|minDownloadMbps|minUploadMbps|minDiskBandwidthMBps|supportPublicIp|volumeEncrypted|interruptible)\b",
+        r"\b(minDownloadMbps|minUploadMbps|minDiskBandwidthMBps|supportPublicIp|volumeEncrypted|interruptible)\b",
         "Removed in v2 — no equivalent. Drop it or stay on v1/GraphQL for this call.",
     ),
     Signal(

@@ -51,7 +51,7 @@ body = {
     "volumeInGb": 100,
     "volumeMountPath": "/workspace",
     "dockerStartCmd": ["bash", "-lc", "python /app/render.py"],
-    "minRAMPerGPU": 16, "minVCPUPerGPU": 4,  # no v2 equivalent
+    "minRAMPerGPU": 16, "minVCPUPerGPU": 4,
     "interruptible": False,                   # no v2 equivalent
 }
 resp = SESSION.post(f"{V1_BASE}/pods", json=body)
@@ -63,7 +63,7 @@ body = {
     "name": name,
     "image": image,
     "cloud": "SECURE",                        # computeType is implied by gpu vs cpu
-    "gpu": {"id": GPU_PREFERENCE[0], "count": 1},
+    "gpu": {"id": GPU_PREFERENCE[0], "count": 1, "minRamPerGpu": 16, "minVcpuCountPerGpu": 4},
     "disk": 60,
     "mounts": {"persistent": {"size": 100, "path": "/workspace"}},
     "args": "bash -lc 'python /app/render.py'",
@@ -229,7 +229,8 @@ export async function runningPods() {
   the v1 value explicitly.
 - /billing/endpoints in v1 meant serverless. In v2 that is /billing/serverless;
   the old path still returns 200, correctly billing public endpoints instead.
-- Dropped with no v2 equivalent: minRAMPerGPU, minVCPUPerGPU, interruptible.
+- minRAMPerGPU / minVCPUPerGPU moved to gpu.minRamPerGpu / gpu.minVcpuCountPerGpu.
+- Dropped with no v2 equivalent: interruptible.
   Pods are now on-demand only — confirm that is acceptable.
 
 ## Still on GraphQL (no v2 equivalent)

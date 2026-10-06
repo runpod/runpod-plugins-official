@@ -156,8 +156,8 @@ Quote any element that was a unit: `bash -lc 'python /app/render.py'`. Anything
 containing a space, a quote, or a shell metacharacter needs the same treatment. Argv
 arrays whose elements are all bare words join safely.
 
-Related: v1's separate `dockerEntrypoint` override has no v2 field at all, so an image
-that relied on overriding ENTRYPOINT *and* CMD independently cannot be expressed.
+To skip the quoting entirely, send the argv as an array: `cmd` takes CMD in exec form and
+`entrypoint` takes ENTRYPOINT in exec form, and v2 encodes both into `args`. See §14.
 
 ### 12. `cloudType: ALL` is gone (GraphQL only)
 
@@ -181,6 +181,31 @@ response reveals the template it came from either.
 Two smaller edges, both `422`: a serverless template on a pod create, or a pod template
 on an endpoint create. An unknown or inaccessible ID is a `404`.
 
+### 14. `dockerEntrypoint` → `entrypoint`, and argv arrays go to `cmd`
+
+v1's separate `dockerEntrypoint` override maps to v2's `entrypoint` array, and an
+argv-form `dockerStartCmd` maps to `cmd`. Both are exec form, so element boundaries
+survive. v2 stores them encoded into the single `args` string; a read returns that
+`args` plus the decoded `entrypoint` and `cmd`. Sending `args` together with `entrypoint` or `cmd` is accepted only when they
+describe the same command, so translate to one form. To clear an override send `[]`;
+omitting the field leaves it unchanged.
+
+### 15. `minRAMPerGPU` / `minVCPUPerGPU` → `gpu.minRamPerGpu` / `gpu.minVcpuCountPerGpu`
+
+Both placement filters moved into the pod's `gpu` object and changed case, so a
+mechanical rename that keeps `RAM` or `VCPU` misses them. They are filters on the host,
+not resource requests: the pod can get more RAM or vCPUs than asked, and the allocation
+is reported in `gpu.memory` and `gpu.vcpuCount`.
+
+### 16. List routes return pages
+
+`GET /v2/pods`, `/v2/serverless`, `/v2/templates` and an endpoint's `releases` and
+`builds` are cursor-paginated. A response holds up to `limit` items (1–1000, default
+1000) and a `pagination` object; follow `pagination.nextCursor` with `?cursor=` while
+`pagination.hasNextPage` is true. Code that reads one response as the full list works
+until the account passes one page, then silently drops the rest. Walk every page before
+filtering client-side.
+
 ---
 
 ## Class 3 — Capability removed: no v2 equivalent at any price
@@ -194,9 +219,8 @@ or the behavior changes. Decide with the user; do not silently drop them.
 | **Spot / interruptible pods** | `interruptible: true`, `podRentInterruptable`, `podBidResume` | none |
 | **Savings plans** | `Pod.savingsPlans`, `adjustedCostPerHr` | not exposed |
 | **Pod `reset`** | `POST /pods/{id}/reset` | `422` — actions are `start`/`stop`/`restart`/`terminate` |
-| **Placement constraints** | `countryCodes`, `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` | no create-time equivalent. `countryCodes` is the one with a rebuild: catalog filter → `dataCenterIds` → verify where it landed, [below](#replacing-countrycodes-and-the-rest-of-the-placement-constraints). The rest have no v2 filter at all. |
-| **Entrypoint override** | `dockerEntrypoint` (array) separate from `dockerStartCmd` | only `args` (one string) |
-| **Server-side list filters / expansions** | `?desiredStatus=`, `?includeMachine=`, … | filter client-side |
+| **Placement constraints** | `countryCodes`, `minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` | no create-time equivalent (`minRAMPerGPU` and `minVCPUPerGPU` moved, Class 2 §15). `countryCodes` is the one with a rebuild: catalog filter → `dataCenterIds` → verify where it landed, [below](#replacing-countrycodes-and-the-rest-of-the-placement-constraints). The rest have no v2 filter at all. |
+| **Server-side list filters / expansions** | `?desiredStatus=`, `?includeMachine=`, … | filter client-side, after walking every page (Class 2 §16) |
 | **Host machine identity** | `machineId`, `machine { podHostId }` | only `dataCenterId` |
 | **Account identity / balance** | `myself { email clientBalance currentSpendPerHr }` | no v2 route — keep GraphQL |
 | **Volume encryption flag** | `volumeEncrypted` | not exposed |
@@ -305,8 +329,8 @@ which is a sounder basis for the allowed list than a country code. Country and
 certification are not the same question, and the user may have been approximating the
 second with the first because v1 gave them no other way to say it.
 
-The other placement constraints — `minRAMPerGPU`, `minVCPUPerGPU`, `minDownloadMbps`,
-`minUploadMbps`, `minDiskBandwidthMBps`, `supportPublicIp` — have no equivalent recipe.
+The other placement constraints — `minDownloadMbps`, `minUploadMbps`,
+`minDiskBandwidthMBps`, `supportPublicIp` — have no equivalent recipe.
 There is no v2 filter for them, so those really are accept-the-change, stay-on-v1, or
 redesign.
 

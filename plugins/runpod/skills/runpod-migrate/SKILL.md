@@ -152,8 +152,8 @@ to the final summary:
 - **Cleanup** — it works either way, but v2 lets you delete code (hand-built job URLs,
   hand-rolled availability retry, polling loops that can now be SSE).
 - **Decisions the user must make** — the code depends on something v2 removed outright:
-  spot/interruptible pods, savings plans, `dockerEntrypoint`, placement constraints
-  (`countryCodes`, `minRAMPerGPU`, …), pod `reset`, per-pod GPU fallback. See
+  spot/interruptible pods, savings plans, placement constraints
+  (`countryCodes`, `minDownloadMbps`, …), pod `reset`, per-pod GPU fallback. See
   [breaking-changes.md](reference/breaking-changes.md) Class 3 — and check it rather
   than working from memory, because things leave this bucket as v2 grows. CUDA pinning,
   `templateId` and CPU endpoint writes all used to be here and are not any more.
