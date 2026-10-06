@@ -7,7 +7,7 @@ description: >-
   asks which Runpod API their code is on. For managing infrastructure rather than
   migrating code, use runpod-mcp or runpodctl.
 user-invocable: true
-allowed-tools: Bash(python3:*), Bash(curl:*), Bash(rg:*), Bash(git:*)
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/runpod-migrate/scripts/rp_api_inventory.py:*), Bash(rg:*)
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod

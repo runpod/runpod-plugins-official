@@ -11,7 +11,7 @@ description: >-
   imported workflows): start here and route onward. Deploy
   with runpodctl or runpod-mcp; end-to-end walkthroughs live in the runpod router's
   golden paths.
-allowed-tools: Bash(python3:*), Bash(curl:*)
+allowed-tools: Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/extract_png_workflow.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/inventory_workflow_models.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/apply_model_metadata.py:*)
 metadata:
   author: runpod
   version: "1.4.0" # x-release-please-version
