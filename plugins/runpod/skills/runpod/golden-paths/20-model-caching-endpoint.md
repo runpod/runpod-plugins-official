@@ -41,7 +41,7 @@ Full comparison of all four delivery methods: [`reference/model-caching.md`](../
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/endpoints -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/serverless -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - **runpodctl ≥ v2.4.0** — `--model-reference` does not exist on older builds. Check
   `runpodctl version`; if behind, install from
   [GitHub releases](https://github.com/runpod/runpodctl/releases) (the Homebrew tap can lag).

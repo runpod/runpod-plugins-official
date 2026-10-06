@@ -39,7 +39,7 @@ throughput; autoscaling adds/removes workers — they are complementary knobs.
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - `docker` running + `docker login` (here: Docker Hub user `<your-registry>`).
 - `runpodctl` installed + authenticated.
 

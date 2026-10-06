@@ -215,7 +215,7 @@ https://docs.runpod.io/flash/custom-docker-images
 12. **Native CUDA libs go in `dependencies=[]` too** -- e.g. CTranslate2/faster-whisper needs `nvidia-cublas-cu12` + `nvidia-cudnn-cu12` or it silently falls back to CPU. Add them alongside the Python package.
 13. **Silent 401 auth failure** -- a set `RUNPOD_API_KEY` env var overrides the `flash login` token, so a bad/expired key wins. The failure is quiet: provisioning logs `GraphQL request failed: 401`, but `flash dev` still prints its normal ready line ("failed endpoints deploy on-demand"), so it *looks* healthy. When endpoints fail to provision:
     1. Check the provisioning log for `GraphQL request failed: 401`.
-    2. Verify the current key independently: `curl -s -o /dev/null -w '%{http_code}' https://rest.runpod.io/v1/endpoints -H "Authorization: Bearer $RUNPOD_API_KEY"` (200 = good, 401 = bad).
+    2. Verify the current key independently: `curl -s -o /dev/null -w '%{http_code}' https://api.runpod.io/v2/serverless -H "Authorization: Bearer $RUNPOD_API_KEY"` (200 = good, 401 = bad).
     3. Fix it: `unset RUNPOD_API_KEY` to fall back to the `flash login` token, or `export` a valid key.
 14. **`system_dependencies=` adds to cold start** -- apt packages (e.g. `["ffmpeg", "espeak-ng"]`) install on the worker before first use, so the initial call is slower (on top of any model download); warm calls are unaffected.
 15. **Teardown a deployed app with `flash app delete <app>`** -- `flash undeploy list` may show "no endpoints" for an app that is deployed and serving; `flash app delete` (or `runpodctl serverless delete <id>`) reliably removes it.
