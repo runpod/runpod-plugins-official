@@ -13,7 +13,7 @@ allowed-tools: Bash(claude mcp:*)
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
-  version: "1.4.0" # x-release-please-version
+  version: "1.5.0" # x-release-please-version
 license: Apache-2.0
 ---
 
