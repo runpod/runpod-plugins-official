@@ -30,7 +30,7 @@ plugins/runpod/                   THE plugin
   README.md  CHANGELOG.md
   skills/                         the eight skills (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
-hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
+hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_frontmatter / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
                                   gen_cli_surface.py regenerates the runpodctl snapshot
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
