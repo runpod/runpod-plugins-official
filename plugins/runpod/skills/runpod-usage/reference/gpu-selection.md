@@ -123,8 +123,8 @@ GPU supply fluctuates by tier and region. To avoid throttling:
 
 ## Guaranteed capacity: reserved pricing
 
-On-Demand pods take whatever GPUs are free when you deploy. For capacity held for your
-account, choose the **Reserved** pricing option; it is arranged with Runpod's sales team, not
-created through the API, so the console's deploy flow points to *Talk to sales* instead of
-deploying. The rule is in [`reservation-pool`](../concepts/reservation-pool.yaml).
+On-Demand pods take whatever GPUs are free when you deploy. Capacity held for your account is
+arranged with Runpod's sales team, not created through the API. The console's default deploy
+flow has no Reserved option; in the legacy deploy flow, the **Reserved** pricing option points
+to *Talk to sales* instead of deploying. The rule is in [`reservation-pool`](../concepts/reservation-pool.yaml).
 

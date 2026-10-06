@@ -71,11 +71,13 @@ rules:
 
   - id: serverless-billing.what-is-billed
     statement: >
-      A worker is billed from the moment it starts until it fully stops, rounded
-      up to the nearest second. That covers start time (loading the container
-      and model), execution time, and the idle timeout after the last request.
-      Container disk, billed in 5-minute intervals, and network volume storage
-      are billed on top.
+      A worker is billed from the moment it starts running until it fully stops,
+      rounded up to the nearest second. That covers start time (mostly the
+      handler loading the model), execution time, and the idle timeout after the
+      last request. Pulling the container image and downloading cached models
+      happen before the worker starts running and are not billed. Container
+      disk, billed in 5-minute intervals, and network volume storage are billed
+      on top.
     status: documented
     see: [endpoint-autoscaling.idle-timeout, container-disk.billing, worker.billing-by-state]
     evidence:

@@ -82,12 +82,13 @@ rules:
 
   - id: billing-record.per-second-billing
     statement: >
-      Compute and storage are billed per second, charges are deducted from the
-      account's prepaid credits as resources run, and data transfer is free.
-      Billing runs every 5 minutes. A Serverless worker's container disk is the
-      exception: it is billed in 5-minute intervals.
+      Compute and pod container and volume disk are billed per second, charges
+      are deducted from the account's prepaid credits as resources run, and data
+      transfer is free. Billing runs every 5 minutes. Two kinds of storage bill
+      on a coarser unit: network volumes hourly, and a Serverless worker's
+      container disk in 5-minute intervals.
     status: documented
-    see: [credit-balance.low-balance-actions, container-disk.billing]
+    see: [credit-balance.low-balance-actions, container-disk.billing, network-volume-billing.price]
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
 

@@ -87,13 +87,16 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Max worker limits. }
 
-  - id: endpoint-autoscaling.gpu-auto-switch-needs-five
+  - id: endpoint-autoscaling.gpu-priority-distribution
     statement: >
-      With several GPU pools listed, the platform switches between them based on
-      supply only when `workers.max` is at least 5.
+      An endpoint lists up to three GPU types in priority order. When the first
+      choice is unavailable, Runpod uses the next one, with no worker minimum.
+      With five or more workers, Runpod spreads workers across the listed types,
+      most on the primary; with fewer than five, every worker uses the
+      highest-priority type available.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 8. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", seen: "2026-10-06", note: GPU priority and worker distribution. }
 
   - id: endpoint-autoscaling.extra-workers
     statement: >

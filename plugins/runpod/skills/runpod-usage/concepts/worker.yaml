@@ -72,19 +72,20 @@ rules:
   - id: worker.billing-by-state
     applies_to: ["state:RUNNING", "state:IDLE", "state:INITIALIZING", "state:THROTTLED", "state:UNHEALTHY"]
     statement: >
-      A worker bills for as long as it runs: while it starts, while it processes
-      a request, and while it sits idle during the idle timeout waiting for
-      another request. A worker that has scaled down bills nothing. A worker
+      A worker is billed from when its handler starts loading the model until it
+      scales down: while it loads the model, while it processes requests, and
+      through the idle timeout after each request. Pulling the image and
+      downloading cached models happen before that and are not billed. A worker
       kept up by `workers.min` never scales down, so it bills continuously. The
-      public worker-states table, which bills only workers processing requests,
-      understates this.
+      words differ between surfaces: REST v2 `IDLE` is a running worker polling
+      for jobs, which is billed, while the console's "Idle" is a scaled-down
+      worker, which is not.
     status: documented
-    conflict: false
     evidence:
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: The worker states table marks only Running as billed. }
-      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", note: "Compute cost covers start time, execution time and the idle timeout." }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", seen: "2026-10-06", note: Worker states table and billing paragraph. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: "2026-10-06", note: "Compute cost covers start time, execution time and the idle timeout." }
+      - { source: rest-v2-spec, ref: WorkerStatus, seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: A worker kept up by a minimum of 1 bills continuously. }
-      - { source: other, note: "Confirmed by Runpod, 2026-09-28: a worker is billed whenever it is running, including the idle timeout; a scaled-down worker is not billed.", seen: "2026-09-28" }
 
   - id: worker.crash-loop-looks-queued
     applies_to: ["state:INITIALIZING", "state:RUNNING"]

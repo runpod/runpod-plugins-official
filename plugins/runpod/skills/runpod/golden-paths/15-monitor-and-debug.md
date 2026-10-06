@@ -62,7 +62,7 @@ subcommand, and the worker-log signal has to come from the v2 REST SSE path, the
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable (the same key authorizes `api.runpod.ai/v2` and the REST v2
-  API at `api.runpod.io/v2`, also served as `v2-rest.runpod.io/v2`). `runpodctl` also reads the key saved by `runpodctl doctor`.
+  API at `api.runpod.io/v2`). `runpodctl` also reads the key saved by `runpodctl doctor`.
 - A deployed endpoint id. Below uses a tiny CPU echo endpoint (build any handler; see
   [05](05-model-to-endpoint-pipeline.md) for the two-step template→endpoint pattern).
 

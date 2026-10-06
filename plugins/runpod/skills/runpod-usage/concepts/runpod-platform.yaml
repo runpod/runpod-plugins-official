@@ -20,13 +20,11 @@ rules:
     statement: >
       The REST v2 base URL is `https://api.runpod.io/v2`, for example
       `https://api.runpod.io/v2/pods`, and the OpenAPI spec is served at
-      `https://api.runpod.io/v2/openapi.json`. `https://v2-rest.runpod.io/v2`
-      serves the same API; prefer `api.runpod.io`, the host the spec lists.
+      `https://api.runpod.io/v2/openapi.json`.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: servers, seen: "2026-09-28" }
       - { source: public-docs, url: "https://docs.runpod.io/api-reference-v2/overview", seen: "2026-09-28" }
-      - { source: live-probe, ref: "GET https://v2-rest.runpod.io/v2/openapi.json returned 200", seen: "2026-09-28" }
 
   - id: runpod-platform.api-generations
     statement: >
