@@ -8,6 +8,11 @@
   },
   "homepage": "https://github.com/runpod/runpod-plugins-official",
   "repository": "https://github.com/runpod/runpod-plugins-official",
+  "icon": "./assets/logo.png",
+  "documentationUrl": "https://docs.runpod.io/get-started/agent-skills",
+  "supportUrl": "https://www.runpod.io/contact",
+  "privacyPolicyUrl": "https://www.runpod.io/legal/privacy-policy",
+  "termsOfServiceUrl": "https://www.runpod.io/legal/terms-of-service",
   "license": "Apache-2.0",
   "keywords": [
     "runpod",
