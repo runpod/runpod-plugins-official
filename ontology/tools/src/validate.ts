@@ -83,13 +83,44 @@ function excerpt(text: string, pattern: RegExp): string {
     .trim();
 }
 
-// Every human-readable string in a concept, with where it sits. URLs are left
-// out: a public docs URL may contain words the patterns above look for.
-function strings(concept: Concept): { path: string; text: string }[] {
-  const out: { path: string; text: string }[] = [];
+// Hosts a cited URL may point at. Every file ships in a public npm package, so a
+// URL anywhere else (a private repo, an internal tool, localhost) is an error.
+// Extend the list when a new public source is cited.
+const PUBLIC_HOSTS = new Set([
+  "docs.runpod.io",
+  "api.runpod.io",
+  "graphql-spec.runpod.io",
+  "runpod.io",
+  "www.runpod.io",
+  "huggingface.co",
+]);
+const PUBLIC_GITHUB_REPOS = new Set(["runpod-plugins-official", "runpodctl", "runpod-python", "runpod-mcp", "docs"]);
+
+/** Why a URL is not a public source, or null when it is. */
+export function urlProblem(raw: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return "is not a URL";
+  }
+  if (url.protocol !== "https:") return "is not https";
+  if (url.hostname === "github.com") {
+    const [owner, repo] = url.pathname.split("/").filter(Boolean);
+    if (owner === "runpod" && repo && PUBLIC_GITHUB_REPOS.has(repo)) return null;
+    return "is not a public Runpod GitHub repository";
+  }
+  return PUBLIC_HOSTS.has(url.hostname) ? null : `is on ${url.hostname}, which is not a public source host`;
+}
+
+// Every human-readable string in a concept, with where it sits. URLs are
+// returned apart: a public docs URL may contain words the patterns above look
+// for, so URLs are checked against PUBLIC_HOSTS instead.
+function strings(concept: Concept): { path: string; text: string; url: boolean }[] {
+  const out: { path: string; text: string; url: boolean }[] = [];
   const walk = (value: unknown, path: string) => {
     if (typeof value === "string") {
-      if (!path.endsWith(".url")) out.push({ path, text: value });
+      out.push({ path, text: value, url: path.endsWith(".url") });
     } else if (Array.isArray(value)) {
       for (const [index, item] of value.entries()) walk(item, `${path}[${index}]`);
     } else if (value && typeof value === "object") {
@@ -132,7 +163,12 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
     for (const field of concept.fields) ref(`field ${field.name} ref`, field.ref);
     if (concept.summary.trim() === "TODO") warnings.push(`${where}: summary is TODO`);
 
-    for (const { path, text } of strings(concept)) {
+    for (const { path, text, url } of strings(concept)) {
+      if (url) {
+        const problem = urlProblem(text);
+        if (problem) errors.push(`${where}: ${path} ${problem}: "${text}"`);
+        continue;
+      }
       for (const [pattern, why] of SENSITIVE) {
         if (pattern.test(text)) errors.push(`${where}: ${path} mentions ${why}: "${excerpt(text, pattern)}"`);
       }
@@ -163,6 +199,16 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
     const stateNames = new Set(Object.keys(concept.states?.values ?? {}));
     const actionNames = new Set(concept.states?.transitions.map((transition) => transition.action) ?? []);
 
+    // Skill evidence cites a file in this repo, so a rename or deletion fails here.
+    const checkSkillPaths = (label: string, evidence: Concept["rules"][number]["evidence"]) => {
+      for (const item of evidence) {
+        if (item.source === "skill" && item.path && !existsSync(join(repoRoot, item.path.replace(/#.*$/, "")))) {
+          errors.push(`${where}: ${label} cites skill file ${item.path}, which does not exist`);
+        }
+      }
+    };
+    checkSkillPaths("states", concept.states?.evidence ?? []);
+
     for (const transition of concept.states?.transitions ?? []) {
       for (const state of [...transition.from, transition.to]) {
         if (!stateNames.has(state))
@@ -182,12 +228,7 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
       for (const see of rule.see) {
         if (!ruleIds.has(see)) errors.push(`${where}: rule ${rule.id} sees ${see}, which is not a rule`);
       }
-      // Skill evidence cites a file in this repo, so a rename or deletion fails here.
-      for (const evidence of rule.evidence) {
-        if (evidence.source === "skill" && evidence.path && !existsSync(join(repoRoot, evidence.path))) {
-          errors.push(`${where}: rule ${rule.id} cites skill file ${evidence.path}, which does not exist`);
-        }
-      }
+      checkSkillPaths(`rule ${rule.id}`, rule.evidence);
       if (rule.conflict && rule.evidence.length < 2) {
         warnings.push(`${where}: rule ${rule.id} is a conflict with fewer than two pieces of evidence`);
       }

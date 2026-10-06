@@ -54,6 +54,15 @@ export const SOURCES = [
   "other", // anything else public; say what in ref, url or note
 ] as const;
 
+// The keys a reader needs to find each kind of source.
+const EVIDENCE_KEYS: Record<(typeof SOURCES)[number], ("ref" | "url" | "path" | "seen")[]> = {
+  "rest-v2-spec": ["ref"],
+  "public-docs": ["url"],
+  skill: ["path"],
+  "live-probe": ["ref", "seen"],
+  other: [],
+};
+
 const id = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "kebab-case");
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD");
 
@@ -68,7 +77,16 @@ export const Evidence = z
     seen: date.optional(),
     note: z.string().optional(),
   })
-  .refine((e) => e.ref || e.url || e.path || e.note, "evidence needs at least one of ref, url, path or note");
+  .refine((e) => e.ref || e.url || e.path || e.note, "evidence needs at least one of ref, url, path or note")
+  .superRefine((e, ctx) => {
+    // Each source names where a reader finds it; a note alone is not locatable.
+    const required = EVIDENCE_KEYS[e.source];
+    for (const key of required) {
+      if (!e[key]) ctx.addIssue({ code: "custom", message: `${e.source} evidence needs ${required.join(" and ")}` });
+    }
+    if (e.source === "other" && !e.ref && !e.url)
+      ctx.addIssue({ code: "custom", message: "other evidence needs a ref or url naming the public source" });
+  });
 
 export const Field = z.strictObject({
   name: z.string().min(1),

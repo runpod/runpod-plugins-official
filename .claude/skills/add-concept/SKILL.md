@@ -83,6 +83,10 @@ Style: plain present tense, code identifiers in backticks, "Runpod" spelled
 correctly, and no words like "currently" or "not yet". The full list is in
 `concepts/README.md` under "Writing style".
 
+Don't use `#` comments: `pnpm format` rewrites the file from its data and
+refuses a file with a comment, since it would drop it. Put the context in a
+`note` on the evidence instead.
+
 ## 5. Validate and look at it
 
 ```bash

@@ -9,13 +9,14 @@
 // sections; summaries, statements and step descriptions as folded blocks
 // wrapped at 80 columns; lists of names as [a, b]; fields, relations,
 // transitions and evidence as one-line { key: value } entries; a blank line
-// between rules and between steps.
+// between rules and between steps. Files with `#` comments are refused, since
+// re-emitting the data would drop them.
 
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import { parse, stringify } from "yaml";
+import { isNode, parse, parseDocument, stringify, visit } from "yaml";
 import { CONCEPTS_DIR } from "./load.ts";
 
 const WIDTH = 80;
@@ -65,6 +66,7 @@ function flow(value: Value): string {
 /** A scalar in block context, on one line. */
 function scalar(value: Value): string {
   if (value === null) return "null";
+  if (typeof value === "string" && RESERVED.test(value)) return JSON.stringify(value);
   const text = stringify(value, { lineWidth: 0 }).trimEnd();
   if (text.includes("\n")) throw new Error(`cannot write ${JSON.stringify(value)} on one line`);
   return text;
@@ -139,8 +141,19 @@ function normalize(value: Value): Value {
   return typeof value === "string" ? value.trimEnd() : value;
 }
 
-/** The canonical text of one concept file. Throws if the data would change. */
+/** True when the YAML has a `#` comment, which re-emitting would drop. */
+function hasComment(text: string): boolean {
+  const doc = parseDocument(text);
+  let found = Boolean(doc.commentBefore || doc.comment);
+  visit(doc, (_key, node) => {
+    if (isNode(node) && (node.commentBefore || node.comment)) found = true;
+  });
+  return found;
+}
+
+/** The canonical text of one concept file. Throws if the data would change or a comment would be lost. */
 export function formatConcept(text: string): string {
+  if (hasComment(text)) throw new Error("has a # comment, which formatting would drop; move it into a note field");
   const data = parse(text) as { [key: string]: Value };
   const header = ordered(data, HEADER).filter((key) => !SECTIONS.includes(key));
   const lines = header.flatMap((key) => entry(key, data[key]!, 0));

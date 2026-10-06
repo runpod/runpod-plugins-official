@@ -19,7 +19,7 @@ rules:
     evidence:
       - { source: rest-v2-spec, ref: Volume.site }
       - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", note: Docs page for volumes }
-      - { source: other, path: notes/volume-probe.md }
+      - { source: other, ref: "runpodctl volume --help", path: notes/volume-probe.md }
   - id: volume.backups
     statement: Back up data you cannot recreate, because a volume has no snapshots.
     status: verified

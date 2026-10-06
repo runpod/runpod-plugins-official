@@ -1,0 +1,17 @@
+id: private-url
+name: Private URL
+kind: resource
+summary: Cites URLs that a public package cannot carry.
+product: null
+is_a: null
+part_of: null
+rules:
+  - id: private-url.cited
+    statement: Every source here is private or local.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://www.notion.so/runpod/page" }
+      - { source: public-docs, url: "https://linear.app/runpod/issue/X-1" }
+      - { source: public-docs, url: "http://localhost:3000/internal" }
+      - { source: public-docs, url: "https://github.com/runpod/rphttp2/blob/main/README.md" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/overview" }

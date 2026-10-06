@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -69,6 +69,30 @@ test("skill evidence must point at a file in the repo", () => {
 
 test("evidence with no ref, url, path or note is rejected", () => {
   assertHasError(badErrors(), "evidence needs at least one of ref, url, path or note");
+});
+
+test("evidence needs the keys that locate its source", () => {
+  const errors = badErrors();
+  assertHasError(errors, "unlocatable-evidence.yaml: rules.0.evidence.0: skill evidence needs path");
+  assertHasError(errors, "unlocatable-evidence.yaml: rules.0.evidence.1: public-docs evidence needs url");
+  assertHasError(errors, "unlocatable-evidence.yaml: rules.0.evidence.2: other evidence needs a ref or url");
+  assertHasError(errors, "unlocatable-evidence.yaml: rules.0.evidence.3: live-probe evidence needs ref and seen");
+});
+
+test("skill evidence on states must point at a file in the repo", () => {
+  assertHasError(badErrors(), "states-missing-skill: states cites skill file plugins/runpod/skills/nowhere/states.md");
+});
+
+test("a url must be on a public source host", () => {
+  const errors = badErrors();
+  assertHasError(
+    errors,
+    "private-url: rules[0].evidence[0].url is on www.notion.so, which is not a public source host",
+  );
+  assertHasError(errors, "private-url: rules[0].evidence[1].url is on linear.app");
+  assertHasError(errors, "private-url: rules[0].evidence[2].url is not https");
+  assertHasError(errors, "private-url: rules[0].evidence[3].url is not a public Runpod GitHub repository");
+  assert.ok(!errors.some((error) => error.includes("rules[0].evidence[4]")));
 });
 
 function fixtureDb() {
@@ -336,4 +360,23 @@ test("the formatter is stable and never changes the data", () => {
     const text = readFileSync(join(fixtures, "good", file), "utf8");
     assert.equal(formatConcept(formatConcept(text)), formatConcept(text));
   }
+});
+
+test("the formatter refuses comments and quotes YAML 1.1 booleans in block context", () => {
+  const base = "id: volume\nname: Volume\nkind: resource\nsummary: A volume.\n";
+  assert.throws(() => formatConcept(`${base}# a contributor note\nproduct: null\n`), /# comment/);
+  assert.throws(() => formatConcept(`${base}product: null # trailing\n`), /# comment/);
+  const out = formatConcept(`${base}states:\n  field: power\n  values:\n    "on": Powered.\n    "no": Off.\n`);
+  assert.ok(out.includes('    "on": Powered.\n    "no": Off.'), out);
+});
+
+test("a guide whose frontmatter is not a map is an error, not a crash", () => {
+  const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
+  const root = mkdtempSync(join(tmpdir(), "guides-"));
+  const skill = join(root, "skills", "demo");
+  mkdirSync(join(skill, "reference"), { recursive: true });
+  writeFileSync(join(skill, "SKILL.md"), "---\nname: demo\nmetadata:\n  concepts: [volume]\n---\n# Demo\n");
+  writeFileSync(join(skill, "reference", "scalar.md"), "---\njust text\n---\n# Scalar\n");
+  const { errors } = collectGuides(concepts, join(root, "skills"), root);
+  assertHasError(errors, "scalar.md: frontmatter must be a map of keys");
 });

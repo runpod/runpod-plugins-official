@@ -112,16 +112,23 @@ rule on the process itself only when it is about the flow as a whole.
 | `documented` | Stated in the REST v2 spec, the public docs or a public skill |
 | `verified` | Observed on a live account |
 
-Each evidence entry has a `source` and at least one of `ref` (a citation),
-`url`, `path` or `note`. `seen` is the date the source was checked.
+Each evidence entry has a `source` and the keys a reader needs to find it.
+`note` adds context but never stands alone. `seen` is the date the source was
+checked.
 
-| source | What it is |
-|---|---|
-| `rest-v2-spec` | The REST v2 OpenAPI spec (`https://api.runpod.io/v2/openapi.json`, vendored at `testdata/runpod-migrate/v2-openapi.json`) |
-| `public-docs` | docs.runpod.io and the public GraphQL reference |
-| `skill` | A skill file in this repo, cited by `path` from the repo root |
-| `live-probe` | A request made against a live account |
-| `other` | Anything else public; say what it is in `ref`, `url` or `note` |
+| source | What it is | Requires |
+|---|---|---|
+| `rest-v2-spec` | The REST v2 OpenAPI spec (`https://api.runpod.io/v2/openapi.json`, vendored at `testdata/runpod-migrate/v2-openapi.json`) | `ref` |
+| `public-docs` | docs.runpod.io and the public GraphQL reference | `url` |
+| `skill` | A skill file in this repo, cited by `path` from the repo root | `path` |
+| `live-probe` | A request made against a live account | `ref`, `seen` |
+| `other` | Anything else public, such as a CLI's `--help` output | `ref` or `url` |
+
+A `url` must be https on a public source host: docs.runpod.io, api.runpod.io,
+graphql-spec.runpod.io, runpod.io, huggingface.co, or a public `runpod`
+repository on github.com. The list is `PUBLIC_HOSTS` in
+`ontology/tools/src/validate.ts`; add a host there when citing a new public
+source.
 
 Set `conflict: true` only when two public sources disagree. The statement gives
 both readings and tells the agent how to act, and the evidence cites both
@@ -146,5 +153,6 @@ sources. A live probe settles it.
 - Every REST v2 schema, path and field root exists in the vendored spec.
 - The `is_a` and `part_of` chains have no loops.
 - No file names internal systems, internal source ids, private repositories or internal tools.
+- Every evidence entry has the keys its source requires, and every `url` is on a public source host.
 - No file uses time-bound wording.
-- Every `skill` evidence `path` points at a file that exists in this repo.
+- Every `skill` evidence `path`, on rules and on `states`, points at a file that exists in this repo.

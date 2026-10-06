@@ -101,10 +101,13 @@ function summary(body: string): string {
   return text.length > 240 ? `${text.slice(0, 237)}...` : text;
 }
 
-function splitFrontmatter(text: string): { meta: Record<string, unknown>; body: string } {
+/** Frontmatter as a map. `meta` is null when the frontmatter is not a map (a scalar or a list). */
+function splitFrontmatter(text: string): { meta: Record<string, unknown> | null; body: string } {
   const match = text.match(/^---\n([\s\S]*?)\n---\n?/);
   if (!match) return { meta: {}, body: text };
-  return { meta: (parse(match[1]!) ?? {}) as Record<string, unknown>, body: text.slice(match[0].length) };
+  const meta: unknown = parse(match[1]!) ?? {};
+  const isMap = typeof meta === "object" && !Array.isArray(meta);
+  return { meta: isMap ? (meta as Record<string, unknown>) : null, body: text.slice(match[0].length) };
 }
 
 function markdownFiles(dir: string): string[] {
@@ -192,8 +195,10 @@ export function collectGuides(
   };
 
   const guides = guideFiles(skillsDir).map(({ id, kind, file }): Guide => {
-    const { meta, body } = splitFrontmatter(readFileSync(file, "utf8"));
+    const { meta: parsed, body } = splitFrontmatter(readFileSync(file, "utf8"));
     const path = relative(root, file);
+    if (!parsed) errors.push(`${path}: frontmatter must be a map of keys`);
+    const meta = parsed ?? {};
     let lanes: string[] = [];
     let mcp: Guide["mcp"] = null;
 
