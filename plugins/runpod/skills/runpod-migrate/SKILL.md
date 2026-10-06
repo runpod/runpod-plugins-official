@@ -11,7 +11,7 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/runpod-migrate/scripts/
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
-  version: "1.4.0" # x-release-please-version
+  version: "1.5.0" # x-release-please-version
 license: Apache-2.0
 ---
 

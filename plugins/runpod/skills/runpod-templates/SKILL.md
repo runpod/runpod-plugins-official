@@ -14,7 +14,7 @@ description: >-
 allowed-tools: Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/extract_png_workflow.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/inventory_workflow_models.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/apply_model_metadata.py:*)
 metadata:
   author: runpod
-  version: "1.4.0" # x-release-please-version
+  version: "1.5.0" # x-release-please-version
 license: Apache-2.0
 ---
 
