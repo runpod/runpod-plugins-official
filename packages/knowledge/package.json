@@ -20,7 +20,7 @@
     "README.md"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=20.10"
   },
   "scripts": {
     "prepack": "cd ../../ontology/tools && node --disable-warning=ExperimentalWarning src/build-bundle.ts"

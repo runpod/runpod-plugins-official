@@ -39,7 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          # The release commit on push, so the tarball matches its tag even if main
+          # moves before this job starts; main on a manual run.
+          ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
       - uses: pnpm/action-setup@v4
         with:
           version: 10

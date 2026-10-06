@@ -114,9 +114,15 @@ npm trusted publishing (GitHub OIDC), so no npm token is stored, and it skips a 
 is already on npm. After a break-glass release, run the workflow by hand
 (*Actions → release-please → Run workflow*) to publish.
 
-One-time setup, by someone who can publish packages for Runpod on npm: publish the first version by hand
-(`cd packages/knowledge && npm publish`, which builds the bundle first), then on npmjs.com add
-a trusted publisher for `runpod/runpod-plugins-official` with workflow `release-please.yml`.
+One-time setup, by someone who can publish packages for Runpod on npm: publish the first version by hand,
+then on npmjs.com add a trusted publisher for `runpod/runpod-plugins-official` with workflow
+`release-please.yml`. `npm publish` builds the bundle first with the ontology tooling, so
+install its dependencies before publishing:
+
+```bash
+(cd ontology/tools && pnpm install --frozen-lockfile)
+cd packages/knowledge && npm publish
+```
 
 `hooks/check_versions.py` runs in CI as a drift guard and **fails the build if any of these disagree**. `scripts/bump-version.sh` does the same bump locally but is an **emergency/local fallback only** — normal releases go through release-please.
 

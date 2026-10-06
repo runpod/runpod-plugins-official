@@ -28,4 +28,4 @@ reference doc), `golden-path/06-dev-pod` (a golden path). The full shape is in
 `index.d.ts`. `format` changes when the shape changes incompatibly.
 
 The data is loaded with a static import, so bundlers such as Vercel and esbuild include
-it without extra configuration. Requires Node 20 or later.
+it without extra configuration. Requires Node 20.10 or later.
