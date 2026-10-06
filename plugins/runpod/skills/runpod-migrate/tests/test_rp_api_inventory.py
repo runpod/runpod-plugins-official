@@ -445,7 +445,7 @@ ITER_FILES_CASES: list[IterFilesCase] = [
     ),
     IterFilesCase(
         description="negative: skipped suffixes are not yielded",
-        files=("app.py", "yarn.lock", "bundle.min.js", "logo.png"),
+        files=("app.py", "yarn.lock", "bundle.min.js", "data.parquet"),
         expected=("app.py",),
     ),
     IterFilesCase(

@@ -1,6 +1,6 @@
 ---
 description: Migrate this codebase from the Runpod GraphQL API or REST v1 to REST v2 — inventory, rewrite, verify.
-argument-hint: [scope: all | rest | graphql] [path]
+argument-hint: "[scope: all | rest | graphql] [path]"
 ---
 
 Invoke the **runpod-migrate** skill and run its full workflow on this repository.

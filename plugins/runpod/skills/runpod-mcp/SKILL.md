@@ -9,7 +9,7 @@ description: >-
   CRUD when MCP is available; use runpodctl for the terminal, file transfer, or
   SSH setup. Connection lane only — the server itself carries its tool surface
   and its own task playbooks, so read those rather than a list kept here.
-allowed-tools: Bash(npx:*), Bash(claude:*)
+allowed-tools: Bash(claude mcp:*)
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
