@@ -1,3 +1,7 @@
+---
+concepts: [hub-repo]
+---
+
 # GitHub CLI — one-time setup
 
 Install `gh` and set up an SSH key (only needed once, if `gh --version` fails or your key

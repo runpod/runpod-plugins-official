@@ -42,9 +42,7 @@ LIVE_SPEC_URL = "https://api.runpod.io/v2/openapi.json"
 # GraphQL-only identifiers: operation/selection names that would never appear in
 # a REST spec. Their absence proves nothing, so they are reported as unchecked
 # rather than silently counted as verified.
-GRAPHQL_ONLY = re.compile(
-    r"^(myself|secret[A-Z]\w*|pod(Rent|Bid)\w*|machine\s*\{|.*\{.*)$|.*\(.*\)$"
-)
+GRAPHQL_ONLY = re.compile(r"^(myself|pod(Rent|Bid)\w*|machine\s*\{|.*\{.*)$|.*\(.*\)$")
 # Tokens that are prose or types, not field names.
 NOT_A_FIELD = {"true", "false", "null", "array", "string", "none", "n/a"}
 

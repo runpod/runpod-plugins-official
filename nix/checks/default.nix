@@ -74,11 +74,37 @@ let
   # so the gate carries biome.json to stay non-empty and become active the moment
   # a first-party .js lands.
   jsSrc = toSrc (
+    fs.unions (
+      [
+        (fs.difference (filesWithExt "js" src) (src + "/testdata"))
+        (src + "/biome.json")
+      ]
+      # The concept graph tooling (TypeScript) and the npm package it builds.
+      ++
+        lib.concatMap
+          (ext: [
+            (filesWithExt ext (src + "/ontology/tools"))
+            (filesWithExt ext (src + "/packages/knowledge"))
+          ])
+          [
+            "ts"
+            "mjs"
+            "cjs"
+            "json"
+          ]
+    )
+  );
+  # The repo's own YAML: concept files, their valid test fixtures, the workflows.
+  # The intentionally broken fixtures under fixtures/bad are left out.
+  yamlSrc = toSrc (
     fs.unions [
-      (fs.difference (filesWithExt "js" src) (src + "/testdata"))
-      (src + "/biome.json")
+      (filesWithExt "yaml" (src + "/plugins/runpod/skills/runpod-usage/concepts"))
+      (filesWithExt "yaml" (src + "/ontology/tools/test/fixtures/good"))
+      (filesWithExt "yml" (src + "/.github/workflows"))
+      (src + "/.yamllint.yaml")
     ]
   );
+  workflowSrc = toSrc (filesWithExt "yml" (src + "/.github/workflows"));
 
   # Walk the scoped copy for tools that don't recurse a directory themselves
   # (shellcheck, nixfmt): every match, NUL-delimited so paths with spaces are
@@ -140,6 +166,22 @@ let
       runtimeInputs = [ versions.biome ];
       src = jsSrc;
       text = "biome ci --error-on-warnings .";
+    };
+    yamllint = {
+      runtimeInputs = [ versions.yamllint ];
+      src = yamlSrc;
+      text = "yamllint --strict .";
+    };
+    # actionlint shells out to shellcheck for the `run:` scripts.
+    actionlint = {
+      runtimeInputs = [
+        versions.actionlint
+        versions.shellcheck
+      ];
+      src = workflowSrc;
+      # Explicit files: the sandboxed copy is not a git repo, so actionlint cannot
+      # discover .github/workflows on its own.
+      text = walk "yml" "actionlint";
     };
     nixfmt = {
       runtimeInputs = [ versions.nixfmt ];

@@ -5,7 +5,10 @@ pods, serverless endpoints, jobs, templates, and volumes — via the Runpod MCP
 server, `runpodctl`, and `flash`.
 
 This repo ships **one plugin**, [`runpod`](plugins/runpod/), with eight skills total:
-one router plus seven lanes, the hosted Runpod MCP server config, and worked golden paths.
+one router plus seven lanes, the hosted Runpod MCP server config, worked golden paths,
+and a concept graph of how Runpod works. You install and use it as a plugin, exactly as
+below; the npm package described under [Also on npm](#also-on-npm) is an extra way for
+programs to read the same content.
 
 **Compatibility:** installs as a native plugin in **Claude Code, Codex, Gemini,
 and opencode** (with auto-update), and as skills via **skills.sh** for Cursor,
@@ -183,6 +186,28 @@ See the plugin's [README](plugins/runpod/README.md) for the full guide, the
 development loop, and setup. Worked end-to-end examples live in
 [`plugins/runpod/skills/runpod/golden-paths/`](plugins/runpod/skills/runpod/golden-paths/).
 
+**Concept graph.** [`runpod-usage/concepts/`](plugins/runpod/skills/runpod-usage/concepts/README.md)
+holds one YAML file per Runpod concept (pod, network volume, machine, worker, …), with
+rules that each cite a public source. Every skill, reference doc and golden path lists the
+concepts it covers, so an agent can go from a question to the exact rule and to a verified
+example that uses it.
+
+| To | Read |
+| --- | --- |
+| Browse, query, validate or serve the graph | [`ontology/README.md`](ontology/README.md) |
+| Understand the concept file format | [`concepts/README.md`](plugins/runpod/skills/runpod-usage/concepts/README.md) |
+| Add or change a concept | [`add-concept` skill](.claude/skills/add-concept/SKILL.md) |
+| Add or change a skill, reference doc or golden path | [`write-guide` skill](.claude/skills/write-guide/SKILL.md) |
+| Tag a golden path with lanes, MCP coverage and concepts | [`golden-paths/README.md`](plugins/runpod/skills/runpod/golden-paths/README.md) |
+
+## Also on npm
+
+Every release also publishes [`@runpod/plugin-knowledge`](packages/knowledge/README.md): all the
+skills, reference docs, golden paths and concepts as one JSON file, at the plugin's
+version. It is for programs, not for installing the plugin. The Runpod MCP server can
+depend on it to serve the same guides and concepts to agents that don't have the plugin.
+Nothing changes for plugin or skills.sh users.
+
 ## Ask for it by name
 
 Plain English works for one-off actions. For anything you're **designing**, add one
@@ -212,7 +237,10 @@ where the commands that were actually run against a real account live.
 ```
 .claude-plugin/marketplace.json   Claude Code / skills.sh marketplace manifest
 .agents/plugins/marketplace.json  Codex marketplace manifest
-plugins/runpod/                   the plugin (skills/ incl. runpod/golden-paths/, .mcp.json, manifests)
+plugins/runpod/                   the plugin (skills/ incl. runpod/golden-paths/ and
+                                  runpod-usage/concepts/, .mcp.json, manifests)
+packages/knowledge/               @runpod/plugin-knowledge, the npm package built from the plugin
+ontology/                         concept graph tooling: validator, bundle, SQLite, graph page
 hooks/                            marketplace, branding & link validation
 ```
 

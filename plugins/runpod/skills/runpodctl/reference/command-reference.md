@@ -1,3 +1,7 @@
+---
+concepts: [runpodctl, registry-credential]
+---
+
 # runpodctl — behavior reference
 
 **This file does not list flags.** `runpodctl <resource> <action> --help` does, it is always
@@ -91,10 +95,10 @@ Same flags and semantics as `pod logs` above, plus:
 `--idle-timeout 0`, `--workers-max 0`, `--scaler-value 0`). On **v2.9.0 and earlier those were
 silently dropped** from the request, so resetting a dev endpoint back to scale-to-zero looked
 like it applied and the endpoint kept billing. On an older binary verify with `serverless get
-<id>`, or `PATCH https://rest.runpod.io/v1/endpoints/<id>` with an explicit `{"workersMin":0}`.
+<id>`, or `PATCH https://api.runpod.io/v2/serverless/<id>` with an explicit `{"workers":{"min":0}}`.
 
 `serverless update` has **no `--gpu-id` flag** — change an existing endpoint's GPU pool with
-that same `PATCH` and `{"gpuTypeIds":[...]}`.
+that same `PATCH` and `{"gpu":{"pools":[...]}}`.
 
 **Multi-DC** (`--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>`) needs
 **runpodctl ≥ v2.4.0**; data does not sync between volumes automatically — golden path

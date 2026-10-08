@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-handler, worker, job, serverless-endpoint, template, endpoint-autoscaling]
+---
+
 # Golden path 18 — concurrent handler (one worker serving many requests at once)
 
 **Goal:** from "make each worker do more" — write an **async** handler with a
@@ -33,7 +39,7 @@ throughput; autoscaling adds/removes workers — they are complementary knobs.
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - `docker` running + `docker login` (here: Docker Hub user `<your-registry>`).
 - `runpodctl` installed + authenticated.
 

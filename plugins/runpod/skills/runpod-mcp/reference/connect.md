@@ -1,3 +1,7 @@
+---
+concepts: [api-key]
+---
+
 # Connecting the Runpod MCP server
 
 > **If you also use runpodctl/flash, connect the hosted MCP with your API key (Bearer),

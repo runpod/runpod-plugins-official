@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl]
+mcp: partial
+concepts: [serverless-endpoint, endpoint-autoscaling, job, worker, serverless-handler, template, flashboot]
+---
+
 # Golden path 13 — autoscaling tuning (scaler types + worker knobs under load)
 
 **Goal:** understand how serverless scaling *actually* behaves so you can trade cost
@@ -22,7 +28,7 @@ Runpod REST (`/run`, `/health`, `GET /v1/endpoints/<id>`)
   [getting-started.md](../../runpod-usage/reference/getting-started.md) (auth resolution, SSH,
   companion-CLI credentials).
 - `RUNPOD_API_KEY` resolvable (runpodctl + REST). Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - `docker` running and `docker login` to a registry you can push to (`<your-registry>`, e.g. your
   Docker Hub user) — you build and push the tiny sleep handler below.
 - `runpodctl` installed + authenticated, **v2.3+** for the `--scale-by`/`--scale-threshold` flags.

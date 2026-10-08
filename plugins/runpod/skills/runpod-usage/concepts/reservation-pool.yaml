@@ -1,0 +1,30 @@
+id: reservation-pool
+name: Reserved capacity
+kind: billing
+summary: >
+  GPU capacity reserved for an account through Runpod's sales team instead of
+  taken On-Demand when deploying a pod.
+product: billing
+is_a: null
+part_of: runpod-platform
+aliases: [reservation, reserved capacity, Reserved pricing]
+
+surfaces:
+  graphql: { type: Reservation }
+  console: Pods
+
+fields: []
+
+relations:
+  - { type: uses, target: gpu-type, cardinality: "1..n" }
+
+rules:
+  - id: reservation-pool.not-self-serve
+    statement: >
+      Reserved capacity is arranged with Runpod's sales team, not created
+      through the API. The console's default pod deploy flow has no Reserved
+      option. In the legacy deploy flow, choosing the Reserved pricing option
+      points to Talk to sales instead of deploying.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/get-started", seen: "2026-10-06", note: The Reserved option appears only under the Legacy flow tab. }

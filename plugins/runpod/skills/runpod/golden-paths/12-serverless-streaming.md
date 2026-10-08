@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-handler, serverless-endpoint, template, container-image, job, api-rate-limit]
+---
+
 # Golden path 12 — serverless streaming (`/stream`)
 
 **Goal:** get **incremental** output out of a serverless handler — each chunk visible
@@ -51,7 +57,7 @@ Runpod also collects every yield into a single list you can fetch the normal way
 on unless the result set is huge (see [Gotchas](#gotchas)).
 
 ## Prerequisites
-- `RUNPOD_API_KEY` exported (verify: `curl -s -o /dev/null -w '%{http_code}' https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`).
+- `RUNPOD_API_KEY` exported (verify: `curl -s -o /dev/null -w '%{http_code}' https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`).
 - Docker running; a Docker Hub account. `runpodctl` installed.
 
 ## Walkthrough (verified commands)

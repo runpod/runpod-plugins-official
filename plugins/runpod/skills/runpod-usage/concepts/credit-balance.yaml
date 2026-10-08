@@ -1,0 +1,74 @@
+id: credit-balance
+name: Credit balance and spend limit
+kind: billing
+summary: >
+  The prepaid balance that all usage draws from, and the account's hourly spend
+  limit. When the balance reaches $0, pods stop and storage can be lost.
+product: billing
+is_a: null
+part_of: runpod-platform
+aliases: [balance, clientBalance, credits, spend limit, spendLimit, low balance, auto-pay]
+
+surfaces:
+  graphql: { type: User, queries: [myself] }
+  runpodctl: [user]
+  console: Billing
+
+fields:
+  - { name: clientBalance, type: number, unit: USD, set: read, note: "Read from GraphQL `myself`." }
+  - { name: spendLimit, type: number, unit: USD per hour, set: read, note: "Read from GraphQL `myself`." }
+
+relations: []
+
+rules:
+  - id: credit-balance.not-in-rest-v2
+    applies_to: ["field:clientBalance"]
+    statement: >
+      REST v2 has no balance route; `/v2/billing` returns spend history only.
+      Read the live balance with `runpodctl user` or GraphQL `myself`.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/graphql-to-v2.md }
+      - { source: rest-v2-spec, ref: paths, seen: "2026-09-28" }
+      - { source: other, ref: runpodctl user --help, seen: "2026-09-28" }
+
+  - id: credit-balance.low-balance-actions
+    applies_to: ["field:clientBalance"]
+    statement: >
+      When the balance reaches $0, all running pods stop. Pods with a network
+      volume keep their data on the volume; pods without one are terminated and
+      their data cannot be recovered. Network volumes keep accruing storage
+      charges, and a volume whose charges stay unpaid can be deleted.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/pods/pricing", seen: "2026-09-28" }
+
+  - id: credit-balance.avoid-interruptions
+    applies_to: ["field:clientBalance"]
+    statement: >
+      Low balance notifications email the account when the balance drops below a
+      chosen threshold. Auto-pay reloads the balance from a saved card, at most
+      once per hour. Use either or both to keep workloads running.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
+
+  - id: credit-balance.spend-limit
+    applies_to: ["field:spendLimit"]
+    statement: >
+      Accounts start with a spend limit of $80 per hour across all resources.
+      The limit rises automatically with account history, and support can raise
+      it sooner on request.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/pricing", seen: "2026-09-28" }
+
+  - id: credit-balance.credits-non-refundable
+    statement: >
+      Credits are non-refundable, cannot be withdrawn, and can be spent only on
+      Runpod services.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/accounts-billing/billing", seen: "2026-09-28" }

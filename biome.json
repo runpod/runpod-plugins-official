@@ -1,17 +1,36 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
-  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!testdata"]
+    "includes": ["**", "!testdata", "!**/node_modules", "!ontology/build", "!packages/knowledge/knowledge.json"]
   },
   "linter": {
     "enabled": true,
-    "rules": { "recommended": true }
+    "rules": {
+      "recommended": true
+    }
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
-  }
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "overrides": [
+    {
+      "includes": ["ontology/tools/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
 }

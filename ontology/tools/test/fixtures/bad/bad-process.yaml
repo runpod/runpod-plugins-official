@@ -1,0 +1,13 @@
+id: bad-process
+name: Bad process
+kind: process
+summary: One step, pointing at things that do not exist.
+product: null
+is_a: null
+part_of: null
+steps:
+  - id: only
+    title: Only step
+    description: Names a missing concept and a missing rule.
+    concepts: [nowhere]
+    rules: [nothing.here]

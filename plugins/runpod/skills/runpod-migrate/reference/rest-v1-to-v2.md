@@ -1,3 +1,7 @@
+---
+concepts: [cpu-flavor, cpu-pod, registry-credential]
+---
+
 # REST v1 → REST v2 mapping
 
 Base URL: `https://rest.runpod.io/v1` → **`https://api.runpod.io/v2`**
@@ -128,13 +132,15 @@ v1 let you PATCH either field alone; v2 enforces:
 
 Dropped from pod create with no v2 equivalent: `computeType` (implied by `gpu` vs `cpu`),
 `interruptible`, `locked` (PATCH only), `gpuTypePriority`, `dataCenterPriority`,
-`cpuFlavorPriority`, `countryCodes`, `supportPublicIp`, `minRAMPerGPU`, `minVCPUPerGPU`,
-`minDownloadMbps`, `minUploadMbps`, `minDiskBandwidthMBps`.
+`cpuFlavorPriority`, `countryCodes`, `supportPublicIp`, `minDownloadMbps`, `minUploadMbps`,
+`minDiskBandwidthMBps`.
 
 **Moved, not dropped** — do not delete these:
 
 | v1 pod create | v2 |
 | --- | --- |
+| `minRAMPerGPU` / `minVCPUPerGPU` | `gpu.minRamPerGpu` / `gpu.minVcpuCountPerGpu` — host placement filters; note the case change. See [breaking-changes.md Class 2 §15](breaking-changes.md#15-minrampergpu--minvcpupergpu--gpuminrampergpu--gpuminvcpucountpergpu). |
+| `dockerEntrypoint` | `entrypoint` (exec-form array). See [breaking-changes.md Class 2 §14](breaking-changes.md#14-dockerentrypoint--entrypoint-and-argv-arrays-go-to-cmd). |
 | `allowedCudaVersions` | `gpu.allowedCudaVersions` (GPU pods only — a CPU pod has no `gpu` block, and ignores a template's constraint) |
 | `templateId` | `templateId`, still accepted — but resolved once at create time, with no link retained. See [breaking-changes.md Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone). |
 
@@ -307,7 +313,8 @@ specifically so they are unrepresentable here.
 | `containerDiskInGb` | `disk` |
 | `volumeInGb` / `volumeMountPath` | `mounts.persistent.{size,path}` (no `network` on templates — `422`) |
 | `volumeInGb: 0` | **omit `mounts` entirely.** Zero meant "no volume" in v1; `{"size": 0}` is invalid in v2 (10 GB floor) and there is no `path` to supply. |
-| `dockerStartCmd` / `dockerEntrypoint` | `args` (string) |
+| `dockerStartCmd` | `args` (one string) or `cmd` (exec-form array) |
+| `dockerEntrypoint` | `entrypoint` (exec-form array) |
 | `containerRegistryAuthId` | `registry` |
 | `isServerless` | `serverless` |
 | `isPublic` | `public` |

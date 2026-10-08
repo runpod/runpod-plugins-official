@@ -1,0 +1,16 @@
+id: unlocatable-evidence
+name: Unlocatable evidence
+kind: resource
+summary: Has evidence a reader cannot find.
+product: null
+is_a: null
+part_of: null
+rules:
+  - id: unlocatable-evidence.unfindable
+    statement: Each source here lacks the key that locates it.
+    status: documented
+    evidence:
+      - { source: skill, note: A skill somewhere. }
+      - { source: public-docs, ref: somewhere }
+      - { source: other, note: trust me }
+      - { source: live-probe, ref: GET /v2/pods }

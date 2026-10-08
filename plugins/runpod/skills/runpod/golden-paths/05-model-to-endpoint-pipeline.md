@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest, hf]
+mcp: partial
+concepts: [container-image, template, serverless-endpoint, serverless-handler, job, worker]
+---
+
 # Golden path 05 — custom model → serverless endpoint (hf → docker → runpodctl)
 
 **Goal:** from "serve this custom model as an endpoint", take a model, bake it into a
@@ -27,7 +33,7 @@ bloat the image and every cold start (see `reference/gotchas.md` "Model not bake
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable (runpodctl + REST). Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - `docker` running and `docker login` to a registry you can push to (`<your-registry>`,
   e.g. your Docker Hub user). A **public** image needs no Runpod registry auth; a
   **private** one does (see gotchas).

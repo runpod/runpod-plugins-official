@@ -9,11 +9,11 @@
 
 This document explains how to use **[Nix](https://nixos.org)** with this repo: how to run the full static-analysis gate with a single command, and how to get a reproducible development environment for the Python hooks and skill scripts.
 
-This repo is a **plugin marketplace** — it ships no application. The Nix tree exists purely to run **detailed static analysis** over every language present (Python, shell, JavaScript, and the Nix files themselves), hermetically and reproducibly.
+This repo is a **plugin marketplace** — it ships no application. The Nix tree exists purely to run **detailed static analysis** over every language present (Python, shell, TypeScript and JavaScript, YAML, GitHub Actions workflows, and the Nix files themselves), hermetically and reproducibly.
 
 ## Why Nix?
 
-- **One command runs every check** — `nix flake check` runs ruff, mypy, bandit, the unit tests, shellcheck, shfmt, biome, nixfmt, deadnix and statix in an isolated sandbox, without installing any of them onto your system.
+- **One command runs every check** — `nix flake check` runs ruff, mypy, bandit, the unit tests, shellcheck, shfmt, biome, yamllint, actionlint, nixfmt, deadnix and statix in an isolated sandbox, without installing any of them onto your system.
 - **Reproducible toolchain** — every contributor (and CI) gets the identical tool versions pinned in `flake.lock`, so a lint verdict is the same everywhere. No "works on my machine".
 - **No local installs** — you don't need ruff, mypy, biome, shellcheck, etc. on your PATH; Nix fetches exactly the pinned versions into `/nix/store` and they vanish when you leave the shell.
 
@@ -171,12 +171,12 @@ All tools come straight from the `flake.lock`-pinned nixpkgs (via `versions.nix`
 - **unittest** — the stdlib `unittest` suite (mirrors the CI invocation)
 - **shellcheck** — every first-party `*.sh` in `scripts/`
 - **shfmt** — those same scripts are formatted (`-i 2 -ci`)
-- **biome** — first-party JavaScript
+- **biome** — lint and format for the concept graph tooling (`ontology/tools`, TypeScript) and the `packages/knowledge` npm package
+- **yamllint** — the concept files, their valid test fixtures and the workflows, against `.yamllint.yaml` (the concept files' layout itself comes from `pnpm format` in `ontology/tools`)
+- **actionlint** — the GitHub Actions workflows, including shellcheck on their `run:` steps
 - **nixfmt** / **deadnix** / **statix** — the Nix tree lints itself
 
 **Scope.** The Python / shell / JS checks are scoped to the **first-party** tree only. The intentionally-broken scanner corpora under `testdata/**`, the container payloads under `**/golden-paths/**/template/**`, and the eval fixtures under `skills/flash/evals/fixtures/**` are never linted — linting or "fixing" them would corrupt the fixtures the migrate scanner is tested against.
-
-> **The `biome` gate is wired but currently empty.** The only `.js` files in the repo are migrate-scanner fixtures under `testdata/`, which are deliberately excluded. `biome` carries the root `biome.json` so the check stays valid, and it activates the moment a first-party `.js` file lands.
 
 All Nix packages come from [nixpkgs](https://github.com/NixOS/nixpkgs) and are searchable at [search.nixos.org](https://search.nixos.org/packages?channel=unstable).
 

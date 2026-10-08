@@ -30,6 +30,13 @@ runs the `runpod-migrate` workflow directly, e.g. `/runpod:migrate rest src/`.
 CRUD. Prefer `runpod-mcp` when its tools are connected in your session; use
 `runpodctl` for the terminal, Hub, file transfer, SSH, or `doctor`.
 
+## Exact facts: the concept graph
+
+[`skills/runpod-usage/concepts/`](skills/runpod-usage/concepts/README.md) has one YAML file
+per concept, each with rules that cite a public source. Agents read them for precise facts,
+such as which data center a volume can be used in or why a stopped pod may not restart with
+a GPU. Every skill, reference doc and golden path lists the concepts it covers.
+
 ## The development loop
 
 Any "get X running on Runpod" task follows one loop (in `runpod-usage`): **decide

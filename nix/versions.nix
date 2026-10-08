@@ -23,7 +23,8 @@
   # RC). Taking mypy from the default-python `pkgs.mypy` keeps the type gate
   # buildable and cached while the code still runs on 3.15. Also: shell, ruff,
   # bandit, JavaScript (wired for future first-party JS; testdata excluded), and
-  # the tools the Nix tree lints itself with.
+  # the tools the Nix tree lints itself with, and the YAML and GitHub Actions
+  # linters for the concept files and workflows.
   inherit (pkgs)
     ruff
     mypy
@@ -31,6 +32,8 @@
     shellcheck
     shfmt
     biome
+    yamllint
+    actionlint
     nixfmt
     deadnix
     statix

@@ -1,0 +1,13 @@
+id: states-missing-skill
+name: States missing skill
+kind: resource
+summary: Cites a skill file for its states that does not exist.
+product: null
+is_a: null
+part_of: null
+states:
+  field: status
+  values:
+    UP: Running.
+  evidence:
+    - { source: skill, path: plugins/runpod/skills/nowhere/states.md }

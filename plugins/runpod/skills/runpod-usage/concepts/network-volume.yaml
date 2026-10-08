@@ -1,0 +1,189 @@
+id: network-volume
+name: Network volume
+kind: resource
+summary: >
+  Persistent storage that lives in one data center, outlives any pod or worker,
+  and mounts into pods, Serverless endpoints and Instant Clusters in that data
+  center. It is not the volume disk, which lives on a single pod's machine.
+product: storage
+is_a: null
+part_of: runpod-platform
+aliases: [volume, network storage, NV, NetworkVolume]
+
+surfaces:
+  rest_v2: { schema: NetworkVolume, paths: [/v2/network-volumes, "/v2/network-volumes/{id}"] }
+  graphql: { type: NetworkVolume }
+  mcp: [create-network-volume, list-network-volumes, get-network-volume, update-network-volume, delete-network-volume]
+  runpodctl: [network-volume create, network-volume list, network-volume get, network-volume update, network-volume delete]
+  console: Storage
+
+fields:
+  - { name: id, type: string, set: read, note: also the S3 bucket name }
+  - { name: name, type: string, set: "create,update", required: true, note: not unique }
+  - { name: size, type: integer, unit: GB, set: "create,update", required: true, note: "10-4096 on create" }
+  - { name: dataCenter, type: string, ref: data-center, set: create, required: true }
+  - { name: type, type: enum, values: [STANDARD, HIGH_PERFORMANCE], set: create }
+
+relations:
+  - { type: located_in, target: data-center, cardinality: "1" }
+  - { type: constrained_by, target: cloud-tier, cardinality: "1" }
+  - { type: billed_by, target: network-volume-billing, cardinality: "1" }
+  - { type: constrained_by, target: credit-balance, cardinality: "1" }
+
+rules:
+  - id: network-volume.data-center-level-not-machine-level
+    statement: >
+      A network volume lives at the data center level: any pod or endpoint in
+      its data center can attach it, it can move between machines, and it keeps
+      its data after the pod is deleted. The volume disk is different; it lives
+      on one pod's machine and only that pod can use it.
+    status: documented
+    see: [pod-volume-disk.machine-level-not-data-center-level, network-volume.same-dc-only]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", seen: "2026-09-28", note: "A network volume can be attached to multiple pods, moved between machines, and kept after the pod is deleted." }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+
+  - id: network-volume.size-bounds
+    applies_to: ["field:size"]
+    statement: >
+      `size` is 10 to 4096 GB at creation. For a larger volume, contact Runpod
+      support.
+    on_violation: 422
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: CreateNetworkVolumeRequest.size, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+
+  - id: network-volume.size-grow-only
+    applies_to: ["field:size"]
+    statement: >
+      `size` can only grow. Storage cannot be reduced after creation, so start
+      with what you need and expand later.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: UpdateNetworkVolumeRequest.size, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+
+  - id: network-volume.placement-immutable
+    applies_to: ["field:dataCenter", "field:type"]
+    statement: >
+      `dataCenter` and `type` are fixed at creation. To move data to another
+      data center, create a new volume there and copy the data.
+    status: documented
+    see: [pod.network-volume-same-dc, pod.mount-kind-fixed]
+    evidence:
+      - { source: rest-v2-spec, ref: "NetworkVolume.dataCenter; NetworkVolume.type", seen: "2026-09-28" }
+
+  - id: network-volume.type-per-dc
+    applies_to: ["field:type", "field:dataCenter"]
+    statement: >
+      `type` must be a tier the data center lists in `networkVolumeTypes`. When
+      `type` is omitted, the data center's default tier is used.
+      `HIGH_PERFORMANCE` gives up to 3x the throughput and 4x the IOPS of
+      `STANDARD`, at a higher price per GB, in select data centers.
+    status: documented
+    see: [data-center.volume-types]
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateNetworkVolumeRequest.type; DataCenter.networkVolumeTypes", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/high-performance-storage", seen: "2026-09-28" }
+
+  - id: network-volume.same-dc-only
+    applies_to: ["field:dataCenter"]
+    statement: >
+      Only compute in the volume's own data center can mount it, which limits
+      GPU choice to what that data center offers. Volumes in different data
+      centers do not sync.
+    status: documented
+    see: [pod.network-volume-same-dc]
+    evidence:
+      - { source: rest-v2-spec, ref: NetworkMount.volumeId, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
+
+  - id: network-volume.serverless-one-per-dc
+    statement: >
+      A Serverless endpoint can attach several network volumes, at most one per
+      data center. Each worker gets exactly one volume, the one in its data
+      center, so attaching volumes in several data centers widens GPU choice.
+      Copy the data to each volume yourself, since volumes do not sync.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", note: "See \"Attach multiple volumes\".", seen: "2026-09-28" }
+
+  - id: network-volume.mount-path
+    statement: >
+      On a pod created through REST v2, the network mount path has no default
+      and must be sent. Pods conventionally use `/workspace`. Serverless workers
+      see the volume at `/runpod-volume`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: NetworkMount.path, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+
+  - id: network-volume.concurrent-writes
+    statement: >
+      Several workers or pods can have the same volume mounted, but writing to
+      it from more than one at a time can corrupt data. Coordinate concurrent
+      writes in your application.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
+
+  - id: network-volume.secure-cloud-only
+    statement: >
+      Network volumes can be attached only to Secure Cloud pods.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+
+  - id: network-volume.allocated-size-only
+    applies_to: ["field:size"]
+    statement: >
+      `size` is the allocated size. The API returns no usage figure, so track
+      how full a volume is from inside a pod or worker.
+    status: documented
+    see: [network-volume-billing.price]
+    evidence:
+      - { source: rest-v2-spec, ref: NetworkVolume, note: The schema has no usage field., seen: "2026-09-28" }
+
+  - id: network-volume.low-balance-deletion
+    statement: >
+      When the account balance reaches $0, pods with an attached network volume
+      stop and the data stays on the volume, but storage charges keep accruing.
+      If the balance stays at $0, the volume can be terminated and its data
+      cannot be recovered. Turn on low-balance notifications.
+    status: documented
+    see: [network-volume.delete-irreversible, credit-balance.low-balance-actions]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/network-volumes", seen: "2026-09-28" }
+
+  - id: network-volume.no-status-field
+    statement: >
+      A REST v2 volume has no status field. It is usable once the create call
+      returns, so there is nothing to poll.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: NetworkVolume, seen: "2026-09-28" }
+
+  - id: network-volume.delete-irreversible
+    statement: >
+      Deleting a volume is permanent and its data cannot be recovered. Copy
+      anything you need, for example over the S3-compatible API, before you
+      delete it.
+    status: documented
+    see: [network-volume.s3-api]
+    evidence:
+      - { source: rest-v2-spec, ref: "DELETE /v2/network-volumes/{id}", seen: "2026-09-28" }
+
+  - id: network-volume.s3-api
+    applies_to: ["field:id", "field:dataCenter"]
+    statement: >
+      In supported data centers, a volume is reachable through Runpod's
+      S3-compatible API without running a pod, with the volume `id` as the
+      bucket and an S3 API key created in the console.
+    status: documented
+    see: [file-transfer.s3-api-per-data-center]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/s3-api", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }

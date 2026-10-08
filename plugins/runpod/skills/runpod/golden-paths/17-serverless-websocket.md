@@ -1,3 +1,9 @@
+---
+lanes: [docker, runpodctl, rest]
+mcp: partial
+concepts: [serverless-endpoint, worker, template, exposed-port, container-image, endpoint-autoscaling]
+---
+
 # Golden path 17 — serverless WebSocket worker (load-balancing endpoint)
 
 **Goal:** serve a **bidirectional, persistent WebSocket** from a serverless worker — a
@@ -31,7 +37,7 @@ prompt on the *same* connection and getting a second stream back. HTTP `/ping`,
 - Read golden path [14](14-load-balancing-endpoint.md) first (the LB substrate — see the
   prerequisite-reading note above).
 - `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`. The same
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`. The same
   key is the Bearer token on every HTTP request and on the WS upgrade.
 - `docker` running and `docker login` to a registry you can push to (`<your-registry>`, e.g. your
   Docker Hub user) — you build and push the FastAPI worker image below.

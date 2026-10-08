@@ -37,7 +37,7 @@ def slugs_for(path: Path) -> set[str]:
 
 bad: list[tuple[Path, int, str, str]] = []
 for md in ROOT.rglob("*.md"):
-    if ".git" in md.parts:
+    if ".git" in md.parts or "node_modules" in md.parts:
         continue
     d = md.parent
     for line_no, line in enumerate(md.read_text(errors="replace").splitlines(), 1):

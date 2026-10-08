@@ -1,3 +1,9 @@
+---
+lanes: [rest]
+mcp: full
+concepts: [public-endpoint, job]
+---
+
 # Golden path 11 — call a Runpod Public Endpoint (ready hosted model, no deploy)
 
 **Goal:** from "I just need a model's output, not my own infrastructure", call a
@@ -36,7 +42,7 @@ custom code.
 - A Runpod account **with credits** (Public Endpoints are pay-per-call; a call fails if
   you have no balance).
 - `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - **Nothing else.** No Docker, no runpodctl, no template, no volume. The same account API
   key that talks to REST invokes every Public Endpoint.
 

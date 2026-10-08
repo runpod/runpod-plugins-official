@@ -15,6 +15,7 @@ allowed-tools: Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scr
 metadata:
   author: runpod
   version: "1.5.0" # x-release-please-version
+  concepts: [template, container-image, pod, exposed-port]
 license: Apache-2.0
 ---
 

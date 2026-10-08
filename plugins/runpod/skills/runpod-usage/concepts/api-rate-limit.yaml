@@ -1,0 +1,58 @@
+id: api-rate-limit
+name: API rate limit
+kind: limit
+summary: >
+  Per-user request limits on the Runpod API, counted over minute, hour and day
+  windows. Exceeding one returns 429 with a `Retry-After` header.
+product: account
+is_a: null
+part_of: runpod-platform
+aliases: [rate limit, "429", RateLimit header, Retry-After]
+
+relations: []
+
+rules:
+  - id: api-rate-limit.headers
+    statement: >
+      Authenticated REST v2 responses carry `RateLimit` (remaining requests `r`
+      and seconds to reset `t`) and `RateLimit-Policy` (quota `q` and window
+      length `w`) for the minute, hour and day windows, not only on 429s. Read
+      them to slow down before you hit the limit. Callers exempt from rate
+      limits receive neither header.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "components.headers.RateLimit; RateLimitHeader; RateLimitPolicyHeader", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/unlocks.md }
+
+  - id: api-rate-limit.on-429
+    statement: >
+      A 429 names the exceeded window in `detail` and sets `Retry-After` in
+      seconds. Wait that long, then retry with backoff.
+    on_violation: 429
+    status: documented
+    see: [api-rate-limit.headers]
+    evidence:
+      - { source: rest-v2-spec, ref: components.responses.TooManyRequestsError, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/output-and-errors.md }
+
+  - id: api-rate-limit.trust-the-policy-header
+    statement: >
+      Read quotas from `RateLimit-Policy` rather than hard-coding numbers.
+      Limits are set per user and can differ between accounts.
+    status: documented
+    see: [api-rate-limit.headers]
+    evidence:
+      - { source: rest-v2-spec, ref: RateLimitPolicyHeader, seen: "2026-09-28" }
+
+  - id: api-rate-limit.serverless-job-routes
+    statement: >
+      A Serverless endpoint's job routes have their own limits per user and
+      endpoint. For example, `/run` allows 1,000 requests per 10 seconds,
+      `/runsync`, `/status` and `/stream` allow 2,000, and `/purge-queue` allows
+      2. The effective limit grows with the endpoint's running workers. A 429
+      means back off exponentially, not poll faster.
+    on_violation: 429
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests", note: "See the \"Rate limits\" and \"Dynamic rate limiting\" sections.", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming.md }

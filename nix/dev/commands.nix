@@ -21,6 +21,9 @@
   check-types = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
   check-security = "bandit -c pyproject.toml --severity-level medium -r hooks plugins";
   check-shell = "shellcheck scripts/*.sh && shfmt --diff --indent 2 --case-indent scripts";
+  check-js = "biome ci --error-on-warnings .";
+  check-yaml = "yamllint --strict .";
+  check-actions = "actionlint";
   # nixfmt is passed explicit files (not `.`): nixfmt deprecated directory args,
   # and this matches the sandboxed gate's file-walk. `-exec … {} +` is portable
   # (BSD + GNU find) and needs no `xargs -r`. deadnix/statix still accept `.`.

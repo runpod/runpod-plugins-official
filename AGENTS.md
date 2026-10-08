@@ -35,6 +35,9 @@ hooks/                            validate_marketplace / check_versions / check_
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
 testdata/runpodctl/command-surface.json   vendored runpodctl command surface the absence check gates against
+ontology/                         Node 24 tooling for the concept files: validator, bundle, SQLite build, graph page
+packages/knowledge/               @runpod/plugin-knowledge: the skills, golden paths and concepts as one JSON bundle, published to npm on release
+.claude/skills/add-concept/       contributor procedure for adding or changing a concept
 .github/workflows/validate.yml    runs the hooks + the ComfyUI workflow helper unittests on PRs
 .github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API + the latest runpodctl release
 ```
@@ -53,6 +56,7 @@ skills/flash/             write & deploy your own code on Runpod serverless (@re
 skills/companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
 skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a tool
   reference/*.md          detailed topics, loaded on demand
+  concepts/*.yaml         the concept graph: one file per concept, rules with public evidence
 skills/runpod-templates/  official prebuilt pod templates + ComfyUI model-repair guide
   reference/*.md          one file per template (fixed question shape) + comfyui-model-repair.md usage guide
   scripts/                the ComfyUI repair helpers (CI-gated unittests)
@@ -129,6 +133,14 @@ editing the repo. Each is its own checkable rule.
      `NN-name/` with a `README.md` (goal, "which variant?", shared schema/gotchas/cost)
      plus one `variant-*.md` per approach.
    - Every golden-path doc follows the section template listed under *Golden paths & evals*.
+   - Every golden-path doc starts with frontmatter declaring `lanes` (from `runpod-mcp`, `runpodctl`,
+     `flash`, `ssh`, `docker`, `hf`, `aws`, `rest`, `console`), `mcp` (`full`, `partial` or `none`: can
+     an agent with only the Runpod MCP tools finish it) and `concepts` (the concept ids it works with).
+     `pnpm check:guides` in `ontology/tools/` checks them, and `pnpm build:bundle --suggest` lists
+     candidate concepts. A path without this frontmatter fails the check.
+   - Each skill's `SKILL.md` lists the concepts it covers under `metadata.concepts`, and a
+     reference doc lists them in a `concepts:` frontmatter line unless a concept rule already
+     cites it. Every skill, reference doc and golden path must link to at least one concept.
    - The per-path verification status is authoritative in `golden-paths/README.md`'s Status
      column; do not restate it in AGENTS.md (it drifts).
 6. **Evals** — add or update an `evals/*.eval.md` when you add or change routing/behavior.
@@ -166,10 +178,22 @@ editing the repo. Each is its own checkable rule.
      falsifying claims the skills stated as fact.
 10. **Releases** —
    - Never hand-bump versions; release-please cuts the release (see `CONTRIBUTING.md` →
-     Cutting a release).
+     Cutting a release). Cutting a release also publishes `@runpod/plugin-knowledge` to npm at the
+     same version, so plugin content changes reach the MCP server through that package.
    - Use Conventional Commits.
 11. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
    move long tables and deep explanations into `reference/*.md` linked from the body.
+12. **Concept files** — `skills/runpod-usage/concepts/*.yaml` hold exact facts; the reference
+   docs explain them.
+   - Follow `.claude/skills/add-concept/SKILL.md` for concepts and `.claude/skills/write-guide/SKILL.md`
+     for skills, reference docs and golden paths, and run `pnpm validate --strict` and
+     `pnpm check:guides` in `ontology/tools/` before committing.
+   - Guides state only facts the concept rules support; a fact a guide needs goes into a rule
+     first. Every concept is covered by at least one guide, and `check:guides` fails otherwise.
+   - Every file is public-facing: cite only the REST v2 spec, the public docs, a skill file in
+     this repo, or a live probe. The validator rejects internal names and time-bound wording.
+   - When you change a skill doc that a concept cites, re-read the citing rules (grep the
+     concepts for the path) so the two do not disagree.
 
 ## Conventions
 

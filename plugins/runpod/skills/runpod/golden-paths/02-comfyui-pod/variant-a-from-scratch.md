@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, ssh]
+mcp: partial
+concepts: [pod, template, network-volume, pod-ssh-access, exposed-port]
+---
+
 # Golden path 02 — ComfyUI — Variant A: from scratch on a PyTorch template
 
 **Status:** COVERED — live-verified 2026-07-07 (ran end to end, 512×512 PNG

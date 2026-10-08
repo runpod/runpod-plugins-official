@@ -1,0 +1,70 @@
+id: model-store
+name: Model Store
+kind: capability
+summary: >
+  Runpod-managed caching of model weights on hosts, so Serverless workers start
+  with the model already present. Attach a Hugging Face model by URL, or upload
+  your own model to the Model Repository.
+product: storage
+is_a: null
+part_of: runpod-platform
+aliases: [cached models, model cache, model weights, modelReferences, Model Repository]
+
+surfaces:
+  runpodctl: [model add, model list, model remove, serverless create --model-reference, serverless update --model-reference, serverless model-status]
+
+relations:
+  - { type: uses, target: serverless-endpoint, cardinality: "0..n" }
+  - { type: uses, target: network-volume, cardinality: "0..1" }
+
+rules:
+  - id: model-store.attach-by-reference
+    statement: >
+      Attach a Hugging Face model to an endpoint by its full URL with a ref, for
+      example `https://huggingface.co/<org>/<model>:main`. Public, gated and
+      private models all work; gated and private ones need a Hugging Face token.
+      Workers find the model in the standard Hugging Face cache under
+      `/runpod-volume/huggingface-cache/hub/`.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
+
+  - id: model-store.gpu-endpoints-only
+    statement: >
+      `runpodctl serverless create --model-reference` works with `--template-id`
+      and `--hub-id` on GPU endpoints only (`--compute-type GPU`).
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
+
+  - id: model-store.no-download-billing
+    statement: >
+      Model download time is not billed, whether or not the cache hits. On a
+      miss, worker start is held until the download finishes, so jobs wait in
+      the queue and the endpoint can look stuck while it downloads.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
+
+  - id: model-store.best-effort-locality
+    statement: >
+      The scheduler prefers hosts that already hold the model, but residency is
+      best-effort. Cache capacity depends on each machine's disk, so two workers
+      on one endpoint can cold-start at different speeds. For a
+      latency-sensitive endpoint, pre-load the weights on a network volume
+      instead.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
+
+  - id: model-store.not-on-hugging-face
+    statement: >
+      For a private model that is not on Hugging Face, upload it to the Model
+      Repository with `runpodctl model add`, or bake it into the image.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }

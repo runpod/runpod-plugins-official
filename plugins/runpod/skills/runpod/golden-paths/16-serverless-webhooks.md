@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, rest]
+mcp: partial
+concepts: [job, serverless-endpoint, serverless-handler, template]
+---
+
 # Golden path 16 — serverless webhooks (get pushed the result instead of polling)
 
 **Goal:** from "tell me when the job is done" — submit an async `/run` job with a `webhook`
@@ -27,7 +33,7 @@ to it from the public internet.
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - A serverless endpoint (any handler — the `webhook` field is orthogonal to what your
   handler does). Here: a 3-line echo handler on CPU scale-to-zero.
 - A **public HTTPS receiver**. For this walkthrough we use webhook.site's API to spin one

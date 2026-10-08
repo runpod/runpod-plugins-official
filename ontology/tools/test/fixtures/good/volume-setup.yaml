@@ -1,0 +1,18 @@
+id: volume-setup
+name: How volume setup works
+kind: process
+summary: Pick a site, then create the volume there.
+product: storage
+is_a: null
+part_of: null
+steps:
+  - id: pick-site
+    title: Pick a site
+    description: Choose where the volume lives.
+    concepts: [site]
+    rules: [site.capacity-hidden]
+  - id: create
+    title: Create the volume
+    description: The volume is created in that site and stays there.
+    concepts: [volume, site]
+    rules: [volume.site-fixed]

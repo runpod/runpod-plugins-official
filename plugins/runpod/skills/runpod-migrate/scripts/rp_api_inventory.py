@@ -211,14 +211,16 @@ SIGNALS: list[Signal] = [
     Signal(
         Gen.GRAPHQL,
         "secret",
-        r"\bsecret(Create|Delete)\b",
-        "No REST v2 equivalent. Keep this GraphQL call.",
+        r"\bsecret(Create|Delete|ValueUpdate|DescriptionUpdate)\b",
+        "→ POST /v2/account/secrets (create) / PATCH /v2/account/secrets/{id} (value or "
+        "description) / DELETE /v2/account/secrets/{id} (delete, by id). The value is "
+        "write-only: no v2 response returns it.",
     ),
     Signal(
         Gen.GRAPHQL,
         "cluster",
         r"\b(createCluster|deleteCluster)\b",
-        "No REST v2 write equivalent (v2 exposes cluster billing only). Keep this GraphQL call.",
+        "→ POST /v2/clusters (create) / DELETE /v2/clusters/{id} (delete)",
     ),
     # ---- REST v1 -----------------------------------------------------------
     Signal(Gen.V1, "base", r"rest\.runpod\.io/v1", "REST v1 base URL. → https://api.runpod.io/v2"),
@@ -305,8 +307,20 @@ SIGNALS: list[Signal] = [
     Signal(
         Gen.V1_FIELD,
         "pod",
-        r"\bdocker(StartCmd|Args|Entrypoint)\b",
-        "→ `args` (a single string). v2 has no separate entrypoint override.",
+        r"\bdocker(StartCmd|Args)\b",
+        "→ `args` (a single string) or `cmd` (an exec-form array, no quoting needed).",
+    ),
+    Signal(
+        Gen.V1_FIELD,
+        "pod",
+        r"\bdockerEntrypoint\b",
+        "→ `entrypoint` (an exec-form array). v2 encodes it with `cmd` into `args`.",
+    ),
+    Signal(
+        Gen.V1_FIELD,
+        "pod",
+        r"\b(minRAMPerGPU|minVCPUPerGPU)\b",
+        "→ `gpu.minRamPerGpu` / `gpu.minVcpuCountPerGpu` (note the case change).",
     ),
     Signal(
         Gen.V1_FIELD,
@@ -325,7 +339,7 @@ SIGNALS: list[Signal] = [
     Signal(
         Gen.V1_FIELD,
         "pod",
-        r"\b(minRAMPerGPU|minVCPUPerGPU|minDownloadMbps|minUploadMbps|minDiskBandwidthMBps|supportPublicIp|volumeEncrypted|interruptible)\b",
+        r"\b(minDownloadMbps|minUploadMbps|minDiskBandwidthMBps|supportPublicIp|volumeEncrypted|interruptible)\b",
         "Removed in v2 — no equivalent. Drop it or stay on v1/GraphQL for this call.",
     ),
     Signal(
@@ -590,7 +604,7 @@ def md_cell(s: str) -> str:
 # but they say opposite things and the report must not conflate them:
 #
 #   keep-v1  legacy code left behind on purpose — a `RUNPOD_API_V1=1` rollback path,
-#            or a GraphQL-only call (myself/secrets/spot) with no v2 equivalent.
+#            or a GraphQL-only call (myself/spot) with no v2 equivalent.
 #   ignore   not legacy at all — a false positive on code that is already correct.
 #
 # Reporting an `ignore` as `keep-v1` would claim the migration deliberately left v1

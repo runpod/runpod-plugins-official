@@ -23,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from rp_api_inventory import (
+    SIGNALS,
     V2_CONTEXT,
     CompiledSignal,
     Finding,
@@ -463,6 +464,31 @@ class SignalMatchTests(unittest.TestCase):
                 match = _signal_match(case.signal, case.line, case.file_v2_ctx)
                 actual = match.group(0) if match is not None else None
                 self.assertEqual(actual, case.expected)
+
+
+class GraphqlMigrationNoteTests(unittest.TestCase):
+    """Secrets and clusters have REST v2 routes; the report must say where they
+    move instead of telling the user to keep the GraphQL call."""
+
+    def test_secret_and_cluster_notes_point_at_v2(self) -> None:
+        notes = {s.resource: s.note for s in SIGNALS if s.generation is Gen.GRAPHQL}
+        self.assertIn("/v2/account/secrets", notes["secret"])
+        self.assertIn("/v2/clusters", notes["cluster"])
+        for resource in ("secret", "cluster"):
+            self.assertNotIn("Keep this GraphQL call", notes[resource])
+
+    def test_every_secret_mutation_is_flagged(self) -> None:
+        secret = next(s for s in SIGNALS if s.resource == "secret")
+        for mutation in (
+            "secretCreate",
+            "secretValueUpdate",
+            "secretDescriptionUpdate",
+            "secretDelete",
+        ):
+            with self.subTest(mutation):
+                self.assertIsNotNone(
+                    re.search(secret.regex, f"mutation {{ {mutation}(input: $i) {{ id }} }}")
+                )
 
 
 class FileContextTests(unittest.TestCase):

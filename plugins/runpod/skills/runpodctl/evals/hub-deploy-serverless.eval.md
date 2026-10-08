@@ -13,19 +13,19 @@ The agent should:
 2. Create the endpoint with `runpodctl serverless create --hub-id <id> --workers-min 0 --workers-max 2`
 3. Handle the GPU correctly (this is the easy thing to get wrong):
    - Preferably omit `--gpu-id` and let the hub config's default GPU apply, OR
-   - If specifying `--gpu-id`, use a GPU **pool ID** (e.g. `AMPERE_48`, `ADA_24`, `HOPPER_141`) — NOT a display name like `"NVIDIA A40"` from `runpodctl gpu list`. On the `--hub-id` path the API rejects display names with `Invalid GPU Pool ID`.
+   - Pass a GPU name from `runpodctl gpu list` (e.g. `"NVIDIA GeForce RTX 4090"`); runpodctl ≥ v2.14.0 maps it to the matching pool (`ADA_24`). On older binaries, pass the pool id itself.
 
 ## Assertions
 
 - Finds the hub id via `runpodctl hub search vllm` (does not invent one)
 - Runs `runpodctl serverless create --hub-id <id> ...`
 - Sets `--workers-min 0` and `--workers-max 2`
-- If `--gpu-id` is passed at all, its value is a GPU pool ID (e.g. `AMPERE_48`), NOT a `gpu list` display name like `"NVIDIA A40"`
-- Does NOT pass a `gpu list` display name to `--gpu-id` on the hub path
+- If `--gpu-id` is passed, its value is a real GPU name from `runpodctl gpu list` or a pool id (e.g. `ADA_24`), not an invented value
+- Checks `runpodctl version` (or `--help`) before relying on GPU-name mapping on the hub path
 
 ## Notes
 
-This encodes the gotcha found via live testing and tracked upstream as
-runpod/runpodctl#287: `serverless create --gpu-id` on the `--hub-id` path requires
-GPU pool IDs, while `gpu list` (and the `--help` text) surface display names. Until
-that is reconciled, the safe answer is to omit `--gpu-id` or use a pool ID.
+runpod/runpodctl#287 tracked `serverless create --gpu-id` on the `--hub-id` path rejecting
+GPU display names with `Invalid GPU Pool ID`. Verified live with runpodctl v2.14.0
+(2026-09-28): `--gpu-id "NVIDIA GeForce RTX 4090"` on the hub path created the endpoint
+with `gpu.pools: ["ADA_24"]`. Older binaries may still need the pool id.

@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl]
+mcp: full
+concepts: [hub-repo, serverless-endpoint, worker, job, gpu-pool]
+---
+
 # Golden path 03 — Whisper — Variant A: Runpod Hub worker
 
 **Status:** COVERED — live-verified 2026-07-07. **Lane:** runpodctl + Runpod Hub.
@@ -83,7 +89,7 @@ created equal.
 ```
 
 First request cold-starts (image pull + model load) ~20–90 s, which can exceed
-`runsync`'s 60 s sync window — for the first call use `/run` and poll
+`runsync`'s sync window (90 s by default) — for the first call use `/run` and poll
 `/status/<job-id>`, then switch to `runsync` once warm:
 
 ```bash
@@ -107,9 +113,11 @@ curl -s https://api.runpod.ai/v2/<endpoint-id>/status/<job-id> \
   repeated `start container` with no `container` output is the crash-loop tell this run
   had to infer. (MCP `stream-worker-logs` does the same when it's connected.)
 - **`serverless update` has no `--gpu-id` flag.** To change an existing endpoint's
-  GPU pool you must `PATCH https://rest.runpod.io/v1/endpoints/<id>` with
-  `{"gpuTypeIds":[...]}`. (To *override* the pool at create time, pass `--gpu-id` on
-  `serverless create`.)
+  GPU pools, `PATCH https://api.runpod.io/v2/serverless/<id>` with
+  `{"gpu":{"pools":["ADA_24"]}}` (MCP: `set-endpoint-gpus`). Sending `pools` without
+  `excludedTypes` clears any exclusions. (To *override* the pool at create time, pass
+  `--gpu-id` on `serverless create`; it accepts a GPU name such as
+  `"NVIDIA GeForce RTX 4090"` and stores the matching pool.)
 - **`--workers-min 0` is scale-to-zero** and is the default when omitted; the Hub
   config controls the GPU pool unless you override with `--gpu-id`.
 

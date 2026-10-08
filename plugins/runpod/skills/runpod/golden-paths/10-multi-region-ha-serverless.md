@@ -1,3 +1,9 @@
+---
+lanes: [runpodctl, aws, rest]
+mcp: partial
+concepts: [network-volume, serverless-endpoint, data-center, gpu-type, worker, template, serverless-handler, file-transfer]
+---
+
 # Golden path 10 — high-availability serverless across regions (multi-volume + data sync)
 
 **Goal:** stop a serverless endpoint from being hostage to **one** data center's GPU
@@ -26,7 +32,7 @@ verification**.
   [getting-started.md](../../runpod-usage/reference/getting-started.md) (auth resolution, SSH,
   companion-CLI credentials).
 - `RUNPOD_API_KEY` resolvable (runpodctl + REST). Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - `aws` CLI configured with **Runpod S3 API keys** (access key = your Runpod `user_...` id, secret =
   `rps_...`). These are **Console-only** to create (Settings → S3 API Keys) — an agent can't
   self-provision them; escalate if they aren't already in `~/.aws/credentials`/env

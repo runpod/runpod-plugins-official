@@ -1,0 +1,70 @@
+id: endpoint-build
+name: Endpoint build
+kind: component
+summary: >
+  A container image build that Runpod runs from a commit to a GitHub repository
+  connected to an endpoint. A completed build produces a release.
+product: serverless
+is_a: null
+part_of: serverless-endpoint
+aliases: [build, GitHub build, GitHub integration build]
+
+surfaces:
+  rest_v2: { schema: Build, paths: ["/v2/serverless/{id}/builds", "/v2/serverless/{id}/builds/{buildId}"] }
+  mcp: [list-endpoint-builds, get-endpoint-build]
+  console: Serverless > Builds
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: status, type: BuildState, set: read }
+  - { name: commitHash, type: string, set: read }
+  - { name: branch, type: string, set: read }
+  - { name: imageName, type: string, ref: container-image, set: read }
+  - { name: error, type: string, set: read, note: "set for `FAILED` and `TEST_FAILED`" }
+  - { name: startedAt, type: string, set: read }
+  - { name: completedAt, type: string, set: read }
+
+states:
+  field: status
+  values:
+    PENDING: Queued and not started.
+    BUILDING: Building the image.
+    UPLOADING: Pushing the image.
+    TESTING: Running tests.
+    COMPLETED: Finished; the image was produced.
+    FAILED: The build failed.
+    CANCELLED: The build was cancelled.
+    TEST_FAILED: The tests failed.
+  evidence:
+    - { source: rest-v2-spec, ref: BuildState, seen: "2026-09-28" }
+
+relations:
+  - { type: requires, target: container-image, cardinality: "1" }
+
+rules:
+  - id: endpoint-build.terminal-states
+    applies_to: ["field:status", "field:error"]
+    statement: >
+      `COMPLETED`, `FAILED`, `CANCELLED` and `TEST_FAILED` are terminal.
+      `PENDING`, `BUILDING`, `UPLOADING` and `TESTING` mean the build is still
+      running. `error` explains a `FAILED` or `TEST_FAILED` build.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "BuildState; Build.error", seen: "2026-09-28" }
+
+  - id: endpoint-build.feeds-release
+    statement: >
+      A completed build produces a release with `source` set to `GIT_BUILD` and
+      its `buildId`. Workers move to it as they are replaced.
+    status: documented
+    see: [endpoint-release.source, endpoint-release.rollout]
+    evidence:
+      - { source: rest-v2-spec, ref: Release.buildId, seen: "2026-09-28" }
+
+  - id: endpoint-build.listing
+    statement: >
+      The build list is newest first, with a default limit of 100. Fetch an
+      older build directly by its id.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/builds; GET /v2/serverless/{id}/builds/{buildId}", seen: "2026-09-28" }

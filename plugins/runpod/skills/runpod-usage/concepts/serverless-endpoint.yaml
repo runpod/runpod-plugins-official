@@ -1,0 +1,228 @@
+id: serverless-endpoint
+name: Serverless endpoint
+kind: resource
+summary: >
+  A URL backed by autoscaling workers that run your container only while there
+  is work. Requests go either through a managed job queue or straight to the
+  workers' own HTTP servers, and the worker count scales between a minimum and a
+  maximum.
+product: serverless
+is_a: null
+part_of: runpod-platform
+aliases: [endpoint, Serverless, queue-based endpoint, load-balanced endpoint, load balancing endpoint]
+
+surfaces:
+  rest_v2: { schema: Endpoint, paths: [/v2/serverless, "/v2/serverless/{id}"] }
+  graphql: { type: Endpoint, mutations: [saveEndpoint, deleteEndpoint] }
+  mcp: [create-endpoint, list-endpoints, get-endpoint, update-endpoint, delete-endpoint, endpoint-health, set-endpoint-gpus, purge-endpoint-queue]
+  runpodctl: [serverless create, serverless list, serverless get, serverless update, serverless delete, serverless health, serverless env, serverless model-status]
+  console: Serverless
+
+fields:
+  - { name: name, type: string, set: "create,update", required: true }
+  - { name: type, type: enum, values: [QUEUE, LOAD_BALANCER], set: create, required: true, note: how requests reach workers }
+  - { name: gpu.pools, type: "string[]", ref: gpu-pool, set: "create,update", note: serverless GPU pool ids }
+  - { name: gpu.excludedTypes, type: "string[]", ref: gpu-type, set: "create,update", note: GPU type ids removed from the selected pools }
+  - { name: gpu.count, type: integer, default: 1, set: "create,update", note: GPUs per worker }
+  - { name: gpu.allowedCudaVersions, type: "string[]", set: "create,update" }
+  - { name: gpu.minCudaVersion, type: string, set: "create,update" }
+  - { name: cpu, type: "CreateCpuConfig[]", ref: cpu-flavor, set: "create,update", note: present only on CPU endpoints }
+  - { name: templateId, type: string, ref: template, set: "create,update" }
+  - { name: image, type: string, set: "create,update" }
+  - { name: env, type: object, set: "create,update" }
+  - { name: registry, type: string, ref: registry-credential, set: "create,update" }
+  - { name: networkVolumes, type: "string[]", ref: network-volume, set: "create,update" }
+  - { name: dataCenterIds, type: "string[]", ref: data-center, set: "create,update", note: placement preference }
+  - { name: workers.min, type: integer, default: 0, set: "create,update" }
+  - { name: workers.max, type: integer, default: 3, set: "create,update" }
+  - { name: workers.idleTimeout, type: integer, unit: seconds, default: 10, set: "create,update", note: "1 to 3600" }
+  - { name: scaling.type, type: enum, values: [QUEUE_DELAY, REQUEST_COUNT], set: "create,update", required: true }
+  - { name: scaling.queueDelay, type: number, unit: seconds, set: "create,update", note: minimum 0.5 }
+  - { name: scaling.requestCount, type: integer, set: "create,update", note: minimum 1 }
+  - { name: timeout, type: integer, unit: ms, default: 300000, set: "create,update", note: per-request execution timeout }
+  - { name: flashboot, type: enum, values: ["OFF", FLASHBOOT, PRIORITY_FLASHBOOT], default: "OFF", set: "create,update" }
+  - { name: requestUrls, type: EndpointRequestUrls, set: read, note: "invoke URLs for the endpoint's type" }
+
+relations:
+  - { type: uses, target: template, cardinality: "0..1" }
+  - { type: runs_on, target: gpu-pool, cardinality: "0..n" }
+  - { type: runs_on, target: cpu-flavor, cardinality: "0..n" }
+  - { type: uses, target: network-volume, cardinality: "0..n" }
+  - { type: located_in, target: data-center, cardinality: "0..n" }
+  - { type: uses, target: registry-credential, cardinality: "0..1" }
+  - { type: requires, target: container-image, cardinality: "1" }
+  - { type: billed_by, target: serverless-billing, cardinality: "1" }
+  - { type: constrained_by, target: gpu-availability, cardinality: "1" }
+  - { type: constrained_by, target: credit-balance, cardinality: "1" }
+
+rules:
+  - id: serverless-endpoint.gpu-xor-cpu
+    applies_to: ["field:gpu.pools", "field:cpu"]
+    statement: >
+      Set exactly one of `gpu` or `cpu` on create; sending neither or both
+      returns 400. The compute family is fixed after that, so a PATCH that sends
+      `gpu` to a CPU endpoint or `cpu` to a GPU endpoint also returns 400.
+    on_violation: 400
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "POST /v2/serverless; PATCH /v2/serverless/{id}", seen: "2026-09-28" }
+
+  - id: serverless-endpoint.image-or-template
+    applies_to: ["field:image", "field:templateId", "field:env"]
+    statement: >
+      `image` is required unless `templateId` is set. The template is resolved
+      into container settings at create time: fields in the request body
+      override it, and `env` merges key by key with the body's values winning.
+      `templateId` on a PATCH applies the template once and leaves no lasting
+      link.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateEndpointRequest.templateId; UpdateEndpointRequest.templateId", seen: "2026-09-28" }
+
+  - id: serverless-endpoint.type-fixed
+    applies_to: ["field:type", "field:requestUrls"]
+    statement: >
+      `type` is required on create and cannot be changed later. A `QUEUE`
+      endpoint gets the job URLs (`run`, `runSync`, `status`, `stream`,
+      `cancel`, `retry`, `purgeQueue` and `health`). A `LOAD_BALANCER` endpoint
+      gets only its base URL and `health`, and its workers serve their own HTTP
+      paths.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "EndpointType; CreateEndpointRequest.type; EndpointRequestUrls", seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-mcp/SKILL.md, note: The routing type is fixed at creation. }
+
+  - id: serverless-endpoint.lb-worker-ports
+    applies_to: ["field:type", "field:env"]
+    statement: >
+      A worker on a `LOAD_BALANCER` endpoint listens on the port in `PORT`
+      (default 80) and answers health checks on `PORT_HEALTH` (default 80) at
+      `HEALTH_CHECK_PATH` (default `/ping`).
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: EndpointType, seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/build-a-worker", note: The example worker serves its health check at /ping. }
+
+  - id: serverless-endpoint.lb-no-queue
+    applies_to: ["field:type"]
+    statement: >
+      A `LOAD_BALANCER` endpoint has no job queue. When every worker is busy,
+      new requests are dropped instead of waiting, so use a `QUEUE` endpoint
+      when requests must be buffered.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview", note: "The comparison table lists backpressure as dropping requests when overloaded, against queue buffering." }
+
+  - id: serverless-endpoint.pools-not-types
+    applies_to: ["field:gpu.pools", "field:gpu.excludedTypes"]
+    statement: >
+      `gpu.pools` takes serverless pool ids (the `pool` field of `GET
+      /v2/catalog/gpus`), not the GPU type ids that pods use.
+      `gpu.excludedTypes` takes GPU type ids and removes them from those pools.
+      A PATCH that sends `pools` without `excludedTypes` clears the exclusions.
+    on_violation: 400 when an excluded type is not in any selected pool
+    status: documented
+    see: [gpu-pool.pool-vs-type-ids]
+    evidence:
+      - { source: rest-v2-spec, ref: "BaseEndpointGpuConfig.pools; BaseEndpointGpuConfig.excludedTypes", seen: "2026-09-28" }
+
+  - id: serverless-endpoint.cuda-constraints
+    applies_to: ["field:gpu.allowedCudaVersions", "field:gpu.minCudaVersion"]
+    statement: >
+      A non-empty `allowedCudaVersions` and a `minCudaVersion` cannot be sent
+      together. A change to either applies as workers are replaced, not to
+      workers that are already running.
+    on_violation: 400
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateEndpointGpuConfig; UpdateEndpointGpuConfig", seen: "2026-09-28" }
+
+  - id: serverless-endpoint.network-volume-pins-dc
+    applies_to: ["field:networkVolumes", "field:dataCenterIds"]
+    statement: >
+      Attaching network volumes limits workers to those volumes' data centers.
+      To spread workers across data centers, attach one volume per data center.
+      Volumes in different data centers do not sync with each other.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md, note: Attach one volume per data center to spread workers. }
+
+  - id: serverless-endpoint.leave-placement-broad
+    applies_to: ["field:gpu.pools", "field:dataCenterIds"]
+    statement: >
+      List every GPU pool your workload can run on, and leave `dataCenterIds`
+      unset unless a network volume requires it. Pinning a scarce GPU to one
+      data center leaves workers throttled and jobs waiting in `IN_QUEUE`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: POST /v2/serverless (Checking what you can deploy), seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
+
+  - id: serverless-endpoint.accepts-jobs-before-workers
+    statement: >
+      A new endpoint accepts jobs right away, but it has no running workers
+      unless `workers.min` is above 0, so the first request pays for a cold
+      start. Create does not check that the image runs; a broken image shows up
+      later as jobs stuck in `IN_QUEUE`.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: POST /v2/serverless, seen: "2026-09-28" }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Describes how a broken image looks from the queue. }
+
+  - id: serverless-endpoint.diagnose-with-health
+    statement: >
+      Read the endpoint's health before waiting longer. Jobs queued with zero
+      workers for more than about two minutes point to a placement failure, not
+      a cold start. A `throttled` count above 0 means there is no capacity in
+      the selected pools and data centers. Ready workers with jobs stuck in
+      `IN_QUEUE` and nothing in progress point to a broken image.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Serverless facts section. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
+
+  - id: serverless-endpoint.update-effect-timing
+    applies_to: ["field:workers.min", "field:workers.max", "field:scaling.type", "field:timeout", "field:image", "field:env"]
+    statement: >
+      Changes to `workers`, `scaling` and `timeout` reach the autoscaler
+      promptly. Container changes (`image`, `env`, `args`, `disk`, `ports` and
+      `registry`) create a new release that rolls out as workers are replaced.
+    status: documented
+    see: [endpoint-release.rollout]
+    evidence:
+      - { source: rest-v2-spec, ref: "PATCH /v2/serverless/{id}", seen: "2026-09-28" }
+
+  - id: serverless-endpoint.defaults-by-layer
+    applies_to: ["field:workers.idleTimeout", "field:timeout", "field:flashboot", "field:workers.max"]
+    statement: >
+      Defaults depend on the tool that creates the endpoint. REST v2 create uses
+      `workers.max` 3, `idleTimeout` 10 seconds, `timeout` 300 seconds and
+      `flashboot` `OFF`. The console uses a 5-second idle timeout, a 600-second
+      execution timeout and FlashBoot on. runpodctl and the Flash SDK set their
+      own defaults, so set these values explicitly.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateEndpointRequest (workers, timeout and flashboot defaults)", seen: "2026-09-28" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: "Console defaults for idle timeout, execution timeout and FlashBoot." }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: "The Flash SDK's defaults differ from the platform's." }
+
+  - id: serverless-endpoint.max-zero-stops-workers
+    applies_to: ["field:workers.max"]
+    statement: >
+      Setting `workers.max` to 0 stops every worker on the endpoint. Use it to
+      drain an endpoint before an update that must not mix versions, then
+      restore the previous value. Runpod also sets `workers.max` to 0 on an
+      endpoint that receives no requests for 7 days.
+    status: documented
+    see: [endpoint-autoscaling.idle-endpoint-scale-down]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/rolling-releases", note: Scale to zero before updating for strict version consistency. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle endpoint scale-down. }
+
+  - id: serverless-endpoint.delete-is-total
+    statement: >
+      Deleting an endpoint also deletes its bound template, terminates all of
+      its workers, and cancels queued and in-progress jobs. It cannot be undone.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "DELETE /v2/serverless/{id}", seen: "2026-09-28" }
