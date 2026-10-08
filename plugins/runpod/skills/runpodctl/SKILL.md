@@ -10,7 +10,7 @@ allowed-tools: Bash(runpodctl:*)
 compatibility: Linux, macOS
 metadata:
   author: runpod
-  version: "1.5.0" # x-release-please-version
+  version: "1.6.0" # x-release-please-version
   concepts: [runpodctl, pod, cpu-pod, serverless-endpoint, template, network-volume, hub-repo, ssh-key, file-transfer, model-store]
 license: Apache-2.0
 ---
