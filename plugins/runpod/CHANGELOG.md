@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.0](https://github.com/runpod/runpod-plugins-official/compare/v1.5.0...v1.6.0) (2026-10-08)
+
+
+### Features
+
+* concept graph linked to skills and golden paths, published as @runpod/plugin-knowledge ([#67](https://github.com/runpod/runpod-plugins-official/issues/67)) ([ee2a2c1](https://github.com/runpod/runpod-plugins-official/commit/ee2a2c1771eb063fe8d6dd4df637aa01d7ac40d6))
+
 ## [1.5.0](https://github.com/runpod/runpod-plugins-official/compare/v1.4.0...v1.5.0) (2026-10-06)
 
 
