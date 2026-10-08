@@ -3,7 +3,7 @@
 This repo is a **plugin marketplace**. It ships one plugin, `runpod`, whose skills
 also install via [skills.sh](https://skills.sh/) — both read the same
 `.claude-plugin/marketplace.json`. Each release also publishes the same content to npm
-as [`runpod-official-plugin-knowledge`](packages/knowledge/README.md), for programs such as the Runpod
+as [`@runpod/plugin-knowledge`](packages/knowledge/README.md), for programs such as the Runpod
 MCP server.
 
 ## Layout
@@ -20,7 +20,7 @@ plugins/runpod/
   skills/<name>/SKILL.md          the skills (+ reference/, evals/)
   skills/runpod/golden-paths/     worked end-to-end reference tasks (no SKILL.md)
   skills/runpod-usage/concepts/   the concept graph: one YAML file per concept
-packages/knowledge/               runpod-official-plugin-knowledge, the npm package built from all of the above
+packages/knowledge/               @runpod/plugin-knowledge, the npm package built from all of the above
 ontology/                         Node 24 tooling: validator, bundle, SQLite build, graph page
 hooks/                            validation scripts
 testdata/runpod-migrate/          fixture repos for the scanner regression check
@@ -105,9 +105,9 @@ release-please runs on every push to `main` (`.github/workflows/release-please.y
 - the two `plugin.json`s, `gemini-extension.json`, top-level `marketplace.json` (via the JSON `jsonpath` updater),
 - each skill's `SKILL.md` `metadata.version` (via the `# x-release-please-version` annotation on that line) — there is **no** independent per-skill versioning; a skill's version just mirrors the plugin version so a reader of any single `SKILL.md` sees which release it shipped in.
 
-- `packages/knowledge/package.json`, so `runpod-official-plugin-knowledge` is published at the plugin's version.
+- `packages/knowledge/package.json`, so `@runpod/plugin-knowledge` is published at the plugin's version.
 
-**Merging the release PR also publishes `runpod-official-plugin-knowledge` to npm.** The `publish-knowledge`
+**Merging the release PR also publishes `@runpod/plugin-knowledge` to npm.** The `publish-knowledge`
 job in `release-please.yml` runs when a release is cut: it checks the concepts and guides,
 builds `knowledge.json` from the release commit and runs `npm publish`. It authenticates with
 npm trusted publishing (GitHub OIDC), so no npm token is stored, and it skips a version that
@@ -117,11 +117,12 @@ is already on npm. After a break-glass release, run the workflow by hand
 One-time setup, by someone who can publish packages for Runpod on npm: publish the first version by hand,
 then on npmjs.com add a trusted publisher for `runpod/runpod-plugins-official` with workflow
 `release-please.yml`. `npm publish` builds the bundle first with the ontology tooling, so
-install its dependencies before publishing:
+install its dependencies before publishing. Provenance only works from CI, so turn it off
+for this one local publish:
 
 ```bash
 (cd ontology/tools && pnpm install --frozen-lockfile)
-cd packages/knowledge && npm publish
+cd packages/knowledge && npm publish --provenance=false
 ```
 
 `hooks/check_versions.py` runs in CI as a drift guard and **fails the build if any of these disagree**. `scripts/bump-version.sh` does the same bump locally but is an **emergency/local fallback only** — normal releases go through release-please.

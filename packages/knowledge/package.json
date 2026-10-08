@@ -1,5 +1,5 @@
 {
-  "name": "runpod-official-plugin-knowledge",
+  "name": "@runpod/plugin-knowledge",
   "version": "1.5.0",
   "description": "The Runpod plugin's skills, reference docs, golden paths and concept graph as one JSON bundle, for programs such as the Runpod MCP server",
   "license": "Apache-2.0",

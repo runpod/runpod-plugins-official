@@ -80,7 +80,7 @@ jobs:
       - run: pnpm validate --strict
       - run: pnpm check:guides
       - run: pnpm build:sqlite
-      - name: Pack runpod-official-plugin-knowledge (what release-please publishes)
+      - name: Pack @runpod/plugin-knowledge (what release-please publishes)
         working-directory: packages/knowledge
         run: npm pack --dry-run
 

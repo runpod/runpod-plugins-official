@@ -1,4 +1,4 @@
-# runpod-official-plugin-knowledge
+# @runpod/plugin-knowledge
 
 The Runpod plugin's knowledge as one JSON file, for programs that serve it to agents,
 such as the Runpod MCP server. It is built from
@@ -9,7 +9,7 @@ This package is not how you install the plugin. Plugin and skills.sh users insta
 the repo as described in its README.
 
 ```js
-import { loadKnowledge } from "runpod-official-plugin-knowledge"; // or require("runpod-official-plugin-knowledge")
+import { loadKnowledge } from "@runpod/plugin-knowledge"; // or require("@runpod/plugin-knowledge")
 
 const { version, commit, guides, concepts, links } = loadKnowledge();
 ```

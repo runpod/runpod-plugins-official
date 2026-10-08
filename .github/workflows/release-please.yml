@@ -4,7 +4,7 @@ name: release-please
 # opens/maintains a "release PR" that bumps every version file + regenerates the
 # CHANGELOG. Merging that PR tags the release (vX.Y.Z). No manual version edits.
 #
-# When a release is cut, publish-knowledge publishes runpod-official-plugin-knowledge (the
+# When a release is cut, publish-knowledge publishes @runpod/plugin-knowledge (the
 # skills, golden paths and concept graph as one JSON bundle) to npm at the same
 # version. Run this workflow by hand (workflow_dispatch) to publish after a
 # break-glass release made with scripts/release.sh.
@@ -59,12 +59,12 @@ jobs:
           pnpm test
           pnpm validate --strict
           pnpm check:guides
-      - name: Publish runpod-official-plugin-knowledge
+      - name: Publish @runpod/plugin-knowledge
         working-directory: packages/knowledge
         run: |
           version="$(node -p "require('./package.json').version")"
-          if npm view "runpod-official-plugin-knowledge@${version}" version >/dev/null 2>&1; then
-            echo "runpod-official-plugin-knowledge@${version} is already published; nothing to do."
+          if npm view "@runpod/plugin-knowledge@${version}" version >/dev/null 2>&1; then
+            echo "@runpod/plugin-knowledge@${version} is already published; nothing to do."
             exit 0
           fi
           # prepack builds knowledge.json from this commit.
