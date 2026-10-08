@@ -12,9 +12,6 @@
       "!testdata",
       "!**/node_modules",
       "!ontology/build",
-      "!ontology/tools/dist",
-      "!ontology/tools/public",
-      "!ontology/tools/api/ontology.sqlite",
       "!packages/knowledge/knowledge.json"
     ]
   },

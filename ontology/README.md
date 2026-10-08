@@ -19,10 +19,7 @@ pnpm serve               # http://localhost:8787: the graph page plus the JSON A
 ```
 
 The server is read-only: `GET /api/concepts`, `/api/concepts/<id|name|alias>`,
-`/api/concepts/<ref>/neighbors`, `/api/search?q=<text>` and `/api/tree?root=<ref>`. It also deploys to Vercel
-with the project's root directory set to `ontology/tools`: `vercel.json` compiles the
-tools, builds the SQLite file next to the function in `api/index.mjs`, and serves the
-graph page statically.
+`/api/concepts/<ref>/neighbors`, `/api/search?q=<text>` and `/api/tree?root=<ref>`.
 
 - `sqlite/schema.sql` is the table layout. `tools/src/query.ts` is the query layer an agent tool would use.
 - Fields and paths are checked against the REST v2 snapshot at
@@ -33,7 +30,7 @@ To add or change a concept, follow `.claude/skills/add-concept/SKILL.md`.
 
 ## Guides, examples and concepts in one package
 
-`pnpm build:bundle` writes `packages/knowledge/knowledge.json`, the `runpod-official-plugin-knowledge`
+`pnpm build:bundle` writes `packages/knowledge/knowledge.json`, the `@runpod/plugin-knowledge`
 package. It holds every skill, reference doc and golden path, the concept files, and
 the links between them:
 

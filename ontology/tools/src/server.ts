@@ -1,6 +1,5 @@
 // Serves the concept graph over HTTP: a read-only JSON API, and the graph page
-// at / when one is given. The Vercel function in api/index.mjs uses the same
-// listener, so local and hosted behave the same.
+// at / when one is given.
 //
 //   node src/server.ts [--port 8787]
 //
