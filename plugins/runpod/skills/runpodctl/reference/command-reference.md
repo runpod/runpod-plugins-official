@@ -98,7 +98,7 @@ like it applied and the endpoint kept billing. On an older binary verify with `s
 <id>`, or `PATCH https://api.runpod.io/v2/serverless/<id>` with an explicit `{"workers":{"min":0}}`.
 
 `serverless update` has **no `--gpu-id` flag** — change an existing endpoint's GPU pool with
-that same `PATCH` and `{"gpuTypeIds":[...]}`.
+that same `PATCH` and `{"gpu":{"pools":[...]}}`.
 
 **Multi-DC** (`--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>`) needs
 **runpodctl ≥ v2.4.0**; data does not sync between volumes automatically — golden path
