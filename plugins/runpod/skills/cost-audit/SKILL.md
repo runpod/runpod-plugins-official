@@ -9,7 +9,7 @@ description: 'Read-only Runpod spend audit: find idle spend, explain serverless 
   is made.'
 metadata:
   author: runpod
-  version: "1.6.0" # x-release-please-version
+  version: "1.7.0" # x-release-please-version
   concepts: [billing-record, pod-billing, serverless-billing, network-volume-billing, public-endpoint, credit-balance, endpoint-autoscaling]
 license: Apache-2.0
 ---
