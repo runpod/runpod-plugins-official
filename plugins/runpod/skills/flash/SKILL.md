@@ -9,7 +9,7 @@ description: >-
 user-invocable: true
 metadata:
   author: runpod
-  version: "1.7.0" # x-release-please-version
+  version: "1.7.1" # x-release-please-version
   concepts: [flash, serverless-endpoint, serverless-handler, worker]
 license: Apache-2.0
 ---
