@@ -150,6 +150,7 @@
         "--create-upload",
         "--credential-reference",
         "--credential-type",
+        "--delete-my-model-files-after-upload",
         "--file-name",
         "--file-size",
         "--hash-timeout",
@@ -185,6 +186,7 @@
         "delete"
       ],
       "flags": [
+        "--clear-models",
         "--hash",
         "--help",
         "--name",
@@ -281,9 +283,7 @@
         "--public-ip",
         "--registry-auth-id",
         "--ssh",
-        "--stop-after",
         "--template-id",
-        "--terminate-after",
         "--type",
         "--volume-in-gb",
         "--volume-mount-path",
@@ -402,6 +402,7 @@
         "--name",
         "--output",
         "--password",
+        "--password-stdin",
         "--username"
       ]
     },
@@ -488,6 +489,13 @@
         "--output"
       ]
     },
+    "serverless env": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output"
+      ]
+    },
     "serverless get": {
       "aliases": [],
       "flags": [
@@ -524,6 +532,14 @@
         "--source",
         "--tail",
         "--worker"
+      ]
+    },
+    "serverless model-status": {
+      "aliases": [],
+      "flags": [
+        "--help",
+        "--output",
+        "--source"
       ]
     },
     "serverless run": {
@@ -722,5 +738,5 @@
     "project",
     "config"
   ],
-  "version": "runpodctl 2.10.0-fc93344"
+  "version": "runpodctl 2.14.0-dd55bcf"
 }

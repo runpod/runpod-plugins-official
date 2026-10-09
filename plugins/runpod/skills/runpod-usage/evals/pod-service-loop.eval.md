@@ -18,11 +18,11 @@ Per `runpod-usage/reference/{pod-workflows.md,on-pod-setup.md}`:
    the SSH channel closing, and return immediately.
 4. **Verify from outside** — poll `https://<pod-id>-11434.proxy.runpod.net/api/tags`
    until 200 (expect warm-up 502s) before reporting the URL.
-5. **Cost guard** — `--terminate-after` (not `--stop-after`).
+5. **Cost guard** — remove the pod when done (`runpodctl pod remove`). Never `--terminate-after` / `--stop-after`: they were never enforced and v2.12.0 removed them.
 
 ## Assertions
 
 - Sets the port and env at `pod create` (not after).
 - Passes env explicitly on the SSH-launched service command (doesn't rely on `--env` reaching the shell).
 - Starts the server detached (`setsid`/`nohup` + `</dev/null`), not a bare `&`.
-- Verifies by polling the proxy URL, and uses `--terminate-after` as the cost guard.
+- Verifies by polling the proxy URL, and tells the user to remove the pod when done. Does NOT use `--terminate-after` / `--stop-after`.
