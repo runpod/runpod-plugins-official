@@ -168,10 +168,12 @@ editing the repo. Each is its own checkable rule.
    - Prefer a positive claim ("read them with `serverless logs`") or silence. If an absence
      claim is genuinely load-bearing, give it a **version floor** ("needs ≥ v2.10.0") rather
      than an open-ended "cannot", and add it to the check's `ALLOW` list with a reason.
-   - **The MCP tool surface is not documented in this repo at all.** No hook can gate it —
-     the server ships on its own cadence and publishes its tools (with generated parameter
-     descriptions) plus its own task playbooks under `runpod://skills/`, so a copy here is
-     stale by construction.
+   - **The MCP tool list is not documented in this repo.** No hook can gate it — the
+     server ships on its own cadence and publishes its tools with generated parameter
+     descriptions, so a copy here is stale by construction. The MCP journey playbooks are
+     the exception: they live here (`runpod-mcp` and the journey skills it routes to) and
+     reach the server through `@runpod/plugin-knowledge`, so a playbook's tool binding
+     defers to the live tool list.
    - **An eval asserting a false negative is the worst case** — it trains the wrong behavior
      in rather than merely misinforming a reader. This has already happened twice: v2.9.0
      added `serverless health` and v2.10.0 added `serverless logs`/`pod logs`, each
