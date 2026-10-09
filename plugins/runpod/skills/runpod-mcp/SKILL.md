@@ -75,9 +75,10 @@ Once connected, read the server. Do not reason about its tools from memory.
    own parameter descriptions, generated from Runpod's REST v2 contract. Check there
    before concluding a capability exists *or* doesn't. When a journey skill's tool
    binding disagrees with the live tool list, the live list wins.
-2. **The server serves the same playbooks** as MCP resources under `runpod://skills/`,
-   versioned with the server. With this plugin installed, the journey skills below are
-   the procedure; the server's copies are the fallback for an agent without the plugin.
+2. **The server serves these same skills** from this plugin's release: `read-guide`
+   (start with `read-guide runpod-mcp`) and the `runpod://guides/<id>` resources. With
+   this plugin installed, the journey skills below are the procedure; the server's
+   guides are the same text for an agent without the plugin.
 3. **The wire contract** is the Runpod v2 OpenAPI document at
    `https://api.runpod.io/v2/openapi.json`, for fields beyond the tool surface.
 
