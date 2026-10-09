@@ -6,6 +6,18 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.0](https://github.com/runpod/runpod-plugins-official/compare/v1.6.0...v1.7.0) (2026-10-09)
+
+
+### Features
+
+* **skills:** add the MCP journey skills for the Runpod MCP server ([#75](https://github.com/runpod/runpod-plugins-official/issues/75)) ([8b0e6de](https://github.com/runpod/runpod-plugins-official/commit/8b0e6defb23b147a9c1b967dd575f79da31f1ae9))
+
+
+### Documentation
+
+* **runpod:** pin a CUDA floor on GPU creates across every lane ([#57](https://github.com/runpod/runpod-plugins-official/issues/57)) ([0db94d9](https://github.com/runpod/runpod-plugins-official/commit/0db94d92637e56d9de7a38ea0229fcf2cbcc4f6e))
+
 ## [1.6.0](https://github.com/runpod/runpod-plugins-official/compare/v1.5.0...v1.6.0) (2026-10-08)
 
 
