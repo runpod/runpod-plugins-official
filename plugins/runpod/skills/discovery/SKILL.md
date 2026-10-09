@@ -9,7 +9,7 @@ description: 'Answer what is available, what fits and the price against Runpod''
   MCP tools.'
 metadata:
   author: runpod
-  version: "1.7.0" # x-release-please-version
+  version: "1.7.1" # x-release-please-version
   concepts: [gpu-type, gpu-availability, gpu-pool, cpu-flavor, data-center, cloud-tier, hub-repo, template, public-endpoint]
 license: Apache-2.0
 ---

@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.1](https://github.com/runpod/runpod-plugins-official/compare/v1.7.0...v1.7.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **runpod-mcp:** point at read-guide now that the server serves the plugin's skills ([#76](https://github.com/runpod/runpod-plugins-official/issues/76)) ([50e3dfb](https://github.com/runpod/runpod-plugins-official/commit/50e3dfb69ace7feeb48e10e4943f99ec58c167a7))
+
 ## [1.7.0](https://github.com/runpod/runpod-plugins-official/compare/v1.6.0...v1.7.0) (2026-10-09)
 
 

@@ -9,7 +9,7 @@ description: Provision a Runpod Pod for interactive, development or training use
   endpoint, through the Runpod MCP tools.
 metadata:
   author: runpod
-  version: "1.7.0" # x-release-please-version
+  version: "1.7.1" # x-release-please-version
   concepts: [pod, template, gpu-type, gpu-availability, data-center, cloud-tier, exposed-port, container-disk, pod-volume-disk, network-volume]
 license: Apache-2.0
 ---
