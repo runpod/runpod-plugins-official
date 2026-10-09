@@ -21,7 +21,14 @@
         "./skills/runpod-usage",
         "./skills/runpod-templates",
         "./skills/companion-clis",
-        "./skills/runpod-migrate"
+        "./skills/runpod-migrate",
+        "./skills/cost-audit",
+        "./skills/discovery",
+        "./skills/endpoint-ops",
+        "./skills/lifecycle-crud",
+        "./skills/pod-deploy",
+        "./skills/pod-doctor",
+        "./skills/serverless-deploy"
       ]
     }
   ]
