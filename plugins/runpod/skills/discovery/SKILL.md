@@ -98,4 +98,4 @@ If a tool named here is missing from the session's tool list, say so and use the
 
 ## Contract
 
-The cross-journey answer contract (definite facts from reads, commit-don't-hedge, mutations bind to this conversation's creations, a standalone final message, honest failure, granted tools only) is defined in the `runpod-mcp-journeys` router skill and applies to every reply from this journey. If the `runpod-mcp-journeys` router skill has not been loaded in this conversation, load it now, before the next tool call: its rules on which resources you may change, when a request is the go, and when to stop for the user are not repeated here.
+The cross-journey answer contract (definite facts from reads, commit-don't-hedge, mutations bind to this conversation's creations, a standalone final message, honest failure, granted tools only) is defined in the `runpod-mcp` skill and applies to every reply from this journey. If the `runpod-mcp` skill has not been loaded in this conversation, load it now, before the next tool call: its rules on which resources you may change, when a request is the go, and when to stop for the user are not repeated here.

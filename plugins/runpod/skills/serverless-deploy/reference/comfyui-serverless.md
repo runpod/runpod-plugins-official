@@ -1,16 +1,5 @@
 ---
-name: comfyui-serverless
-description: Host a ComfyUI workflow as a serverless endpoint and prove it with one generated image. Owns
-  the workflow-as-job-input pattern (the workflow JSON rides each job request, it is never baked into
-  the image), worker-variant selection by the models the workflow references, and custom-model provisioning
-  (Civitai checkpoints/LoRAs, extra upscalers) via an explicit mechanism with its cold-start consequence
-  stated. Use when the user has a ComfyUI workflow, or custom image-generation models, and wants them
-  served as an API on Runpod Serverless through the Runpod MCP tools.
-metadata:
-  author: runpod
-  version: "1.6.0" # x-release-please-version
-  concepts: [serverless-endpoint, serverless-handler, hub-repo, network-volume, worker, job, model-store]
-license: Apache-2.0
+concepts: [serverless-endpoint, serverless-handler, hub-repo, network-volume, worker, job, model-store]
 ---
 
 # ComfyUI serverless
@@ -63,4 +52,4 @@ If a tool named here is missing from the session's tool list, say so and use the
 
 ## Contract
 
-The cross-journey answer contract (definite facts from reads, commit-don't-hedge, mutations bind to this conversation's creations, a standalone final message, honest failure, granted tools only) is defined in the `runpod-mcp-journeys` router skill and applies to every reply from this journey. If the `runpod-mcp-journeys` router skill has not been loaded in this conversation, load it now, before the next tool call: its rules on which resources you may change, when a request is the go, and when to stop for the user are not repeated here.
+This page extends [serverless-deploy](../SKILL.md): its smoke-test, hand-back and teardown rules apply here. The answer contract in [the runpod-mcp skill](../../runpod-mcp/SKILL.md#the-answer-contract) applies to every reply from this journey. If that skill has not been loaded in this conversation, load it now, before the next tool call.

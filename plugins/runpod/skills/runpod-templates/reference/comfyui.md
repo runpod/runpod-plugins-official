@@ -6,6 +6,8 @@ concepts: [template, pod, container-image, network-volume, exposed-port]
 
 ComfyUI + dependencies + custom nodes baked in, **auto-starting on boot**. No SSH, no
 `pip install`, no `python main.py`. This is the default way to get ComfyUI on a pod.
+To serve a ComfyUI workflow as a scale-to-zero API instead of a pod, see
+[serverless-deploy/reference/comfyui-serverless.md](../../serverless-deploy/reference/comfyui-serverless.md).
 
 Two variants, one per CUDA line. Everything below was verified on 2026-08-25 (see
 [Verification](#verification)).

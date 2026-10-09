@@ -1,15 +1,5 @@
 ---
-name: api-boundary
-description: 'Recognize when a task exceeds what the Runpod MCP tools can do and answer honestly: name
-  the specific operation that is not exposed and the real working path for it. Never fabricate a tool
-  call or claim a silent success, and never refuse an operation the server serves; check the served tool
-  list before calling anything a gap. Use when the user asks for file transfer to or from a Pod or volume,
-  a command run inside a Pod, or anything else that looks like it should be a tool and is not.'
-metadata:
-  author: runpod
-  version: "1.6.0" # x-release-please-version
-  concepts: [file-transfer, pod-ssh-access, pod-command-exec, runpodctl, network-volume, runpod-secret, instant-cluster]
-license: Apache-2.0
+concepts: [file-transfer, pod-ssh-access, pod-command-exec, runpodctl, network-volume, runpod-secret, instant-cluster]
 ---
 
 # API boundary
@@ -61,4 +51,4 @@ File transfer and in-Pod command execution are the gaps: no MCP tool moves bytes
 
 ## Contract
 
-The cross-journey answer contract (definite facts from reads, commit-don't-hedge, mutations bind to this conversation's creations, a standalone final message, honest failure, granted tools only) is defined in the `runpod-mcp-journeys` router skill and applies to every reply from this journey. If the `runpod-mcp-journeys` router skill has not been loaded in this conversation, load it now, before the next tool call: its rules on which resources you may change, when a request is the go, and when to stop for the user are not repeated here.
+The answer contract in [the runpod-mcp skill](../SKILL.md#the-answer-contract) applies to every reply that uses this page.

@@ -22,15 +22,12 @@
         "./skills/runpod-templates",
         "./skills/companion-clis",
         "./skills/runpod-migrate",
-        "./skills/api-boundary",
-        "./skills/comfyui-serverless",
         "./skills/cost-audit",
         "./skills/discovery",
         "./skills/endpoint-ops",
         "./skills/lifecycle-crud",
         "./skills/pod-deploy",
         "./skills/pod-doctor",
-        "./skills/runpod-mcp-journeys",
         "./skills/serverless-deploy"
       ]
     }

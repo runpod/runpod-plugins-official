@@ -47,7 +47,7 @@ Read the source the user gave you and classify it. The engine family follows fro
 |---|---|---|
 | Text-generation LLM, `safetensors` weights | vLLM or SGLang | `runpod/worker-v1-vllm` (or SGLang worker) |
 | Text-generation LLM, `GGUF` quantized weights | llama.cpp / Ollama | a GGUF-capable worker — **not** vLLM |
-| Image/diffusion `workflow.json` | ComfyUI | `runpod/worker-comfyui` |
+| Image/diffusion `workflow.json` | ComfyUI | `runpod/worker-comfyui` ([reference/comfyui-serverless.md](reference/comfyui-serverless.md)) |
 | Speech-to-text (transcription) | a Whisper-family model | a speech-to-text worker, not an LLM worker |
 | Text-to-speech / voice cloning | a TTS model | a TTS worker |
 | Speaker diarization | a diarization pipeline | a diarization worker from the Hub or public catalog |
@@ -170,4 +170,4 @@ recommended next step.
 
 ## Contract
 
-The cross-journey answer contract (definite facts from reads, commit-don't-hedge, mutations bind to this conversation's creations, a standalone final message, honest failure, granted tools only) is defined in the `runpod-mcp-journeys` router skill and applies to every reply from this journey. If the `runpod-mcp-journeys` router skill has not been loaded in this conversation, load it now, before the next tool call: its rules on which resources you may change, when a request is the go, and when to stop for the user are not repeated here.
+The cross-journey answer contract (definite facts from reads, commit-don't-hedge, mutations bind to this conversation's creations, a standalone final message, honest failure, granted tools only) is defined in the `runpod-mcp` skill and applies to every reply from this journey. If the `runpod-mcp` skill has not been loaded in this conversation, load it now, before the next tool call: its rules on which resources you may change, when a request is the go, and when to stop for the user are not repeated here.

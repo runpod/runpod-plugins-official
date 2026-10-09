@@ -32,15 +32,12 @@
         "plugins/runpod/skills/companion-clis/SKILL.md",
         "plugins/runpod/skills/runpod-usage/SKILL.md",
         "plugins/runpod/skills/runpod-templates/SKILL.md",
-        "plugins/runpod/skills/api-boundary/SKILL.md",
-        "plugins/runpod/skills/comfyui-serverless/SKILL.md",
         "plugins/runpod/skills/cost-audit/SKILL.md",
         "plugins/runpod/skills/discovery/SKILL.md",
         "plugins/runpod/skills/endpoint-ops/SKILL.md",
         "plugins/runpod/skills/lifecycle-crud/SKILL.md",
         "plugins/runpod/skills/pod-deploy/SKILL.md",
         "plugins/runpod/skills/pod-doctor/SKILL.md",
-        "plugins/runpod/skills/runpod-mcp-journeys/SKILL.md",
         "plugins/runpod/skills/serverless-deploy/SKILL.md"
       ]
     }
