@@ -2,24 +2,30 @@
 concepts: [container-image]
 ---
 
-# Docker — one-time setup
+# Docker — setup for the selected build route
 
-Install Docker (only needed once, if `docker --version` fails). Credentials, tagging,
-and build/push commands are in [`docker.md`](docker.md).
+First inspect the existing environment. `docker --version` checks only the CLI in the
+current shell: a Windows host may lack it while an existing WSL distribution or remote
+builder already works. Identify the intended shell and available installations before
+installing anything. `docker info` checks the daemon/context; inspect `docker context ls`
+if it is unreachable. A stopped daemon or wrong context is not a missing installation.
 
-**macOS:** Download Docker Desktop from https://docs.docker.com/desktop/setup/install/mac-install/
-- Choose the **Apple Silicon** installer for M-series Macs, or **Intel Chip** for older Macs
-- Open the DMG, drag Docker to Applications, and launch it
+File authoring and eligible hosted builds do not require local Docker. Choose a local
+setup only when that is the user's build route. Credentials, tagging and build/push
+commands are in [docker.md](docker.md).
 
-**Windows:** Download Docker Desktop from https://docs.docker.com/desktop/setup/install/windows-install/
-- Requires WSL 2 — install it first if needed (`wsl --install` in an admin PowerShell, then restart); Docker Desktop then detects it automatically
-- After installation, `docker` commands work inside your WSL2 terminal without extra configuration
-- Run the installer and follow the setup wizard
+- **macOS:** follow [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/)
+  for the current hardware/OS requirements. Choose the installer for the machine's
+  architecture; build explicitly for the deployment platform.
+- **Windows:** follow [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+  for the selected supported backend and current requirements. Existing WSL Docker,
+  native Desktop and remote contexts are different setups. Verify engine startup and
+  WSL integration if chosen; do not assume installation automatically makes every
+  distribution's CLI work. Administrator/reboot steps are human setup only when needed.
+- **Linux:** follow [Docker Engine installation](https://docs.docker.com/engine/install/)
+  for the actual distribution. Inspect a chosen installer before executing it; do not
+  pipe a downloaded convenience script into a shell as a routine diagnostic.
 
-**Linux:** See https://docs.docker.com/engine/install/ for distro-specific instructions
-
-```bash
-# Linux convenience script (Ubuntu/Debian)
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER   # allow non-root usage (re-login after)
-```
+After the chosen setup, verify a reachable Linux engine, intended context, builder
+platform and sufficient disk. Docker daemon access is privileged: diagnose permission
+failures without broad socket permissions or unrequested group/system changes.

@@ -8,7 +8,8 @@ description: >-
   before the first Runpod MCP tool call of a request: it routes the task to the
   journey skill that carries the procedure, owns the answer contract and the
   rules on which resources you may change, and defers to runpodctl for the
-  terminal, file transfer, and SSH setup.
+  terminal, file transfer, and SSH setup; template project and Hub listing authoring
+  routes to runpod-build-template.
 allowed-tools: Bash(claude mcp:*)
 compatibility: Linux, macOS, Windows
 metadata:
@@ -91,8 +92,9 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
 
 ## Use MCP vs runpodctl
 
-- **Use this lane** when the tools are connected AND the task is infra CRUD or a
-  serverless job call the server exposes. Cap large job/log output to a file.
+- **Use runpod-mcp** when the tools are connected AND the task is infra CRUD,
+  browsing/deploying an existing Hub listing, or a serverless job call the server
+  exposes. Cap large job/log output to a file.
 - **Use runpodctl instead** for: **`send`/`receive`** file transfer, **SSH** key
   management, **`doctor`** setup, **model cache**, or any shell-only agent, or
   when the user wants a reproducible command.
@@ -107,8 +109,10 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
   on an otherwise-successful create), or for a **template + CPU** pod together, which
   v2 does not express. Each alone is fine in MCP: `templateId` (each field you pass
   replaces the template's whole value rather than merging) or `computeType: "CPU"`.
-- **Not this lane:** writing/deploying your own Python (→ flash); downloading
-  models or building/pushing images (→ companion-clis).
+- **Not this lane:** authoring a template project or Hub listing files
+  (→ [runpod-build-template](../runpod-build-template/SKILL.md)); writing/deploying
+  your own Python with Flash (→ flash); downloading models or building/pushing
+  images (→ companion-clis).
 
 ## Route by intent
 

@@ -68,3 +68,47 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
+
+  - id: model-store.deployment-routes
+    statement: >
+      Hugging Face model caching can be configured for Docker, GitHub and Hub
+      Serverless deployments. Choosing the managed GitHub builder does not
+      require baking eligible model weights into its image.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/model-delivery.md, note: Delivery choices and documented cache constraints. }
+
+  - id: model-store.one-model-per-endpoint
+    statement: >
+      An endpoint supports one cached model. An adapter and a separate base can
+      require different repositories, so account for every required component
+      instead of assuming caching one also supplies the other.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/model-delivery.md, note: Delivery choices and documented cache constraints. }
+
+  - id: model-store.custom-loader-integration
+    statement: >
+      A custom worker must configure its loader's cache directory or pass the
+      matching local snapshot; using a Hugging Face-compatible library alone
+      does not establish cache discovery. Match the repository and revision,
+      validate the loader's handling of cache symlinks, and keep writes in
+      designated writable storage rather than the provider cache.
+    status: documented
+    see: [model-store.attach-by-reference]
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/model-delivery.md, note: Connect configuration to the loader. }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md, note: HF model cache and runtime-load path. }
+
+  - id: model-store.endpoint-and-loader-selection
+    statement: >
+      Changing an application model environment variable does not update the
+      endpoint's Model field. Keep the endpoint cache selection and loader
+      selection in agreement, or implement an authorized download fallback;
+      enable offline loading only after every required component is present.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/model-delivery.md, note: Connect configuration to the loader. }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md, note: Runtime-load path. }

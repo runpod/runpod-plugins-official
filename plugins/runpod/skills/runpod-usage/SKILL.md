@@ -1,12 +1,10 @@
 ---
 name: runpod-usage
 description: >-
-  How Runpod works and how to work it — pods vs serverless, GPU/VRAM selection,
-  storage, building a container, networking, plus the agentic pod development loop
-  (provision → ssh-exec → set up → poll readiness) and on-pod install hygiene
-  (uv/apt). Use to answer "how does X work", "which GPU", "how do I build a
-  container", or "how do I stand up a workload on a pod". Guidance, not a tool —
-  execute with runpodctl, runpod-mcp, or flash.
+  Explain Runpod architecture and design choices: Pods versus Serverless, GPU/VRAM,
+  image construction, storage, networking, and workload development. For creating
+  or improving a complete template project use runpod-build-template; execute
+  infrastructure with runpodctl/runpod-mcp and code-first work with flash.
 metadata:
   author: runpod
   version: "1.7.1" # x-release-please-version
@@ -24,6 +22,10 @@ nothing — once you know what to do, execute with **runpod-mcp**/**runpodctl**
 do X" rather than "how does X work", the verified end-to-end example is the faster answer —
 [runpod/golden-paths/README.md](../runpod/golden-paths/README.md). Read the concept here, then
 follow the path.
+
+To author files for a custom template, use
+[runpod-build-template](../runpod-build-template/SKILL.md); this lane supplies the
+shared concepts, not a competing packaging workflow.
 
 Read the one reference file that matches the question:
 

@@ -1,11 +1,10 @@
 ---
 name: flash
 description: >-
-  runpod-flash — code-first serverless: write Python locally, run it on remote
-  Runpod GPUs/CPUs with `flash dev` (hot-reload + live worker logs), then
-  `flash deploy`. Use for @Endpoint/@remote functions, resource config, and
-  debugging flash deployments. For CLI-only infra management use runpodctl or
-  runpod-mcp.
+  Write and deploy code-first Runpod Serverless with runpod-flash: @Endpoint/@remote,
+  flash dev, resource configuration, and debugging. Use runpod-build-template for
+  explicit Dockerfile/template project authoring, and runpodctl/runpod-mcp for
+  infrastructure management.
 user-invocable: true
 metadata:
   author: runpod
@@ -15,6 +14,10 @@ license: Apache-2.0
 ---
 
 # Runpod Flash
+
+For an explicit Dockerfile/template project request, use
+[runpod-build-template](../runpod-build-template/SKILL.md). Do not replace that
+deliverable with Flash unless the user chooses its code-first workflow.
 
 Write code locally, iterate with `flash dev` — it runs your functions on remote Runpod GPUs/CPUs with hot-reload and live worker logs — then `flash deploy` to ship. `Endpoint` handles provisioning.
 

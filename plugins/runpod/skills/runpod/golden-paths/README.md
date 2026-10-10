@@ -18,13 +18,15 @@ load-balanced image contract is covered by the already-live-verified [path 14](1
 
 ## Before you run any path (shared prerequisites)
 
-Every path assumes this baseline — set it up once, then follow the path:
+Apply these prerequisites to the operations the selected path actually executes.
+[Path 26](26-template-project/README.md) can author and statically check files without
+cloud auth, SSH, or local Docker; hosted builds have their own prerequisites.
 
 - **Auth + SSH keys** — resolve `RUNPOD_API_KEY` (or `runpodctl doctor` / MCP OAuth) and,
-  for any pod path, **register an SSH key before creating the pod**. Full setup:
+  for a Pod that promises SSH, **register an SSH key before creating the pod**. Full setup:
   [`../../runpod-usage/reference/getting-started.md`](../../runpod-usage/reference/getting-started.md).
-- **Companion CLIs** — image paths need `docker` running **and `docker login`** to a
-  registry you can push to; some paths need `hf` (HF token) or `aws` (Runpod S3 keys,
+- **Companion CLIs** — local image builds need a reachable Docker builder; registry
+  pushes need the appropriate login; some paths need `hf` (HF token) or `aws` (Runpod S3 keys,
   which are **Console-only** — an agent can't self-provision them). See
   [`../../companion-clis/SKILL.md`](../../companion-clis/SKILL.md).
 - **Placeholders are yours to fill** — commands use `<template-id>`, `<endpoint-id>`,
@@ -92,9 +94,10 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 22 | [Minimal pod image (+ don't kill SSH)](22-minimal-pod-image/README.md) | image contract / pod | docker buildx + runpodctl pod (CPU) + SSH | ✅ live-verified |
 | 23 | [Minimal serverless queue image](23-minimal-queue-image/README.md) | image contract / serverless | docker buildx + runpodctl serverless (CPU) + `/runsync` | ✅ live-verified |
 | 25 | [Bake into image vs mount a network volume](25-bake-vs-mount/README.md) | storage model / image | docker buildx + runpodctl nv + CPU pod (`df -T`: overlay vs MooseFS) | ✅ live-verified |
+| 26 | [Author a complete template project](26-template-project/README.md) | project authoring / Pod / queue / LB | app files + documented build/deployment handoff | spec; local/container checks recorded in path, no live Runpod verification |
 
 > **When a path has two variants, prefer the prebuilt/Hub one** (Variant B for
-> ComfyUI, Variant A for Whisper) unless you need custom code — that's the
+> ComfyUI, Variant A for Whisper) unless you need custom code or explicitly requested template/Dockerfile authoring — that's the
 > development loop's "prefer prebuilt over from-scratch" rule in action.
 
 > **Complementary pairs:** 13 (autoscaling) + 18 (concurrency) — concurrency raises
@@ -138,11 +141,13 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 
 ## Cross-cutting requirements (every path)
 
-1. **Auth** — resolve `RUNPOD_API_KEY` (or `runpodctl doctor` / MCP OAuth) before acting.
-2. **Agentic execution** — an agent has no Console/web terminal; it must drive
-   everything through the CLI/API/MCP and SSH-exec, non-interactively.
+1. **Auth** — resolve control-plane credentials before live infra actions; file authoring does not require them.
+2. **Agentic execution** — use available supported tools for the selected operation;
+   give precise human steps when account setup cannot be completed agentically.
 3. **Readiness, not fire-and-forget** — poll until the service actually answers;
    don't report success on "pod Running" alone.
 4. **Escalate on manual steps** — if something needs a human (OAuth, a quota
-   increase, a license click, a missing credential), stop and tell the user.
-5. **Clean up** — set `--stop-after` / `--terminate-after` on test resources.
+   increase, a license click, a missing credential), give the exact action and continue
+   independent authoring/checks while waiting.
+5. **Clean up** — use supported time/cost guards on disposable test resources,
+   preserve results, and confirm cleanup. No resources are needed for files-only work.
