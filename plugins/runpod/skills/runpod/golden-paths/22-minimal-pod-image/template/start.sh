@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Minimal pod startup that reproduces what runpod/pytorch's /start.sh does for SSH,
-# then runs the workload. On an official runpod/* base you would NOT need this — you'd
-# inherit /start.sh. This is the "from a non-Runpod base" pattern: without it, a pod
-# built on a plain base image has no SSH and you can be locked out.
+# then runs the workload. A compatible Runpod base may already provide SSH; inspect
+# and preserve its startup hooks. This is the "from a non-Runpod base" pattern: without it, a pod
+# that promises SSH would not provide that interface. App-only Pods can omit SSH.
 set -e
 
 # 1. SSH: install the injected public key, generate host keys, start sshd.

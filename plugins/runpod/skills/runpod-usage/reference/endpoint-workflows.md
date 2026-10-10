@@ -1,9 +1,12 @@
 # The serverless endpoint loop
 
 The serverless specialization of the development loop (`development-loop.md`) — for
-a **request/response API that scales to zero** (transcription, inference). Unlike a
-pod there's no SSH, no exposed ports, no proxy: you deploy a worker and invoke it
-over the Runpod job API. Proven on the Whisper golden path (both variants).
+a **queue-based request/response API that scales to zero** (transcription, inference).
+You deploy a worker and invoke the Runpod job API. For direct HTTP applications use
+the [load-balanced contract](../../runpod-build-template/reference/serverless-load-balanced.md).
+Explicit template/Dockerfile authoring starts with
+[runpod-build-template](../../runpod-build-template/SKILL.md); the preferences below
+apply to general deployment requests. Proven on the Whisper golden path (both variants).
 
 ## 1. Pick the source (in order of preference)
 
@@ -13,9 +16,10 @@ over the Runpod job API. Proven on the Whisper golden path (both variants).
 2. **flash (from scratch, custom/light)** — write an `@Endpoint` handler and
    `flash deploy`. Best when you need your own model size / I/O schema / a lighter
    image, or no good Hub worker exists.
-3. **Custom image + endpoint (last resort)** — write a handler, `docker build
+3. **Custom image + endpoint** — write a handler, `docker build
    --platform=linux/amd64`, push (private image → registry auth), create the
-   endpoint (runpodctl/MCP). Only when neither of the above fits.
+   endpoint (runpodctl/MCP). Choose this when explicitly requested or when the other
+   approaches do not meet the application requirements.
 
 ## 2. Deploy (scale-to-zero)
 

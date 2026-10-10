@@ -68,3 +68,73 @@ rules:
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "GET /v2/serverless/{id}/builds; GET /v2/serverless/{id}/builds/{buildId}", seen: "2026-09-28" }
+
+  - id: endpoint-build.github-targets
+    statement: >
+      The managed GitHub integration builds workers for queue-based and
+      load-balanced Serverless endpoints. A connected GitHub account and App
+      control repository access, and the setup selects a branch and Dockerfile
+      path.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/github-integration.md, note: Documented behavior table. }
+
+  - id: endpoint-build.github-budgets
+    statement: >
+      The managed GitHub route limits the Docker build step to 30 minutes, the
+      total clone/build/upload/test process to 160 minutes, and image size to 80
+      GB. These are limits of that route; diagnose the failing phase before
+      changing model delivery or selecting another builder.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/github-integration.md, note: Documented behavior table. }
+
+  - id: endpoint-build.github-public-base
+    statement: >
+      The managed GitHub builder does not support private base images. Use an
+      authorized public base or an external builder and registry when the
+      project requires a private base.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }
+
+  - id: endpoint-build.github-build-gpu
+    statement: >
+      The managed GitHub builder does not provide GPU access during a build. A
+      build that requires a GPU needs another builder; device-independent CUDA
+      compilation does not itself require GPU access.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/github-integration.md, note: Documented behavior table. }
+
+  - id: endpoint-build.github-image-export
+    statement: >
+      Images produced by the managed GitHub integration cannot be pulled or
+      executed on other platforms. Use an external registry route when the
+      project needs a portable image or local testing of that exact artifact.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }
+
+  - id: endpoint-build.github-update-trigger
+    statement: >
+      Updating an existing GitHub integration requires a new GitHub release;
+      pushing a commit alone does not complete deployment. Verify the build,
+      release and worker image after publishing the release.
+    status: documented
+    see: [endpoint-build.feeds-release, endpoint-release.rollout]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/github-integration.md, note: Documented behavior table. }
+
+  - id: endpoint-build.github-account-connection
+    statement: >
+      A Runpod account supports one GitHub connection, and connections are not
+      shared. Check the owning account and repository access before planning a
+      team or organization build.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/github-integration", seen: "2026-10-10" }

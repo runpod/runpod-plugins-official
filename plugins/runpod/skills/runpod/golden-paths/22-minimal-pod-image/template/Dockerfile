@@ -1,8 +1,8 @@
 # Minimal Runpod POD image built from a plain base.
 # Runpod hosts are x86_64 Linux — always build with --platform=linux/amd64.
 #
-# NOTE: prefer FROM runpod/pytorch:<tag> for real GPU work — it's host-cached AND already
-# sets up SSH via /start.sh, so you can skip this whole SSH block. This slim base is used
+# Prefer a compatible Runpod base for GPU work; cached layers may be reused.
+# Inspect its startup hooks before adding SSH again. This slim base is used
 # here only to show the from-scratch SSH-preservation pattern with a tiny, fast image.
 FROM python:3.11-slim
 

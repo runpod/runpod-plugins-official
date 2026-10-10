@@ -1,165 +1,117 @@
 # Building container images for Runpod
 
-How to think about building an image for Runpod: pick the right base, layer for speed,
-decide what to **bake in** vs **mount at runtime**, and match the **image contract** to your
-target (pod vs serverless queue vs serverless load-balanced). CLI mechanics (login, tag,
-push) live in [companion-clis docker](../../companion-clis/reference/docker.md) and
-[docker.md](docker.md); this is the strategy layer.
+Shared design principles for image authoring. For a complete project use
+[runpod-build-template](../../runpod-build-template/SKILL.md); for CLI login/build/push
+use [companion-clis Docker](../../companion-clis/reference/docker.md). Choose the
+application contract before selecting its base, storage and startup.
 
-## Start from an official Runpod base image
+## Choose a compatible base
 
-**For a GPU workload, build `FROM` an official `runpod/pytorch:<tag>` image.** Two reasons:
+Prefer an official Runpod image when it supplies the required framework/CUDA stack.
+Otherwise prefer pinned Ubuntu with an explicit, compatible runtime/dependency plan.
+Preserve a suitable existing base when changing it would add risk without benefit;
+small CPU examples may use a language runtime base. Do not install CUDA or PyTorch
+for an app that does not need them.
 
-- **torch/CUDA already match Runpod hosts**, so you don't fight driver/toolkit mismatches.
-- **Runpod pre-caches official base images on its hosts.** The base layers are effectively
-  already on the machine, so they don't re-download at pull time — you only ship the layers
-  you add on top. Starting from a random public base throws that away.
+Inspect the selected base's Python, framework, CUDA runtime/toolkit and startup hooks.
+Check application/native-extension requirements and target GPU/driver compatibility;
+an official image does not guarantee every combination works. The CUDA version shown
+by `nvidia-smi` alone does not identify the application's installed toolkit/framework.
+Run a representative GPU operation before claiming compatibility.
 
-**Exceptions (both shown in the golden paths):** a trivial CPU-only workload may use a slim
-base (e.g. `python:3.11-slim`) — see [GP23](../../runpod/golden-paths/23-minimal-queue-image/README.md);
-and if you build from a **non-Runpod base you must reproduce SSH yourself** for pods (see the
-SSH section below and [GP22](../../runpod/golden-paths/22-minimal-pod-image/README.md)).
+Record an exact published tag and resolved digest, source revision, dependency locks
+or constraints and model revision. Tags can move; a pinned base alone does not pin
+later downloads. Build for the target platform (Runpod's x86 Linux examples use
+`--platform=linux/amd64`); an ARM laptop's default image can be wrong for the target.
 
-Then, whatever the base:
+## Layer for reuse
 
-- **Pin an exact tag**, e.g. `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` — for
-  reproducible builds.
-- **Build for x86_64:** `docker build --platform=linux/amd64 …` — Runpod hosts are x86_64
-  (see [docker.md](docker.md)).
+Order stable base/system/framework dependencies before application dependencies and
+changing source. Copy dependency manifests before application code. Extending the
+same published dependency image preserves its layers; independently installing the
+same PyTorch version does not guarantee identical layers.
 
-## Layer for fast, cacheable pulls
+Declare frequently changing build arguments near their first use. In-scope `ARG`
+values affect later `RUN` cache keys even when the command does not reference them;
+declaring an app version before an unrelated apt/CUDA install can force that install
+to rerun. Verify cache behavior separately from final layer identity and pull time.
 
-Order layers **least- to most-frequently-changing** so a code edit doesn't invalidate the
-heavy dependency layers, and independent layers pull in parallel:
+Host-cached layers can avoid transfer, but residency on every machine is not promised.
+BuildKit's build cache and the deployment host's image cache are different. A small
+code-only change should preserve heavy layer identities: compare the resulting images.
+Separate transfer size, unpacked disk and startup work when measuring an improvement.
 
-1. base image (`FROM runpod/pytorch:…`)
-2. system deps (`apt-get …`)
-3. Python deps (`pip install …`)
-4. **your code last**
+- Exclude secrets, local environments, datasets and caches with `.dockerignore`, while
+  preserving required source/build inputs.
+- Use `apt-get update` and installation in one layer, `--no-install-recommends` where
+  appropriate, and clean package lists in that same layer.
+- Use either deliberate BuildKit package caches or avoid retaining installer caches;
+  deleting large files in a later layer does not remove their earlier layer bytes.
+- Use multi-stage builds when build tools can be removed without losing runtime libraries.
+- Use supported build secrets for private dependencies, runtime secrets for execution;
+  neither secrets in `ARG` nor credentials copied then deleted are safe image storage.
+- Inspect dependency resolution so app extensions do not silently replace the base's
+  framework with an incompatible or duplicate stack.
 
-Unchanged layers are reused from cache; only the layers after your edit rebuild/re-pull.
+[Docker build guidance](https://docs.docker.com/build/building/best-practices/) and
+[layer sharing](https://docs.docker.com/engine/storage/drivers/) explain these mechanics.
 
-## Dockerfile best practices
+## Match startup to the target
 
-- **`.dockerignore`** — exclude `.git`, virtualenvs, datasets, local caches so the build context stays small and pushes fast.
-- **Cache the dependency layer** — `COPY requirements.txt` and `pip install` *before* you `COPY` your code, so a code edit doesn't reinstall everything:
-  ```dockerfile
-  COPY requirements.txt .
-  RUN pip install --no-cache-dir -r requirements.txt
-  COPY . .
-  ```
-- **Shrink the image** (smaller = faster pull + cold start) with concrete steps: `apt-get install --no-install-recommends …` then `rm -rf /var/lib/apt/lists/*`; `pip install --no-cache-dir`; use a **multi-stage** build when heavy build tools aren't needed at runtime.
-- **BuildKit cache mounts** for fast rebuilds: `RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt`.
-- **Never bake secrets** into layers (API keys, tokens) — layers are extractable; pass secrets as runtime env.
-- **`ENV PYTHONUNBUFFERED=1`** — so logs stream unbuffered. (Pin the base image tag too — see above.)
+| Target | Contract |
+| --- | --- |
+| Pod | Promised app, development environment or batch command; SSH/Jupyter only when required. |
+| Queue Serverless | SDK worker running the real job handler. |
+| Load-balanced Serverless | HTTP application with the currently required health/readiness contract. |
 
-## Don't clobber the base image's startup (SSH / web terminal) — **pods**
+For a Pod that promises SSH/Jupyter, preserve the selected base's supported startup
+hooks. Some Runpod bases provide `/start.sh` and pre/post hooks; inspect that exact
+version rather than assuming every base does. Overriding its entrypoint can disable
+those services. Application-only Pods may intentionally use their own command.
 
-Official `runpod/pytorch` images ship `CMD ["/start.sh"]`, and **that script is what makes a
-pod usable**: it reads `$PUBLIC_KEY` into `~/.ssh/authorized_keys`, runs `ssh-keygen -A`,
-starts `sshd`, and brings up the web terminal / Jupyter. It also runs `/pre_start.sh` before
-and `/post_start.sh` after, if those exist.
+For one foreground app, prefer an exec-form `CMD` or a startup script ending in
+`exec`. If several services are required, use deliberate supervision and observable
+readiness/failure propagation. Do not background `/start.sh`, wait a fixed number of
+seconds and infer that initialization succeeded. Hook ordering, whether a hook blocks,
+and signal handling must be verified on the chosen base.
 
-**Rule (pods):** any custom `CMD`/`ENTRYPOINT` **must invoke `/start.sh`** — inherit it, or run
-`/start.sh &` before your workload. **Exception:** serverless images are exempt (no SSH).
+From Ubuntu, install/configure SSH only if the requested interface needs it; validate
+key handling and access, rather than copying an unrelated template's services. The
+historically tested [Pod example](../../runpod/golden-paths/22-minimal-pod-image/README.md)
+shows one SSH-enabled contract, not a mandatory Pod layout.
 
-Why: if a custom `CMD`/`ENTRYPOINT` doesn't chain `/start.sh`, none of that startup runs — you
-get **no SSH, no web terminal**, and can be locked out of the pod. For a pod this is the #1
-footgun.
+## Image versus persistent storage
 
-Three safe patterns, in order of preference:
+Keep stable runtimes and many small immutable files in image layers outside mount
+points, using the base's environment or an intentional path such as `/opt/venv`.
+Mounts can hide baked files. Inspect actual mounted storage: `/workspace` on a Pod or
+`/runpod-volume` on Serverless is a path, not proof of a storage tier or lifecycle.
+The [bake/mount experiment](../../runpod/golden-paths/25-bake-vs-mount/README.md) records
+one specific deployment's filesystem observations.
 
-1. **Don't override `CMD` at all** (default — use this unless you need your own foreground
-   process). Add your layers, leave `CMD ["/start.sh"]`. Do per-pod work via the env-driven
-   hooks the base already runs:
-   ```dockerfile
-   FROM runpod/pytorch:<tag>
-   COPY post_start.sh /post_start.sh   # base runs this AFTER sshd is up
-   RUN chmod +x /post_start.sh
-   # no CMD — inherit the base's /start.sh
-   ```
-2. **Override only if you need your own foreground process** (a long-running service as PID 1):
-   call the base start first, then `exec` your workload:
-   ```dockerfile
-   COPY run.sh /run.sh
-   RUN chmod +x /run.sh
-   CMD ["/run.sh"]
-   ```
-   ```bash
-   #!/usr/bin/env bash
-   /start.sh &        # SSH + web terminal (base startup), backgrounded
-   sleep 2
-   exec python -u my_service.py   # your long-running workload in the foreground
-   ```
-3. **From a non-Runpod base, reproduce SSH yourself** (only if you can't start from
-   `runpod/pytorch`). Minimum to not get locked out of a pod:
-   ```dockerfile
-   RUN apt-get update && apt-get install -y --no-install-recommends openssh-server \
-       && rm -rf /var/lib/apt/lists/*
-   COPY start.sh /start.sh
-   RUN chmod +x /start.sh
-   CMD ["/start.sh"]
-   ```
-   ```bash
-   #!/usr/bin/env bash
-   mkdir -p ~/.ssh && chmod 700 ~/.ssh
-   [ -n "$PUBLIC_KEY" ] && echo "$PUBLIC_KEY" >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
-   ssh-keygen -A                       # host keys
-   service ssh start                   # or: /usr/sbin/sshd -D
-   exec "$@"                            # then your workload (or keep sshd in foreground)
-   ```
+Persist user outputs, configuration, models, datasets and editable source as needed.
+Avoid copying a whole PyTorch/Python environment to a volume on each startup. An
+editable Pod may reuse image packages with a compatible small persistent environment;
+`--system-site-packages` is optional and requires ABI/version/shadowing checks.
+Immutable apps need no persistent environment or migration framework.
 
-Reference implementation: `justinwlin/Runpod-GPU-And-Serverless-Base` (a dual pod+serverless
-base) and the vendored `start.sh` in
-[golden path 09](../../runpod/golden-paths/09-custom-serverless-dev-loop/README.md). Worked
-end-to-end in [golden path 22 — minimal pod image](../../runpod/golden-paths/22-minimal-pod-image/README.md).
+Choose model placement explicitly: image, supported provider cache, persistent volume,
+or controlled download. Consider revision, authorization, redistribution permission,
+capacity, cold startup and reuse. For downloads handle incomplete files and integrity;
+coordinate concurrent writers on shared storage. Namespace incompatible mutable
+versions, stage atomic replacement on the same filesystem, and preserve versions in
+use. Do not delete user workspace data to repair a mismatch.
 
-## Bake in vs mount at runtime (this drives startup speed)
+## Verify the workload
 
-Only the **image** (and whatever is baked into it) lands on the host's **local disk** — fast.
-When a **network volume** is attached it takes over the working directory (`/workspace` on a
-pod, `/runpod-volume` on serverless); anything written there lives on **networked storage**,
-which is slower — **especially for many small files**.
+Check source/configuration first, build and run the actual entrypoint where possible,
+then validate through the intended Runpod interface when authorized. A successful build
+or healthy process does not establish useful output. Record unavailable GPU, cache,
+cloud and timing evidence as unverified.
 
-Live proof that this is a real filesystem boundary (baked = `overlay`/local, volume =
-`fuse`/MooseFS network mount): [golden path 25 — bake vs mount](../../runpod/golden-paths/25-bake-vs-mount/README.md).
-
-- **Bake into the image:** packages, libraries, and lots of small static files → local, fast.
-- **Mount a volume:** large/few files (model weights, datasets), anything that must persist
-  across pods, or data you stream/live-load.
-- **High-throughput / I/O-bound training:**
-  - **temporary / one-off run** → a **pod using local (non-network) storage** is fastest;
-  - **persistent, many small files, or I/O-bound** → a **high-performance network volume**.
-
-  See [golden path 21 — storage tiers](../../runpod/golden-paths/21-storage-tiers.md).
-
-## Match the image contract to the target
-
-| Target | Needs a handler? | Entry point |
-| --- | --- | --- |
-| **Pod** | No | your `CMD`/entrypoint — a long-running service; bind `0.0.0.0`, expose ports |
-| **Serverless — queue-based** | **Yes** | `runpod.serverless.start({"handler": handler})` |
-| **Serverless — load-balanced** | No (different contract) | your own **HTTP server** exposing routes (no queue handler) |
-
-Minimal runnable image per contract (each built + deployed live): pod →
-[golden path 22](../../runpod/golden-paths/22-minimal-pod-image/README.md), queue →
-[golden path 23](../../runpod/golden-paths/23-minimal-queue-image/README.md), load-balanced →
-[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
-
-Queue vs load-balanced request/response shapes and when to pick each are covered in
-[endpoint-workflows.md](endpoint-workflows.md) and golden paths
-[12 (streaming)](../../runpod/golden-paths/12-serverless-streaming.md),
-[14 (load-balancing)](../../runpod/golden-paths/14-load-balancing-endpoint.md), and
-[17 (WebSocket)](../../runpod/golden-paths/17-serverless-websocket.md). One image can be
-**dual-mode** (pod dev + serverless) — see
-[golden path 09](../../runpod/golden-paths/09-custom-serverless-dev-loop/README.md).
-
-## Test locally before deploying
-
-- Build for the right platform: `docker build --platform=linux/amd64 …`.
-- **Queue handler:** run the container and invoke `handler.py` locally (the dual-mode
-  `python handler.py` loop in [golden path 09](../../runpod/golden-paths/09-custom-serverless-dev-loop/README.md))
-  before pushing.
-- **Load-balanced:** run the container and hit the HTTP routes locally.
-- Then push ([companion-clis docker](../../companion-clis/reference/docker.md)) and deploy
-  (runpodctl or runpod-mcp).
+Use the [authoring variants](../../runpod/golden-paths/26-template-project/README.md)
+and [verification protocol](../../runpod-build-template/reference/verification.md) for
+fresh/reused storage, restart, repeated requests, likely failures and comparable
+measurements. Existing minimal contracts: [Pod](../../runpod/golden-paths/22-minimal-pod-image/README.md),
+[queue](../../runpod/golden-paths/23-minimal-queue-image/README.md),
+[load balancing](../../runpod/golden-paths/14-load-balancing-endpoint.md).

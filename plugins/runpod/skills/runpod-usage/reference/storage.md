@@ -103,8 +103,10 @@ Runpod's cached-model feature stores models in the standard HF cache layout at:
 Structure follows HF conventions — `models--{org}--{name}/snapshots/{hash}/`
 (slashes in the model name become `--`), e.g.
 `/runpod-volume/huggingface-cache/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/<hash>/`.
-Anything that reads the HF cache (Transformers, vLLM, …) picks it up automatically.
-Baking into a custom image instead? Point `HF_HOME` at your model dir.
+Custom workers must configure the loader's cache directory or pass the matching local
+snapshot path; using an HF-compatible library alone does not establish cache discovery.
+For baked files, match the loader configuration to the actual layout: an HF cache root
+and a plain model directory are not interchangeable.
 
 ## Accessing a network volume over S3
 

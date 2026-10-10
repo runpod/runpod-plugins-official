@@ -1,6 +1,6 @@
 ---
 name: companion-clis
-description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker, and AWS. Use the ComfyUI model-repair guide in runpod-templates instead when an imported ComfyUI workflow lacks model download metadata.
+description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker, and AWS. Use runpod-build-template for complete template project authoring, and the ComfyUI model-repair guide in runpod-templates for imported workflows lacking model download metadata.
 allowed-tools: Bash(hf:*), Bash(gh:*), Bash(docker:*), Bash(aws:*), Bash(ssh-keygen:*), Bash(ssh-add:*), Bash(ssh-agent:*)
 compatibility: Linux, macOS, Windows
 metadata:
@@ -11,6 +11,10 @@ license: Apache-2.0
 ---
 
 # Companion CLIs
+
+For creating or improving a documented template project, start with
+[runpod-build-template](../runpod-build-template/SKILL.md); return here for the selected
+CLI operation.
 
 Four CLIs commonly needed alongside Runpod. Each has its own **credentials + command reference** in [`reference/`](reference/) — plus a one-time `<cli>-setup.md` for install (only opened if the CLI isn't installed). Load only the one the task needs, not all four.
 
@@ -28,7 +32,7 @@ download, cache, or bake that artifact.
 | `docker` | Build/validate/push images to Docker Hub for Runpod to pull | [reference/docker.md](reference/docker.md) |
 | `aws` (S3) | Read/write network-volume storage over Runpod's S3 API | [reference/aws.md](reference/aws.md) |
 
-Each requires credentials before use. Read the per-tool reference for auth steps and commands; install is a separate one-time `<cli>-setup.md`.
+Check credentials for the selected operation; local builds and public reads may not need them. Read the per-tool reference for auth steps and commands; install is a separate one-time `<cli>-setup.md`.
 
 These CLIs are usually one step inside a larger job. For the whole job the verified example is
 in [runpod/golden-paths/README.md](../runpod/golden-paths/README.md) — baking vs mounting a
@@ -41,15 +45,13 @@ for flags and subcommands** — the references here cover the Runpod-specific us
 traps, not the tool's full surface. Check `--help` before reporting that one of them cannot do
 something.
 
-## Windows: Install WSL2 First
+## Windows: choose the environment for the operation
 
-If you are on Windows, install WSL2 before proceeding — it gives you the native Linux environment all these CLIs target. In PowerShell as Administrator, then restart:
-
-```powershell
-wsl --install
-```
-
-Afterward open the Ubuntu app to finish setup, then follow the **Linux** instructions in each reference.
+Identify native PowerShell, WSL, and the Docker engine separately. File authoring,
+native CLIs and hosted builds do not require installing WSL. For local Linux-container
+builds inspect the available engine/context, then follow the current
+[Docker setup](reference/docker-setup.md) for that route. Give shell-correct commands;
+request administrator/reboot steps only when the chosen setup actually needs them.
 
 ## HuggingFace CLI
 

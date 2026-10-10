@@ -18,21 +18,23 @@ relations:
 rules:
   - id: container-image.use-runpod-pytorch
     statement: >
-      For a GPU workload, build `FROM` an official `runpod/pytorch:<tag>` image.
-      Its PyTorch and CUDA builds match Runpod hosts, and Runpod caches official
-      base images on its hosts, so only the layers you add are pulled.
+      Prefer an official Runpod image when it supplies the application's
+      required framework and CUDA stack; otherwise use a compatible pinned base
+      with an explicit runtime and dependency plan. Inspect the selected image
+      and verify a representative workload, since an official image alone does
+      not establish application or target GPU compatibility.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md, note: Choose a compatible base. }
 
   - id: container-image.pin-exact-tag
     statement: >
-      Pin an exact image tag, for example
-      `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, so builds and deploys
-      are reproducible.
+      Record an exact published image tag and its resolved digest, along with
+      the source revision, dependency locks or constraints, and model revision.
+      Tags can move, and pinning a base image does not pin later downloads.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md, note: Choose a compatible base. }
 
   - id: container-image.build-for-amd64
     statement: >
@@ -45,10 +47,22 @@ rules:
 
   - id: container-image.ssh-on-custom-base
     statement: >
-      Official Runpod images start SSH from `/start.sh`, which reads
-      `PUBLIC_KEY` into `authorized_keys` and starts `sshd`. An image built on a
-      non-Runpod base has to do the same itself, or you cannot SSH into the pod.
+      A pod that promises SSH must preserve or implement the selected image's
+      SSH startup and key handling. Some Runpod bases provide `/start.sh` and
+      startup hooks; inspect the exact version before replacing its command.
+      Application-only pods may use their own command without SSH or Jupyter.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md, note: Match startup to the target. }
       - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/22-minimal-pod-image/README.md }
+
+  - id: container-image.layer-reuse
+    statement: >
+      Extending the same published dependency image preserves its existing
+      layers, while independently reinstalling the same package versions does
+      not establish identical layers. Host-cached layers can avoid transfer, but
+      BuildKit's build cache and the deployment host's image cache are separate;
+      measure layer identity, transfer and startup independently.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md, note: Layer for reuse. }

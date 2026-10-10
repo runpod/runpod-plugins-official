@@ -8,13 +8,14 @@ concepts: [container-image, pod, pod-ssh-access, ssh-key, template, cpu-pod]
 
 ✅ **Live-verified** (built → pushed → CPU pod launched → **SSH'd in** → HTTP proxy `200` → torn down).
 
-The smallest useful **pod** image and the #1 pod footgun: **a pod image must set up SSH, or you
-get locked out.** Official `runpod/pytorch` images do this for you via `/start.sh`; this path
+A minimal **SSH-enabled Pod** image: if the template promises SSH, its image must
+start that service. Application-only Pods can use another access contract. Compatible
+`runpod/pytorch` bases provide startup hooks; this historical path
 builds from a plain base to show the **from-scratch** SSH pattern explicitly (and to prove it
 works). Pods have **no handler** — the container just runs a long-lived process (your `CMD`).
 
-See [building-images.md → Don't clobber the base image's startup](../../../runpod-usage/reference/building-images.md)
-for the concept; this is the runnable proof.
+See [building-images.md → Match startup to the target](../../../runpod-usage/reference/building-images.md)
+for the current concept; this is historical runnable evidence for an SSH-enabled Pod.
 
 ## Prerequisites
 
@@ -40,9 +41,10 @@ block first. For this path specifically:
   2. `ssh-keygen -A` (host keys) → `service ssh start`
   3. `exec python3 -m http.server $PORT` — a stand-in long-running service
 
-> **On an official `runpod/pytorch` base you skip all of step 1–2** — just add your layers and
-> leave `CMD ["/start.sh"]`, or if you must override, run `/start.sh &` first (see
-> building-images.md). The from-scratch version here is for when you can't use a Runpod base.
+> **On a compatible `runpod/pytorch` base that already provides SSH, skip steps 1–2** — add your layers and
+> preserve that exact base version's supported startup hooks (see building-images.md).
+> Verify hook ordering and process supervision rather than relying on a background
+> script and fixed sleep. This example specifically implements an SSH-enabled contract.
 
 ## Build + push (x86_64 Linux — emulated on Apple Silicon)
 
@@ -110,7 +112,7 @@ runpodctl pod list        # confirm it's gone (pods bill while running — delet
 ## What this proves
 
 - The **pod image contract**: no handler — the container runs your long-lived `CMD`.
-- **SSH must be set up by the image.** From a Runpod base it's inherited; from a plain base you
+- **Promised SSH access must be set up by the image.** From a Runpod base it's inherited; from a plain base you
   reproduce it (`PUBLIC_KEY` → authorized_keys, `ssh-keygen -A`, start sshd) **before** your
   workload, or you're locked out.
 - `--platform=linux/amd64` build from Apple Silicon; CPU pod for a CPU workload; port exposure

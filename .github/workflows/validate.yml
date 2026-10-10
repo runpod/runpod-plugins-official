@@ -84,6 +84,75 @@ jobs:
         working-directory: packages/knowledge
         run: npm pack --dry-run
 
+  template-examples:
+    # Small CPU fixtures only: no Runpod credentials, GPU, push or billable resources.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        target: [http, queue]
+    defaults:
+      run:
+        working-directory: plugins/runpod/skills/runpod/golden-paths/26-template-project/template
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test application adapters in the image runtime
+        run: |
+          docker build --target test -f Dockerfile.${{ matrix.target }} -t template-example:test .
+          docker run --rm template-example:test
+          docker build -f Dockerfile.${{ matrix.target }} -t template-example:app .
+      - name: Exercise actual HTTP entrypoint
+        if: matrix.target == 'http'
+        run: |
+          docker run -d --name template-http -p 127.0.0.1:8080:8080 template-example:app
+          python3 - <<'PY'
+          import json
+          import time
+          from urllib.error import URLError
+          from urllib.request import Request, urlopen
+
+          for attempt in range(30):
+              try:
+                  with urlopen('http://127.0.0.1:8080/ping', timeout=2) as response:
+                      assert json.load(response) == {'status': 'ready'}
+                  break
+              except URLError:
+                  if attempt == 29:
+                      raise
+                  time.sleep(1)
+          request = Request('http://127.0.0.1:8080/analyze',
+                            data=b'{"text":"A a B"}',
+                            headers={'Content-Type': 'application/json'})
+          with urlopen(request, timeout=5) as response:
+              assert json.load(response) == {'words': 3, 'counts': {'a': 2, 'b': 1}}
+          PY
+      - name: Exercise queue SDK local-input mode
+        if: matrix.target == 'queue'
+        run: |
+          python3 - <<'PY'
+          import ast
+          import json
+          import subprocess
+
+          command = ['docker', 'run', '--rm', 'template-example:app']
+          # The bundled local request tests the actual default container command.
+          result = subprocess.run(command,
+                                  capture_output=True, text=True, check=True, timeout=120)
+          print(result.stdout)
+          # The example deliberately pins SDK 1.10.1; assert its actual result payload.
+          payloads = [ast.literal_eval(line.split('Job result: ', 1)[1])
+                      for line in result.stdout.splitlines() if 'Job result: ' in line]
+          assert payloads == [{'output': {'words': 3, 'counts': {'a': 2, 'b': 1}}}]
+          invalid = subprocess.run(command + ['python', '-u', 'handler.py', '--test_input',
+                                             json.dumps({'input': {'text': ''}})],
+                                   capture_output=True, text=True, check=False, timeout=120)
+          assert invalid.returncode != 0
+          assert 'text must be a non-empty string' in invalid.stdout + invalid.stderr
+          PY
+      - name: Clean up HTTP test container
+        if: always() && matrix.target == 'http'
+        run: docker rm -f template-http || true
+
   nix-checks:
     # Runs the full static-analysis gate (ruff, mypy, bandit, unittest,
     # shellcheck, shfmt, biome, nixfmt, deadnix, statix) hermetically. The

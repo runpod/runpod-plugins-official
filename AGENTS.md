@@ -28,8 +28,8 @@ plugins/runpod/                   THE plugin
   gemini-extension.json           Gemini manifest
   .mcp.json                       hosted Runpod MCP server config
   README.md  CHANGELOG.md
-  skills/                         the eight skills (below)
-  golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
+  skills/                         router, specialized lanes and MCP journey skills
+    runpod/golden-paths/           worked end-to-end reference tasks (no SKILL.md)
 hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_frontmatter / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
                                   gen_cli_surface.py regenerates the runpodctl snapshot
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
@@ -60,6 +60,7 @@ skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a to
 skills/runpod-templates/  official prebuilt pod templates + ComfyUI model-repair guide
   reference/*.md          one file per template (fixed question shape) + comfyui-model-repair.md usage guide
   scripts/                the ComfyUI repair helpers (CI-gated unittests)
+skills/runpod-build-template/  create/improve complete template projects (Pod / queue / LB)
 skills/runpod-migrate/    migrate a codebase from GraphQL / REST v1 to REST v2
   scripts/                the API-version inventory scanner
 ```
@@ -68,7 +69,7 @@ skills/runpod-migrate/    migrate a codebase from GraphQL / REST v1 to REST v2
 same infra CRUD. Which one wins is decided by the **capability-first, environment-second**
 precedence rule, canonical in `skills/runpod/SKILL.md`'s capability matrix (roughly: runpod-mcp
 for simple structured CRUD when connected, runpodctl the moment an op needs a capability MCP
-lacks — Hub, `send`/`receive`, SSH, `doctor`, models, pod-from-template / CPU / multi-GPU — or
+lacks — `send`/`receive`, SSH, `doctor`, models, pod-from-template / CPU / multi-GPU — or
 whenever the agent is shell-only). Consult the matrix there; don't rely on this summary.
 
 ## Skill file format

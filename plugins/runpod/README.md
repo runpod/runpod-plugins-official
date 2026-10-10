@@ -4,7 +4,7 @@ One entrypoint for AI agents to manage GPU workloads on Runpod — pods, serverl
 endpoints, jobs, templates, and volumes — via the Runpod MCP server, `runpodctl`,
 and `flash`, with conceptual guidance and worked golden paths.
 
-This plugin bundles eight skills, the hosted Runpod MCP server config
+This plugin bundles a router, specialized lanes and MCP journey skills, the hosted Runpod MCP server config
 ([`.mcp.json`](.mcp.json)), and reference material.
 
 ## Which skill?
@@ -21,6 +21,7 @@ lane below. If you already know the lane, go straight to it.
 | [`companion-clis`](skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf` (models), `docker` (images), `gh` (repos/releases), `aws` (S3 to volumes). |
 | [`runpod-usage`](skills/runpod-usage/SKILL.md) | **Concepts** — how pods/serverless work, building containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness/runtime gotchas, version pinning; ComfyUI, PyTorch, Ubuntu. |
+| [`runpod-build-template`](skills/runpod-build-template/SKILL.md) | **Create or improve a complete template project** — documented Dockerfile, app-specific files and a precise deployment handoff. |
 | [`runpod-migrate`](skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2 — inventory, rewrite, flag breaking changes. |
 
 The migration flow also has a slash command: **`/runpod:migrate [scope] [path]`**
@@ -43,6 +44,11 @@ Any "get X running on Runpod" task follows one loop (in `runpod-usage`): **decid
 pod vs serverless → prefer a prebuilt template/Hub worker over from-scratch →
 provision → verify with a real request ("Running" ≠ "ready") → deliver → cost-guard
 + teardown.** See [`skills/runpod-usage/reference/development-loop.md`](skills/runpod-usage/reference/development-loop.md).
+
+For explicit template/Dockerfile authoring, follow
+[`runpod-build-template`](skills/runpod-build-template/SKILL.md) instead of replacing
+the requested project with a prebuilt deployment. No cloud credentials are needed
+to prepare the files.
 
 ## Golden paths — check these first
 
@@ -152,6 +158,7 @@ skills/
   companion-clis/    hf / gh / docker / aws prerequisites
   runpod-usage/      concepts + reference/*.md
   runpod-templates/  official pod templates + repair guide + scripts
+  runpod-build-template/  authoring + target/build-route references + evals
   runpod-migrate/    GraphQL / REST v1 -> REST v2 migration + inventory scanner
 .mcp.json            hosted Runpod MCP server config
 ```

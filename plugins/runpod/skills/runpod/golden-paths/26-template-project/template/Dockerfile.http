@@ -1,0 +1,19 @@
+# Ubuntu is sufficient: this app has no GPU or third-party Python dependencies.
+# Resolve and record BASE_IMAGE's digest when producing a deployment release.
+ARG BASE_IMAGE=ubuntu:24.04
+FROM ${BASE_IMAGE} AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 PORT=8080
+WORKDIR /opt/text-stats
+# Changing the app leaves the heavier system/runtime layers reusable.
+COPY workload.py app.py ./
+EXPOSE 8080
+CMD ["python3", "app.py"]
+
+# Tests exercise the same runtime; the final application contains no test code.
+FROM runtime AS test
+COPY handler.py test_app.py ./
+CMD ["python3", "-m", "unittest", "-v", "test_app"]
+
+FROM runtime AS app
