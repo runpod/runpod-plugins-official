@@ -6,6 +6,14 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.2](https://github.com/runpod/runpod-plugins-official/compare/v1.7.1...v1.7.2) (2026-10-13)
+
+
+### Documentation
+
+* drop --stop-after/--terminate-after, warn they never worked ([#61](https://github.com/runpod/runpod-plugins-official/issues/61)) ([208d9c0](https://github.com/runpod/runpod-plugins-official/commit/208d9c0698c4191c31e1a65d083b0f402ff0d964))
+* **runpod-migrate:** keep startSsh and startJupyter when migrating pod creates ([#66](https://github.com/runpod/runpod-plugins-official/issues/66)) ([f50e849](https://github.com/runpod/runpod-plugins-official/commit/f50e849305624ebd82f9932272e7051595c73301))
+
 ## [1.7.1](https://github.com/runpod/runpod-plugins-official/compare/v1.7.0...v1.7.1) (2026-10-09)
 
 
