@@ -4,9 +4,9 @@ The **official** plugin marketplace of skills for AI agents to manage GPU worklo
 pods, serverless endpoints, jobs, templates, and volumes — via the Runpod MCP
 server, `runpodctl`, and `flash`.
 
-This repo ships **one plugin**, [`runpod`](plugins/runpod/), with eight skills total:
-one router plus seven lanes, the hosted Runpod MCP server config, worked golden paths,
-and a concept graph of how Runpod works. You install and use it as a plugin, exactly as
+This repo ships **one plugin**, [`runpod`](plugins/runpod/), that bundles a router skill,
+the lane skills it routes to, the MCP journey skills, the hosted Runpod MCP server config,
+worked golden paths and a concept graph of how Runpod works. You install and use it as a plugin, exactly as
 below; the npm package described under [Also on npm](#also-on-npm) is an extra way for
 programs to read the same content.
 
@@ -48,7 +48,7 @@ That's it. Notes:
 ## Install
 
 Same repo, one manifest — pick your agent below. Every route installs the same
-eight skills (one router plus seven lanes), plus a hosted **Runpod MCP server** for
+skills (the router, the lanes and the MCP journey skills), plus a hosted **Runpod MCP server** for
 control-plane tools.
 Then [authenticate](#authentication).
 
@@ -71,7 +71,7 @@ endpoints"* — it should call the MCP `list-endpoints` tool.
 
 ```bash
 codex plugin marketplace add https://github.com/runpod/runpod-plugins-official.git
-codex /plugins        # → open the "Runpod" marketplace tab → Runpod → Install (reload if prompted)
+codex plugin add runpod@runpod   # or: codex /plugins → "Runpod" marketplace tab → Install
 ```
 
 Manage the source: `codex plugin marketplace list` · `… upgrade runpod` · `… remove runpod`.
@@ -80,7 +80,7 @@ Codex may **not** auto-wire the bundled MCP — if the `runpod` MCP tools don't 
 after install, add the hosted server manually:
 
 ```bash
-codex mcp add runpod --transport http https://mcp.getrunpod.io/
+codex mcp add runpod --url https://mcp.getrunpod.io/
 ```
 
 **Verify:** ask a Runpod task (the skill/router should answer); once the MCP is added,
@@ -181,6 +181,7 @@ Start with the **`runpod`** router; it points at the right lane.
 | [`runpod-usage`](plugins/runpod/skills/runpod-usage/SKILL.md) | **Concepts** — pods/serverless, containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](plugins/runpod/skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness, gotchas. |
 | [`runpod-migrate`](plugins/runpod/skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2. |
+| [`discovery`](plugins/runpod/skills/discovery/SKILL.md), [`lifecycle-crud`](plugins/runpod/skills/lifecycle-crud/SKILL.md), [`serverless-deploy`](plugins/runpod/skills/serverless-deploy/SKILL.md), [`pod-deploy`](plugins/runpod/skills/pod-deploy/SKILL.md), [`pod-doctor`](plugins/runpod/skills/pod-doctor/SKILL.md), [`endpoint-ops`](plugins/runpod/skills/endpoint-ops/SKILL.md), [`cost-audit`](plugins/runpod/skills/cost-audit/SKILL.md) | **MCP journeys** — the step-by-step playbooks `runpod-mcp` routes to. |
 
 See the plugin's [README](plugins/runpod/README.md) for the full guide, the
 development loop, and setup. Worked end-to-end examples live in

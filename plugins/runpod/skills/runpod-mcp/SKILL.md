@@ -45,7 +45,7 @@ claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/ \
   --header "Authorization: Bearer $RUNPOD_API_KEY"
 ```
 
-Plain **OAuth** ("Sign in with Runpod", via `npx @runpod/mcp-server@latest add`) is MCP-only: the CLIs stay unauthed, so use it only for MCP-only work. Local **stdio** runs the server as a subprocess with your key. Those variants + the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
+Plain **OAuth** ("Sign in with Runpod"; the user can set it up with the interactive `npx @runpod/mcp-server@latest add`) is MCP-only: the CLIs stay unauthed, so use it only for MCP-only work. Local **stdio** runs the server as a subprocess with your key. Those variants + the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
 
 **Verify it's live (do this before relying on MCP):** in Claude Code run `/mcp`.
 `runpod` should show **Connected**, not *Needs authentication* (if it's the latter,

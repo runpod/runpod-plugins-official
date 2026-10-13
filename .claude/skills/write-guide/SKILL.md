@@ -1,6 +1,8 @@
 ---
 name: write-guide
 description: Write or change a skill, reference doc or golden path in this repo so it agrees with the concept graph and is linked to it. Use when adding or editing any SKILL.md, reference/*.md or golden path, and after adding or changing a concept so the docs that cover it are updated too. Pairs with the add-concept skill, which covers the concept files themselves.
+metadata:
+  internal: true
 ---
 
 # Write a guide against the concept graph
