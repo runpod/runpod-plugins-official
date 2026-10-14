@@ -68,3 +68,17 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }
+
+  - id: model-store.flash-attach-after-deploy
+    statement: >
+      For a Flash endpoint, attach the model after `flash deploy` with
+      `runpodctl serverless update <endpoint-id> --model-reference <url>:<ref>`,
+      which prints the saved `modelReferences`. Later `flash deploy` runs keep
+      the reference. Point `HF_HUB_CACHE` at
+      `/runpod-volume/huggingface-cache/hub` so the load finds it.
+    status: verified
+    see: [model-store.attach-by-reference, model-store.best-effort-locality]
+    evidence:
+      - { source: live-probe, ref: "runpodctl 2.14.0 serverless update --model-reference on a runpod-flash 1.20.1 endpoint, then flash deploy with a changed env; GraphQL myself.endpoints.modelReferences kept the reference", seen: "2026-10-14" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/model-caching", seen: "2026-10-14", note: Cached models are under /runpod-volume/huggingface-cache/hub/. }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/model-caching.md }

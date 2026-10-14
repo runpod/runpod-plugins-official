@@ -21,7 +21,10 @@ The agent should:
    Hub access stays on because symlinks aren't copied, size the volume for the mirror,
    size the container disk for the whole model (`PodTemplate(containerDiskInGb=...)`; the
    Flash default is 64 GB), and let one worker populate the mirror first
-5. Suggest timing a cold start before and after, not quoting a speedup
+5. Offer Model Store as the no-volume alternative for a HuggingFace model on GPU: attach it after
+   `flash deploy` with `runpodctl serverless update <endpoint-id> --model-reference`, with the
+   caveat that worker start waits for a host that holds the model
+6. Suggest timing the whole cold request before and after, not quoting a speedup
 
 ## Assertions
 
@@ -30,6 +33,7 @@ The agent should:
 - Points the HF cache at a local path, not at `/runpod-volume`
 - Mentions that a failing cache falls back silently to a normal cold start
 - Checks that the container disk can hold the whole local cache
+- Mentions Model Store (`--model-reference`) as an alternative, with the worker-wait caveat
 - Does NOT set `HF_HUB_OFFLINE=1` alongside `VolumeCache`
 - Does NOT tell the user to load the model directly from `/runpod-volume` as the fast path
 - Does NOT quote a fixed speedup figure as a guarantee

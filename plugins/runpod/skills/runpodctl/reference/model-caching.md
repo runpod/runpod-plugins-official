@@ -110,6 +110,12 @@ region, deploy there and measure the first cold start.
 
 ## Network volume — load from local disk with `VolumeCache`
 
+**Model on Hugging Face and a GPU endpoint? Try the [HF model cache](#hf-model-cache----model-reference)
+first.** It needs no volume and no handler code, and download time isn't billed. The trade:
+worker start waits until a host holds the model, so time the **whole cold request**, queue
+delay included, not just the load. Use a volume with `VolumeCache` when that wait is too long
+for your endpoint, or when the model isn't on Hugging Face.
+
 Mounting a volume and pointing the model path at `/runpod-volume/...` makes every cold
 start read the weights over the network mount. In a handler you write (a custom image or
 Flash), keep the model cache on container disk and wrap the load in `VolumeCache` from the

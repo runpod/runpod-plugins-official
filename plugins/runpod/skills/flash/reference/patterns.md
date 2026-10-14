@@ -1,5 +1,5 @@
 ---
-concepts: [flash, serverless-handler, network-volume, container-disk, volume-cache]
+concepts: [flash, serverless-handler, network-volume, container-disk, volume-cache, model-store]
 ---
 # Flash — Common Patterns
 
@@ -28,7 +28,7 @@ worker at runtime (see *Loading ML models* below). Other sources: a custom image
 > catch is that a scaled-to-zero worker **re-downloads on every cold start**. For a large
 > model you call often, cache it so it isn't re-pulled each time — persist to a
 > **NetworkVolume** with `VolumeCache` (see *Loading ML models* below), or on the runpodctl/serverless side use
-> the **HF model cache** (`--model-reference`) or bake it into the image. This is the same
+> the **HF model cache** (`--model-reference`, attached after `flash deploy`) or bake it into the image. This is the same
 > tradeoff as the delivery-methods table in
 > [`runpodctl/reference/model-caching.md`](../../runpodctl/reference/model-caching.md): easy
 > streaming vs. faster/cheaper cold starts for reused weights — not a contradiction.
@@ -41,12 +41,18 @@ etc.), so **model size is not a Flash limit**. Two things make this fast and che
 
 - **Load once per worker, not per request** — use a *class* `@Endpoint`: `__init__` loads
   the model into VRAM once when the worker starts; methods handle requests and reuse it.
-- **Mirror the cache on a NetworkVolume with `VolumeCache`** so a cold worker copies the
-  weights it downloaded before onto its local disk and loads from there. It doesn't re-pull
-  them from the Hub or read them over the network mount. Keep the HF cache on container disk
-  (not under `/runpod-volume`) and wrap the load in `VolumeCache` from the Runpod Python SDK
-  (`runpod>=1.12.0`). It hydrates the local cache from the volume's mirror, then syncs new
-  files back.
+- **Keep the weights close so a cold worker doesn't re-pull them from the Hub.** Two ways:
+  - **Model Store**, when the model is on HuggingFace and the endpoint is GPU: no volume and
+    no cache code. Set `env={"HF_HUB_CACHE": "/runpod-volume/huggingface-cache/hub"}` on the
+    `@Endpoint`, then after `flash deploy` attach the model with
+    `runpodctl serverless update <endpoint-id> --model-reference https://huggingface.co/<org>/<model>:main`.
+    Later `flash deploy` runs keep the reference. Worker start waits until a host holds the
+    model, so time the whole cold request; if that wait is too long, use the volume below.
+  - **A NetworkVolume mirrored with `VolumeCache`**: a cold worker copies the weights an
+    earlier worker downloaded onto its local disk and loads from there, not over the network
+    mount. Keep the HF cache on container disk (not under `/runpod-volume`) and wrap the load
+    in `VolumeCache` from the Runpod Python SDK (`runpod>=1.12.0`). It hydrates the local cache
+    from the volume's mirror, then syncs new files back:
 
 ```python
 from runpod_flash import Endpoint, GpuType, DataCenter, NetworkVolume
