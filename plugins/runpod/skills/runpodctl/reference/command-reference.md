@@ -146,7 +146,10 @@ readiness loop. If interactive SSH isn't available, execute remotely via
 `ssh remove-key` takes `--name` **or** `--fingerprint`; use the fingerprint to disambiguate
 keys that share a name.
 
-### Pod host key trust
+### Pod host key trust (v2.15.0+)
+
+Through v2.14.0 these paths ran with host key checking disabled. Check `runpodctl version`
+before relying on anything below.
 
 Affects only the **hidden, deprecated** `project` subcommands and `exec python`, which share
 one Go SSH client. **`ssh info` is unchanged**: it prints an ordinary
@@ -160,14 +163,25 @@ match an existing entry. The `rsync` invocation always runs after that, so it **
 pin rather than creating one: `StrictHostKeyChecking=yes` with `UpdateHostKeys=no`, so it can
 neither enroll a key itself nor let the server add further keys to the entry.
 
-A mismatch is reported, never repaired. **Never delete the offending entry automatically, and
-never advise a user to.** It means either the pod's container was recreated and so generated a
-new host key, or the connection is being intercepted — and deleting the entry to clear the error
-destroys the only signal that separates the two. A recreated container is the common case: stopping
-and starting a pod clears its container disk, as do `pod update` and a reset, and Runpod's images
-generate fresh host keys at boot. The pod id stays the same, so the pin does not survive a stop and
-start. Surface the fingerprint, ask whether the pod was stopped, updated, or reset since the last
-connection, and let the operator decide.
+A mismatch means either the pod's container was recreated and so generated a new host key, or
+the connection is being intercepted. A recreated container is the common case: stopping and
+starting a pod clears its container disk, as do `pod update` and a reset, and Runpod's images
+generate fresh host keys at boot. The pod id stays the same, so the pin does not survive a stop
+and start.
+
+When stdin and stderr are both terminals, the Go client shows the recorded and offered
+fingerprints and asks `[y/N]` before replacing that pod's entry. Without a terminal (an agent,
+a script, CI) it fails with the offered fingerprint and names `runpodctl ssh forget <pod-id>`,
+which removes only that pod's entry so the next connection enrolls the key the pod then offers.
+**Never run `ssh forget` unprompted**: clearing the entry destroys the only signal that separates
+a restart from interception. Surface the fingerprint and ask whether the pod was stopped,
+updated, or reset since the last connection. Once the operator confirms one of those,
+`ssh forget` and a retry is the recovery. If none happened, treat it as possible interception.
+
+For about 30 seconds after `pod start`, the API still reports the previous container's address.
+A connection in that window can be refused, reset, end its handshake with `EOF`, or drop
+mid-`rsync`; the CLI reports these as `could not reach pod <id>: it may still be restarting`.
+That is not a trust failure. Wait and retry.
 
 Trust on first use closes silent key substitution on **later** connections. It does **not**
 prevent interception of the **first** connection to a pod; that needs the host key delivered
