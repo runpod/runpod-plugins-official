@@ -1,0 +1,95 @@
+id: volume-cache
+name: VolumeCache
+kind: capability
+summary: >
+  A helper in the Runpod Python SDK that mirrors local directories, such as a
+  model cache, onto the endpoint's network volume. On cold start it copies the
+  mirror onto the worker's container disk, so the model loads from local disk
+  instead of the network mount.
+product: serverless
+is_a: null
+part_of: serverless-handler
+aliases: [volume cache, network-volume warm cache, runpod.serverless.VolumeCache, hydrate, sync]
+
+relations:
+  - { type: requires, target: network-volume, cardinality: "1" }
+  - { type: uses, target: container-disk, cardinality: "1" }
+
+rules:
+  - id: volume-cache.copy-to-local-disk
+    statement: >
+      `from runpod.serverless import VolumeCache` needs the Runpod Python SDK
+      `runpod>=1.12.0` in the worker. Wrap the model load in `with
+      VolumeCache(dirs=[<local cache dir>]):`. On entry it copies cached files
+      from the volume into the local directories (`hydrate()`), and on exit it
+      copies new or changed files back to the volume (`sync()`).
+    status: documented
+    see: [network-volume.mount-path]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/main/CHANGELOG.md", seen: "2026-10-14", note: "1.12.0 adds the network-volume warm cache (VolumeCache)." }
+
+  - id: volume-cache.local-dirs-not-the-mount
+    statement: >
+      List directories on the container disk in `dirs`, not paths under
+      `/runpod-volume`. The volume holds only the mirror, so the model loads
+      from local disk, and the files are re-hydrated after the container disk is
+      wiped at scale-down.
+    status: documented
+    see: [container-disk.what-survives]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: VolumeCache warms local directories using an attached network volume. }
+
+  - id: volume-cache.opt-in-handler-code
+    statement: >
+      `VolumeCache` runs only where your handler code wraps it, so it applies to
+      your own handler or Flash code. A prebuilt worker image that does not call
+      it reads its model path directly, and a network volume attached to that
+      image serves the model from the mount.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: "You add it explicitly by wrapping the code that populates your cache, so nothing runs until you opt in." }
+
+  - id: volume-cache.best-effort-hides-failures
+    statement: >
+      With the default `best_effort=True`, any cache error is logged and
+      swallowed, and the worker falls back to a normal cold start. A failing
+      cache therefore shows up as a slow cold start, not an error. Pass
+      `best_effort=False` while debugging so failures raise.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14" }
+
+  - id: volume-cache.symlinks-not-copied
+    statement: >
+      `VolumeCache` never copies symbolic links. The `snapshots/` entries of a
+      Hugging Face hub cache are symlinks, so after a hydrate let
+      `huggingface_hub` re-link the snapshot with a Hub metadata call. Do not
+      set `HF_HUB_OFFLINE=1` on a cache that `VolumeCache` restores.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: Symbolic links are never followed or copied. }
+      - { source: other, url: "https://huggingface.co/docs/huggingface_hub/guides/manage-cache", seen: "2026-10-14", note: Snapshot files are symlinks to blobs. }
+
+  - id: volume-cache.mirror-sizing
+    statement: >
+      The mirror lives at `/runpod-volume/.cache/<namespace>` and the
+      `namespace` defaults to `RUNPOD_ENDPOINT_ID`. Size the network volume for
+      the mirror plus anything else on it. Large files that you delete or rename
+      locally stay on the volume, so usage grows as you swap model versions.
+    status: documented
+    see: [network-volume.size-grow-only]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14" }
+
+  - id: volume-cache.first-population
+    statement: >
+      Workers that cold-start together against an empty mirror each download the
+      model and sync a full copy back, with no coordination. Populate the mirror
+      with one worker first. The default `sync()` runs on a background thread,
+      so call `sync(background=False)` when the process may be killed before a
+      normal interpreter shutdown.
+    status: documented
+    see: [network-volume.concurrent-writes]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14" }

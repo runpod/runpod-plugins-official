@@ -11,7 +11,7 @@ compatibility: Linux, macOS
 metadata:
   author: runpod
   version: "1.7.4" # x-release-please-version
-  concepts: [runpodctl, pod, cpu-pod, serverless-endpoint, template, network-volume, hub-repo, ssh-key, file-transfer, model-store]
+  concepts: [runpodctl, pod, cpu-pod, serverless-endpoint, template, network-volume, hub-repo, ssh-key, file-transfer, model-store, volume-cache]
 license: Apache-2.0
 ---
 

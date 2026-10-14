@@ -85,7 +85,8 @@ contrast, is **pinned to one data center**, which narrows the GPU availability y
 can schedule against.
 
 Reach for the other options deliberately: a **network volume** when you want direct
-filesystem control or are sharing large files across workers, the **Model
+filesystem control or are sharing large files across workers (in your own handler, wrap
+the load in `VolumeCache` so cold starts read local disk, not the mount), the **Model
 Repository** (`runpodctl model add`) for your own artifacts that aren't on
 HuggingFace, and **baking into the image** when you need a fully reproducible build.
 Caching is GPU-only and needs `runpodctl` ≥ v2.4.0.

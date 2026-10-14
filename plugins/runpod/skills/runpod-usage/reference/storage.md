@@ -82,7 +82,7 @@ yourself); need a reproducible image → **bake**.
 | --- | --- | --- |
 | Bake into image | `COPY` model files, or download during `docker build` | Small/private models not on Hugging Face; fully reproducible images |
 | Cached model (HF) | Attach a Hugging Face model to the endpoint (`--model-reference`); Runpod caches it host-side | Public/gated/private HF models; fastest cold starts, smaller images |
-| Network volume | Pre-load the model onto a volume, mount it | Large shared models reused across many workers/pods |
+| Network volume | Pre-load the model onto a volume, mount it; in your own handler, load through `VolumeCache` so it reads local disk | Large shared models reused across many workers/pods |
 | Model Repository | Upload your own artifacts with `runpodctl model add`; Runpod versions + distributes them | Your own/custom models not on HF, without image bloat or a DC-pinned volume |
 
 Full comparison + commands: [`runpodctl/reference/model-caching.md`](../../runpodctl/reference/model-caching.md).

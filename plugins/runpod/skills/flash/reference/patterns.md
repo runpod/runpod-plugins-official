@@ -24,7 +24,7 @@ worker at runtime (see *Loading ML models* below). Other sources: a custom image
 > flash limit: naming a large HF repo streams the weights to the worker at runtime. The
 > catch is that a scaled-to-zero worker **re-downloads on every cold start**. For a large
 > model you call often, cache it so it isn't re-pulled each time — persist to a
-> **NetworkVolume** (see *Loading ML models* below), or on the runpodctl/serverless side use
+> **NetworkVolume** with `VolumeCache` (see *Loading ML models* below), or on the runpodctl/serverless side use
 > the **HF model cache** (`--model-reference`) or bake it into the image. This is the same
 > tradeoff as the delivery-methods table in
 > [`runpodctl/reference/model-caching.md`](../../runpodctl/reference/model-caching.md): easy
@@ -38,8 +38,12 @@ etc.), so **model size is not a Flash limit**. Two things make this fast and che
 
 - **Load once per worker, not per request** — use a *class* `@Endpoint`: `__init__` loads
   the model into VRAM once when the worker starts; methods handle requests and reuse it.
-- **Persist the cache on a NetworkVolume** so a cold worker reuses downloaded weights
-  instead of re-pulling them every cold start.
+- **Mirror the cache on a NetworkVolume with `VolumeCache`** so a cold worker copies the
+  weights it downloaded before onto its local disk and loads from there. It doesn't re-pull
+  them from the Hub or read them over the network mount. Keep the HF cache on container disk
+  (not under `/runpod-volume`) and wrap the load in `VolumeCache` from the Runpod Python SDK
+  (`runpod>=1.12.0`). It hydrates the local cache from the volume's mirror, then syncs new
+  files back.
 
 ```python
 from runpod_flash import Endpoint, GpuType, DataCenter, NetworkVolume
@@ -53,16 +57,19 @@ vol = NetworkVolume(name="model-cache", size=100, datacenter=DataCenter.US_GA_2)
     idle_timeout=300,                                # keep workers warm between calls
     datacenter=DataCenter.US_GA_2,
     volume=vol,
-    env={"HF_HUB_CACHE": "/runpod-volume/models"},   # cache weights on the volume
-    dependencies=["torch", "diffusers", "transformers", "accelerate"],
+    env={"HF_HUB_CACHE": "/opt/hf-cache"},           # local container disk, mirrored by VolumeCache
+    dependencies=["torch", "diffusers", "transformers", "accelerate", "runpod>=1.12.0"],
 )
 class SD:
     def __init__(self):                              # runs ONCE per worker
         import torch
         from diffusers import StableDiffusionPipeline
-        self.pipe = StableDiffusionPipeline.from_pretrained(
-            "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
-        ).to("cuda")
+        from runpod.serverless import VolumeCache
+
+        with VolumeCache(dirs=["/opt/hf-cache"]):    # hydrate from the volume, then sync back
+            self.pipe = StableDiffusionPipeline.from_pretrained(
+                "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
+            ).to("cuda")
 
     async def generate(self, prompt: str) -> dict:   # per request, reuses self.pipe
         image = self.pipe(prompt=prompt).images[0]
@@ -71,6 +78,14 @@ class SD:
 ```
 
 - **Gated** models: pass `env={"HF_TOKEN": "..."}`.
+- **`VolumeCache` is best-effort.** Any cache error is logged and swallowed, and the worker
+  does a normal cold start, so a broken cache looks like a slow cold start. Pass
+  `VolumeCache(..., best_effort=False)` while debugging. It never copies symlinks, which the HF
+  cache uses for `snapshots/`. Leave Hub access on (don't set `HF_HUB_OFFLINE=1`) so
+  `from_pretrained` can re-link the snapshot with a metadata call. Size the volume for the
+  mirror (`/runpod-volume/.cache/<endpoint id>`). Let one worker populate it first: workers
+  that cold-start together on an empty mirror each download and sync a full copy. Full
+  behavior: [`concepts/volume-cache.yaml`](../../runpod-usage/concepts/volume-cache.yaml).
 - `workers=(1, n)` keeps one worker warm (no cold start on the first request); `(0, n)` scales to zero and cold-starts after `idle_timeout`.
 - The class form is the cleanest way to load once. In function-form `@Endpoint` the same effect needs the module-global cache trick (see Gotcha #11 in the skill); the class form is preferred for real inference.
 
