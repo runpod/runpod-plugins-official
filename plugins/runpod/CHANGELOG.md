@@ -6,6 +6,20 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.3](https://github.com/runpod/runpod-plugins-official/compare/v1.7.2...v1.7.3) (2026-10-14)
+
+
+### Bug Fixes
+
+* **companion-clis:** drop broad allowed-tools so the directory stops holding releases ([#84](https://github.com/runpod/runpod-plugins-official/issues/84)) ([b678400](https://github.com/runpod/runpod-plugins-official/commit/b67840034599fc7aef748db4f12dfdfaa513ab0c))
+* **skills:** hide contributor skills from skills.sh installs and refresh install docs ([#83](https://github.com/runpod/runpod-plugins-official/issues/83)) ([d340a5e](https://github.com/runpod/runpod-plugins-official/commit/d340a5e0f7a1b96e47f75079e1826db401c0a9f2))
+
+
+### Documentation
+
+* point agents to the Runpod agent setup page ([#79](https://github.com/runpod/runpod-plugins-official/issues/79)) ([64a899e](https://github.com/runpod/runpod-plugins-official/commit/64a899e6aae726b102ff2f8d33e65b77ad7b23d2))
+* **runpodctl:** document pod host key trust on project/exec ([#59](https://github.com/runpod/runpod-plugins-official/issues/59)) ([ec02ff7](https://github.com/runpod/runpod-plugins-official/commit/ec02ff7c4daf298c95ac8fb90ec533647be4e8f0))
+
 ## [1.7.2](https://github.com/runpod/runpod-plugins-official/compare/v1.7.1...v1.7.2) (2026-10-13)
 
 

@@ -4,7 +4,7 @@ description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
-  version: "1.7.2" # x-release-please-version
+  version: "1.7.3" # x-release-please-version
   concepts: [container-image, network-volume, hub-repo]
 license: Apache-2.0
 ---
