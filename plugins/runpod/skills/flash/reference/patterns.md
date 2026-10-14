@@ -1,3 +1,6 @@
+---
+concepts: [flash, serverless-handler, network-volume, container-disk, volume-cache]
+---
 # Flash — Common Patterns
 
 ## Choosing a model
@@ -83,7 +86,9 @@ class SD:
   `VolumeCache(..., best_effort=False)` while debugging. It never copies symlinks, which the HF
   cache uses for `snapshots/`. Leave Hub access on (don't set `HF_HUB_OFFLINE=1`) so
   `from_pretrained` can re-link the snapshot with a metadata call. Size the volume for the
-  mirror (`/runpod-volume/.cache/<endpoint id>`). Let one worker populate it first: workers
+  mirror (`/runpod-volume/.cache/<endpoint id>`), and size the **container disk** for the whole
+  local cache plus headroom. It defaults to 64 GB, so a 70B fp16 model (~140 GB) needs
+  `template=PodTemplate(containerDiskInGb=200)` on the `@Endpoint`. Let one worker populate it first: workers
   that cold-start together on an empty mirror each download and sync a full copy. Full
   behavior: [`concepts/volume-cache.yaml`](../../runpod-usage/concepts/volume-cache.yaml).
 - `workers=(1, n)` keeps one worker warm (no cold start on the first request); `(0, n)` scales to zero and cold-starts after `idle_timeout`.

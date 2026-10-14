@@ -18,8 +18,9 @@ The agent should:
 3. Explain the mechanism: the first worker downloads from the Hub and syncs a mirror to the
    volume, and later cold starts copy the mirror onto local disk and load from there
 4. Name the gotchas: errors are swallowed by default (`best_effort=False` while debugging),
-   Hub access stays on because symlinks aren't copied, size the volume for the mirror, and
-   let one worker populate the mirror first
+   Hub access stays on because symlinks aren't copied, size the volume for the mirror,
+   size the container disk for the whole model (`PodTemplate(containerDiskInGb=...)`; the
+   Flash default is 64 GB), and let one worker populate the mirror first
 5. Suggest timing a cold start before and after, not quoting a speedup
 
 ## Assertions
@@ -28,6 +29,7 @@ The agent should:
 - Lists `runpod>=1.12.0` in the `@Endpoint` `dependencies`
 - Points the HF cache at a local path, not at `/runpod-volume`
 - Mentions that a failing cache falls back silently to a normal cold start
+- Checks that the container disk can hold the whole local cache
 - Does NOT set `HF_HUB_OFFLINE=1` alongside `VolumeCache`
 - Does NOT tell the user to load the model directly from `/runpod-volume` as the fast path
 - Does NOT quote a fixed speedup figure as a guarantee

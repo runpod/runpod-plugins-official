@@ -71,6 +71,20 @@ rules:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: Symbolic links are never followed or copied. }
       - { source: other, url: "https://huggingface.co/docs/huggingface_hub/guides/manage-cache", seen: "2026-10-14", note: Snapshot files are symlinks to blobs. }
 
+  - id: volume-cache.container-disk-holds-cache
+    statement: >
+      The worker's container disk holds the whole local cache, because both the
+      hydrate and a fallback Hub download write there. Size the container disk
+      for the full model plus runtime headroom. Flash endpoints default to 64
+      GB, so raise it with `template=PodTemplate(containerDiskInGb=...)`, and on
+      a template use `runpodctl template create --container-disk-in-gb`.
+    status: documented
+    see: [container-disk.what-survives]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: VolumeCache restores cached files into the local directories. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: PodTemplate containerDiskInGb defaults to 64. }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md }
+
   - id: volume-cache.mirror-sizing
     statement: >
       The mirror lives at `/runpod-volume/.cache/<namespace>` and the

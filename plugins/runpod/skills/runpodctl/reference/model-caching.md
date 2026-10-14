@@ -1,3 +1,6 @@
+---
+concepts: [model-store, network-volume, container-disk, serverless-endpoint, volume-cache]
+---
 # Getting a model to a serverless worker
 
 Four ways to make model weights available to a Runpod serverless worker. Pick by
@@ -139,6 +142,10 @@ runpod.serverless.start({"handler": handler})
 - **Keep Hub access on.** It never copies symlinks, and the HF cache's `snapshots/` entries
   are symlinks, so `from_pretrained` re-links them with a metadata call. Don't set
   `HF_HUB_OFFLINE=1` on a cache that `VolumeCache` restores.
+- **Size the container disk for the whole local cache** plus runtime headroom: the hydrate
+  and any fallback download both write there. Set it on the template
+  (`runpodctl template create --container-disk-in-gb`, or `PodTemplate(containerDiskInGb=...)` in
+  Flash, which defaults to 64 GB).
 - **Size the volume for the mirror** (`/runpod-volume/.cache/<RUNPOD_ENDPOINT_ID>`). Large
   files you delete or rename locally stay on the volume, so usage grows as you swap models.
 - **Populate with one worker.** Workers that cold-start together on an empty mirror each

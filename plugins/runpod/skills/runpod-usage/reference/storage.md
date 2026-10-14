@@ -1,3 +1,6 @@
+---
+concepts: [network-volume, container-disk, pod-volume-disk, model-store, volume-cache]
+---
 # Where data lives on Runpod
 
 Pick storage based on whether data must survive a stop, be shared across
