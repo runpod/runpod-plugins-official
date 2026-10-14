@@ -14,7 +14,7 @@ compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
   version: "1.7.2" # x-release-please-version
-  concepts: [runpod-platform, pod, serverless-endpoint, job, template, network-volume, registry-credential, gpu-type, log-stream, api-key, api-rate-limit]
+  concepts: [runpod-platform, pod, serverless-endpoint, job, template, network-volume, registry-credential, gpu-type, log-stream, api-key, api-rate-limit, hub-repo]
 license: Apache-2.0
 ---
 
@@ -91,8 +91,10 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
 
 ## Use MCP vs runpodctl
 
-- **Use this lane** when the tools are connected AND the task is infra CRUD or a
-  serverless job call the server exposes. Cap large job/log output to a file.
+- **Use this lane** for infra CRUD, browsing/deploying an existing Hub listing,
+  or a serverless job call the connected server exposes. Choose the lane using the
+  [router capability matrix](../runpod/SKILL.md#runpod-mcp-vs-runpodctl-the-overlap).
+  Cap large job/log output to a file.
 - **Use runpodctl instead** for: **`send`/`receive`** file transfer, **SSH** key
   management, **`doctor`** setup, **model cache**, or any shell-only agent, or
   when the user wants a reproducible command.

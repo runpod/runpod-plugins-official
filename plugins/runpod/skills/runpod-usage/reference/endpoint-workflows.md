@@ -8,7 +8,8 @@ over the Runpod job API. Proven on the Whisper golden path (both variants).
 ## 1. Pick the source (in order of preference)
 
 1. **Hub worker (fastest, least fragile)** — a maintained prebuilt worker.
-   `runpodctl hub search <app>` → deploy with runpodctl (Hub is runpodctl-only).
+   Select the execution lane using the
+   [router capability matrix](../../runpod/SKILL.md#runpod-mcp-vs-runpodctl-the-overlap).
    Best when a good worker ships what you need.
 2. **flash (from scratch, custom/light)** — write an `@Endpoint` handler and
    `flash deploy`. Best when you need your own model size / I/O schema / a lighter

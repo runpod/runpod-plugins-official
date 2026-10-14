@@ -11,7 +11,7 @@ description: >-
 metadata:
   author: runpod
   version: "1.7.2" # x-release-please-version
-  concepts: [runpod-platform, pod, serverless-endpoint, template, network-volume]
+  concepts: [runpod-platform, pod, serverless-endpoint, template, network-volume, hub-repo]
 license: Apache-2.0
 ---
 
@@ -27,7 +27,7 @@ the lane; otherwise read the matching skill's `SKILL.md` next.
 | Lane | Use it for |
 | --- | --- |
 | **runpod-mcp** | Manage infra (pods, endpoints, jobs, templates, volumes, registries, catalog, billing) via **structured tool calls** — when the Runpod MCP tools are connected in this session. Routes on to the journey skill for the task (discovery, lifecycle-crud, serverless-deploy, pod-deploy, pod-doctor, endpoint-ops, cost-audit). |
-| **runpodctl** | Manage the same infra from a **terminal/CI/script**, plus the things only the CLI does: Hub browse/deploy, `send`/`receive` file transfer, SSH keys, `doctor` setup, model cache. |
+| **runpodctl** | Manage the same infra from a **terminal/CI/script**, including Hub browse/deploy, file transfer (`send`/`receive`), SSH keys, `doctor` setup, and model cache. |
 | **flash** | **Write Python** that runs on Runpod serverless — `@remote`/`@Endpoint` functions, `flash dev` hot-reload, `flash deploy`. Code-first, not infra management. |
 | **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
@@ -82,7 +82,7 @@ Plus, in Claude Code, `/mcp` should show `runpod` **Connected**.
 **Rule: get a key first — do not default to MCP OAuth.** The reason: one `RUNPOD_API_KEY`
 unlocks every tool — it authenticates **runpodctl + flash + the hosted MCP** (as `--header
 "Authorization: Bearer $RUNPOD_API_KEY"`). The MCP's "Sign in with Runpod" OAuth auths the **MCP alone** — the CLIs
-stay blocked, so you hit a wall on any CLI-only task (Hub, `send`/`receive`, SSH, `doctor`,
+stay blocked, so you hit a wall on any CLI-only task (`send`/`receive`, SSH, `doctor`,
 model cache/Model Repository, CPU endpoints). ⚠️ **OAuth-only is a half-setup.** If nothing's
 set up, stop and get a key, in order:
 1. **`flash login`** — browser OAuth that saves a real key to `~/.runpod/config.toml` (runpodctl
@@ -113,8 +113,9 @@ routing becomes reading rather than re-deriving. Check it when **any** of these 
 
 Skip step 0 for a single read or a single CRUD call ("list my pods", "stop pod X",
 "what GPUs are available") — go straight to the lane. **A matching golden path outranks
-this router's lane table**: it was verified end to end on a real account, so where the two
-disagree, follow the path and treat the difference as a bug worth reporting.
+this router's lane table for workflow selection**. Its commands do not establish that a
+capability is CLI-only: choose the execution lane from the live tool surface and the
+capability matrix below, while preserving the path's ordering and verification steps.
 
 1. **Conceptual question, or an unmade design choice** (serverless vs pod? which
    GPU? bake the model or mount a volume?) → read **runpod-usage** first, then
@@ -131,7 +132,7 @@ disagree, follow the path and treat the difference as a bug worth reporting.
    is the infra lanes below.)
 6. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
-   - Capability only the CLI has — **Hub, `send`/`receive`, SSH keys, `doctor`,
+   - Capability only the CLI has — **`send`/`receive`, SSH keys, `doctor`,
      model cache** → **runpodctl**.
    - Otherwise, if the Runpod **MCP tools are connected** in this session
      (`create-pod`, `list-endpoints`, … are available) → **runpod-mcp**.
@@ -156,7 +157,7 @@ Capability matrix (pick the preferred lane per operation):
 | Create a **simple** pod (one image + one GPU) | **runpod-mcp** if connected, else runpodctl | Both handle it |
 | Create a pod **from a template** or a **CPU** pod | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` (v2-only) and `computeType: "CPU"` |
 | Create a pod with a **multi-GPU priority list**, or **template + CPU together** | **runpodctl** | MCP narrows to one GPU type, and rejects a template deploy for a CPU pod |
-| Deploy from the **Hub** | **runpod-mcp** if connected, else runpodctl | MCP has `list-hub-repos` + `deploy-hub-repo` |
+| Browse or deploy an existing **Hub** listing | **runpod-mcp** if connected and it exposes the requested operation, else runpodctl | Check the live tool surface; Hub is not a reason by itself to switch to the CLI |
 | **File transfer** (`send`/`receive`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
 | Invoke a serverless job (`run`/`runsync`/status/stream) | **runpod-mcp** if connected, else runpodctl | Both lanes have first-class job commands now (runpodctl `serverless run`/`status`/`health`, v2.9.0+); MCP is typed, and only MCP streams a job's incremental output (`stream-job`) |
 | Read **pod or worker logs** | **either** — runpod-mcp if connected, else runpodctl | Both lanes read them: MCP `stream-pod-logs`/`stream-worker-logs` return parsed frames; runpodctl `pod logs`/`serverless logs` emit json lines and `--follow` (v2.10.0+) |
