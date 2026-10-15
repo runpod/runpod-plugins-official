@@ -1,6 +1,6 @@
 ---
 name: companion-clis
-description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker, and AWS. Use the ComfyUI model-repair guide in runpod-templates instead when an imported ComfyUI workflow lacks model download metadata.
+description: Companion CLIs for Runpod workflows — HuggingFace, GitHub, Docker, and AWS. Use runpod-build-template for complete template project authoring, and the ComfyUI model-repair guide in runpod-templates for imported workflows lacking model download metadata.
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
@@ -10,6 +10,10 @@ license: Apache-2.0
 ---
 
 # Companion CLIs
+
+For creating or improving a documented template project, start with
+[runpod-build-template](../runpod-build-template/SKILL.md); return here for the selected
+CLI operation.
 
 Four CLIs commonly needed alongside Runpod. Each has its own **credentials + command reference** in [`reference/`](reference/) — plus a one-time `<cli>-setup.md` for install (only opened if the CLI isn't installed). Load only the one the task needs, not all four.
 

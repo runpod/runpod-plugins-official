@@ -20,6 +20,7 @@
         "./skills/flash",
         "./skills/runpod-usage",
         "./skills/runpod-templates",
+        "./skills/runpod-build-template",
         "./skills/companion-clis",
         "./skills/runpod-migrate",
         "./skills/cost-audit",

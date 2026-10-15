@@ -64,3 +64,34 @@ rules:
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/hub/revenue-sharing", seen: "2026-09-28" }
+
+  - id: hub-repo.authoring-files
+    statement: >
+      A Hub project includes `.runpod/hub.json`, `.runpod/tests.json`, worker
+      code, a Dockerfile and a README. The metadata and deployment defaults must
+      agree with the worker's actual input, model, hardware and storage
+      requirements.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/hub-publishing.md, note: Author the listing without a user-supplied checklist. }
+
+  - id: hub-repo.runpod-directory-precedence
+    statement: >
+      Common project files under `.runpod` take precedence over their root
+      copies for Hub builds. Inspect both locations so the listing builds the
+      intended code and context.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", seen: "2026-10-10" }
+
+  - id: hub-repo.test-input-contract
+    statement: >
+      The `input` in `.runpod/tests.json` is the raw job payload, without a
+      second Runpod submission envelope. Configure a realistic timeout and test
+      hardware, and retain a semantic workload check because the guide's HTTP
+      200 criterion alone does not establish useful output.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", seen: "2026-10-10" }
+      - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/hub-publishing.md, note: Author the listing without a user-supplied checklist. }

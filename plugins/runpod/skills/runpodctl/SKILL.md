@@ -187,6 +187,9 @@ pod down) → [reference/command-reference.md](reference/command-reference.md#po
 
 Browse/search the Runpod Hub (curated deployable repos).
 
+For authoring a project's Hub listing files, use
+[runpod-build-template](../runpod-build-template/SKILL.md).
+
 ```bash
 runpodctl hub search vllm                            # find a repo (+ hub list [--type/--category/--order-by/--owner])
 runpodctl hub get <listing-id|owner/name>            # repo details

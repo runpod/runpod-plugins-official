@@ -1,16 +1,10 @@
 ---
 name: runpod-templates
 description: >-
-  Runpod's official prebuilt pod
-  templates (ComfyUI, PyTorch, and others): what each image ships, which ports and
-  paths it uses, how to pick one, how to pin a version, and what is missing on first
-  boot. Use when a task says "run <X> on a pod" and an official template already
-  covers it, instead of building an image — and when a user needs help with or wants
-  to fix something about a Runpod template they are already running (won't boot, can't
-  reach the UI, missing models, wrong CUDA line, broken ComfyUI workflow metadata on
-  imported workflows): start here and route onward. Deploy
-  with runpodctl or runpod-mcp; end-to-end walkthroughs live in the runpod router's
-  golden paths.
+  Find, use, and troubleshoot official Runpod Pod templates, including ComfyUI
+  workflow model metadata repair. For creating or optimizing Dockerfiles and
+  application template projects use runpod-build-template; deploy through runpod-mcp
+  or runpodctl.
 allowed-tools: Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/extract_png_workflow.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/inventory_workflow_models.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/apply_model_metadata.py:*)
 metadata:
   author: runpod
@@ -21,7 +15,9 @@ license: Apache-2.0
 
 # Official Runpod templates
 
-**Prefer an official template over building an image.** Runpod maintains prebuilt
+For explicit source packaging or template optimization, use
+[runpod-build-template](../runpod-build-template/SKILL.md). For ordinary workload
+deployment, **prefer an official template over building an image.** Runpod maintains prebuilt
 images for common workloads; deploying one is a create + poll, with no SSH install
 step. This skill is the reference for *what those images actually are*. It does not
 manage infrastructure — deploy with **runpod-mcp** (if connected) or **runpodctl**.
@@ -132,7 +128,7 @@ template deployed, fixed, or replaced. Land here, identify which, and hand off:
 | **Fix a pod that won't serve** ("Running" but URL dead, 404/502) | the template's reference file, §Readiness — then [`runpod-usage/reference/gotchas.md`](../runpod-usage/reference/gotchas.md) |
 | **Fix a ComfyUI workflow whose models won't download** (missing/broken model metadata, imported workflow or PNG) | [the repair guide](reference/comfyui-model-repair.md) — it drives the repair scripts in [`scripts/`](scripts/). The official ComfyUI templates ship ComfyUI-RunpodDirect, so its automatic-download path applies |
 | **Add models / files** to a running template pod | the template's reference file (§What does not ship), or `companion-clis` for generic Hugging Face transfers |
-| **Customize beyond what the template ships** (pinned versions, extra nodes, lighter image) | [`runpod-usage/reference/building-images.md`](../runpod-usage/reference/building-images.md) — build `FROM` the official base |
+| **Customize beyond what the template ships** (pinned versions, extra nodes, lighter image) or **author a template project / Hub listing** | [`runpod-build-template`](../runpod-build-template/SKILL.md) — author the project, using the official base when it fits |
 | **A serverless worker**, not a pod | not a pod template — Hub workers via `runpodctl` / `runpod-mcp` |
 
 Reference files here answer *what is in the image*; they never duplicate a walkthrough or

@@ -1,0 +1,2 @@
+# Deliberate SDK pin for this example; revalidate when updating it.
+runpod==1.10.1
