@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.4](https://github.com/runpod/runpod-plugins-official/compare/v1.7.3...v1.7.4) (2026-10-15)
+
+
+### Documentation
+
+* **runpodctl:** document pod create --wait-for running (POD-341) ([#70](https://github.com/runpod/runpod-plugins-official/issues/70)) ([07852d1](https://github.com/runpod/runpod-plugins-official/commit/07852d188c165cabe7b98446ccaed5e9a2d424e6))
+
 ## [1.7.3](https://github.com/runpod/runpod-plugins-official/compare/v1.7.2...v1.7.3) (2026-10-14)
 
 
