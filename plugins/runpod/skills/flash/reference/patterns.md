@@ -39,7 +39,7 @@ import runpod
 app = runpod.App("sd")
 
 @app.api(gpu="5090", workers=(0, 3), idle_timeout=300,
-         dependencies=["diffusers", "transformers", "accelerate"])
+         dependencies=["diffusers", "transformers"])
 class SD:
     @runpod.init
     def load(self):
@@ -81,7 +81,7 @@ start unless you cache. Pick one:
   ```python
   qwen = runpod.Model("Qwen/Qwen2.5-7B-Instruct")
 
-  @app.queue(gpu="4090", model=qwen, dependencies=["transformers", "accelerate"])
+  @app.queue(gpu="4090", model=qwen, dependencies=["transformers"])
   def chat(prompt: str) -> str:
       from transformers import pipeline
       pipe = pipeline("text-generation", model=str(qwen.path), device=0)
@@ -96,7 +96,7 @@ start unless you cache. Pick one:
   cache = runpod.NetworkVolume("model-cache", size=100)
 
   @app.api(gpu="5090", mounts={"/runpod-volume": cache}, container_disk_gb=60,
-           env={"HF_HUB_CACHE": "/opt/hf-cache"}, dependencies=["transformers", "accelerate"])
+           env={"HF_HUB_CACHE": "/opt/hf-cache"}, dependencies=["transformers"])
   class Chat:
       @runpod.init
       def load(self):
