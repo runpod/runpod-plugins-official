@@ -168,8 +168,9 @@ def finetune(steps: int = 1000) -> str:
     return str(ckpts.path / "adapter")
 ```
 
-A queue endpoint that mounts the same volume at `/runpod-volume` reads what the task wrote; see
-[`train_then_serve.py`](../examples/train_then_serve.py). For a long run, `job = finetune.spawn()`
+A queue endpoint that mounts the same volume at `/runpod-volume` reads what the task wrote (golden
+path 07 shows the volume handoff). Small results can skip the volume: return them from the task
+as JSON, as [`train_then_serve.py`](../examples/train_then_serve.py) does. For a long run, `job = finetune.spawn()`
 then `await job.wait(timeout=...)`, which terminates the Pod when it finishes or times out.
 
 ## Streaming results
