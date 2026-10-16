@@ -11,9 +11,10 @@ concepts: [pod, network-volume, data-center, serverless-endpoint, worker, server
 then serve the adapter from an endpoint."
 **Status:** COVERED — live-verified 2026-07-10 end to end (pod wrote `/workspace/hello.txt`;
 a `runpod-flash` serverless worker read it back at `/runpod-volume/hello.txt` and returned the
-exact contents). Step 3 is ported to the Runpod SDK (`runpod` 2.0) and checked with
-`rp flash deploy --build-only`; the SDK reader awaits a live re-run; on 2026-10-16 a dev session could not run it because the
-built-in runtime images lack `runpod.NetworkVolume` (flash SKILL gotcha 14). The earlier read-back failures were a handler-signature / empty-input bug, not the
+exact contents). Step 3 is ported to the Runpod SDK (`runpod` 2.0.0rc1): on 2026-10-16 an SDK
+app deployed with `rp flash deploy` wrote to a network volume from one endpoint and read the
+exact contents back from another. Run it with `rp flash deploy`, not `rp flash dev`; dev
+sessions on the built-in runtime images fail on volume apps (flash SKILL gotcha 14). The earlier read-back failures were a handler-signature / empty-input bug, not the
 handoff — see [Root cause](#root-cause-why-the-reader-first-timed-out-found-via-mcp-worker-logs).
 **Lane(s):** runpodctl (volume + pod) + flash (serverless reader) + Runpod MCP (`stream-worker-logs`, for diagnosis)
 
@@ -90,10 +91,10 @@ vol = runpod.NetworkVolume("<vol-id>", create=False)    # attach EXISTING by id 
 @app.queue(cpu="cpu3c-1-2", workers=(0, 1), datacenter="EU-RO-1",
            mounts={"/runpod-volume": vol})
 def read(path: str = "hello.txt") -> dict:              # input keys = parameter names
-    p = os.path.join(str(vol.path), path)               # /runpod-volume, not /workspace
+    p = os.path.join("/runpod-volume", path)            # /runpod-volume, not /workspace
     return {"exists": os.path.exists(p),
             "content": open(p).read() if os.path.exists(p) else None,
-            "runpod_volume_listing": sorted(os.listdir(vol.path))}
+            "runpod_volume_listing": sorted(os.listdir("/runpod-volume"))}
 
 @runpod.local_entrypoint
 def main():
@@ -103,7 +104,6 @@ def main():
 the request's `input` keys must be parameter names. A plain `def read(input: dict)` fails with
 `read() got an unexpected keyword argument …`. See [Root cause](#root-cause-why-the-reader-first-timed-out-found-via-mcp-worker-logs).
 ```bash
-rp flash dev main.py --once      # optional: read it once from a temporary endpoint
 rp flash deploy main.py          # app "handoff", environment "default"
 runpodctl serverless list        # confirm the endpoint's networkVolumeId == your volume id
 ```

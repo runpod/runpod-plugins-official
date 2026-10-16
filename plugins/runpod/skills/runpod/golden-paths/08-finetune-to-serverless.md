@@ -15,8 +15,9 @@ GPU, dataset) — nothing structural changes.
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
 and generated. Section 3 is ported to the Runpod SDK (`runpod` 2.0) and checked with
-`rp flash deploy --build-only`; the SDK endpoint awaits a live re-run; on 2026-10-16 a dev session could not run it because the
-built-in runtime images lack `runpod.NetworkVolume` (flash SKILL gotcha 14). The live run used a **minimal peft + transformers `Trainer`** script (below) —
+`rp flash deploy --build-only`; the SDK endpoint awaits a live re-run. Run it with
+`rp flash deploy`: dev sessions on the built-in runtime images fail on volume apps, and the
+code reads the literal `/runpod-volume` path (flash SKILL gotcha 14). The live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.
 Composes the verified network-volume handoff (golden path [07](07-network-volume-handoff.md)).
@@ -182,7 +183,7 @@ def generate(prompt: str = "Hello", max_new_tokens: int = 64) -> dict:
     from peft import PeftModel
 
     global _M, _T
-    adapter = str(vol.path / "outputs" / "lora-out")
+    adapter = "/runpod-volume/outputs/lora-out"           # literal mount path (gotcha 14)
     if _M is None:                                           # load once per worker
         _T = AutoTokenizer.from_pretrained(adapter)
         base = AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.float16).to("cuda")
@@ -199,7 +200,6 @@ def main():
     print(generate.remote(prompt="Give me one tip about GPUs."))
 ```
 ```bash
-rp flash dev main.py --once      # optional: one request against a temporary endpoint
 rp flash deploy main.py          # app "ft-serve", environment "default"
 runpodctl serverless list        # confirm the endpoint's networkVolumeId == <vol-id>
 ```

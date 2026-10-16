@@ -28,9 +28,9 @@ def train(steps: int = 200) -> str:
         opt.zero_grad()
         loss.backward()
         opt.step()
-    path = ckpts.path / "linear.pt"          # resolve the mount inside the function
+    path = "/ckpts/linear.pt"                # literal mount path (SKILL gotcha 14)
     torch.save(model.state_dict(), path)
-    return path.name
+    return "linear.pt"
 
 
 @app.queue(cpu="cpu3c-2-4", mounts={"/runpod-volume": ckpts}, dependencies=["torch"])
@@ -38,7 +38,7 @@ def predict(name: str, x: float) -> float:
     import torch
 
     model = torch.nn.Linear(1, 1)
-    model.load_state_dict(torch.load(ckpts.path / name, map_location="cpu"))
+    model.load_state_dict(torch.load(f"/runpod-volume/{name}", map_location="cpu"))
     return model(torch.tensor([[x]])).item()
 
 

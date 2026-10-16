@@ -188,8 +188,11 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
     but `rp flash dev` workers import the `runpod` baked into the built-in image. The
     `:latest` runtime images used by `runpod` 2.0.0rc1 predate `runpod.NetworkVolume` and
     `runpod.GlobalVolume`, so an app that declares one fails on the worker with
-    `module 'runpod' has no attribute 'NetworkVolume'`. Read the worker traceback; an
-    `AttributeError` on a `runpod.` name means the image is behind your SDK.
+    `module 'runpod' has no attribute 'NetworkVolume'`. Deployed workers on the same images
+    attach the volume, but `vol.path` raises `is not mounted in the current execution`; read
+    the literal mount path instead (`/runpod-volume` for queue and API resources, the
+    `mounts` key for tasks). An `AttributeError` on a `runpod.` name in a worker traceback
+    means the image is behind your SDK.
 15. **Teardown by app and environment:** `rp flash undeploy --app APP --env default -y`
     removes one environment's endpoints; `rp flash app delete APP` removes every environment.
     Then delete volumes you no longer need.

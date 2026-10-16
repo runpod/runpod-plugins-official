@@ -140,7 +140,9 @@ existing = runpod.NetworkVolume("vol_id_or_name", create=False)          # must 
 - Global volumes need GPU compute.
 - A new network volume is placed in a data center that has network storage and stock for every
   resource sharing it; resources using it are scheduled in that data center.
-- Read `models.path` **inside** the remote function. Volumes are not mounted locally.
+- Read `models.path` **inside** the remote function. Volumes are not mounted locally. If
+  `.path` raises `is not mounted in the current execution`, the runtime image is older than
+  your SDK; read the literal mount path (`/runpod-volume`) instead.
 - Undeploying an app or ending a dev session leaves its volumes in place, and they keep billing.
 
 ## Models and secrets
