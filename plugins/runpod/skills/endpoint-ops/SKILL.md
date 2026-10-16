@@ -7,7 +7,7 @@ description: 'Operate a Serverless endpoint that already exists: diagnose queued
   one of its settings changed through the Runpod MCP tools.'
 metadata:
   author: runpod
-  version: "1.7.4" # x-release-please-version
+  version: "1.7.5" # x-release-please-version
   concepts: [serverless-endpoint, endpoint-autoscaling, worker, job, flashboot, gpu-pool, log-stream, endpoint-release, volume-cache]
 license: Apache-2.0
 ---
