@@ -19,7 +19,7 @@ ephemeral disk for throwaway scratch, and pod volume disk when a single pod's da
 doesn't need to outlive it. When in doubt, choose the network volume.
 
 **One exception: model weights for GPU serverless.** If the model is on HuggingFace,
-the host-side cache beats a volume — faster cold starts, no download billing, and no
+the host-side cache needs no volume, no download billing, and no
 data-center pin narrowing your GPU availability. See
 [Getting a model to the worker](#getting-a-model-to-the-worker) below; the default
 above is about datasets, checkpoints, and everything else worth keeping.
@@ -84,7 +84,7 @@ yourself); need a reproducible image → **bake**.
 | Option | How | Best when |
 | --- | --- | --- |
 | Bake into image | `COPY` model files, or download during `docker build` | Small/private models not on Hugging Face; fully reproducible images |
-| Cached model (HF) | Attach a Hugging Face model to the endpoint (`--model-reference`); Runpod caches it host-side | Public/gated/private HF models; fastest cold starts, smaller images |
+| Cached model (HF) | Attach a Hugging Face model to the endpoint (`--model-reference`); Runpod caches it host-side | Public/gated/private HF models; fastest load once the worker runs, smaller images. Worker start waits for a host that holds the model, so time the whole cold request |
 | Network volume | Pre-load the model onto a volume, mount it; in your own handler, load through `VolumeCache` so it reads local disk | Large shared models reused across many workers/pods |
 | Model Repository | Upload your own artifacts with `runpodctl model add`; Runpod versions + distributes them | Your own/custom models not on HF, without image bloat or a DC-pinned volume |
 

@@ -62,7 +62,8 @@ rules:
 
   - id: volume-cache.symlinks-not-copied
     statement: >
-      `VolumeCache` never copies symbolic links. The `snapshots/` entries of a
+      `VolumeCache` never copies symbolic links, and it skips `refs/` and
+      `.no_exist/` directories and `*.lock` files. The `snapshots/` entries of a
       Hugging Face hub cache are symlinks, so after a hydrate let
       `huggingface_hub` re-link the snapshot with a Hub metadata call. Do not
       set `HF_HUB_OFFLINE=1` on a cache that `VolumeCache` restores.
@@ -70,6 +71,7 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: Symbolic links are never followed or copied. }
       - { source: other, url: "https://huggingface.co/docs/huggingface_hub/guides/manage-cache", seen: "2026-10-14", note: Snapshot files are symlinks to blobs. }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v1.12.0/runpod/serverless/utils/rp_volume_cache.py#L74", seen: "2026-10-15", note: Paths containing /refs/ or /.no_exist/ are excluded from sync. }
 
   - id: volume-cache.container-disk-holds-cache
     statement: >
@@ -84,6 +86,18 @@ rules:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: VolumeCache restores cached files into the local directories. }
       - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: PodTemplate containerDiskInGb defaults to 64. }
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md }
+
+  - id: volume-cache.silent-without-namespace
+    statement: >
+      `VolumeCache` needs a mounted volume and a `namespace`, which defaults to
+      `RUNPOD_ENDPOINT_ID`. Without either, `available` is False and `hydrate()`
+      and `sync()` do nothing and log nothing. Serverless workers set
+      `RUNPOD_ENDPOINT_ID`, but a Pod or a local run does not, so pass
+      `namespace=` there or check `available` before relying on the cache.
+    status: documented
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v1.12.0/runpod/serverless/utils/rp_volume_cache.py#L87", seen: "2026-10-15", note: "namespace falls back to RUNPOD_ENDPOINT_ID, then to an empty string." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v1.12.0/runpod/serverless/utils/rp_volume_cache.py#L374", seen: "2026-10-15", note: "hydrate() and sync() return early when not available, with no log line." }
 
   - id: volume-cache.mirror-sizing
     statement: >

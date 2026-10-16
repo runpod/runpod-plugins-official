@@ -9,7 +9,7 @@ where the weights come from, how large/private they are, and how often they chan
 | Method | How | Best when | Cold start |
 |--------|-----|-----------|-----------|
 | **Bake into image** | `COPY`/download during `docker build`, push to a registry | small/private weights; fully reproducible image | fast (in image) but bloats pulls |
-| **HF model cache** (`--model-reference`) | point the endpoint at a HuggingFace model URL; Runpod caches it host-side | the model is already on HuggingFace (public/gated/private) | fastest — host-cached, no download billing |
+| **HF model cache** (`--model-reference`) | point the endpoint at a HuggingFace model URL; Runpod caches it host-side | the model is already on HuggingFace (public/gated/private) | fastest load once the worker runs, no download billing; worker start waits for a host that holds the model, so the whole cold request can be slower |
 | **Network volume** | pre-load weights onto a DC-pinned volume, mount it; in your own handler, copy them to local disk with `VolumeCache` | large weights reused across workers; you manage the files | fast once populated; with `VolumeCache` the load reads local disk instead of the network mount; volume is pinned to one data center |
 | **Model Repository** (`runpodctl model`) | upload your **own** artifacts to Runpod-managed, versioned storage | private/custom models not on HuggingFace, without image bloat or a DC-locked volume | managed + host-distributed |
 

@@ -30,7 +30,8 @@ The agent should:
 
 - Wraps the load in `VolumeCache` and imports it from `runpod.serverless`
 - Lists `runpod>=1.12.0` in the `@Endpoint` `dependencies`
-- Points the HF cache at a local path, not at `/runpod-volume`
+- In the `VolumeCache` answer, points the HF cache at a local path, not at `/runpod-volume`
+  (the Model Store alternative's `/runpod-volume/huggingface-cache/hub` is correct)
 - Mentions that a failing cache falls back silently to a normal cold start
 - Checks that the container disk can hold the whole local cache
 - Mentions Model Store (`--model-reference`) as an alternative, with the worker-wait caveat
