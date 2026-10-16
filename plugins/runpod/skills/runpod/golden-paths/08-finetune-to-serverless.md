@@ -15,7 +15,8 @@ GPU, dataset) — nothing structural changes.
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
 and generated. Section 3 is ported to the Runpod SDK (`runpod` 2.0) and checked with
-`rp flash deploy --build-only`; the SDK endpoint awaits a live re-run. The live run used a **minimal peft + transformers `Trainer`** script (below) —
+`rp flash deploy --build-only`; the SDK endpoint awaits a live re-run; on 2026-10-16 a dev session could not run it because the
+built-in runtime images lack `runpod.NetworkVolume` (flash SKILL gotcha 14). The live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.
 Composes the verified network-volume handoff (golden path [07](07-network-volume-handoff.md)).

@@ -134,7 +134,7 @@ def preprocess(rows: list[dict]) -> list[list[float]]:
 @app.queue(gpu="AMPERE_80")
 def score(matrix: list[list[float]]) -> list[float]:
     import torch
-    return torch.tensor(matrix, device="cuda").mean(dim=1).tolist()
+    return torch.tensor(matrix, dtype=torch.float32, device="cuda").mean(dim=1).tolist()
 
 @runpod.local_entrypoint
 def main():

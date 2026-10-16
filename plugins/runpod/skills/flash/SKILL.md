@@ -153,7 +153,8 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 
 1. **Queue arguments and results must be JSON-serializable.** Queue jobs are plain JSON in dev
    and deploy alike; a non-JSON argument fails with `arguments must be json-serializable`. Pass
-   URLs or base64, not objects.
+   URLs or base64, not objects. Whole-number floats can arrive as integers (`1.0` → `1`), so
+   cast numeric inputs explicitly (`torch.tensor(x, dtype=torch.float32)`).
 2. **One file per app.** Discovery imports the module you point at. Helpers in a sibling local
    module are not shipped yet; keep them in the same file or in an installable package.
 3. **Keep blocking work out of module scope.** The SDK imports your module to discover
@@ -183,7 +184,13 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
     `accelerate`, `sentence-transformers`) pulls `torch` into the artifact even on GPU images
     and with `--exclude torch`, so the artifact grows by hundreds of MB. Run
     `rp flash deploy --build-only` and check the size before deploying.
-14. **Teardown by app and environment:** `rp flash undeploy --app APP --env default -y`
+14. **Dev sessions run the runtime image's own `runpod`.** Deploys vendor your local package,
+    but `rp flash dev` workers import the `runpod` baked into the built-in image. The
+    `:latest` runtime images used by `runpod` 2.0.0rc1 predate `runpod.NetworkVolume` and
+    `runpod.GlobalVolume`, so an app that declares one fails on the worker with
+    `module 'runpod' has no attribute 'NetworkVolume'`. Read the worker traceback; an
+    `AttributeError` on a `runpod.` name means the image is behind your SDK.
+15. **Teardown by app and environment:** `rp flash undeploy --app APP --env default -y`
     removes one environment's endpoints; `rp flash app delete APP` removes every environment.
     Then delete volumes you no longer need.
 
