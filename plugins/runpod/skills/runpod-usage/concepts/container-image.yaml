@@ -18,20 +18,24 @@ relations:
 rules:
   - id: container-image.use-runpod-pytorch
     statement: >
-      For a GPU workload, build `FROM` an official `runpod/pytorch:<tag>` image.
-      Its PyTorch and CUDA builds match Runpod hosts, and Runpod caches official
-      base images on its hosts, so only the layers you add are pulled.
+      Prefer an official Runpod base when its framework and CUDA stack match the
+      application. Reuse that stack rather than reinstalling it, and verify the
+      application on the target GPU; a base image alone does not establish every
+      dependency's compatibility.
     status: documented
     evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/templates/create-custom-template", seen: "2026-10-13" }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
 
   - id: container-image.pin-exact-tag
     statement: >
-      Pin an exact image tag, for example
-      `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, so builds and deploys
-      are reproducible.
+      Choose a published versioned tag, for example
+      `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, and record its resolved
+      digest for reproducible deployment. Record dependency and model revisions
+      too, since pinning a base does not pin later downloads.
     status: documented
     evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/deploy", seen: "2026-10-13", note: Image versioning and SHA references. }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
 
   - id: container-image.build-for-amd64
@@ -45,10 +49,35 @@ rules:
 
   - id: container-image.ssh-on-custom-base
     statement: >
-      Official Runpod images start SSH from `/start.sh`, which reads
-      `PUBLIC_KEY` into `authorized_keys` and starts `sshd`. An image built on a
-      non-Runpod base has to do the same itself, or you cannot SSH into the pod.
+      Runpod PyTorch bases use `/start.sh` for services including SSH, with
+      `PUBLIC_KEY` handling and startup hooks. Preserve that startup when the
+      pod promises those services, or implement them on a custom base;
+      application-only pods may intentionally omit SSH and Jupyter.
     status: documented
     evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/pods/templates/create-custom-template", seen: "2026-10-13", note: Three startup modes. }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md }
       - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/22-minimal-pod-image/README.md }
+
+  - id: container-image.layer-reuse
+    statement: >
+      Extending a published dependency image preserves its existing layers;
+      independently installing the same package versions does not guarantee
+      identical layers. Put dependency installation before changing source, and
+      distinguish builder cache reuse from layers cached on deployment hosts.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.docker.com/build/cache/optimize/", seen: "2026-10-13", note: Dependency layers precede changing application source. }
+      - { source: public-docs, url: "https://docs.docker.com/engine/storage/drivers/", seen: "2026-10-13", note: Images share existing layers. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/building-images.md, note: "Layer order, shared dependency bases and cache boundaries." }
+
+  - id: container-image.linux-builder-permissions
+    statement: >
+      For a local Linux Docker Engine, membership in the `docker` group grants
+      daemon access without `sudo` and carries root-level privileges. After
+      adding the user, log out and back in so the login session receives the new
+      group membership.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.docker.com/engine/install/linux-postinstall/", seen: "2026-10-14" }
+      - { source: skill, path: plugins/runpod/skills/companion-clis/reference/docker-setup.md }

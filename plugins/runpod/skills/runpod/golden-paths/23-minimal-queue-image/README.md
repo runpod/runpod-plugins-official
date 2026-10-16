@@ -39,7 +39,8 @@ block first. For this path specifically:
 - **`Dockerfile`** — `FROM python:3.11-slim`; deps layer before code; `CMD` runs the handler.
 
 > This CPU demo uses `python:3.11-slim` (honest + pulls fast). A GPU workload should build
-> `FROM runpod/pytorch:<tag>` for the pre-cached CUDA/torch base — see
+> `FROM runpod/pytorch:<tag>` when its CUDA/torch stack fits the app. Existing host-cached
+> layers can avoid transfer; do not assume every host has them — see
 > [building-images.md](../../../runpod-usage/reference/building-images.md) (the single source
 > for base-image choice).
 

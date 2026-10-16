@@ -172,8 +172,11 @@ runpodctl serverless create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090
 
 - The trailing `:main` is the branch/tag/revision.
 - Weights land in the standard HF cache dir `/runpod-volume/huggingface-cache/hub/`
-  (`models--{org}--{name}/snapshots/{hash}/`), so anything that reads the HF cache
-  (Transformers, vLLM, …) picks it up automatically.
+  (`models--{org}--{name}/snapshots/{hash}/`). Official workers can integrate that
+  location; a custom worker must configure its loader or pass the matching local
+  snapshot. See the public [cache integration guide](https://docs.runpod.io/serverless/development/huggingface-models).
+  For a loader that uses standard HF cache variables, `HF_HOME` is the cache root
+  and `HF_HUB_CACHE` is the `hub` directory; verify the selected repository and revision.
 - The CLI flag is repeatable, but the platform currently allows **one cached model per
   endpoint** (docs → Current limitations).
 - Works with `--template-id` **and** `--hub-id`, but **GPU only** (`--compute-type GPU`).
@@ -227,5 +230,6 @@ hands-off, versioned artifact.
 > This is distinct from the HF **model-caching** feature (the `--model-reference` flag /
 > the endpoint "Model" field), whose runtime path **is** documented: the model lands in
 > `/runpod-volume/huggingface-cache/hub/` and the handler resolves the local snapshot from
-> there (load offline with `HF_HUB_OFFLINE=1`). See golden path 20 and the official
-> example `runpod-workers/model-store-cache-example`.
+> there. Enable `HF_HUB_OFFLINE=1` only after all required components are present, so it
+> does not block an intended download of a missing component. See golden path 20 and the
+> [official custom-worker example](https://docs.runpod.io/serverless/development/huggingface-models).

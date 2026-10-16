@@ -88,6 +88,7 @@ function excerpt(text: string, pattern: RegExp): string {
 // Extend the list when a new public source is cited.
 const PUBLIC_HOSTS = new Set([
   "docs.runpod.io",
+  "docs.docker.com",
   "api.runpod.io",
   "graphql-spec.runpod.io",
   "runpod.io",
