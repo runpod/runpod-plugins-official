@@ -26,7 +26,7 @@ Gemini, opencode, +more). The first line is all you need; drop any others you wo
 ```bash
 npx skills add runpod/runpod-plugins-official # the skills — any agent (essential)
 curl -sSL https://cli.runpod.net | bash       # runpodctl — infra CLI (or: brew install runpod/runpodctl/runpodctl)
-uv tool install runpod-flash                  # flash — deploy your own code (optional; or: pip install runpod-flash)
+pip install "runpod>=2.0.0rc1"                # Runpod SDK + rp CLI — deploy your own code (optional; flash lane)
 npx @runpod/mcp-server@latest add            # hosted MCP server — guided setup, OAuth (optional)
 ```
 
@@ -180,7 +180,7 @@ Start with the **`runpod`** router; it points at the right lane.
 | [`runpod`](plugins/runpod/skills/runpod/SKILL.md) | Router / entrypoint. Start here when the right skill is unclear. |
 | [`runpod-mcp`](plugins/runpod/skills/runpod-mcp/SKILL.md) | Manage infra via the Runpod **MCP server**'s structured tool calls. |
 | [`runpodctl`](plugins/runpod/skills/runpodctl/SKILL.md) | Manage infra from the **CLI**, plus Hub, file transfer, SSH, `doctor`. |
-| [`flash`](plugins/runpod/skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless (`@remote`). |
+| [`flash`](plugins/runpod/skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless with the Runpod SDK (`runpod.App`, `rp flash`). |
 | [`companion-clis`](plugins/runpod/skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf`, `docker`, `gh`, `aws`. |
 | [`runpod-usage`](plugins/runpod/skills/runpod-usage/SKILL.md) | **Concepts** — pods/serverless, containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](plugins/runpod/skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness, gotchas. |

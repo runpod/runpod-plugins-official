@@ -2,24 +2,26 @@
 
 ## Prompt
 
-Using runpod-flash, build a two-stage pipeline: a CPU stage that cleans raw data
-with pandas, then a GPU stage that runs inference with torch. The CPU stage
-should use a compute CPU instance and the GPU stage an A100. Wire them together.
+With the Runpod Python SDK, build a two-stage pipeline: a CPU stage that cleans raw data
+with pandas, then a GPU stage that runs inference with torch on an A100. Wire them together
+and run several batches in parallel.
 
 ## Expected behavior
 
 The agent should:
 
-1. Define a CPU `@Endpoint(cpu=CpuInstanceType.<type>, dependencies=["pandas"])` function
-2. Define a GPU `@Endpoint(gpu=GpuGroup.AMPERE_80, dependencies=["torch"])` function
+1. Define a CPU `@app.queue(cpu="cpu5c-..." or similar, dependencies=["pandas"])` function
+2. Define a GPU `@app.queue(gpu="AMPERE_80" or "A100", ...)` function
 3. Import `pandas`/`torch` inside the respective functions
-4. Chain them: `await infer(await preprocess(raw))`
+4. Chain them: `score.remote(preprocess.remote(rows))`
+5. Fan out with `.spawn()` and collect with `job.result()` (or `asyncio.gather` over `.remote.aio`)
 
 ## Assertions
 
-- CPU stage uses `cpu=CpuInstanceType.<member>` and does NOT set `gpu=`
-- GPU stage uses `gpu=GpuGroup.AMPERE_80` and does NOT set `cpu=`
-- `pandas` listed in the CPU stage `dependencies`, `torch` in the GPU stage `dependencies`
-- Imports are inside each decorated function
-- Stages are chained with `await` (the GPU call awaits the result of the CPU call)
-- Does NOT put `gpu=` and `cpu=` on the same Endpoint
+- CPU stage sets `cpu=` to a CPU flavor id and does NOT set `gpu=`
+- GPU stage sets `gpu=` to an A100 pool or name and does NOT set `cpu=`
+- `pandas` is in the CPU stage `dependencies`; the GPU stage either lists `torch` or relies on
+  the built-in GPU image's torch, and says which
+- Stages exchange JSON-serializable values (lists/dicts, not DataFrames or tensors)
+- Parallel calls use `.spawn()` / `.remote.aio`, not sequential `.remote()` in a loop
+- Does NOT import from `runpod_flash`

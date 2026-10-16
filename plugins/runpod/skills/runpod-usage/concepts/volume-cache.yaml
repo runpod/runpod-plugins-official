@@ -77,14 +77,17 @@ rules:
     statement: >
       The worker's container disk holds the whole local cache, because both the
       hydrate and a fallback Hub download write there. Size the container disk
-      for the full model plus runtime headroom. Flash endpoints default to 64
-      GB, so raise it with `template=PodTemplate(containerDiskInGb=...)`, and on
-      a template use `runpodctl template create --container-disk-in-gb`.
+      for the full model plus runtime headroom. Flash SDK resources default to
+      30 GB on GPU, so raise it with `container_disk_gb=` (legacy `runpod-flash`
+      endpoints default to 64 GB and use
+      `template=PodTemplate(containerDiskInGb=...)`), and on a template use
+      `runpodctl template create --container-disk-in-gb`.
     status: documented
     see: [container-disk.what-survives]
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: VolumeCache restores cached files into the local directories. }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: PodTemplate containerDiskInGb defaults to 64. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/configuration/parameters", seen: "2026-10-16", note: container_disk_gb defaults to 30 on GPU and 10 on CPU. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: PodTemplate containerDiskInGb defaults to 64. }
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md }
 
   - id: volume-cache.silent-without-namespace
