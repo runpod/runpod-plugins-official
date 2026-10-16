@@ -6,9 +6,9 @@ concepts: [flash, serverless-endpoint, worker, serverless-handler, gpu-type]
 
 # Golden path 03 — Whisper — Variant B: from scratch with the Runpod SDK
 
-**Status:** PORTED — the `runpod-flash` version of this path was live-verified 2026-07-07; this
-Runpod SDK (`runpod` 2.0) version is checked with `rp flash deploy --build-only` and awaits a
-live re-run. **Lane:** flash (code-first serverless). **When to use this variant:** you want a
+**Status:** COVERED — live-verified on the Runpod SDK (`runpod` 2.0.0rc1) 2026-10-16 with
+`rp flash dev main.py --once`: the worker returned the Gettysburg transcript in 70 s from cold.
+The `runpod-flash` version was live-verified 2026-07-07. **Lane:** flash (code-first serverless). **When to use this variant:** you want a
 **custom/lighter** worker than any Hub image — your own model size, your own I/O schema, your
 own pre/post-processing — or no good Hub worker fits. You write a faster-whisper function,
 iterate on a real GPU with `rp flash dev`, then `rp flash deploy`. For a heavy prebuilt model
@@ -42,7 +42,7 @@ and cost notes live in the [folder README](README.md); the flash skill is at
    @app.queue(
        gpu="AMPERE_16",                        # whisper base needs <2 GB; broad supply
        workers=(0, 3), idle_timeout=60,        # scale-to-zero
-       dependencies=["faster-whisper",
+       dependencies=["faster-whisper", "av<19",              # av 19 drops an arg faster-whisper passes
                      "nvidia-cublas-cu12", "nvidia-cudnn-cu12"],  # CTranslate2 GPU libs
    )
    def transcribe(audio_url: str = "", audio_base64: str = "") -> dict:
@@ -113,7 +113,10 @@ curl -s https://api.runpod.ai/v2/<endpoint-id>/runsync \
   -d '{"input":{"audio_url":"https://github.com/runpod-workers/sample-inputs/raw/main/audio/gettysburg.wav"}}'
 ```
 
-Expect `{text, language}` with the Gettysburg transcript ("Four score and seven years ago…").
+Verified result (2026-10-16, dev session, cold):
+```
+{'language': 'en', 'text': 'Four score and seven years ago, our fathers brought forth on this continent a new nation, ...'}
+```
 The `runpod-flash` run measured cold ~55–75 s (image pull + model download) and warm <1 s.
 For the first, cold call use `/run` + poll `/status/<id>`, or `.remote()` from the SDK, which
 has no timeout by default.
@@ -125,6 +128,9 @@ has no timeout by default.
   version used one `input_data: dict` parameter and needed `{"input":{"input_data":{...}}}`.)
 - **Arguments must be JSON-serializable** — pass a URL or base64, not bytes.
 - **Native CUDA libraries must be listed in `dependencies`** — or faster-whisper runs on CPU.
+- **Pin `av<19`.** PyAV 19 removed the `metadata_errors` argument that faster-whisper passes
+  to `av.open`, so an unpinned install fails with `open() got an unexpected keyword argument
+  'metadata_errors'`.
 - **10 MB payload limit** — pass a URL for large audio.
 - **The artifact is ~1.05 GB of the 1,500 MB cap**, mostly the cuDNN and cuBLAS wheels. Adding
   another large package can push it over; check with `--build-only`.

@@ -12,7 +12,8 @@ then serve the adapter from an endpoint."
 **Status:** COVERED — live-verified 2026-07-10 end to end (pod wrote `/workspace/hello.txt`;
 a `runpod-flash` serverless worker read it back at `/runpod-volume/hello.txt` and returned the
 exact contents). Step 3 is ported to the Runpod SDK (`runpod` 2.0) and checked with
-`rp flash deploy --build-only`; the SDK reader awaits a live re-run. The earlier read-back failures were a handler-signature / empty-input bug, not the
+`rp flash deploy --build-only`; the SDK reader awaits a live re-run; on 2026-10-16 a dev session could not run it because the
+built-in runtime images lack `runpod.NetworkVolume` (flash SKILL gotcha 14). The earlier read-back failures were a handler-signature / empty-input bug, not the
 handoff — see [Root cause](#root-cause-why-the-reader-first-timed-out-found-via-mcp-worker-logs).
 **Lane(s):** runpodctl (volume + pod) + flash (serverless reader) + Runpod MCP (`stream-worker-logs`, for diagnosis)
 

@@ -70,7 +70,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | | ↳ [Variant B — prebuilt official image](02-comfyui-pod/variant-b-prebuilt.md) | | official template (auto-starts) | ✅ (faster) |
 | 03 | [Whisper endpoint (audio → text)](03-whisper-endpoint/README.md) | serverless | — | ✅ live-verified |
 | | ↳ [Variant A — Runpod Hub worker](03-whisper-endpoint/variant-a-hub.md) | | runpodctl + Hub (recommended) | ✅ |
-| | ↳ [Variant B — from scratch with the Runpod SDK](03-whisper-endpoint/variant-b-flash.md) | | Runpod SDK `@app.queue` (`rp flash`) | 🔄 ported to the SDK; `runpod-flash` version ✅ |
+| | ↳ [Variant B — from scratch with the Runpod SDK](03-whisper-endpoint/variant-b-flash.md) | | Runpod SDK `@app.queue` (`rp flash`) | ✅ (SDK, 2026-10-16) |
 | 04 | [LoRA fine-tune (training run) on a pod](04-finetune-pod.md) | pod / batch job | runpodctl pod + volume | ✅ live-verified (training phase, via 08) |
 | 05 | [Custom model → serverless endpoint](05-model-to-endpoint-pipeline.md) | cross-lane pipeline | hf → docker → runpodctl | ✅ live-verified |
 | 06 | [Interactive dev pod (SSH / VS Code)](06-dev-pod.md) | pod / interactive | runpodctl pod + volume | ✅ live-verified |
