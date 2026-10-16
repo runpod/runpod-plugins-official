@@ -70,12 +70,12 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | | ↳ [Variant B — prebuilt official image](02-comfyui-pod/variant-b-prebuilt.md) | | official template (auto-starts) | ✅ (faster) |
 | 03 | [Whisper endpoint (audio → text)](03-whisper-endpoint/README.md) | serverless | — | ✅ live-verified |
 | | ↳ [Variant A — Runpod Hub worker](03-whisper-endpoint/variant-a-hub.md) | | runpodctl + Hub (recommended) | ✅ |
-| | ↳ [Variant B — from scratch with flash](03-whisper-endpoint/variant-b-flash.md) | | flash code-first handler | ✅ |
+| | ↳ [Variant B — from scratch with the Runpod SDK](03-whisper-endpoint/variant-b-flash.md) | | Runpod SDK `@app.queue` (`rp flash`) | 🔄 ported to the SDK; `runpod-flash` version ✅ |
 | 04 | [LoRA fine-tune (training run) on a pod](04-finetune-pod.md) | pod / batch job | runpodctl pod + volume | ✅ live-verified (training phase, via 08) |
 | 05 | [Custom model → serverless endpoint](05-model-to-endpoint-pipeline.md) | cross-lane pipeline | hf → docker → runpodctl | ✅ live-verified |
 | 06 | [Interactive dev pod (SSH / VS Code)](06-dev-pod.md) | pod / interactive | runpodctl pod + volume | ✅ live-verified |
-| 07 | [Network-volume handoff (pod → volume → serverless)](07-network-volume-handoff.md) | pod + serverless | runpodctl + flash | ✅ live-verified |
-| 08 | [Fine-tune → serve (LoRA on a pod → serverless)](08-finetune-to-serverless.md) | train → serve loop | runpodctl + peft/axolotl + flash | ✅ live-verified |
+| 07 | [Network-volume handoff (pod → volume → serverless)](07-network-volume-handoff.md) | pod + serverless | runpodctl + Runpod SDK (`rp flash`) | ✅ live-verified with `runpod-flash`; 🔄 SDK reader ported |
+| 08 | [Fine-tune → serve (LoRA on a pod → serverless)](08-finetune-to-serverless.md) | train → serve loop | runpodctl + peft/axolotl + Runpod SDK (`rp flash`) | ✅ live-verified with `runpod-flash`; 🔄 SDK endpoint ported |
 | 09 | [Custom serverless dev loop (iterate in a pod → dual-mode image → serverless)](09-custom-serverless-dev-loop/README.md) | custom image / escape hatch | runpodctl + docker (dual-mode `MODE_TO_RUN`) | ✅ live-verified |
 | 10 | [Multi-region HA serverless (multi-volume + data sync)](10-multi-region-ha-serverless.md) | serverless / availability | runpodctl ≥v2.4.0 (`--network-volume-ids`) + S3 API (aws) | ✅ live-verified |
 | 11 | [Public Endpoints (call a ready hosted model)](11-public-endpoints.md) | serverless / hosted | Runpod Public Endpoint API (native + OpenAI-compatible) | ✅ live-verified |
@@ -135,6 +135,9 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
   commands and the "observed output" blocks are from that run.
 - **📘 documented (launch only)** (used in the table above) — the provisioning/launch steps
   are written and grounded in the CLI/REST specs, but a full end-to-end run wasn't performed.
+- **🔄 ported** (used in the table above) — a live-verified path rewritten for a newer tool
+  (the Runpod SDK in place of `runpod-flash`). The new code passes `rp flash deploy --build-only`;
+  the live run that produced the "observed output" blocks used the older tool.
 
 ## Cross-cutting requirements (every path)
 

@@ -28,7 +28,7 @@ the lane; otherwise read the matching skill's `SKILL.md` next.
 | --- | --- |
 | **runpod-mcp** | Manage infra (pods, endpoints, jobs, templates, volumes, registries, catalog, billing) via **structured tool calls** — when the Runpod MCP tools are connected in this session. Routes on to the journey skill for the task (discovery, lifecycle-crud, serverless-deploy, pod-deploy, pod-doctor, endpoint-ops, cost-audit). |
 | **runpodctl** | Manage the same infra from a **terminal/CI/script**, plus the things only the CLI does: Hub browse/deploy, `send`/`receive` file transfer, SSH keys, `doctor` setup, model cache. |
-| **flash** | **Write Python** that runs on Runpod serverless — `@remote`/`@Endpoint` functions, `flash dev` hot-reload, `flash deploy`. Code-first, not infra management. |
+| **flash** | **Write Python** that runs on Runpod serverless with the Runpod SDK — `runpod.App` with `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; also maintains or migrates legacy `runpod-flash` projects. Code-first, not infra management. |
 | **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
 | **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
@@ -44,7 +44,7 @@ of you**:
 | --- | --- |
 | runpodctl | `runpodctl --help`, `runpodctl <resource> <action> --help`, `runpodctl version`. For failure shapes, run a command wrong on purpose and read the JSON |
 | runpod-mcp | your client's tool list (`/mcp` in Claude Code) — each tool carries its own parameter descriptions |
-| flash | `flash --help`, and the deploy/dev output |
+| flash | `rp --help`, `rp flash <command> --help`, `pip show runpod`, and the dev/deploy output |
 | companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
 | runpod-templates | `runpodctl template list --type official`, `template get <id>` (its readme is authoritative) |
 | REST v2 | the live spec at `https://api.runpod.io/v2/openapi.json` |
@@ -63,7 +63,7 @@ fixed or removed. runpodctl before v2.12.0 accepts `pod create --stop-after` /
 deadline. Update each tool you are about to use:
 ```bash
 runpodctl update && runpodctl version   # runpodctl
-flash update                            # flash
+rp update                               # Runpod SDK + rp CLI (flash lane)
 ```
 The MCP needs no step: the hosted server is always current, and a local install started with
 `npx @runpod/mcp-server@latest` fetches the latest release.
@@ -85,15 +85,15 @@ unlocks every tool — it authenticates **runpodctl + flash + the hosted MCP** (
 stay blocked, so you hit a wall on any CLI-only task (Hub, `send`/`receive`, SSH, `doctor`,
 model cache/Model Repository, CPU endpoints). ⚠️ **OAuth-only is a half-setup.** If nothing's
 set up, stop and get a key, in order:
-1. **`flash login`** — browser OAuth that saves a real key to `~/.runpod/config.toml` (runpodctl
-   + flash read it; reuse it for the MCP Bearer). One step, unlocks all. Human-only.
+1. **`rp login`** — browser approval that saves a real key to `~/.runpod/config.toml` (runpodctl
+   + the Runpod SDK read it; reuse it for the MCP Bearer). One step, unlocks all. Human-only.
 2. **`export RUNPOD_API_KEY=…`** (https://console.runpod.io/user/settings) — same full unlock;
    best for headless agents.
 3. **MCP OAuth only** (`/mcp` → *Sign in*) — last resort, MCP-only work; CLIs stay unauthed.
 
 **Then:** if a lane already works, use it — but if *only* the MCP is OAuth'd, still get a key
 before any CLI-only step. Missing a CLI? `curl -sSL https://cli.runpod.net | bash` (runpodctl) ·
-`uv tool install runpod-flash` (flash) · `npx @runpod/mcp-server@latest add` (MCP). Full setup:
+`pip install "runpod>=2.0.0rc1"` (Runpod SDK + `rp`, flash lane) · `npx @runpod/mcp-server@latest add` (MCP). Full setup:
 [`runpod-usage/reference/getting-started.md`](../runpod-usage/reference/getting-started.md).
 
 ## How to route
@@ -248,7 +248,7 @@ Example — "deploy `openai/gpt-oss-20b` to a serverless endpoint":
 ## Auth
 
 Everything is one key: **`RUNPOD_API_KEY`** (https://console.runpod.io/user/settings).
-Each lane just makes that key resolvable — `runpodctl doctor`, `flash login`, MCP
+Each lane just makes that key resolvable — `runpodctl doctor`, `rp login`, MCP
 stdio env var, or MCP hosted "Sign in with Runpod" (OAuth, no key on disk).
 Companion CLIs use their **own** credentials (HuggingFace token, GitHub auth,
 Docker Hub PAT, Runpod **S3** keys for `aws`) — do not reuse `RUNPOD_API_KEY` for

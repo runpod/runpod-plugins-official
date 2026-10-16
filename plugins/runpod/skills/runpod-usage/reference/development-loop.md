@@ -82,7 +82,7 @@ blocked**. Don't spin or fake progress.
   `--stop-after`: they were never enforced and v2.12.0 removed them.
 - Serverless → `--workers-min 0` (scale-to-zero, ~$0 idle).
 - Delete test resources when done (`runpodctl pod remove` / `serverless delete` /
-  `flash app delete`; then any network volume).
+  `rp flash app delete`; then any network volume).
 
 ## Which sub-loop?
 
