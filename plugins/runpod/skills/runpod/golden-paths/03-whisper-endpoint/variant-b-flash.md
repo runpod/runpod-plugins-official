@@ -85,8 +85,9 @@ and cost notes live in the [folder README](README.md); the flash skill is at
    ```bash
    rp flash dev main.py --once           # temporary endpoint, runs main(), cleans up
    ```
-   For repeated edits, run `rp flash dev main.py < /dev/null > /tmp/rp-dev.log 2>&1 &`; each
-   save re-runs `main()` against the refreshed endpoint. Stop it with `kill -INT`.
+   For repeated edits, run a background session as shown in the flash skill's *Autonomous dev
+   loop* (it restores SIGINT so `kill -INT` cleans up); each save re-runs `main()` against the
+   refreshed endpoint.
 
 4. **Ship it:**
    ```bash
