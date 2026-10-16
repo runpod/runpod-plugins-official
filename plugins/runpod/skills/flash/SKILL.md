@@ -116,11 +116,15 @@ A dev session is long-running. Three rules:
   the entrypoint on every file save, so you never need to press Enter.
 - **Capture its output** to a log file and read it. Worker `print`s, tracebacks, `✗ remote execution failed: ...` and the per-run
   `✓ done in ...` / `✗ failed in ...` lines land there.
-- **Stop it with SIGINT**, never `kill -9`, so it deletes its endpoints. Confirm the log ends
-  with `cleaning up N deleted`.
+- **Stop it with SIGINT**, so it deletes its endpoints, and confirm the log ends with
+  `cleaning up N deleted`. A non-interactive shell starts `&` jobs with SIGINT ignored, and
+  SIGTERM or `kill -9` exit without cleanup, so launch through the wrapper below, which
+  restores SIGINT. When one run is enough, prefer `--once`; it cleans up on its own.
 
 ```bash
-rp flash dev main.py < /dev/null > /tmp/rp-dev.log 2>&1 &
+# restore SIGINT for the background job, then exec rp
+python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execvp(sys.argv[1], sys.argv[1:])' \
+  rp flash dev main.py < /dev/null > /tmp/rp-dev.log 2>&1 &
 DEV=$!
 # poll the log (bounded) for the run result: "✓ done in ..." or "✗ failed in ..."
 for i in $(seq 1 120); do grep -qE "✓ done in|✗ failed in" /tmp/rp-dev.log && break; sleep 3; done
