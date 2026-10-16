@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.5](https://github.com/runpod/runpod-plugins-official/compare/v1.7.4...v1.7.5) (2026-10-16)
+
+
+### Documentation
+
+* **model-caching:** load volume-backed models via VolumeCache ([#86](https://github.com/runpod/runpod-plugins-official/issues/86)) ([ef53bfd](https://github.com/runpod/runpod-plugins-official/commit/ef53bfd056ba183d46dc31dfa54bf784cad5bc3d))
+
 ## [1.7.4](https://github.com/runpod/runpod-plugins-official/compare/v1.7.3...v1.7.4) (2026-10-15)
 
 
