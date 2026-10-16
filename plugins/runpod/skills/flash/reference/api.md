@@ -175,6 +175,11 @@ not download them. Gated models need `HF_TOKEN` on the same resource. Create the
 - **A list** of any of these. Automatic switching between listed GPUs needs a max of at least 5
   workers.
 
+`rp flash deploy` in `runpod` 2.0.0rc1 turns device names into their pools with no exclusions:
+`gpu=["4090", "L4", "A5000"]` deployed as `ADA_24` + `AMPERE_24`, and a worker landed on a
+24 GB RTX PRO 6000 Blackwell MIG slice. When exact hardware matters, read the endpoint after
+deploy and pin it with the Runpod MCP `set-endpoint-gpus` tool.
+
 `cpu=` takes a flavor id: `cpu3g-{1-4,2-8,4-16,8-32}` (general), `cpu3c-{1-2,2-4,4-8,8-16}`
 (compute), `cpu5c-{1-2,2-4,4-8,8-16}` (compute, 5th gen), where the numbers are vCPUs and GB of
 RAM. `runpod.CpuInstanceType` holds the same values.

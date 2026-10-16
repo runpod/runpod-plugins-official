@@ -184,11 +184,15 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 12. **A set `RUNPOD_API_KEY` wins over `rp login`.** A stale exported key causes 401s while the
     saved login is fine. Check with `runpodctl user`, then `unset RUNPOD_API_KEY` or export a
     good key.
-13. **Check the artifact when a dependency needs torch.** Auto-exclusion drops `torch` only when
-    it is listed directly. In `runpod` 2.0.0rc1, a package that depends on it (`peft`,
-    `accelerate`, `sentence-transformers`) pulls `torch` into the artifact even on GPU images
-    and with `--exclude torch`, so the artifact grows by hundreds of MB. Run
-    `rp flash deploy --build-only` and check the size before deploying.
+13. **Don't list torch-dependent packages for a GPU deploy.** Auto-exclusion drops `torch` only
+    when it is listed directly. In `runpod` 2.0.0rc1, a package that depends on it (`peft`,
+    `accelerate`, `sentence-transformers`) pulls a CUDA 13 `torch` into the artifact, even with
+    `--exclude torch`. That copy replaces the GPU image's torch, the worker fails its CUDA check
+    (`libcudart.so.13: cannot open shared object file`), and the endpoint crash-loops. Install such
+    packages on first call with `pip install --no-deps` instead (the `_ensure` helper in
+    [golden path 08](../runpod/golden-paths/08-finetune-to-serverless.md)), and list their
+    non-torch dependencies (`psutil`, `pyyaml`) in `dependencies`. Dev sessions are unaffected:
+    they pip-install on the worker, where torch is already satisfied.
 14. **Dev sessions run the runtime image's own `runpod`.** Deploys vendor your local package,
     but `rp flash dev` workers import the `runpod` baked into the built-in image. The
     `:latest` runtime images used by `runpod` 2.0.0rc1 predate `runpod.NetworkVolume` and

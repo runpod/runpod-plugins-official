@@ -26,7 +26,9 @@ The agent should:
 ## Assertions
 
 - Removes every `runpod_flash` import; uses `import runpod`
-- `embed` becomes `@app.queue(gpu="ADA_24" or GpuGroup.ADA_24, dependencies=[...])`
+- `embed` becomes `@app.queue(gpu="ADA_24" or GpuGroup.ADA_24, ...)`, and the agent flags that
+  `sentence-transformers` depends on `torch`: listed in `dependencies` it makes the GPU deploy
+  crash-loop, so it installs it with `--no-deps` at runtime (flash SKILL gotcha 13)
 - `search` becomes an `@app.api` class whose POST method takes one `body` argument
 - CI calls `rp flash deploy`, not `flash deploy`
 - Runs or recommends `rp flash dev main.py --once` before `rp flash deploy`

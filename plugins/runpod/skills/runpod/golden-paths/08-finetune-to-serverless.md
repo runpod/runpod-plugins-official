@@ -14,10 +14,12 @@ GPU, dataset) — nothing structural changes.
 **Status:** COVERED — live-verified 2026-07-10 end to end. A pod LoRA-trained
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
-and generated. Section 3 is ported to the Runpod SDK (`runpod` 2.0) and checked with
-`rp flash deploy --build-only`; the SDK endpoint awaits a live re-run. Run it with
-`rp flash deploy`: dev sessions on the built-in runtime images fail on volume apps, and the
-code reads the literal `/runpod-volume` path (flash SKILL gotcha 14). The live run used a **minimal peft + transformers `Trainer`** script (below) —
+and generated. Section 3 is ported to the Runpod SDK (`runpod` 2.0.0rc1): on 2026-10-16 the
+section 3 code, deployed with `rp flash deploy`, loaded TinyLlama plus a LoRA
+adapter from a network volume and generated text (the adapter was an untrained one saved by a
+helper function, standing in for the pod training step). Run it with `rp flash deploy`: dev
+sessions on the built-in runtime images fail on volume apps (flash SKILL gotcha 14).
+The `runpod-flash` live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.
 Composes the verified network-volume handoff (golden path [07](07-network-volume-handoff.md)).
@@ -159,6 +161,12 @@ Mind the two things from 07: mount path is `/runpod-volume`, and the worker call
 as `generate(**job_input)`, so the `input` keys are its parameter names (empty input is
 rejected).
 
+**Why `peft` is installed at runtime:** listing `peft` or `accelerate` in `dependencies` makes
+`rp flash deploy` vendor their `torch` dependency into the artifact (`runpod` 2.0.0rc1), and that
+copy replaces the GPU image's CUDA torch. The worker then fails its CUDA check
+(`libcudart.so.13: cannot open shared object file`) and crash-loops. `_ensure` installs them with
+`--no-deps` on first call instead (flash SKILL gotcha 13).
+
 The `runpod-flash` handler that ran used a function with a `global` cache and `**kwargs`.
 The SDK version keeps the same model code; the whole module ships, so the paths can be
 module-level constants:
@@ -173,11 +181,20 @@ BASE = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 _M = _T = None
 
 
+def _ensure(*pkgs):
+    # install torch-dependent packages without deps, so the GPU image's CUDA torch stays in place
+    import importlib.util, subprocess, sys
+    missing = [p for p in pkgs if importlib.util.find_spec(p) is None]
+    if missing:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "--no-deps", *missing])
+
+
 @app.queue(gpu="ADA_24", workers=(0, 1), idle_timeout=60, datacenter="EU-RO-1",
            mounts={"/runpod-volume": vol},
            env={"HF_HOME": "/runpod-volume/hf-cache"},       # reuse training's base-model cache
-           dependencies=["transformers", "peft", "accelerate"])   # torch ships on the GPU image
+           dependencies=["transformers", "psutil", "pyyaml"])     # NOT peft/accelerate: see below
 def generate(prompt: str = "Hello", max_new_tokens: int = 64) -> dict:
+    _ensure("peft", "accelerate")
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
