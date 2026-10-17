@@ -11,13 +11,13 @@ into the project's virtual environment, because dev sessions run your local inte
 
 ```bash
 # requires Python 3.10-3.14
-uv add "runpod>=2.0.0rc1"          # uv project
-pip install "runpod>=2.0.0rc1"     # pip / venv
+uv add "runpod>=2.0.0rc2"          # uv project
+pip install "runpod>=2.0.0rc2"     # pip / venv
 pip show runpod                    # confirm the version (2.x)
 rp update                          # upgrade the package in place; rp update --version X pins one
 ```
 
-The `>=2.0.0rc1` specifier also accepts the 2.0 release candidate, so it resolves to 2.x
+The `>=2.0.0rc2` specifier also accepts the 2.0 release candidate, so it resolves to 2.x
 whether or not a stable 2.0.0 is published. A plain `pip install runpod` on an index with only
 the release candidate installs 1.x, which has no `rp flash`.
 

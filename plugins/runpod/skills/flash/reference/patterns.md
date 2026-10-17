@@ -110,6 +110,16 @@ start unless you cache. Pick one:
   `runpod.serverless.VolumeCache` is importable on the worker without listing `runpod` in
   `dependencies`.
 
+  The same code works on a `runpod.GlobalVolume` (GPU resources only): mount it at
+  `/runpod-volume` and `VolumeCache` mirrors there. Restores from a global volume run slower
+  than from a network volume, so prefer a network volume when the endpoint stays in one data
+  center ([model-caching](../../runpodctl/reference/model-caching.md#measured-cold-starts)).
+
+**Don't load weights straight off the mount** (`HF_HOME=/runpod-volume/...` or
+`from_pretrained("/runpod-volume/model")`). Every read then crosses the network; restoring with
+`VolumeCache` and loading from local disk measured faster
+([model-caching](../../runpodctl/reference/model-caching.md#measured-cold-starts)).
+
 `VolumeCache` details that bite:
 - **Best-effort.** Cache errors are logged and swallowed, and the worker cold-starts normally,
   so a broken cache looks like a slow cold start. Use `VolumeCache(..., best_effort=False)`
@@ -120,6 +130,10 @@ start unless you cache. Pick one:
   headroom; the default is 30 GB on GPU.
 - Let one worker populate the mirror first. Workers that cold-start together on an empty mirror
   each download and sync a full copy.
+- The mirror is keyed by endpoint ID (`namespace` defaults to `RUNPOD_ENDPOINT_ID`). Every dev
+  session creates new endpoints, so each session starts from an empty mirror and leaves its copy
+  on the volume. Pass a fixed `namespace="qwen-7b"` to share one mirror across dev sessions and
+  deploys.
 
 Full behavior: [`concepts/volume-cache.yaml`](../../runpod-usage/concepts/volume-cache.yaml).
 

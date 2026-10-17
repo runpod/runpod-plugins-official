@@ -14,7 +14,7 @@ The agent should:
 1. Inventory the `runpod_flash` imports, every `Endpoint`, and every `flash` CLI call (CI too)
 2. Check the known differences (multi-file project, `id=`/`template=`, path params, volume lists)
    and report any that apply before converting
-3. Install `runpod>=2.0.0rc1`, convert to `runpod.App` with `@app.queue` for `embed` and an
+3. Install `runpod>=2.0.0rc2`, convert to `runpod.App` with `@app.queue` for `embed` and an
    `@app.api` class with `@runpod.post("/query")` for `search`, and add a
    `@runpod.local_entrypoint`
 4. Update CI from `flash deploy` to `rp flash deploy`
@@ -26,9 +26,9 @@ The agent should:
 ## Assertions
 
 - Removes every `runpod_flash` import; uses `import runpod`
-- `embed` becomes `@app.queue(gpu="ADA_24" or GpuGroup.ADA_24, ...)`, and the agent flags that
-  `sentence-transformers` depends on `torch`: listed in `dependencies` it makes the GPU deploy
-  crash-loop, so it installs it with `--no-deps` at runtime (flash SKILL gotcha 13)
+- `embed` becomes `@app.queue(gpu="ADA_24" or GpuGroup.ADA_24, ...)` with
+  `sentence-transformers` in `dependencies`. The agent does not pin `torch` or install it with
+  `--no-deps`: the build leaves torch to the GPU image (flash SKILL gotcha 13)
 - `search` becomes an `@app.api` class whose POST method takes one `body` argument
 - CI calls `rp flash deploy`, not `flash deploy`
 - Runs or recommends `rp flash dev main.py --once` before `rp flash deploy`

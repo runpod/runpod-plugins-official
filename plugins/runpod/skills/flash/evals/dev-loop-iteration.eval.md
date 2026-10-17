@@ -6,7 +6,7 @@
 
 ## Setup
 
-- Requires `runpod>=2.0.0rc1` installed in the active environment and a valid key
+- Requires `runpod>=2.0.0rc2` installed in the active environment and a valid key
   (`rp login` or `RUNPOD_API_KEY`).
 - Copy the fixture to a scratch dir so the graded fix does not mutate the committed
   fixture: `cp -r flash/evals/fixtures/dev-loop /tmp/dev-loop-eval && cd /tmp/dev-loop-eval`.
@@ -31,7 +31,7 @@ The agent should actually execute (not merely describe) the following:
 4. Re-run without deploying: save the file and let the background session re-run, or run
    `--once` again.
 5. Confirm the entrypoint succeeds (`✓` result line, the `assert` passes).
-6. End the session with SIGINT (or let `--once` exit) and confirm the log reports its
+6. End the session with `kill` (SIGTERM) or SIGINT (or let `--once` exit) and confirm the log reports its
    temporary endpoints deleted.
 
 ## Assertions

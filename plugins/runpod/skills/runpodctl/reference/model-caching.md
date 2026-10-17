@@ -150,15 +150,41 @@ runpod.serverless.start({"handler": handler})
   `HF_HUB_OFFLINE=1` on a cache that `VolumeCache` restores.
 - **Size the container disk for the whole local cache** plus runtime headroom: the hydrate
   and any fallback download both write there. Set it on the template
-  (`runpodctl template create --container-disk-in-gb`, or `PodTemplate(containerDiskInGb=...)` in
-  Flash, which defaults to 64 GB).
+  (`runpodctl template create --container-disk-in-gb`), or with `container_disk_gb=` on a Runpod
+  SDK decorator, which defaults to 30 GB on GPU.
 - **Size the volume for the mirror** (`/runpod-volume/.cache/<RUNPOD_ENDPOINT_ID>`). Large
   files you delete or rename locally stay on the volume, so usage grows as you swap models.
 - **Populate with one worker.** Workers that cold-start together on an empty mirror each
   download and sync a full copy back.
 
-Measure it like the rest of this page: time a cold start with and without it on your model,
-in your data center. Exact rules: [`volume-cache`](../../runpod-usage/concepts/volume-cache.yaml).
+- **A global volume works too, more slowly.** Mount it where the network volume would go
+  (`/runpod-volume` on an endpoint; GPU compute only) and the same code mirrors there. It needs
+  `runpod>=2.0.0rc2`: older versions fail to copy every file of 256 KiB or more onto a global
+  volume and swallow the error, so every cold start downloads again. Restores from a global
+  volume run several times slower than from a network volume; use one when the endpoint spans
+  data centers.
+
+### Measured cold starts
+
+What a fresh worker spent getting Qwen2.5-1.5B-Instruct (3.1 GB) from storage onto the GPU,
+measured on Runpod Serverless (L4 and RTX 4090 workers, 2026-10-17):
+
+| Where the weights come from | Download or restore | Load | Total |
+|---|---|---|---|
+| Download from Hugging Face every cold start | — | — | 16–21 s |
+| Load straight from a network volume | — | 11 s | 11 s |
+| `VolumeCache` restore from a network volume | 5.2 s | 3.9 s | **9.1 s** |
+| `VolumeCache` restore from a global volume | 26–51 s | 2–4 s | 30–55 s |
+
+- **Copy first, then load.** The restore read the volume at about 600 MB/s, and loading from
+  local disk is quick. Loading straight off the mount reads every byte over the network.
+- **Global volumes are the slowest source.** Restores were complete but several times slower than
+  from a network volume. Use one only when the endpoint must span data centers.
+- Treat these as direction, not a spec: time your own model in your data center. An independent
+  benchmark with 3B and 7B models, including Model Store, is
+  [flash-model-cache-bench](https://github.com/deanq/flash-model-cache-bench).
+
+Exact rules: [`volume-cache`](../../runpod-usage/concepts/volume-cache.yaml).
 
 ## HF model cache — `--model-reference`
 

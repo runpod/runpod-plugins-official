@@ -1,7 +1,7 @@
 ---
 lanes: [runpodctl, ssh, flash, runpod-mcp]
 mcp: partial
-concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool]
+concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool, volume-cache]
 ---
 
 # Golden path 08 — fine-tune → serve (LoRA on a pod → serverless)
@@ -14,11 +14,14 @@ GPU, dataset) — nothing structural changes.
 **Status:** COVERED — live-verified 2026-07-10 end to end. A pod LoRA-trained
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
-and generated. Section 3 is ported to the Runpod SDK (`runpod` 2.0.0rc1): on 2026-10-16 the
-section 3 code, deployed with `rp flash deploy`, loaded TinyLlama plus a LoRA
-adapter from a network volume and generated text (the adapter was an untrained one saved by a
-helper function, standing in for the pod training step). Run it with `rp flash deploy`: dev
-sessions on the built-in runtime images fail on volume apps (flash SKILL gotcha 14).
+and generated. Section 3 is ported to the Runpod SDK: on 2026-10-17 the section 3 code,
+deployed with `rp flash deploy` on a build of `runpod` with the transitive-torch, GPU-pinning,
+`vol.path` and API-key fixes, loaded TinyLlama plus a LoRA adapter from a network volume and
+generated text (the adapter was an untrained one saved by a helper function, standing in for the
+pod training step). `peft` and `accelerate` were plain `dependencies` and the worker ran the
+image's `torch 2.9.1+cu128`. The first cold start downloaded the base model in 10.3 s; a later
+cold start restored 2.2 GB through `VolumeCache` and loaded it in 7.2 s. Run it with
+`rp flash deploy` (flash SKILL gotcha 14 covers dev sessions on older runtime images).
 The `runpod-flash` live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.
@@ -50,7 +53,7 @@ A 1.1B LoRA on a 4090 trains in **minutes** — fast enough to iterate the loop 
 spending on a real run.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable; `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.0rc1"`, which provides `rp`).
+- `RUNPOD_API_KEY` resolvable; `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.0rc2"`, which provides `rp`).
 - An SSH key registered **before** creating the pod (`runpodctl ssh list-keys`; see
   `../../runpod-usage/reference/getting-started.md`).
 - `HF_TOKEN` only if you scale to a **gated** base model (TinyLlama is ungated).
@@ -161,11 +164,13 @@ Mind the two things from 07: mount path is `/runpod-volume`, and the worker call
 as `generate(**job_input)`, so the `input` keys are its parameter names (empty input is
 rejected).
 
-**Why `peft` is installed at runtime:** listing `peft` or `accelerate` in `dependencies` makes
-`rp flash deploy` vendor their `torch` dependency into the artifact (`runpod` 2.0.0rc1), and that
-copy replaces the GPU image's CUDA torch. The worker then fails its CUDA check
-(`libcudart.so.13: cannot open shared object file`) and crash-loops. `_ensure` installs them with
-`--no-deps` on first call instead (flash SKILL gotcha 13).
+**Model loading:** the adapter is small, so the worker reads it straight from the volume through
+`vol.path`. The base model is the large part: keep its Hugging Face cache on the worker's own
+disk and wrap the load in `VolumeCache`, so later cold starts copy it from the volume to local
+disk instead of downloading it or reading it over the network mount (flash
+[patterns](../../flash/reference/patterns.md#loading-ml-models)). `peft` and `accelerate` go in
+`dependencies` like any package; the build leaves their `torch` dependency to the GPU image
+(flash SKILL gotcha 13).
 
 The `runpod-flash` handler that ran used a function with a `global` cache and `**kwargs`.
 The SDK version keeps the same model code; the whole module ships, so the paths can be
@@ -178,32 +183,25 @@ app = runpod.App("ft-serve")
 
 vol = runpod.NetworkVolume("<vol-id>", create=False)        # the SAME volume, by id
 BASE = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+HF_CACHE = "/opt/hf-cache"                                  # on the worker's disk, not the volume
 _M = _T = None
 
 
-def _ensure(*pkgs):
-    # install torch-dependent packages without deps, so the GPU image's CUDA torch stays in place
-    import importlib.util, subprocess, sys
-    missing = [p for p in pkgs if importlib.util.find_spec(p) is None]
-    if missing:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "--no-deps", *missing])
-
-
 @app.queue(gpu="ADA_24", workers=(0, 1), idle_timeout=60, datacenter="EU-RO-1",
-           mounts={"/runpod-volume": vol},
-           env={"HF_HOME": "/runpod-volume/hf-cache"},       # reuse training's base-model cache
-           dependencies=["transformers", "psutil", "pyyaml"])     # NOT peft/accelerate: see below
+           mounts={"/runpod-volume": vol}, env={"HF_HOME": HF_CACHE},
+           dependencies=["transformers", "peft", "accelerate"])
 def generate(prompt: str = "Hello", max_new_tokens: int = 64) -> dict:
-    _ensure("peft", "accelerate")
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from runpod.serverless import VolumeCache
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     global _M, _T
-    adapter = "/runpod-volume/outputs/lora-out"           # literal mount path (gotcha 14)
+    adapter = str(vol.path / "outputs" / "lora-out")        # written by the pod's training run
     if _M is None:                                           # load once per worker
         _T = AutoTokenizer.from_pretrained(adapter)
-        base = AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.float16).to("cuda")
+        with VolumeCache(dirs=[HF_CACHE]):                   # copy the base model's cache to local disk
+            base = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float16).to("cuda")
         _M = PeftModel.from_pretrained(base, adapter).eval()
     text = f"### Instruction:\n{prompt}\n\n### Response:\n"
     ids = _T(text, return_tensors="pt").to("cuda")

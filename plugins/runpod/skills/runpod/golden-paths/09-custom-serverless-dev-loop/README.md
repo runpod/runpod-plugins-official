@@ -1,7 +1,7 @@
 ---
 lanes: [runpodctl, docker, ssh, rest, runpod-mcp]
 mcp: partial
-concepts: [pod, template, serverless-endpoint, serverless-handler, container-image, worker, network-volume, log-stream]
+concepts: [pod, template, serverless-endpoint, serverless-handler, container-image, worker, network-volume, log-stream, volume-cache]
 ---
 
 # Golden path 09 — custom serverless the hard way (iterate in a pod, then flip to serverless)
@@ -168,7 +168,7 @@ create the endpoint from that template, scale-to-zero:
 runpodctl template create --name whisper-dualmode-sl --serverless \
   --image <you>/whisper-dualmode:v1 --container-disk-in-gb 15 \
   --env '{"MODE_TO_RUN":"serverless"}'                  # → template id, e.g. nnbpsuubpi
-  # heavy models on a volume? also add MODEL_CACHE_DIR=/runpod-volume/whisper-cache here
+  # heavy models on a volume? keep MODEL_CACHE_DIR on local disk and wrap the load in VolumeCache (below)
 
 # 2. endpoint from that template (gpu-id, not gpu-type; workers-min 0 = scale-to-zero)
 runpodctl serverless create --name whisper-custom \
@@ -209,14 +209,25 @@ result: the dual-mode invariant holds end to end.
 
 ## Heavy things → network volume (don't bake giant weights)
 Small models (whisper `base` ≈ 140 MB) are fine baked in. For **large** weights
-(`large-v3`, LLMs, LoRA stacks) don't fatten the image — cache them on a **network
-volume** and point the handler at it. That's golden path
-[07](../07-network-volume-handoff.md)'s handoff:
-- Pod mounts the volume at **`/workspace`**; serverless sees the **same** volume at
-  **`/runpod-volume`** (the template's `MODEL_CACHE_DIR` already defaults to
-  `/runpod-volume/...` when that path exists).
-- Download once (on the pod, or the first worker), reuse across all workers — no
-  re-download per cold start.
+(`large-v3`, LLMs, LoRA stacks) don't fatten the image — keep a copy on a **network
+volume** and restore it to local disk on each cold start. The volume is the same one golden
+path [07](../07-network-volume-handoff.md) hands off: the pod sees it at **`/workspace`**,
+serverless at **`/runpod-volume`**.
+- Keep the model cache on the container disk (`MODEL_CACHE_DIR=/app/model-cache`), not under
+  `/runpod-volume`. Loading straight off the mount reads every byte over the network, which
+  measured slower than restoring the files to local disk first.
+- Wrap the load in `VolumeCache` (Runpod Python SDK `runpod>=1.12.0`) inside `handler.py` (this step was not part of the 2026-07-10 live run). A cold
+  worker copies the files an earlier worker saved, loads from local disk, and saves anything
+  new back to the volume:
+  ```python
+  from runpod.serverless import VolumeCache
+
+  with VolumeCache(dirs=[os.environ["MODEL_CACHE_DIR"]]):
+      model = WhisperModel("large-v3", device="cuda", download_root=os.environ["MODEL_CACHE_DIR"])
+  ```
+- Size `--container-disk-in-gb` for the whole model plus headroom; the restore writes there.
+  Full behavior and measured numbers:
+  [model-caching](../../../runpodctl/reference/model-caching.md#network-volume--load-from-local-disk-with-volumecache).
 
 ## Verify it works (all three passed live, 2026-07-10)
 1. ✅ `python handler.py` on the pod printed a correct JFK transcription (`en`, 11.0 s).

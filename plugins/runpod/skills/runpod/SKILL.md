@@ -93,7 +93,7 @@ set up, stop and get a key, in order:
 
 **Then:** if a lane already works, use it — but if *only* the MCP is OAuth'd, still get a key
 before any CLI-only step. Missing a CLI? `curl -sSL https://cli.runpod.net | bash` (runpodctl) ·
-`pip install "runpod>=2.0.0rc1"` (Runpod SDK + `rp`, flash lane) · `npx @runpod/mcp-server@latest add` (MCP). Full setup:
+`pip install "runpod>=2.0.0rc2"` (Runpod SDK + `rp`, flash lane) · `npx @runpod/mcp-server@latest add` (MCP). Full setup:
 [`runpod-usage/reference/getting-started.md`](../runpod-usage/reference/getting-started.md).
 
 ## How to route

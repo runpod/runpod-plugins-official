@@ -56,7 +56,7 @@ live in [`examples/`](examples/).
 | Moving a `runpod-flash` project to the SDK | [reference/migrate-from-runpod-flash.md](reference/migrate-from-runpod-flash.md) |
 | Maintaining a `runpod-flash` project as it is | [reference/runpod-flash-legacy.md](reference/runpod-flash-legacy.md) |
 
-Quick start: `uv add "runpod>=2.0.0rc1"` (or `pip install "runpod>=2.0.0rc1"`; this resolves
+Quick start: `uv add "runpod>=2.0.0rc2"` (or `pip install "runpod>=2.0.0rc2"`; this resolves
 to the release candidate until 2.0.0 is stable) → `rp login` (or `export RUNPOD_API_KEY=...`)
 → `rp flash init my-app` → `cd my-app && rp flash dev main.py`.
 
@@ -111,22 +111,20 @@ A dev session is long-running. Three rules:
   the entrypoint on every file save, so you never need to press Enter.
 - **Capture its output** to a log file and read it. Worker `print`s, tracebacks, `✗ remote execution failed: ...` and the per-run
   `✓ done in ...` / `✗ failed in ...` lines land there.
-- **Stop it with SIGINT**, so it deletes its endpoints, and confirm the log ends with
-  `cleaning up N deleted`. A non-interactive shell starts `&` jobs with SIGINT ignored, and
-  SIGTERM or `kill -9` exit without cleanup, so launch through the wrapper below, which
-  restores SIGINT. When one run is enough, prefer `--once`; it cleans up on its own.
+- **Stop it with `kill` (SIGTERM) or SIGINT**, so it deletes its endpoints, and confirm the
+  log ends with `cleaning up N deleted`. A second signal stops waiting for a running
+  entrypoint and goes straight to cleanup. `kill -9` skips cleanup. When one run is enough,
+  prefer `--once`; it cleans up on its own.
 
 ```bash
-# restore SIGINT for the background job, then exec rp
-python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execvp(sys.argv[1], sys.argv[1:])' \
-  rp flash dev main.py < /dev/null > /tmp/rp-dev.log 2>&1 &
+rp flash dev main.py < /dev/null > /tmp/rp-dev.log 2>&1 &
 DEV=$!
 # poll the log (bounded) for the run result: "✓ done in ..." or "✗ failed in ..."
 for i in $(seq 1 120); do grep -qE "✓ done in|✗ failed in" /tmp/rp-dev.log && break; sleep 3; done
 tail -40 /tmp/rp-dev.log
 # edit main.py and save -> the session re-scans, refreshes endpoints, re-runs main()
 # (each run appends a new result line; read the last one)
-kill -INT $DEV; wait $DEV; tail -3 /tmp/rp-dev.log   # expect "cleaning up N deleted"
+kill $DEV; wait $DEV; tail -3 /tmp/rp-dev.log   # expect "cleaning up N deleted"
 ```
 
 For a single check, `rp flash dev main.py --once` is simpler and cleans up on its own. If a
@@ -169,6 +167,8 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 8. **Volumes outlive everything.** Dev sessions and `rp flash undeploy` delete endpoints, not
    the `NetworkVolume`s they created, and those keep billing. Queue and API resources mount one
    volume at `/runpod-volume`; read `vol.path` inside the remote function, never at import time.
+   Load model weights through `VolumeCache`, not straight off the mount
+   ([reference/patterns.md](reference/patterns.md#loading-ml-models)).
 9. **Tasks bill until they return.** A `.spawn()`ed task that you never `wait()` or `cancel()`
    keeps its Pod running after your script exits.
 10. **Native CUDA libraries go in `dependencies` too**, e.g. faster-whisper needs
@@ -179,24 +179,17 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 12. **A set `RUNPOD_API_KEY` wins over `rp login`.** A stale exported key causes 401s while the
     saved login is fine. Check with `runpodctl user`, then `unset RUNPOD_API_KEY` or export a
     good key.
-13. **Don't list torch-dependent packages for a GPU deploy.** Auto-exclusion drops `torch` only
-    when it is listed directly. In `runpod` 2.0.0rc1, a package that depends on it (`peft`,
-    `accelerate`, `sentence-transformers`) pulls a CUDA 13 `torch` into the artifact, even with
-    `--exclude torch`. That copy replaces the GPU image's torch, the worker fails its CUDA check
-    (`libcudart.so.13: cannot open shared object file`), and the endpoint crash-loops. Install such
-    packages on first call with `pip install --no-deps` instead (the `_ensure` helper in
-    [golden path 08](../runpod/golden-paths/08-finetune-to-serverless.md)), and list their
-    non-torch dependencies (`psutil`, `pyyaml`) in `dependencies`. Dev sessions are unaffected:
-    they pip-install on the worker, where torch is already satisfied.
+13. **The torch family comes from the GPU image; never pin it.** Builds leave `torch`,
+    `torchvision`, `torchaudio` and `triton` out of the artifact whether you list them or a
+    dependency pulls them in (`peft`, `accelerate`, `sentence-transformers`), plus the wheels
+    only torch needs. GPU workers use the image's build (`torch 2.9.1+cu128`), so a version
+    pin on these packages is ignored. In an app that mixes CPU and GPU resources, a CPU
+    resource whose dependencies need torch installs it at cold start; give it
+    `container_disk_gb` room for that (the build warns when this applies).
 14. **Dev sessions run the runtime image's own `runpod`.** Deploys vendor your local package,
-    but `rp flash dev` workers import the `runpod` baked into the built-in image. The
-    `:latest` runtime images used by `runpod` 2.0.0rc1 predate `runpod.NetworkVolume` and
-    `runpod.GlobalVolume`, so an app that declares one fails on the worker with
-    `module 'runpod' has no attribute 'NetworkVolume'`. Deployed workers on the same images
-    attach the volume, but `vol.path` raises `is not mounted in the current execution`; read
-    the literal mount path instead (`/runpod-volume` for queue and API resources, the
-    `mounts` key for tasks). An `AttributeError` on a `runpod.` name in a worker traceback
-    means the image is behind your SDK.
+    but `rp flash dev` workers import the `runpod` baked into the built-in image. An
+    `AttributeError` on a `runpod.` name in a dev worker traceback means the image is behind
+    your SDK; `rp flash deploy` runs your installed version.
 15. **Teardown by app and environment:** `rp flash undeploy --app APP --env default -y`
     removes one environment's endpoints; `rp flash app delete APP` removes every environment.
     Then delete volumes you no longer need.
