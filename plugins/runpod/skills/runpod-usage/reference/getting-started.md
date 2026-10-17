@@ -16,7 +16,7 @@ lane's `SKILL.md` (linked). You don't need all of them.
 | Lane | Quick install | Source / docs |
 | --- | --- | --- |
 | **runpodctl** (CLI) | `curl -sSL https://cli.runpod.net \| bash` (or `brew install runpod/runpodctl/runpodctl`) | [source](https://github.com/runpod/runpodctl) · [`runpodctl/SKILL.md`](../../runpodctl/SKILL.md) |
-| **flash** (deploy your own code) | `uv tool install runpod-flash` (or `pip install runpod-flash`; Python 3.10–3.13) | [source](https://github.com/runpod/flash) · [`flash/SKILL.md`](../../flash/SKILL.md) |
+| **flash** (deploy your own code) | `pip install "runpod>=2.0.0rc2"` (or `uv add`; Python 3.10–3.14; installs the `rp` CLI) | [source](https://github.com/runpod/runpod-python) · [`flash/SKILL.md`](../../flash/SKILL.md) |
 | **runpod-mcp** (hosted) | `npx @runpod/mcp-server@latest add` (guided; OAuth) | [source](https://github.com/runpod/runpod-mcp) · [`runpod-mcp/SKILL.md`](../../runpod-mcp/SKILL.md) |
 | **runpod-mcp** (local stdio) | `claude mcp add runpod -e RUNPOD_API_KEY=... -- npx -y @runpod/mcp-server` | same as above |
 | **companion CLIs** (`hf`/`gh`/`docker`/`aws`) | per-tool; see the skill | [`companion-clis/SKILL.md`](../../companion-clis/SKILL.md) |
@@ -29,7 +29,7 @@ Nothing to install for the **hosted MCP** beyond configuring your client, and th
 ```bash
 npx skills add runpod/runpod-plugins-official # the skills — works with any agent
 curl -sSL https://cli.runpod.net | bash       # runpodctl — infra CLI (or: brew install runpod/runpodctl/runpodctl)
-uv tool install runpod-flash                  # flash — deploy your own code (or: pip install runpod-flash)
+pip install "runpod>=2.0.0rc2"                # Runpod SDK + rp CLI — deploy your own code (flash lane)
 npx @runpod/mcp-server@latest add             # hosted MCP server — guided setup, OAuth
 ```
 
@@ -50,7 +50,7 @@ yourself (e.g. an `Authorization: Bearer` header for a direct API call), prefer
 | --- | --- | --- |
 | **runpodctl** | `export RUNPOD_API_KEY=...` | Non-interactive — runpodctl reads it. Best for agents/CI/scripts. |
 | runpodctl (human) | `runpodctl doctor` | Interactive; stores the key **and** sets up SSH keys. Prompts, so not for agents. |
-| **flash** | `export RUNPOD_API_KEY=...` | Or `flash login` — browser OAuth that **saves a real API key to `~/.runpod/config.toml`**, which runpodctl reads too, so one login serves both. Human-only (needs a browser). |
+| **flash** | `export RUNPOD_API_KEY=...` | Or `rp login` — browser approval that **saves a real API key to `~/.runpod/config.toml`**, which runpodctl reads too, so one login serves both. Human-only (needs a browser); `rp login --api-key` stores a key without one. |
 | **runpod-mcp (hosted)** | "Sign in with Runpod" OAuth on first connect | No key on disk. Or pass `Authorization: Bearer $RUNPOD_API_KEY`. |
 | **runpod-mcp (local)** | `RUNPOD_API_KEY` env in the MCP client config | Forwarded to the API. |
 

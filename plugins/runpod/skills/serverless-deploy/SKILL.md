@@ -21,7 +21,7 @@ You take *any* deployable source and turn it into a working, queue-backed Server
 
 Two decisions are yours to make without being told: the **engine family** (which worker image is correct for this modality and model format) and the **provisioning path** (bake weights into the image vs download-on-start vs stage on a network volume, each with a different cold-start cost). Size hardware from the model's real metadata, never a guess. When several suitable workers exist for the modality, prefer the smallest, most-proven image for a smoke-able deploy. A giant image turns the first job into a cold start of many minutes, and the smoke test's job is proof of the journey, not maximal quality. Name the trade-off if the user's request implies a heavier engine. Creating an endpoint is billable: state the hourly cost of the GPU class before you create it, and remember a smoke job costs money.
 
-For code-first Python (writing endpoint functions in a project and iterating with Runpod's Python dev loop, runpod-flash), this MCP-only bundle has no path. Say so instead of improvising one. This skill deploys an existing source (Hub repo, container image, ComfyUI workflow, Hub release) to an endpoint through the MCP tools.
+For code-first Python (writing endpoint functions in a project and iterating with the Runpod SDK's `rp flash dev` loop), this MCP-only bundle has no path. Say so instead of improvising one. This skill deploys an existing source (Hub repo, container image, ComfyUI workflow, Hub release) to an endpoint through the MCP tools.
 
 ## Required capabilities
 

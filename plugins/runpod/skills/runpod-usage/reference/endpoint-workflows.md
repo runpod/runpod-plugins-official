@@ -10,8 +10,8 @@ over the Runpod job API. Proven on the Whisper golden path (both variants).
 1. **Hub worker (fastest, least fragile)** — a maintained prebuilt worker.
    `runpodctl hub search <app>` → deploy with runpodctl (Hub is runpodctl-only).
    Best when a good worker ships what you need.
-2. **flash (from scratch, custom/light)** — write an `@Endpoint` handler and
-   `flash deploy`. Best when you need your own model size / I/O schema / a lighter
+2. **flash (from scratch, custom/light)** — write an `@app.queue` function with the
+   Runpod SDK and `rp flash deploy`. Best when you need your own model size / I/O schema / a lighter
    image, or no good Hub worker exists.
 3. **Custom image + endpoint (last resort)** — write a handler, `docker build
    --platform=linux/amd64`, push (private image → registry auth), create the
@@ -23,7 +23,7 @@ over the Runpod job API. Proven on the Whisper golden path (both variants).
 # Hub
 runpodctl serverless create --hub-id <id> --name <name> --workers-min 0 --workers-max 3
 # flash
-flash deploy                                  # @Endpoint(workers=(0,3)) in the code
+rp flash deploy                               # @app.queue(workers=(0, 3)) in the code
 # Custom image — TWO steps: serverless create takes --template-id/--hub-id, NOT an image.
 runpodctl template create --name <tpl> --serverless \
   --image <you>/<img>:<tag> --container-disk-in-gb 15 \
@@ -92,7 +92,7 @@ output. Bound any poll loop.
 
 Give the user the endpoint id + a copy-paste `curl` and the input schema (how to
 pass a URL and/or base64). Scale-to-zero means it's safe to leave; delete with
-`runpodctl serverless delete <id>` (or `flash app delete <app>`).
+`runpodctl serverless delete <id>` (or `rp flash app delete <app> --yes`).
 
 See [`golden-paths/03-whisper-endpoint/`](../../runpod/golden-paths/03-whisper-endpoint/README.md)
 for a fully worked example of both the Hub and flash variants (a README plus one

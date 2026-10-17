@@ -2,117 +2,237 @@ id: flash
 name: Flash
 kind: tool
 summary: >
-  Runpod's Python SDK and CLI (`runpod-flash`) for code-first serverless. You
-  write decorated functions or routes, iterate with `flash dev` against remote
-  workers, and ship with `flash deploy`.
+  Code-first serverless in the Runpod Python SDK (`runpod` 2.0). You define a
+  `runpod.App` with queue, API and task resources, iterate with `rp flash dev`
+  against remote workers, and ship with `rp flash deploy`. The older standalone
+  `runpod-flash` package is deprecated.
 product: flash
 is_a: null
 part_of: runpod-platform
-aliases: [Runpod Flash, runpod-flash, flash CLI]
+aliases: [Runpod Flash, runpod-flash, flash CLI, rp flash, Runpod SDK apps, Apps SDK]
 
 relations:
   - { type: runs_on, target: serverless-endpoint, cardinality: "1..n" }
   - { type: uses, target: network-volume, cardinality: "0..n" }
+  - { type: uses, target: model-store, cardinality: "0..n" }
   - { type: requires, target: api-key, cardinality: "1" }
 
 rules:
+  - id: flash.part-of-runpod-sdk
+    statement: >
+      Flash ships in the `runpod` package from version 2.0, with the `rp` CLI
+      (`rp flash init`, `dev`, `deploy`, `app`, `env`, `undeploy`). The CLI is
+      also installed as `runpod`. Install `runpod>=2.0.0rc2`; that specifier
+      also accepts the 2.0 release candidate.
+    status: verified
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/cli", seen: "2026-10-16" }
+      - { source: live-probe, ref: "pip install runpod==2.0.0rc1; rp --help and rp flash --help", seen: "2026-10-16" }
+
+  - id: flash.runpod-flash-deprecated
+    statement: >
+      The standalone `runpod-flash` package is deprecated on October 29, 2026
+      and gets no fixes after that date. Endpoints it deployed keep running.
+      Write new code on the Runpod SDK and migrate existing projects.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/migrate-from-runpod-flash.md }
+
   - id: flash.not-flashboot
     statement: >
-      Flash is the `runpod-flash` SDK and CLI. FlashBoot is a separate endpoint
+      Flash is the code-first SDK and CLI. FlashBoot is a separate endpoint
       setting for faster restarts; Flash exposes it through the `flashboot`
-      argument but does not depend on it.
+      parameter but does not depend on it.
     status: documented
     see: [flashboot.flash-sdk-default-on]
     evidence:
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: The flashboot argument of Endpoint. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: The flashboot parameter of the decorators. }
 
-  - id: flash.modes
+  - id: flash.resource-types
     statement: >
-      Flash has three modes. A bare `@Endpoint` decorator is queue-based with
-      its own worker pool. Routes such as `@api.post` are load-balanced and
-      share one pool. Passing `image=` or `id=` is client mode, against a
-      prebuilt image or an existing endpoint. `gpu=` and `cpu=` cannot be used
-      together.
+      An app has three resource types. `@app.queue` on a function creates a
+      queue-based endpoint. `@app.api` on a class creates a load-balanced
+      endpoint whose `@runpod.get` and `@runpod.post` methods are routes, with
+      setup in a `@runpod.init` method. `@app.task` on a function runs one Pod
+      per call and terminates it when the function returns. `gpu=` and `cpu=`
+      cannot be used together.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Modes section and Gotchas 4 and 7. }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/overview", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/spec.py", seen: "2026-10-16", note: gpu and cpu are mutually exclusive. }
+
+  - id: flash.dev-session
+    statement: >
+      `rp flash dev FILE` creates temporary endpoints, runs the
+      `@runpod.local_entrypoint` on your machine, streams the workers' output
+      and runs again after each file change. Ending the session deletes the
+      endpoints. It runs no local HTTP server. `--once` runs the entrypoint
+      once, cleans up and exits non-zero on failure.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/rp_cli/main.py", seen: "2026-10-16", note: With stdin closed the session re-runs on file changes only. }
+
+  - id: flash.same-module-in-dev-and-deploy
+    statement: >
+      Dev sessions and deploys run the whole module source on the worker, so
+      module-level imports, constants and helpers behave the same in both. An
+      app lives in one file; helpers in sibling local modules are not shipped.
+    status: documented
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/serialization.py", seen: "2026-10-16", note: get_function_source returns the full module source. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16", note: Known differences lists projects split across multiple local files. }
+
+  - id: flash.json-queue-arguments
+    statement: >
+      Queue job arguments are plain JSON, in a dev session as well as deployed,
+      so a non-JSON argument fails before the job is sent. A deployed queue
+      function receives the job's `input` object as keyword arguments.
+    status: documented
+    see: [job.input-envelope]
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/targets.py", seen: "2026-10-16", note: "require_json_args runs on live queue calls; deployed targets send {\"input\": kwargs}." }
+
+  - id: flash.api-route-body
+    statement: >
+      A POST route on an `@app.api` class receives the request's JSON body as
+      its one argument, so callers send the object itself with no wrapper key. A
+      GET route takes no argument.
+    status: documented
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/examples/apps/web_service.py", seen: "2026-10-16", note: "Counter.post(\"/bump\", {\"by\": 3}) reaches bump(self, body) as body[\"by\"]." }
 
   - id: flash.artifact-limits
     statement: >
-      `flash build` packages an artifact of up to 1500 MB and leaves out `torch`
-      automatically. The CLI needs Python 3.10 to 3.13, and `--python-version`
-      picks the Python version the worker runs.
+      `rp flash deploy` packages an artifact of up to 1500 MB. On the built-in
+      GPU images it leaves out `torch`, `torchvision`, `torchaudio` and
+      `triton`. Local Python must be 3.10 to 3.14, and `--python-version` picks
+      the worker's Python for deploys.
     status: documented
     evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/deploy", seen: "2026-10-16" }
       - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
 
   - id: flash.sdk-defaults
     statement: >
-      The SDK uses its own defaults: `workers` (0, 1), `idle_timeout` 60
-      seconds, unlimited execution time, `flashboot` `True` and
-      `min_cuda_version` 12.8. They differ from the platform's defaults, so set
-      them explicitly when they matter.
+      The SDK uses its own defaults: `workers` (0, 3), `idle_timeout` 60
+      seconds, `execution_timeout_ms` 0 (no limit), `flashboot` `True`, and
+      `container_disk_gb` 30 on GPU or 10 on CPU. They differ from the
+      platform's defaults, so set them explicitly when they matter.
     status: documented
     see: [serverless-endpoint.defaults-by-layer]
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Endpoint constructor. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/configuration/parameters", seen: "2026-10-16" }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Parameters table. }
 
-  - id: flash.cuda-floor
+  - id: flash.volume-mounts
     statement: >
-      Flash endpoints default to `min_cuda_version` 12.8 because the
-      `runpod/flash` image needs it; on older hosts that image crash-loops.
-      Lower `min_cuda_version` only with an image that supports the older CUDA
-      version.
-    status: documented
-    evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md }
-
-  - id: flash.volume-sets-dc
-    statement: >
-      A `NetworkVolume` lives in one data center, so give the `Endpoint` the
-      same `datacenter` as its volume and pick a data center with stock for the
-      GPU you need.
+      Queue and API resources mount one volume, at `/runpod-volume`. Tasks mount
+      up to one network volume and one global volume at distinct paths. Read
+      `volume.path` inside the remote function. Undeploying or ending a dev
+      session leaves the volumes, and they keep billing.
     status: documented
     see: [serverless-endpoint.network-volume-pins-dc]
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/reference/patterns.md, note: The volume and the endpoint share one data center. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/configuration/storage", seen: "2026-10-16" }
 
   - id: flash.cli-mediated
     statement: >
-      Deploy and tear down through the `flash` CLI (`flash deploy` and `flash
-      app delete`) rather than raw REST or GraphQL calls. `flash init` writes an
-      `AGENTS.md` that tells coding agents the same. `flash undeploy list` can
-      miss a deployed app.
+      Deploy and tear down through the CLI rather than raw REST or GraphQL
+      calls: `rp flash deploy`, `rp flash undeploy --app APP --env ENV` for one
+      environment, and `rp flash app delete APP` for every environment.
     status: documented
     evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/cli", seen: "2026-10-16" }
       - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 15. }
-
-  - id: flash.dev-ships-body-only
-    statement: >
-      `flash dev` ships only the decorated function's body to the worker, so put
-      imports and helpers inside it. `flash deploy` imports the whole module,
-      which can hide this mistake.
-    status: documented
-    evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 1. }
 
   - id: flash.api-key-precedence
     statement: >
-      A set `RUNPOD_API_KEY` overrides the token from `flash login`. A bad key
-      fails quietly with "GraphQL request failed: 401" in the provisioning log
-      while `flash dev` still reports that it is ready.
+      A set `RUNPOD_API_KEY` overrides the key saved by `rp login` in
+      `~/.runpod/config.toml`, so a stale exported key causes 401 errors while
+      the saved login is valid.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 13. }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/utils/network.py", seen: "2026-10-16", note: RUNPOD_API_KEY is read before the stored credentials. }
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 12. }
 
   - id: flash.client-limits
     statement: >
-      Payloads are limited to 10 MB, so pass URLs or write to a volume. The
-      SDK's `runsync` times out after 60 seconds, so use `run()` and
-      `job.wait()` when a cold start is likely.
+      Payloads are limited to 10 MB, so pass URLs or write to a volume.
+      `.remote()` and `job.wait()` impose no timeout by default; the endpoint
+      client's `run_sync` takes a `timeout` in seconds.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotchas 6 and 9. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: remote() and job.wait() impose no execution timeout by default. }
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 7. }
+
+  - id: flash.torch-family-from-gpu-image
+    statement: >
+      From `runpod` 2.0.0rc2, builds leave `torch`, `torchvision`, `torchaudio`
+      and `triton` out of the artifact whether a requirement lists them or a
+      dependency pulls them in (`peft`, `accelerate`, `sentence-transformers`),
+      together with the wheels only they need. GPU workers on the built-in
+      images use the image's `torch 2.9.1+cu128`, and version pins on these
+      packages are ignored. In an app that mixes CPU and GPU resources, a CPU
+      resource whose dependencies need torch installs it at cold start, so it
+      needs container disk for it.
+    status: verified
+    evidence:
+      - { source: live-probe, ref: "rp flash deploy of a gpu queue function with dependencies=[\"peft\"]: artifact 80.7 MB with no torch (645.6 MB with torch 2.14.1 before the fix); the worker returned torch 2.9.1+cu128 from site-packages with cuda True", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/623", seen: "2026-10-16", note: Removes transitive torch-family wheels after vendoring and scopes the cold-start install list to CPU resources. }
+
+  - id: flash.gpu-device-names-pin-devices
+    statement: >
+      From `runpod` 2.0.0rc2, GPU device names in `gpu=` pin those devices.
+      Endpoints select GPUs by pool, so the SDK selects each device's pool and
+      excludes the pool's other devices, reading membership from the live GPU
+      catalog. A pool id allows every device in the pool, including MIG slices.
+    status: verified
+    see: [gpu-pool.pin-a-card]
+    evidence:
+      - { source: live-probe, ref: "gpu=[\"NVIDIA GeForce RTX 4090\", \"NVIDIA L4\", \"NVIDIA RTX A5000\"] stored gpuIds ADA_24,AMPERE_24,-NVIDIA GeForce RTX 3090,-NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb; four parallel jobs all reported NVIDIA GeForce RTX 4090", seen: "2026-10-16" }
+      - { source: live-probe, ref: "GET https://api.runpod.io/v2/catalog/gpus lists NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb with pool AMPERE_24", seen: "2026-10-16" }
+
+  - id: flash.worker-api-key-for-callers
+    statement: >
+      From `runpod` 2.0.0rc2, deploy and dev add the account API key
+      (`RUNPOD_API_KEY`) only to resources whose code can call another
+      resource: a reference to another resource, `.remote()` or `.spawn()`, a
+      `runpod` client, or code the build cannot follow (a local helper module,
+      a nested function). Other resources run without the key.
+    status: verified
+    evidence:
+      - { source: live-probe, ref: "deployed leaf + caller queues: only caller's template had RUNPOD_API_KEY; caller returned {'has_key': True, 'nested': {'has_key': False, 'x': 42}}", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/628", seen: "2026-10-16" }
+
+  - id: flash.dev-session-stop-signals
+    statement: >
+      From `runpod` 2.0.0rc2, a dev session deletes its endpoints when it
+      receives SIGINT or SIGTERM, including a background session started with
+      SIGINT ignored. A second signal stops waiting for a running entrypoint.
+      `kill -9` skips the cleanup.
+    status: verified
+    see: [flash.dev-session]
+    evidence:
+      - { source: live-probe, ref: "rp flash dev main.py < /dev/null & from a script, then kill -TERM and separately kill -INT: both logged 'cleaning up 1 deleted' and left no endpoints", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/625", seen: "2026-10-16" }
+
+  - id: flash.legacy-dev-ships-body-only
+    statement: >
+      In the legacy `runpod-flash` package, `flash dev` ships only the decorated
+      function's body to the worker, so imports and helpers go inside it, while
+      `flash deploy` imports the whole module and can hide the mistake.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: Gotcha 1. }
+
+  - id: flash.legacy-defaults
+    statement: >
+      Legacy `runpod-flash` endpoints default to `workers` (0, 1), a 64 GB
+      container disk and `min_cuda_version` 12.8, because the `runpod/flash`
+      image needs CUDA 12.8; on older hosts that image crash-loops.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: Defaults section. }

@@ -44,7 +44,7 @@ Rejected:
 | Effort | ~2 min, zero code | ~15 min, you own the handler |
 | Customization | Take the worker's model + I/O schema | Own the model size, I/O schema, pre/post-processing |
 | Image | Heavy prebuilt WhisperX image | Lighter/cheaper image you control |
-| Iteration | None needed (prebuilt) | `flash dev` on a real remote GPU (hot-reload) |
+| Iteration | None needed (prebuilt) | `rp flash dev` on a real remote GPU (re-runs on save) |
 | Pick when | A **heavy, prebuilt, known** model has a good Hub worker | **Custom/small** workload, or no good Hub worker fits |
 
 Rule of thumb: for a big prebuilt model with a solid Hub worker, flash is just
@@ -114,7 +114,7 @@ resources when done:
 
 ```bash
 runpodctl serverless delete <endpoint-id>
-# flash apps can also be removed with: flash app delete <app-name>
+# SDK apps can also be removed with: rp flash app delete <app-name> --yes
 ```
 
 See each variant file for the exact teardown command it used.

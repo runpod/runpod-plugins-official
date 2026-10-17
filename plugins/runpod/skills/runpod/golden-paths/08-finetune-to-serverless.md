@@ -1,7 +1,7 @@
 ---
 lanes: [runpodctl, ssh, flash, runpod-mcp]
 mcp: partial
-concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool]
+concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool, volume-cache]
 ---
 
 # Golden path 08 — fine-tune → serve (LoRA on a pod → serverless)
@@ -13,8 +13,16 @@ fast/cheap validation that **scales to larger models by changing three things** 
 GPU, dataset) — nothing structural changes.
 **Status:** COVERED — live-verified 2026-07-10 end to end. A pod LoRA-trained
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
-volume; a flash serverless worker then loaded base + adapter from `/runpod-volume` and
-generated. The live run used a **minimal peft + transformers `Trainer`** script (below) —
+volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
+and generated. Section 3 is ported to the Runpod SDK: on 2026-10-17 the section 3 code,
+deployed with `rp flash deploy` on a build of `runpod` with the transitive-torch, GPU-pinning,
+`vol.path` and API-key fixes, loaded TinyLlama plus a LoRA adapter from a network volume and
+generated text (the adapter was an untrained one saved by a helper function, standing in for the
+pod training step). `peft` and `accelerate` were plain `dependencies` and the worker ran the
+image's `torch 2.9.1+cu128`. The first cold start downloaded the base model in 10.3 s; a later
+cold start restored 2.2 GB through `VolumeCache` and loaded it in 7.2 s. Run it with
+`rp flash deploy` (flash SKILL gotcha 14 covers dev sessions on older runtime images).
+The `runpod-flash` live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.
 Composes the verified network-volume handoff (golden path [07](07-network-volume-handoff.md)).
@@ -45,7 +53,7 @@ A 1.1B LoRA on a 4090 trains in **minutes** — fast enough to iterate the loop 
 spending on a real run.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable; `runpodctl` + `flash` installed.
+- `RUNPOD_API_KEY` resolvable; `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.0rc2"`, which provides `rp`).
 - An SSH key registered **before** creating the pod (`runpodctl ssh list-keys`; see
   `../../runpod-usage/reference/getting-started.md`).
 - `HF_TOKEN` only if you scale to a **gated** base model (TinyLlama is ungated).
@@ -151,44 +159,63 @@ runpodctl pod remove <pod-id>
 > long run so it survives SSH disconnect.
 
 ## 3. Serve on serverless (load base + adapter from `/runpod-volume`)
-A flash endpoint attaches the **same volume** and loads the adapter once per worker.
-Mind the two things from 07: mount path is `/runpod-volume`, and the handler is called as
-`handler(**job_input)` (use `**kwargs`; empty input is rejected).
+A Runpod SDK app attaches the **same volume** and loads the adapter once per worker.
+Mind the two things from 07: mount path is `/runpod-volume`, and the worker calls the function
+as `generate(**job_input)`, so the `input` keys are its parameter names (empty input is
+rejected).
 
-This is the exact handler that ran. Note the flash rules from 07: **function** handler with a
-`global` cache loaded once per worker (only the function *body* ships to the worker, so load
-inside it, not at module level), `**kwargs`, and paths inlined (module-level constants don't
-ship):
+**Model loading:** the adapter is small, so the worker reads it straight from the volume through
+`vol.path`. The base model is the large part: keep its Hugging Face cache on the worker's own
+disk and wrap the load in `VolumeCache`, so later cold starts copy it from the volume to local
+disk instead of downloading it or reading it over the network mount (flash
+[patterns](../../flash/reference/patterns.md#loading-ml-models)). `peft` and `accelerate` go in
+`dependencies` like any package; the build leaves their `torch` dependency to the GPU image
+(flash SKILL gotcha 13).
+
+The `runpod-flash` handler that ran used a function with a `global` cache and `**kwargs`.
+The SDK version keeps the same model code; the whole module ships, so the paths can be
+module-level constants:
 ```python
 # main.py
-from runpod_flash import Endpoint, GpuGroup, DataCenter, NetworkVolume
+import runpod
 
-vol = NetworkVolume(id="<vol-id>", datacenter=DataCenter.EU_RO_1)   # the SAME volume
+app = runpod.App("ft-serve")
 
-@Endpoint(name="ft-serve", gpu=GpuGroup.ADA_24, workers=(0, 1), idle_timeout=60,
-          datacenter=DataCenter.EU_RO_1, volume=vol,
-          env={"HF_HOME": "/runpod-volume/hf-cache"},          # reuse training's base-model cache
-          dependencies=["torch", "transformers", "peft", "accelerate"])
-async def generate(**kwargs) -> dict:                          # flash spreads input as kwargs
+vol = runpod.NetworkVolume("<vol-id>", create=False)        # the SAME volume, by id
+BASE = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+HF_CACHE = "/opt/hf-cache"                                  # on the worker's disk, not the volume
+_M = _T = None
+
+
+@app.queue(gpu="ADA_24", workers=(0, 1), idle_timeout=60, datacenter="EU-RO-1",
+           mounts={"/runpod-volume": vol}, env={"HF_HOME": HF_CACHE},
+           dependencies=["transformers", "peft", "accelerate"])
+def generate(prompt: str = "Hello", max_new_tokens: int = 64) -> dict:
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from runpod.serverless import VolumeCache
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
     global _M, _T
-    try:
-        _M
-    except NameError:                                          # load once per worker
-        _T = AutoTokenizer.from_pretrained("/runpod-volume/outputs/lora-out")
-        base = AutoModelForCausalLM.from_pretrained(
-            "TinyLlama/TinyLlama-1.1B-Chat-v1.0", torch_dtype=torch.float16).to("cuda")
-        _M = PeftModel.from_pretrained(base, "/runpod-volume/outputs/lora-out").eval()
-    text = f"### Instruction:\n{kwargs.get('prompt', 'Hello')}\n\n### Response:\n"
+    adapter = str(vol.path / "outputs" / "lora-out")        # written by the pod's training run
+    if _M is None:                                           # load once per worker
+        _T = AutoTokenizer.from_pretrained(adapter)
+        with VolumeCache(dirs=[HF_CACHE]):                   # copy the base model's cache to local disk
+            base = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float16).to("cuda")
+        _M = PeftModel.from_pretrained(base, adapter).eval()
+    text = f"### Instruction:\n{prompt}\n\n### Response:\n"
     ids = _T(text, return_tensors="pt").to("cuda")
     with torch.no_grad():
-        out = _M.generate(**ids, max_new_tokens=int(kwargs.get("max_new_tokens", 64)), do_sample=False)
+        out = _M.generate(**ids, max_new_tokens=int(max_new_tokens), do_sample=False)
     return {"output": _T.decode(out[0][ids["input_ids"].shape[1]:], skip_special_tokens=True)}
+
+
+@runpod.local_entrypoint
+def main():
+    print(generate.remote(prompt="Give me one tip about GPUs."))
 ```
 ```bash
-RUNPOD_API_KEY=... flash deploy
+rp flash deploy main.py          # app "ft-serve", environment "default"
 runpodctl serverless list        # confirm the endpoint's networkVolumeId == <vol-id>
 ```
 
@@ -199,7 +226,9 @@ curl -s https://api.runpod.ai/v2/<endpoint-id>/run -H "Authorization: Bearer $RU
   -H 'Content-Type: application/json' \
   -d '{"input":{"prompt":"Give me one tip about GPUs."}}'    # then poll /status/<job-id>
 ```
-Verified result (2026-07-10): cold call `COMPLETED` in ~48 s queue + 9.7 s exec (fast — the
+From Python: `runpod.Queue(app="ft-serve", name="generate").remote(prompt="...")`.
+
+Verified result with `runpod-flash` (2026-07-10): cold call `COMPLETED` in ~48 s queue + 9.7 s exec (fast — the
 base model was already cached on the volume from training), output:
 ```json
 "output": {"output": "Sure, here's a tip for training LLMs:\n\n1. Start with small models: ..."}
@@ -211,8 +240,8 @@ Green when the first (cold) call returns generated text. The pipeline is proven;
 `GpuGroup` to a bigger-VRAM tier, and dataset/steps. Add `HF_TOKEN` for gated models. Use
 **QLoRA** (axolotl `load_in_4bit: true`) when the base won't fit for full LoRA.
 **Doesn't change:** the loop — one volume, pod writes the adapter to `/workspace/outputs`,
-serverless reads it from `/runpod-volume/outputs`, same DC, `**kwargs` handler, non-empty
-input. For high-throughput serving, swap the transformers handler for **vLLM with LoRA**
+serverless reads it from `/runpod-volume/outputs`, same DC, `input` keys matching the
+parameters, non-empty input. For high-throughput serving, swap the transformers handler for **vLLM with LoRA**
 (load the base once, hot-swap adapters) — same volume handoff.
 
 ## Cost & cleanup
@@ -226,9 +255,10 @@ scale-to-zero (`workers=(0,1)`), ~$0 idle. Keep the volume only while iterating.
 ## Gotchas this path inherits
 - **Mount-path swap:** `/workspace` on the pod == `/runpod-volume` on serverless — same volume,
   different path ([07](07-network-volume-handoff.md), `storage.md`).
-- **flash handler contract:** `handler(**job_input)` — use `**kwargs`; invoke with non-empty
-  `input` (flash SKILL gotcha "Request body shape").
-- **Load the model once** in the class `__init__`, not per request (flash SKILL gotcha).
+- **Handler contract:** the worker calls `generate(**job_input)` — `input` keys are the
+  function's parameter names; invoke with a non-empty `input`.
+- **Load the model once per worker**, not per request: a module-level cache in a queue
+  function, or `@runpod.init` in an `@app.api` class (flash `reference/patterns.md`).
 - **PEP 668** on the training pod: `pip install --break-system-packages …` (`on-pod-setup.md`).
 - **Diagnosis:** if the endpoint job times out, pull worker logs before assuming a broken
   worker — it's usually a payload/handler issue. `runpodctl serverless logs <id> --source

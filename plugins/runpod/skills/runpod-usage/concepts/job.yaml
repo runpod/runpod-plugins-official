@@ -80,7 +80,7 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 10. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Raw HTTP to a deployed queue resource. }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests" }
 
   - id: job.cancel
