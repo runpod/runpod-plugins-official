@@ -96,12 +96,25 @@ rules:
     applies_to: ["field:type", "field:env"]
     statement: >
       A worker on a `LOAD_BALANCER` endpoint listens on the port in `PORT`
-      (default 80) and answers health checks on `PORT_HEALTH` (default 80) at
-      `HEALTH_CHECK_PATH` (default `/ping`).
+      (default 80) and answers health checks on `PORT_HEALTH` (defaults to
+      `PORT`) at `HEALTH_CHECK_PATH` (default `/ping`).
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: EndpointType, seen: "2026-09-28" }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/build-a-worker", note: The example worker serves its health check at /ping. }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview", seen: "2026-10-14", note: Environment variable defaults. }
+
+  - id: serverless-endpoint.lb-readiness
+    applies_to: ["field:type"]
+    statement: >
+      A load-balanced worker's health route returns HTTP 204 while initializing
+      and HTTP 200 when ready to serve requests; other response codes mean
+      unhealthy. Keep model loading behind this readiness gate so traffic only
+      reaches a worker that can perform the requested work.
+    status: documented
+    see: [serverless-endpoint.lb-worker-ports]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview", seen: "2026-10-14", note: Health check response codes. }
 
   - id: serverless-endpoint.lb-no-queue
     applies_to: ["field:type"]

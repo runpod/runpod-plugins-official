@@ -75,13 +75,14 @@ rules:
     applies_to: ["field:input"]
     statement: >
       The request body is always `{"input": {...}}`, and `input` must not be
-      empty. `/run` accepts payloads up to about 10 MB and `/runsync` up to
-      about 20 MB, so pass large inputs as URLs.
+      empty. `/run` accepts payloads up to 10 MB and `/runsync` up to 20 MB, so
+      pass large inputs as URLs.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md }
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 10. }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/send-requests" }
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/operation-reference", seen: "2026-10-14", note: Maximum payload sizes for /run and /runsync. }
 
   - id: job.cancel
     applies_to: ["action:cancel"]

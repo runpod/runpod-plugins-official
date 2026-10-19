@@ -4,7 +4,7 @@ description: >-
   Start here for any Runpod task — running GPU/CPU pods, deploying serverless
   endpoints, templates, network volumes, building images, or understanding how
   Runpod works. Routes to the right skill (runpod-mcp, runpodctl, flash,
-  companion-clis, runpod-usage, runpod-templates, runpod-migrate)
+  companion-clis, runpod-usage, runpod-templates, runpod-build-template, runpod-migrate)
   and indexes two dozen live-verified end-to-end examples
   (golden paths) — use it when the lane is unclear, and for any multi-step or
   provisioning task even when it is not.
@@ -32,6 +32,7 @@ the lane; otherwise read the matching skill's `SKILL.md` next.
 | **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
 | **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
+| **runpod-build-template** | **Create or improve a template project** from a request, local code, or GitHub: documented Dockerfile, app-specific files, and Pod/queue/load-balanced deployment handoff. |
 | **runpod-migrate** | **Move existing code** off the GraphQL API or REST v1 onto REST v2 — inventory which parts use which version, rewrite call sites, flag breaking changes. Edits the user's code; does not manage infra. |
 
 ## These skills are a snapshot; the tools are the source of truth
@@ -68,6 +69,9 @@ flash update                            # flash
 The MCP needs no step: the hosted server is always current, and a local install started with
 `npx @runpod/mcp-server@latest` fetches the latest release.
 Use the same build for the rest of the task.
+
+File authoring with **runpod-build-template** needs no cloud credentials. Check auth only
+when an operation actually uses the control plane or another authenticated service.
 
 Infra tasks (pods, endpoints, jobs, volumes) need a working control plane — the **Runpod MCP**
 or **runpodctl**. Don't start and discover mid-task that nothing's set up: check first, and if
@@ -117,20 +121,31 @@ this router's lane table for workflow selection**. Its commands do not establish
 capability is CLI-only: choose the execution lane from the live tool surface and the
 capability matrix below, while preserving the path's ordering and verification steps.
 
+For an explicit request to create or optimize a Dockerfile/template project, match
+[path 26](./golden-paths/26-template-project/README.md) before generic deployment examples;
+GP26 is an authoring specification with local checks, not a live-verified deployment.
+An existing prebuilt does not replace the requested deliverable.
+
 1. **Conceptual question, or an unmade design choice** (serverless vs pod? which
    GPU? bake the model or mount a volume?) → read **runpod-usage** first, then
    continue with the answer.
-2. **Run a common workload on a pod, or fix a template pod** ("run ComfyUI /
+2. **Author or improve a template project / Dockerfile**, including converting local
+   code or a GitHub repository, or prepare its Hub listing files → **runpod-build-template**.
+   It delegates build/push mechanics and infrastructure work to their existing lanes.
+   Registering an already-built image as a reusable template ("make a template from
+   my image") and browsing/deploying an existing Hub listing use the infrastructure
+   lanes below; registration needs no new Dockerfile.
+3. **Run a common workload on a pod, or fix a template pod** ("run ComfyUI /
    PyTorch dev box", won't boot, missing models) → **runpod-templates** — check for
    an official prebuilt before planning any install, and let it route repairs.
-3. **Write/iterate/ship your own code on Runpod GPUs** → **flash**.
-4. **Produce an artifact** (download a model, build+push an image, create a repo
+4. **Write/iterate/ship your own code on Runpod GPUs using its code-first workflow** → **flash**.
+5. **Produce an artifact** (download a model, build+push an image, create a repo
    release, sync data to a volume) → **companion-clis**.
-5. **Migrate existing code between Runpod API versions** — "move us to REST v2",
+6. **Migrate existing code between Runpod API versions** — "move us to REST v2",
    "which Runpod API is this repo on?", "what breaks if we upgrade?" →
    **runpod-migrate**. (Calling the API to *do* something is a different job; that
    is the infra lanes below.)
-6. **Manage infrastructure** (create/list/update/delete pods, endpoints,
+7. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
    - Capability only the CLI has — **`send`/`receive`, SSH keys, `doctor`,
      model cache** → **runpodctl**.
@@ -172,6 +187,7 @@ For any "get <X> running on Runpod" task, follow the **development loop** in
 (only if from-scratch) → verify → deliver → cost-guard + teardown. These rules bind within it:
 
 - **Prefer a prebuilt template / Hub worker over building an image from scratch** —
+  except when the user explicitly requests a custom template project or Dockerfile;
   official pod templates are indexed in [`runpod-templates`](../runpod-templates/SKILL.md).
 - **Before delivering, verify the workload with a real request from outside the pod/endpoint
   — a "Running"/"ready" status does not mean it is serving.**
@@ -224,6 +240,7 @@ tables above when nothing here is close.
 | Interactive dev box (SSH / VS Code) | [06](./golden-paths/06-dev-pod.md) |
 | Move data pod → volume → serverless | [07](./golden-paths/07-network-volume-handoff.md) |
 | **Custom serverless when flash isn't enough** (dual-mode image dev loop) | [09](./golden-paths/09-custom-serverless-dev-loop/README.md) |
+| Create or improve a complete template project from code, a repo or an app request | [26 — project authoring](./golden-paths/26-template-project/README.md) |
 | Build a minimal image for a target (pod vs serverless queue) | [22 (pod)](./golden-paths/22-minimal-pod-image/README.md), [23 (queue)](./golden-paths/23-minimal-queue-image/README.md); concepts in [building-images](../runpod-usage/reference/building-images.md) |
 | Decide what to bake into the image vs mount on a network volume | [25 — bake vs mount](./golden-paths/25-bake-vs-mount/README.md) |
 | Pick a network-volume **storage tier** (standard vs high-performance) | [21 — storage tiers](./golden-paths/21-storage-tiers.md) |

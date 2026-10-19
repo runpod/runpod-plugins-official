@@ -92,9 +92,10 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 22 | [Minimal pod image (+ don't kill SSH)](22-minimal-pod-image/README.md) | image contract / pod | docker buildx + runpodctl pod (CPU) + SSH | ✅ live-verified |
 | 23 | [Minimal serverless queue image](23-minimal-queue-image/README.md) | image contract / serverless | docker buildx + runpodctl serverless (CPU) + `/runsync` | ✅ live-verified |
 | 25 | [Bake into image vs mount a network volume](25-bake-vs-mount/README.md) | storage model / image | docker buildx + runpodctl nv + CPU pod (`df -T`: overlay vs MooseFS) | ✅ live-verified |
+| 26 | [Author a complete template project](26-template-project/README.md) | project authoring / Pod / queue / LB | app files + documented build/deployment handoff | spec; local/container checks recorded in path, no live Runpod verification |
 
 > **When a path has two variants, prefer the prebuilt/Hub one** (Variant B for
-> ComfyUI, Variant A for Whisper) unless you need custom code — that's the
+> ComfyUI, Variant A for Whisper) unless you need custom code or explicitly requested template/Dockerfile authoring — that's the
 > development loop's "prefer prebuilt over from-scratch" rule in action.
 
 > **Complementary pairs:** 13 (autoscaling) + 18 (concurrency) — concurrency raises
@@ -138,7 +139,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 
 ## Cross-cutting requirements (every path)
 
-1. **Auth** — resolve `RUNPOD_API_KEY` (or `runpodctl doctor` / MCP OAuth) before acting.
+1. **Auth** — resolve `RUNPOD_API_KEY` (or `runpodctl doctor` / MCP OAuth) before live infrastructure actions. GP26 file authoring needs no cloud credentials.
 2. **Agentic execution** — an agent has no Console/web terminal; it must drive
    everything through the CLI/API/MCP and SSH-exec, non-interactively.
 3. **Readiness, not fire-and-forget** — poll until the service actually answers;
