@@ -8,8 +8,9 @@ concepts: [container-image, pod, pod-ssh-access, ssh-key, template, cpu-pod]
 
 ✅ **Live-verified** (built → pushed → CPU pod launched → **SSH'd in** → HTTP proxy `200` → torn down).
 
-The smallest useful **pod** image and the #1 pod footgun: **a pod image must set up SSH, or you
-get locked out.** Official `runpod/pytorch` images do this for you via `/start.sh`; this path
+A minimal **SSH-enabled pod** image and its main access footgun: **a pod image promising
+SSH must start that service.** Application-only pods can intentionally omit it.
+Official `runpod/pytorch` images provide it via `/start.sh`; this path
 builds from a plain base to show the **from-scratch** SSH pattern explicitly (and to prove it
 works). Pods have **no handler** — the container just runs a long-lived process (your `CMD`).
 
@@ -41,8 +42,10 @@ block first. For this path specifically:
   3. `exec python3 -m http.server $PORT` — a stand-in long-running service
 
 > **On an official `runpod/pytorch` base you skip all of step 1–2** — just add your layers and
-> leave `CMD ["/start.sh"]`, or if you must override, run `/start.sh &` first (see
-> building-images.md). The from-scratch version here is for when you can't use a Runpod base.
+> leave `CMD ["/start.sh"]`, using `/post_start.sh` for work after base initialization.
+> If overriding the command, preserve `/start.sh` as shown in building-images.md and
+> verify both SSH and application readiness. The from-scratch version here is for when
+> you can't use a Runpod base.
 
 ## Build + push (x86_64 Linux — emulated on Apple Silicon)
 
@@ -110,7 +113,7 @@ runpodctl pod list        # confirm it's gone (pods bill while running — delet
 ## What this proves
 
 - The **pod image contract**: no handler — the container runs your long-lived `CMD`.
-- **SSH must be set up by the image.** From a Runpod base it's inherited; from a plain base you
+- **Promised SSH access must be set up by the image.** From a Runpod base it's inherited; from a plain base you
   reproduce it (`PUBLIC_KEY` → authorized_keys, `ssh-keygen -A`, start sshd) **before** your
   workload, or you're locked out.
 - `--platform=linux/amd64` build from Apple Silicon; CPU pod for a CPU workload; port exposure

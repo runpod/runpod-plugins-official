@@ -10,7 +10,7 @@ import { buildDatabase } from "../src/build-sqlite.ts";
 import { formatConcept } from "../src/format.ts";
 import { getConcept, guidesFor, neighbors, resolve, search, tree } from "../src/query.ts";
 import { route } from "../src/server.ts";
-import { validate } from "../src/validate.ts";
+import { urlProblem, validate } from "../src/validate.ts";
 
 const fixtures = fileURLToPath(new URL("fixtures/", import.meta.url));
 const noFile = join(fixtures, "does-not-exist");
@@ -81,6 +81,14 @@ test("evidence needs the keys that locate its source", () => {
 
 test("skill evidence on states must point at a file in the repo", () => {
   assertHasError(badErrors(), "states-missing-skill: states cites skill file plugins/runpod/skills/nowhere/states.md");
+});
+
+test("Docker evidence accepts only its exact public documentation host", () => {
+  assert.equal(urlProblem("https://docs.docker.com/build/cache/optimize/"), null);
+  assert.equal(urlProblem("https://docs.docker.com/engine/storage/drivers/"), null);
+  assert.notEqual(urlProblem("https://docs.docker.com.example.com/build/cache/"), null);
+  assert.notEqual(urlProblem("https://private.docker.com/build/cache/"), null);
+  assert.notEqual(urlProblem("http://docs.docker.com/build/cache/"), null);
 });
 
 test("a url must be on a public source host", () => {

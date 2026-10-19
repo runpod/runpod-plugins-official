@@ -124,7 +124,7 @@ checked.
 | `live-probe` | A request made against a live account | `ref`, `seen` |
 | `other` | Anything else public, such as a CLI's `--help` output | `ref` or `url` |
 
-A `url` must be https on a public source host: docs.runpod.io, api.runpod.io,
+A `url` must be https on a public source host: docs.runpod.io, docs.docker.com, api.runpod.io,
 graphql-spec.runpod.io, runpod.io, huggingface.co, or a public `runpod`
 repository on github.com. The list is `PUBLIC_HOSTS` in
 `ontology/tools/src/validate.ts`; add a host there when citing a new public

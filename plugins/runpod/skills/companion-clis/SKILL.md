@@ -40,15 +40,20 @@ for flags and subcommands** — the references here cover the Runpod-specific us
 traps, not the tool's full surface. Check `--help` before reporting that one of them cannot do
 something.
 
-## Windows: Install WSL2 First
+## Windows: choose the shell, then set up WSL2 if needed
 
-If you are on Windows, install WSL2 before proceeding — it gives you the native Linux environment all these CLIs target. In PowerShell as Administrator, then restart:
+Check existing native, WSL2 or remote tools before installing another copy. The Windows
+`hf` and `gh` setup recipes in this skill use WSL2 and their Linux installers. If choosing
+that route and WSL2 is missing, run this in PowerShell as Administrator, then restart if
+prompted:
 
 ```powershell
 wsl --install
 ```
 
-Afterward open the Ubuntu app to finish setup, then follow the **Linux** instructions in each reference.
+Afterward open the Ubuntu app to finish setup, then follow the **Linux** instructions in
+each reference. Keep commands, credentials and paths in the selected environment. File
+authoring alone does not require installing these CLIs.
 
 ## HuggingFace CLI
 
