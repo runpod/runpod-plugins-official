@@ -6,6 +6,24 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.0](https://github.com/runpod/runpod-plugins-official/compare/v1.7.4...v1.8.0) (2026-10-19)
+
+
+### Features
+
+* **runpod-build-template:** add complete template project authoring ([#78](https://github.com/runpod/runpod-plugins-official/issues/78)) ([c4b771a](https://github.com/runpod/runpod-plugins-official/commit/c4b771a8515ff4499e90325badc06d0b30469ab0))
+
+
+### Bug Fixes
+
+* **routing:** use connected MCP capabilities for Hub operations ([#80](https://github.com/runpod/runpod-plugins-official/issues/80)) ([f85e9c5](https://github.com/runpod/runpod-plugins-official/commit/f85e9c58808ea74014635491f5bf6e85d45cdaef))
+
+
+### Documentation
+
+* **images:** preserve startup guidance and clarify reusable storage ([#81](https://github.com/runpod/runpod-plugins-official/issues/81)) ([de38f2f](https://github.com/runpod/runpod-plugins-official/commit/de38f2f1ac403242552c5475722642fedbcc8beb))
+* **model-caching:** load volume-backed models via VolumeCache ([#86](https://github.com/runpod/runpod-plugins-official/issues/86)) ([ef53bfd](https://github.com/runpod/runpod-plugins-official/commit/ef53bfd056ba183d46dc31dfa54bf784cad5bc3d))
+
 ## [1.7.4](https://github.com/runpod/runpod-plugins-official/compare/v1.7.3...v1.7.4) (2026-10-15)
 
 
