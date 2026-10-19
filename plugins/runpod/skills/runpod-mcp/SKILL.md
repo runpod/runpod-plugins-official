@@ -14,7 +14,7 @@ allowed-tools: Bash(claude mcp:*)
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
-  version: "1.7.4" # x-release-please-version
+  version: "1.8.0" # x-release-please-version
   concepts: [runpod-platform, pod, serverless-endpoint, job, template, network-volume, registry-credential, gpu-type, log-stream, api-key, api-rate-limit, hub-repo]
 license: Apache-2.0
 ---
