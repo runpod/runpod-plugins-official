@@ -202,15 +202,6 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
   flash gotcha "Request body shape"). Only if the logs show a genuinely dead/looping
   worker should you switch workers or try a different data center.
 
-## Delete returns an error but succeeded
-
-- **Symptom:** an MCP `delete-*` (or a DELETE call) returns `isError: true` /
-  "Unexpected end of JSON input".
-- **Cause:** the Runpod REST API returns **204 No Content**; there's no JSON body
-  to parse.
-- **Fix:** treat it as success; confirm with a follow-up `get-`/`list-` (the
-  resource should 404 / be absent).
-
 ## Handler swallowing errors
 
 - **Symptom:** jobs report success but return nothing useful; failures are

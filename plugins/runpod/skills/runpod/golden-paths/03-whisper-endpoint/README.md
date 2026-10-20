@@ -100,10 +100,6 @@ works).
   `stream-worker-logs` tool, the v2 REST logs path, or the Console Workers tab:
   there's no serverless worker-log command in runpodctl and no worker-log path on
   REST v1. (Details in Variant A.)
-- **Delete returns 204, not JSON.** A DELETE / MCP `delete-*` may report an error
-  like "Unexpected end of JSON input" because the REST API returns **204 No
-  Content** (no body to parse). Treat it as success; confirm with a follow-up
-  `get`/`list` (the resource should 404 / be absent).
 
 ## Cost & cleanup (shared)
 
