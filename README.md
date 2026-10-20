@@ -15,7 +15,7 @@ and opencode** (with auto-update), and as skills via **skills.sh** for Cursor,
 Copilot, Windsurf, Cline, and 17+ other agents — all from the same manifest.
 
 <!-- runpod-agent-setup:start -->
-**Using an AI agent?** Point it to https://docs.runpod.io/agent-setup.md to install the Runpod skills and MCP server.
+**Using an AI agent?** Point it to https://agents.runpod.io/ to install the Runpod skills and MCP server.
 <!-- runpod-agent-setup:end -->
 
 ## Quick start
