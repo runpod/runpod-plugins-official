@@ -105,9 +105,9 @@ Call styles on a queue or task handle: `fn.remote(...)` (blocks), `await fn.remo
   others). Re-run to update. `--build-only` packages without deploying, a cheap offline check
   that discovery and dependency resolution work.
 
-Dev and deploy run the **same module source**: the whole file ships, so module-level imports,
-constants and helpers behave identically in both. The app must live in **one file** today
-(multi-file projects are a known gap).
+Dev and deploy run the **same module source**, so module-level imports, constants and helpers
+behave identically in both. Deploy packages the project directory, but a dev session ships
+only the module's source, so keep the app in **one file** when you use `rp flash dev`.
 
 ## Autonomous dev loop
 
@@ -158,8 +158,9 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
    and deploy alike; a non-JSON argument fails with `arguments must be json-serializable`. Pass
    URLs or base64, not objects. Whole-number floats can arrive as integers (`1.0` → `1`), so
    cast numeric inputs explicitly (`torch.tensor(x, dtype=torch.float32)`).
-2. **One file per app.** Discovery imports the module you point at. Helpers in a sibling local
-   module are not shipped yet; keep them in the same file or in an installable package.
+2. **One file per app in dev.** A dev session ships only the module's source, so a sibling
+   local module imports in deploy but fails in dev. For dev sessions, keep helpers in the same
+   file or in an installable package.
 3. **Keep blocking work out of module scope.** The SDK imports your module to discover
    resources, locally and on every worker. Put heavy imports (`torch`) and work inside
    functions; guard local-only code with `runpod.is_local()`.

@@ -57,7 +57,7 @@ On a queue or task handle:
 
 | Call | Does |
 |---|---|
-| `fn.remote(*args, **kwargs)` | runs remotely, blocks for the result; no timeout by default |
+| `fn.remote(*args, **kwargs)` | runs remotely, blocks for the result; on a queue, stops waiting after 300 s with `TimeoutError` |
 | `await fn.remote.aio(...)` | async form |
 | `fn.spawn(...)` | submits, returns a job immediately |
 | `fn.stream(...)` | yields chunks from a generator function |

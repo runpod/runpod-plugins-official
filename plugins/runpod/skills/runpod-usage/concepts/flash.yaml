@@ -78,11 +78,14 @@ rules:
   - id: flash.same-module-in-dev-and-deploy
     statement: >
       Dev sessions and deploys run the whole module source on the worker, so
-      module-level imports, constants and helpers behave the same in both. An
-      app lives in one file; helpers in sibling local modules are not shipped.
+      module-level imports, constants and helpers behave the same in both.
+      Deploy packages the project directory, but a dev session ships only the
+      module's source, so helpers in sibling local modules import only in
+      deploy. An app run with dev sessions lives in one file.
     status: documented
     evidence:
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/serialization.py", seen: "2026-10-16", note: get_function_source returns the full module source. }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/deploy.py", seen: "2026-10-19", note: package_project walks the project directory into the artifact. }
       - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16", note: Known differences lists projects split across multiple local files. }
 
   - id: flash.json-queue-arguments
@@ -161,11 +164,14 @@ rules:
   - id: flash.client-limits
     statement: >
       Payloads are limited to 10 MB, so pass URLs or write to a volume.
-      `.remote()` and `job.wait()` impose no timeout by default; the endpoint
-      client's `run_sync` takes a `timeout` in seconds.
+      Jobs get no execution timeout by default, but `.remote()` stops
+      waiting after 300 s on a queue and raises `TimeoutError` while the job
+      keeps running. For longer calls, `.spawn()` and `job.result(timeout=...)`.
+      The endpoint client's `run_sync` takes a `timeout` in seconds.
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: remote() and job.wait() impose no execution timeout by default. }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/targets.py", seen: "2026-10-19", note: DEFAULT_TIMEOUT_SECONDS = 300.0 bounds invoke() and job result waits; _wait_terminal raises TimeoutError at the deadline. }
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 7. }
 
   - id: flash.torch-family-from-gpu-image

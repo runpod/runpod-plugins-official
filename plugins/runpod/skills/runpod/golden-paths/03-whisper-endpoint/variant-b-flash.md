@@ -119,7 +119,7 @@ Verified result (2026-10-16, dev session, cold):
 ```
 The `runpod-flash` run measured cold ~55–75 s (image pull + model download) and warm <1 s.
 For the first, cold call use `/run` + poll `/status/<id>`, or `.remote()` from the SDK, which
-has no timeout by default.
+waits up to 300 s; beyond that, `.spawn()` and `job.result(timeout=...)`.
 
 ## Variant-specific gotchas
 
