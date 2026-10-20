@@ -174,7 +174,7 @@ runpodctl pod logs <pod-id> --follow                 # keep streaming, reconnect
 runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image pull / create / start
 ```
 
-`runpodctl pod reset <pod-id>` returns an unsupported-by-API-v2 error. Use `pod restart` only when a restart is intended.
+runpodctl v3.0.0 removed `pod reset`. Use `pod restart` only when a restart is intended.
 
 **A stalled deploy shows up in `--source system`** (v2.10.0+): repeated pull progress, or a
 `create container` that never reaches `start`. Use `--source container` for your workload's own
