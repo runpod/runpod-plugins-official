@@ -153,15 +153,14 @@ keys that share a name.
 
 ### Pod host key trust (v2.15.0+)
 
-Through v2.14.0 these paths ran with host key checking disabled. Check `runpodctl version`
-before relying on anything below.
+Check `runpodctl version` before relying on host key pinning.
 
-Affects only the **hidden, deprecated** `project` subcommands and `exec python`, which share
-one Go SSH client. **`ssh info` is unchanged**: it prints an ordinary
+Affects the **hidden, deprecated** `exec python` command's Go SSH client.
+`ssh info` prints an ordinary
 `ssh -i <key> root@<ip> -p <port>` and leaves verification to OpenSSH's defaults against your
 own `~/.ssh/known_hosts`.
 
-Those two paths pin a pod's host key in `~/.runpod/ssh/known_hosts`, keyed by `runpod-<podID>`
+The Go client pins a pod's host key in `~/.runpod/ssh/known_hosts`, keyed by `runpod-<podID>`
 rather than by address, because Runpod recycles pod SSH addresses. The Go client enrolls the
 key on first contact, printing the fingerprint to **stderr**, and refuses a key that does not
 match an existing entry. The `rsync` invocation always runs after that, so it **requires** the

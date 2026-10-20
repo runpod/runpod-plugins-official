@@ -22,6 +22,18 @@ relations:
   - { type: uses, target: hub-repo, cardinality: "0..n" }
 
 rules:
+  - id: runpodctl.project-flash-notice
+    statement: >
+      Every `runpodctl project` invocation, including subcommands, aliases,
+      flags and help requests, exits 1 with empty stdout and a plain-text Flash
+      notice on stderr. Treat this as a fatal error, surface the notice verbatim
+      and do not retry or require a JSON error code. Use Flash for serverless
+      development workflows.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/output-and-errors.md, note: Project Flash notice. }
+      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md }
+
   - id: runpodctl.update-first
     statement: >
       Older `runpodctl` builds lack newer flags and fail with confusing errors;

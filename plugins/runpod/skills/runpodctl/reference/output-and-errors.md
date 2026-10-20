@@ -205,7 +205,24 @@ no `code`:
 | --- | --- |
 | legacy `get`/`create`/`remove`/`start`/`stop pod`, `create`/`remove pods`, `get cloud` | `Error: <msg>` on stderr, exit 1 — including the missing-key case, which carries the same message as `no_credentials` but no JSON and no `code`. Success prints a human **table** on stdout, not JSON |
 | `exec` (hidden, deprecated) | **v2.10.0+:** joined the JSON error shape — flat JSON with a `code` on stderr and a **non-zero** exit. Through v2.9.0 it printed the error as plaintext and still exited **0**, so a caller that trusted the exit code saw a silent success. Either way: progress on **stdout**, and it polls up to **5 minutes** for the pod's SSH info before giving up |
-| `project` (hidden) | prints errors to **stdout** and exits **0** — the last surface where the exit code cannot be trusted |
+| `project` (hidden) | plain-text Flash notice on **stderr**, empty stdout, exit **1**; treat as fatal and do not retry |
+
+#### Project Flash notice
+
+Every `runpodctl project ...` invocation reaches the hidden catch-all, including
+`new`, `start`, `deploy`, `build`, the `create`/`dev` aliases, unknown
+subcommands, flags and help requests. It exits **1** with empty stdout and exactly
+this plain-text stderr, including the final newline:
+
+```text
+The "project" command has been removed.
+
+Use Flash for serverless development workflows:
+  https://github.com/runpod/flash
+```
+
+Surface the notice verbatim without requiring a JSON `code`, and treat the failure
+as fatal. Use the [Flash skill](../../flash/SKILL.md) for serverless development.
 
 ### Parsing `ssh info`
 
@@ -233,8 +250,8 @@ longer returns an `ssh_command` at all (it used to hand back one built from stal
 ports that could never connect), and it drops out of `ssh connect`'s `connections` list,
 which is now `[]` rather than `null` when nothing is reachable.
 
-So a parser should tolerate a non-JSON line on stderr from those, and must not rely on
-the exit code for `project` (nor for `exec` before v2.10.0). Prefer the non-legacy
+So a parser should tolerate a non-JSON line on stderr from those. Treat `project`'s
+exit 1 as fatal; `exec` before v2.10.0 requires checking its output. Prefer the non-legacy
 equivalents: `pod get`/`pod create`/`pod delete`, and `ssh info <pod-id>` + your own `ssh`
 invocation instead of `exec`.
 
