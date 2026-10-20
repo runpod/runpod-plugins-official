@@ -83,11 +83,6 @@ Once connected, read the server. Do not reason about its tools from memory.
 3. **The wire contract** is the Runpod v2 OpenAPI document at
    `https://api.runpod.io/v2/openapi.json`, for fields beyond the tool surface.
 
-One protocol quirk worth knowing, because it looks like a bug: delete tools can return
-`isError: true` with "Unexpected end of JSON input" **even on success**, since the REST
-API answers 204 No Content. Confirm with a follow-up `get-`/`list-` (a deleted resource
-then 404s) rather than retrying the delete.
-
 For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage/`.
 
 ## Use MCP vs runpodctl
