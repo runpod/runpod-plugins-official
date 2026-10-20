@@ -20,7 +20,7 @@ and cost notes live in the [folder README](README.md); the flash skill is at
 
 - Python 3.10–3.14 and the Runpod SDK in the project environment:
   ```bash
-  pip install "runpod>=2.0.0rc1"        # installs the rp CLI
+  pip install "runpod>=2.0.0rc2"        # installs the rp CLI
   ```
 - A Runpod API key for non-interactive use:
   ```bash
@@ -86,7 +86,7 @@ and cost notes live in the [folder README](README.md); the flash skill is at
    rp flash dev main.py --once           # temporary endpoint, runs main(), cleans up
    ```
    For repeated edits, run a background session as shown in the flash skill's *Autonomous dev
-   loop* (it restores SIGINT so `kill -INT` cleans up); each save re-runs `main()` against the
+   loop* (`kill` stops it and deletes its endpoint); each save re-runs `main()` against the
    refreshed endpoint.
 
 4. **Ship it:**

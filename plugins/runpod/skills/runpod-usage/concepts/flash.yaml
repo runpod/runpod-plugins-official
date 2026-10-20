@@ -22,7 +22,7 @@ rules:
     statement: >
       Flash ships in the `runpod` package from version 2.0, with the `rp` CLI
       (`rp flash init`, `dev`, `deploy`, `app`, `env`, `undeploy`). The CLI is
-      also installed as `runpod`. Install `runpod>=2.0.0rc1`; that specifier
+      also installed as `runpod`. Install `runpod>=2.0.0rc2`; that specifier
       also accepts the 2.0 release candidate.
     status: verified
     evidence:
@@ -168,27 +168,56 @@ rules:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: remote() and job.wait() impose no execution timeout by default. }
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 7. }
 
-  - id: flash.transitive-torch-breaks-gpu-deploy
+  - id: flash.torch-family-from-gpu-image
     statement: >
-      In `runpod` 2.0.0rc1, a GPU app whose `dependencies` include a package
-      that depends on `torch` (`peft`, `accelerate`, `sentence-transformers`)
-      deploys with a CUDA 13 `torch` in its artifact. That copy replaces the
-      image's torch, the worker fails its CUDA check with `libcudart.so.13:
-      cannot open shared object file`, and the endpoint crash-loops. Install
-      such packages on the worker with `pip install --no-deps` instead.
+      From `runpod` 2.0.0rc2, builds leave `torch`, `torchvision`, `torchaudio`
+      and `triton` out of the artifact whether a requirement lists them or a
+      dependency pulls them in (`peft`, `accelerate`, `sentence-transformers`),
+      together with the wheels only they need. GPU workers on the built-in
+      images use the image's `torch 2.9.1+cu128`, and version pins on these
+      packages are ignored. In an app that mixes CPU and GPU resources, a CPU
+      resource whose dependencies need torch installs it at cold start, so it
+      needs container disk for it.
     status: verified
     evidence:
-      - { source: live-probe, ref: "rp flash deploy of a gpu queue function with dependencies=[\"peft\"]: 645.5 MB artifact, worker logs 'Fitness check failed: _cuda_init_check | libcudart.so.13'; the same function installing peft with --no-deps at runtime returned torch 2.9.1+cu128 with cuda True", seen: "2026-10-16" }
+      - { source: live-probe, ref: "rp flash deploy of a gpu queue function with dependencies=[\"peft\"]: artifact 80.7 MB with no torch (645.6 MB with torch 2.14.1 before the fix); the worker returned torch 2.9.1+cu128 from site-packages with cuda True", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/623", seen: "2026-10-16", note: Removes transitive torch-family wheels after vendoring and scopes the cold-start install list to CPU resources. }
 
-  - id: flash.deploy-gpu-names-map-to-pools
+  - id: flash.gpu-device-names-pin-devices
     statement: >
-      In `runpod` 2.0.0rc1, `rp flash deploy` turns GPU device names into their
-      pools without exclusions, so a worker can run on any GPU in those pools.
-      Pin exact GPU types on the endpoint after deploy when the hardware
-      matters.
+      From `runpod` 2.0.0rc2, GPU device names in `gpu=` pin those devices.
+      Endpoints select GPUs by pool, so the SDK selects each device's pool and
+      excludes the pool's other devices, reading membership from the live GPU
+      catalog. A pool id allows every device in the pool, including MIG slices.
+    status: verified
+    see: [gpu-pool.pin-a-card]
+    evidence:
+      - { source: live-probe, ref: "gpu=[\"NVIDIA GeForce RTX 4090\", \"NVIDIA L4\", \"NVIDIA RTX A5000\"] stored gpuIds ADA_24,AMPERE_24,-NVIDIA GeForce RTX 3090,-NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb; four parallel jobs all reported NVIDIA GeForce RTX 4090", seen: "2026-10-16" }
+      - { source: live-probe, ref: "GET https://api.runpod.io/v2/catalog/gpus lists NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb with pool AMPERE_24", seen: "2026-10-16" }
+
+  - id: flash.worker-api-key-for-callers
+    statement: >
+      From `runpod` 2.0.0rc2, deploy and dev add the account API key
+      (`RUNPOD_API_KEY`) only to resources whose code can call another
+      resource: a reference to another resource, `.remote()` or `.spawn()`, a
+      `runpod` client, or code the build cannot follow (a local helper module,
+      a nested function). Other resources run without the key.
     status: verified
     evidence:
-      - { source: live-probe, ref: "gpu=[\"4090\", \"L4\", \"A5000\"] deployed as gpu.pools [ADA_24, AMPERE_24]; the worker reported NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb", seen: "2026-10-16" }
+      - { source: live-probe, ref: "deployed leaf + caller queues: only caller's template had RUNPOD_API_KEY; caller returned {'has_key': True, 'nested': {'has_key': False, 'x': 42}}", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/628", seen: "2026-10-16" }
+
+  - id: flash.dev-session-stop-signals
+    statement: >
+      From `runpod` 2.0.0rc2, a dev session deletes its endpoints when it
+      receives SIGINT or SIGTERM, including a background session started with
+      SIGINT ignored. A second signal stops waiting for a running entrypoint.
+      `kill -9` skips the cleanup.
+    status: verified
+    see: [flash.dev-session]
+    evidence:
+      - { source: live-probe, ref: "rp flash dev main.py < /dev/null & from a script, then kill -TERM and separately kill -INT: both logged 'cleaning up 1 deleted' and left no endpoints", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/625", seen: "2026-10-16" }
 
   - id: flash.legacy-dev-ships-body-only
     statement: >

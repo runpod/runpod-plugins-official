@@ -39,8 +39,8 @@ before converting, and test it carefully or keep the project on `runpod-flash`:
 ## 3. Install and log in
 
 ```bash
-pip uninstall runpod-flash && pip install "runpod>=2.0.0rc1"
-# uv: uv remove runpod-flash && uv add "runpod>=2.0.0rc1"
+pip uninstall runpod-flash && pip install "runpod>=2.0.0rc2"
+# uv: uv remove runpod-flash && uv add "runpod>=2.0.0rc2"
 rp login            # a key saved by `flash login` keeps working
 ```
 
@@ -128,6 +128,15 @@ class MyApi:
 - **`.flashignore` becomes `.runpodignore`**, and `.gitignore` files apply too.
 - **Local Python must be 3.10–3.14** and matches the worker's in dev sessions and tasks.
 - **Volumes outlive undeploy** and keep billing.
+- **The torch family still comes from the GPU image**, as in runpod-flash, including torch
+  pulled in by another dependency. A CPU resource in the same app that needs torch installs it
+  at cold start, so give it `container_disk_gb` room.
+- **GPU device names pin the exact device**, as runpod-flash's pool exclusions did, now using
+  the platform's live pool membership, so pool members runpod-flash didn't know about (MIG
+  slices) are excluded too.
+- **Only resources that call other resources get `RUNPOD_API_KEY`** in their worker env. A
+  helper that calls `.remote()` from a separate local module counts, so nested calls keep
+  working.
 
 ## 6. Smoke-test, deploy, clean up
 

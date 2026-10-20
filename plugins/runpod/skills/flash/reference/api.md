@@ -140,9 +140,7 @@ existing = runpod.NetworkVolume("vol_id_or_name", create=False)          # must 
 - Global volumes need GPU compute.
 - A new network volume is placed in a data center that has network storage and stock for every
   resource sharing it; resources using it are scheduled in that data center.
-- Read `models.path` **inside** the remote function. Volumes are not mounted locally. If
-  `.path` raises `is not mounted in the current execution`, the runtime image is older than
-  your SDK; read the literal mount path (`/runpod-volume`) instead.
+- Read `models.path` **inside** the remote function. Volumes are not mounted locally.
 - Undeploying an app or ending a dev session leaves its volumes in place, and they keep billing.
 
 ## Models and secrets
@@ -175,14 +173,23 @@ not download them. Gated models need `HF_TOKEN` on the same resource. Create the
 - **A list** of any of these. Automatic switching between listed GPUs needs a max of at least 5
   workers.
 
-`rp flash deploy` in `runpod` 2.0.0rc1 turns device names into their pools with no exclusions:
-`gpu=["4090", "L4", "A5000"]` deployed as `ADA_24` + `AMPERE_24`, and a worker landed on a
-24 GB RTX PRO 6000 Blackwell MIG slice. When exact hardware matters, read the endpoint after
-deploy and pin it with the Runpod MCP `set-endpoint-gpus` tool.
+Device names pin those exact devices. Endpoints select GPUs by pool, so the SDK selects each
+device's pool and excludes the pool's other devices, reading pool membership from the live GPU
+catalog: `gpu=["4090", "L4", "A5000"]` deploys as `ADA_24,AMPERE_24,-NVIDIA GeForce RTX 3090,
+-NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb`. A pool id allows every device in
+the pool, including MIG slices the platform adds to it.
 
 `cpu=` takes a flavor id: `cpu3g-{1-4,2-8,4-16,8-32}` (general), `cpu3c-{1-2,2-4,4-8,8-16}`
 (compute), `cpu5c-{1-2,2-4,4-8,8-16}` (compute, 5th gen), where the numbers are vCPUs and GB of
 RAM. `runpod.CpuInstanceType` holds the same values.
+
+## Credentials on workers
+
+A worker that calls another resource (`.remote()`, `.spawn()`, a `runpod.Queue`/`Api` client)
+needs the account API key, so deploy and dev add `RUNPOD_API_KEY` to the endpoints whose code
+can reach one. The build reads the resource's own body and the module-level helpers it calls.
+Code it cannot follow (a local helper module, a nested function) gets the key too, so a caller
+never goes without it. Resources that make no such call run without the key.
 
 ## Exact rules
 

@@ -150,8 +150,8 @@ runpod.serverless.start({"handler": handler})
   `HF_HUB_OFFLINE=1` on a cache that `VolumeCache` restores.
 - **Size the container disk for the whole local cache** plus runtime headroom: the hydrate
   and any fallback download both write there. Set it on the template
-  (`runpodctl template create --container-disk-in-gb`, or `PodTemplate(containerDiskInGb=...)` in
-  Flash, which defaults to 64 GB).
+  (`runpodctl template create --container-disk-in-gb`), or with `container_disk_gb=` on a Runpod
+  SDK decorator, which defaults to 30 GB on GPU.
 - **Size the volume for the mirror** (`/runpod-volume/.cache/<RUNPOD_ENDPOINT_ID>`). Large
   files you delete or rename locally stay on the volume, so usage grows as you swap models.
 - **Populate with one worker.** Workers that cold-start together on an empty mirror each
