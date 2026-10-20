@@ -22,17 +22,16 @@ relations:
   - { type: uses, target: hub-repo, cardinality: "0..n" }
 
 rules:
-  - id: runpodctl.project-flash-notice
+  - id: runpodctl.project-sdk-notice
     statement: >
       Every `runpodctl project` invocation, including subcommands, aliases,
-      flags and help requests, exits 1 with empty stdout and a plain-text Flash
-      notice on stderr. Treat this as a fatal error, surface the notice verbatim
-      and do not retry or require a JSON error code. Use Flash for serverless
-      development workflows.
+      flags and help requests, exits 1 with empty stdout and a plain-text Runpod
+      SDK notice on stderr. Treat this as a fatal error, surface the notice
+      verbatim and do not retry or require a JSON error code. Use the Runpod SDK
+      for serverless development workflows.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/output-and-errors.md, note: Project Flash notice. }
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/output-and-errors.md, note: Project Runpod SDK notice. }
 
   - id: runpodctl.update-first
     statement: >

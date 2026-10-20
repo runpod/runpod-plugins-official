@@ -19,8 +19,8 @@ license: Apache-2.0
 
 Manage GPU pods, serverless endpoints, templates, volumes, and models.
 
-For serverless development workflows, use the [Flash skill](../flash/SKILL.md)
-and [Flash](https://github.com/runpod/flash).
+For serverless development workflows, use the
+[Runpod SDK](https://github.com/runpod/runpod-python).
 
 ## Install
 
@@ -117,10 +117,10 @@ this (plaintext, and a source build reports a placeholder version).
 
 **`runpodctl project ...` is a plain-text error exception:** every invocation,
 including subcommands, aliases, flags and help, exits **1**, leaves stdout empty,
-and prints a Flash notice on stderr. Treat it as fatal, surface the notice verbatim,
+and prints a Runpod SDK notice on stderr. Treat it as fatal, surface the notice verbatim,
 and do not retry or require JSON.
 
-Full code table, plain-text exceptions, the exact Flash notice, and the env-var
+Full code table, plain-text exceptions, the exact Runpod SDK notice, and the env-var
 table (incl. `RUNPOD_INVOKE_URL`):
 **[reference/output-and-errors.md](reference/output-and-errors.md)**.
 
