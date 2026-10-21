@@ -153,9 +153,18 @@ keys that share a name.
 
 ### Pod host key trust (v2.15.0+)
 
-Check `runpodctl version` before relying on host key pinning.
+In **v2.14.0 and earlier**, the deprecated `project` and `exec python` SSH paths
+run with **host key checking disabled**. Check `runpodctl version` before relying
+on host key pinning.
 
-Affects the **hidden, deprecated** `exec python` command's Go SSH client.
+Pinning applies to the **hidden, deprecated** `exec python` command's Go SSH client
+in **v2.15.0+**, and to legacy `project` SSH in **v2.15.0 through v3.0.1**.
+In builds containing the unreleased [runpod/runpodctl#382](https://github.com/runpod/runpodctl/pull/382),
+`project` only emits the [SDK notice](output-and-errors.md#project-runpod-sdk-notice)
+and opens no SSH connection. Use the [Runpod SDK](https://github.com/runpod/runpod-python)
+for serverless development regardless of CLI version; these are compatibility and
+security caveats, not a recommendation to use `project`.
+
 `ssh info` prints an ordinary
 `ssh -i <key> root@<ip> -p <port>` and leaves verification to OpenSSH's defaults against your
 own `~/.ssh/known_hosts`.

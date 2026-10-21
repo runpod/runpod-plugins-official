@@ -20,7 +20,7 @@ license: Apache-2.0
 Manage GPU pods, serverless endpoints, templates, volumes, and models.
 
 For serverless development workflows, use the
-[Runpod SDK](https://github.com/runpod/runpod-python).
+[Runpod SDK](https://github.com/runpod/runpod-python) regardless of CLI version.
 
 ## Install
 
@@ -113,12 +113,17 @@ Coded errors, the serverless `urls` object and GPU pricing all need **runpodctl 
 Older binaries emit `{"error":"…"}` with **no `code` and no `status`** — still JSON-shaped,
 so a `switch (err.code)` silently gets `undefined` rather than failing loudly. **Gate on
 `code` being present**, not on JSON-vs-plaintext; `runpodctl version` is unreliable for
-this (plaintext, and a source build reports a placeholder version).
+this because source or custom builds can report a released version or a placeholder.
 
-**`runpodctl project ...` is a plain-text error exception:** every invocation,
-including subcommands, aliases, flags and help, exits **1**, leaves stdout empty,
-and prints a Runpod SDK notice on stderr. Treat it as fatal, surface the notice verbatim,
-and do not retry or require JSON.
+**`project` behavior depends on the build.** In released versions through
+**v3.0.1**, runtime errors print to **stdout** and exit **0**, so inspect the output.
+In builds containing the unreleased [runpod/runpodctl#382](https://github.com/runpod/runpodctl/pull/382),
+`runpodctl project ...` invocations, including subcommands, aliases and flags, exit
+**1**, leave stdout empty, and print a Runpod SDK notice on stderr. Help forms such
+as `project --help`, `help project`, `-h project` and `--help project` share this
+contract. Treat that notice as fatal, surface it verbatim, and do not retry or
+require JSON. Check `runpodctl version`, but verify the commit for source or custom
+builds: their version string can match a released version.
 
 Full code table, plain-text exceptions, the exact Runpod SDK notice, and the env-var
 table (incl. `RUNPOD_INVOKE_URL`):
@@ -341,7 +346,7 @@ are **pod on-demand** rates. Shape, stock-value vocabulary and the `"none"` vs
 omitted-key sentinel:
 [reference/output-and-errors.md](reference/output-and-errors.md#gpu-pricing-and-per-data-center-availability).
 
-`ssh info` gives connection details, not a session. If interactive SSH isn't available, run `ssh user@host "command"`. **Registry auth, `billing` history, and SSH key management** (`ssh add-key`/`remove-key`) are in [reference/command-reference.md](reference/command-reference.md). `ssh info` leaves host key verification to the OpenSSH client you run against its output. The host key pinning that the deprecated `exec python` path uses (v2.15.0+), and why `ssh forget` must wait for the operator's go-ahead, is in [reference/command-reference.md](reference/command-reference.md#pod-host-key-trust-v2150).
+`ssh info` gives connection details, not a session. If interactive SSH isn't available, run `ssh user@host "command"`. **Registry auth, `billing` history, and SSH key management** (`ssh add-key`/`remove-key`) are in [reference/command-reference.md](reference/command-reference.md). `ssh info` leaves host key verification to the OpenSSH client you run against its output. Host key pinning applies to deprecated `exec python` (v2.15.0+) and legacy `project` SSH (v2.15.0 through v3.0.1); v2.14.0 and earlier disable host key checking on those paths. Version-specific scope and why `ssh forget` requires the operator's go-ahead are in [reference/command-reference.md](reference/command-reference.md#pod-host-key-trust-v2150).
 
 ### File Transfer
 
