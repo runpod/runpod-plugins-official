@@ -129,8 +129,8 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
 - Use direct pod creation with `--image` when the user has a specific Docker image and does not need a saved template.
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
-- **Leave `--cloud-type` at its `SECURE` default.** Community Cloud hosts are approved vendors; Secure Cloud hosts are data-center-grade providers and so tend toward more stable behavior. Only pass `--cloud-type COMMUNITY` when the user explicitly asks for it (note that a public port 22 then needs `--public-ip`).
-- Do not pass GPU flags when creating CPU pods. Check `runpodctl pod create --help` for the current valid flag set.
+- **Leave `--cloud-type` at its `SECURE` default.** Community Cloud hosts are approved vendors; Secure Cloud hosts are data-center-grade providers and so tend toward more stable behavior. Only pass `--cloud-type COMMUNITY` when the user explicitly asks for it (a public port 22 there needs a machine with a public IP, which the CLI cannot request).
+- A CPU pod gets 2 vCPUs on whichever CPU flavor has the most stock; `--name` defaults to the image name without its tag. CPU pods take a network volume (`--network-volume-id`) but not a pod volume (`--volume-in-gb` is rejected). Do not pass GPU flags.
 - **Set a CUDA floor on every GPU create: `--min-cuda-version 12.8`.** It exists on both
   `pod create` and `serverless create` (not `template create`) and it is the only thing
   keeping a modern image off a host too old to run it — the create itself will not reject
@@ -140,7 +140,7 @@ commands, `project`), and the env-var table (incl. `RUNPOD_INVOKE_URL`):
   `allowedCudaVersions` exact-match variant, and how to check what has capacity:
   [`runpod-usage` gpu-selection "pin the CUDA floor"](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 - **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `pod create --wait-for running` (v2.15.0+) returns when the container is up with no ssh needed — use it when container-up is all the task needs, or for an image that does not start sshd (most cpu images, since cpu pods get no Runpod-managed ssh), where plain `--wait` would bill through the whole timeout and then fail. A cpu image that starts its own sshd still satisfies plain `--wait`, so keep that when the user needs ssh; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
-- Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` **at creation** (they can't be added to a running pod without a reset), then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
+- Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` at creation when possible; `runpodctl pod update` can change them on an existing pod. Then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
 - For SSH, use `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>` to retrieve connection details. runpodctl has **no interactive-shell command** — `ssh info` returns the connection command + key but does not connect. Run commands over SSH yourself with `ssh user@host "command"`.
 - Network volumes are location-sensitive. Check datacenter availability before attaching volumes, and use `send` / `receive` or S3-compatible storage for migrations.
 - Clean up paid resources after tests: delete serverless endpoints, pods, and temporary volumes created for validation.
@@ -165,14 +165,16 @@ runpodctl pod list                                   # running pods (+ --all / -
 runpodctl pod get <pod-id>                           # details incl. SSH info + runtimeStatus
 runpodctl pod create --template-id <id> --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8   # from template
 runpodctl pod create --image <img> --gpu-id "NVIDIA GeForce RTX 4090" --min-cuda-version 12.8        # from image
-runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (lowercase `cpu`; serverless uses `CPU`)
+runpodctl pod create --compute-type cpu --image ubuntu:22.04                 # CPU pod (2 vCPUs; name defaults to the image)
 runpodctl pod create --image <img> --gpu-id <id> --wait                      # block until ssh answers, then print the pod (v2.9.0+)
 runpodctl pod create --compute-type cpu --image ubuntu:22.04 --wait-for running  # block until the container is up; no sshd needed (v2.15.0+)
-runpodctl pod {start|stop|restart|reset|update|delete} <pod-id>              # lifecycle (delete aliases: rm/remove)
+runpodctl pod {start|stop|restart|update|delete} <pod-id>                    # lifecycle (delete aliases: rm/remove; no reset in v3)
 runpodctl pod logs <pod-id>                          # recent container+system logs, json lines (v2.10.0+)
 runpodctl pod logs <pod-id> --follow                 # keep streaming, reconnects on its own
 runpodctl pod logs <pod-id> --since 30m --source system   # platform view: image pull / create / start
 ```
+
+runpodctl v3.0.0 removed `pod reset`. Use `pod restart` only when a restart is intended.
 
 **A stalled deploy shows up in `--source system`** (v2.10.0+): repeated pull progress, or a
 `create container` that never reaches `start`. Use `--source container` for your workload's own
