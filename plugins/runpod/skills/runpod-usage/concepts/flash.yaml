@@ -163,15 +163,15 @@ rules:
 
   - id: flash.client-limits
     statement: >
-      Payloads are limited to 10 MB, so pass URLs or write to a volume.
-      Jobs get no execution timeout by default, but `.remote()` stops
-      waiting after 300 s on a queue and raises `TimeoutError` while the job
-      keeps running. For longer calls, `.spawn()` and `job.result(timeout=...)`.
-      The endpoint client's `run_sync` takes a `timeout` in seconds.
+      Payloads are limited to 10 MB, so pass URLs or write to a volume. Jobs get
+      no execution timeout by default, but `.remote()` stops waiting after 300 s
+      on a queue and raises `TimeoutError` while the job keeps running. For
+      longer calls, `.spawn()` and `job.result(timeout=...)`. The endpoint
+      client's `run_sync` takes a `timeout` in seconds.
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: remote() and job.wait() impose no execution timeout by default. }
-      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/targets.py", seen: "2026-10-19", note: DEFAULT_TIMEOUT_SECONDS = 300.0 bounds invoke() and job result waits; _wait_terminal raises TimeoutError at the deadline. }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/targets.py", seen: "2026-10-19", note: "DEFAULT_TIMEOUT_SECONDS = 300.0 bounds invoke() and job result waits; _wait_terminal raises TimeoutError at the deadline." }
       - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 7. }
 
   - id: flash.torch-family-from-gpu-image
@@ -204,10 +204,10 @@ rules:
   - id: flash.worker-api-key-for-callers
     statement: >
       From `runpod` 2.0.0rc2, deploy and dev add the account API key
-      (`RUNPOD_API_KEY`) only to resources whose code can call another
-      resource: a reference to another resource, `.remote()` or `.spawn()`, a
-      `runpod` client, or code the build cannot follow (a local helper module,
-      a nested function). Other resources run without the key.
+      (`RUNPOD_API_KEY`) only to resources whose code can call another resource:
+      a reference to another resource, `.remote()` or `.spawn()`, a `runpod`
+      client, or code the build cannot follow (a local helper module, a nested
+      function). Other resources run without the key.
     status: verified
     evidence:
       - { source: live-probe, ref: "deployed leaf + caller queues: only caller's template had RUNPOD_API_KEY; caller returned {'has_key': True, 'nested': {'has_key': False, 'x': 42}}", seen: "2026-10-16" }
