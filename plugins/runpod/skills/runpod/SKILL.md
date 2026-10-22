@@ -83,14 +83,13 @@ runpodctl user            # succeeds ⇒ a key is set and valid
 ```
 Plus, in Claude Code, `/mcp` should show `runpod` **Connected**.
 
-**Rule: get a key first — do not default to MCP OAuth.** The reason: one `RUNPOD_API_KEY`
-unlocks every tool — it authenticates **runpodctl + flash + the hosted MCP** (as `--header
-"Authorization: Bearer $RUNPOD_API_KEY"`). The MCP's "Sign in with Runpod" OAuth auths the **MCP alone** — the CLIs
-stay blocked, so you hit a wall on any CLI-only task (`send`/`receive`, SSH, `doctor`,
-model cache/Model Repository, CPU endpoints). ⚠️ **OAuth-only is a half-setup.** If nothing's
-set up, stop and get a key, in order:
+**Rule: get a key for the CLIs too — MCP OAuth alone is a half-setup.** `RUNPOD_API_KEY`
+authenticates **runpodctl + flash**. The hosted MCP signs in separately with "Sign in with
+Runpod" (OAuth), which auths the **MCP alone**: without a key the CLIs stay blocked, so you hit
+a wall on any CLI-only task (`send`/`receive`, SSH, `doctor`, model cache/Model Repository,
+CPU endpoints). If nothing's set up, stop and get a key, in order:
 1. **`flash login`** — browser OAuth that saves a real key to `~/.runpod/config.toml` (runpodctl
-   + flash read it; reuse it for the MCP Bearer). One step, unlocks all. Human-only.
+   + flash read it). One step, unlocks all. Human-only.
 2. **`export RUNPOD_API_KEY=…`** (https://console.runpod.io/user/settings) — same full unlock;
    best for headless agents.
 3. **MCP OAuth only** (`/mcp` → *Sign in*) — last resort, MCP-only work; CLIs stay unauthed.

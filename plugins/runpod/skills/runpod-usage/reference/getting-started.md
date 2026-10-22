@@ -58,9 +58,8 @@ yourself (e.g. an `Authorization: Bearer` header for a direct API call), prefer
 flash both honor it — the closest thing to one-step setup); never run `runpodctl doctor`, which
 prompts.
 
-Context: the **hosted MCP is the exception** — it uses its own `/mcp` "Sign in with Runpod" OAuth
-(or pass the same key as an `Authorization: Bearer` header). Authing the MCP does not set up the
-CLIs, and the export does not authenticate the hosted MCP's OAuth.
+Context: the **hosted MCP is the exception** — it uses its own `/mcp` "Sign in with Runpod" OAuth.
+Authing the MCP does not set up the CLIs, and the export does not authenticate the hosted MCP.
 
 ## SSH (only needed for pods you exec into)
 

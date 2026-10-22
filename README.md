@@ -115,14 +115,14 @@ local (stdio) MCP setup and all client options.
 
 ## Authentication
 
-Auth is needed in **two places**, and **one Runpod API key covers both**:
+Auth is needed in **two places**: an API key for the CLIs, and a sign-in for the MCP server.
 
 | What | What it needs | How |
 | --- | --- | --- |
 | `runpodctl` + `flash` (the CLIs) | `RUNPOD_API_KEY` (env or saved) | `export RUNPOD_API_KEY=<key>`, or `runpodctl doctor` to save it |
-| Hosted **Runpod MCP** server (infra tools) | OAuth **or** the same key | `/mcp` sign-in, **or** pass the key as a Bearer header |
+| Hosted **Runpod MCP** server (infra tools) | OAuth | `/mcp` sign-in |
 
-**Fastest path — one key, everything:**
+**Fastest path:**
 
 1. **Get an API key:** [Runpod console → Settings → API Keys](https://runpod.io/console/user/settings).
 2. **Make it available to the CLIs** (`runpodctl`, `flash`) — either way works:
@@ -130,13 +130,7 @@ Auth is needed in **two places**, and **one Runpod API key covers both**:
    export RUNPOD_API_KEY=<key>   # this shell only; add to ~/.zshrc / ~/.bashrc to persist
    runpodctl doctor              # OR: prompts once and saves to ~/.runpod/config.toml (persistent)
    ```
-3. **Authenticate the MCP server** — pick one:
-   - **OAuth (easiest, no key on disk):** in Claude Code, `/mcp` → **runpod** → *Sign in with Runpod*.
-   - **Reuse the key you just set:**
-     ```bash
-     claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/ \
-       --header "Authorization: Bearer $RUNPOD_API_KEY"
-     ```
+3. **Authenticate the MCP server:** in Claude Code, `/mcp` → **runpod** → *Sign in with Runpod*.
 
 Codex and local-stdio MCP variants are in [`runpod-mcp`](plugins/runpod/skills/runpod-mcp/SKILL.md).
 Companion CLIs (`hf`, `docker`, `gh`, `aws`) use their own credentials — see

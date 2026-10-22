@@ -4,20 +4,11 @@ concepts: [api-key]
 
 # Connecting the Runpod MCP server
 
-> **If you also use runpodctl/flash, connect the hosted MCP with your API key (Bearer),
-> not OAuth.** OAuth authenticates the MCP *only* — the CLIs stay unauthed. A single
-> `RUNPOD_API_KEY` used as a Bearer header auths the MCP **and** unlocks runpodctl + flash.
-> See the router skill's "First run" for the full auth order.
+> **The hosted MCP signs in with Runpod (OAuth).** That authenticates the MCP only.
+> runpodctl and flash read their own key (`RUNPOD_API_KEY`, or `flash login`), so set that
+> up separately for CLI work. See the router skill's "First run" for the full auth order.
 
-**Hosted + API key (recommended for full-tool access)** — one key drives everything:
-
-```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/ \
-  --header "Authorization: Bearer $RUNPOD_API_KEY"
-```
-
-**Hosted + OAuth** — no key on disk, but MCP-only (CLIs stay unauthed). Fine if you only
-need the MCP this session:
+**Hosted + OAuth** (recommended) — no key on disk; sign in on first connect:
 
 ```bash
 # configure a single client by hand (OAuth on first connect)

@@ -39,14 +39,13 @@ a whole job in.
 
 ## Connect
 
-Connect the hosted server with **your API key as a Bearer header** if you also use runpodctl/flash. That one key auths the MCP *and* the CLIs (the 80% path):
+Connect the hosted server and sign in with Runpod (OAuth) on first use. The plugin's bundled server does this already; to add it by hand:
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/ \
-  --header "Authorization: Bearer $RUNPOD_API_KEY"
+claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/
 ```
 
-Plain **OAuth** ("Sign in with Runpod"; the user can set it up with the interactive `npx @runpod/mcp-server@latest add`) is MCP-only: the CLIs stay unauthed, so use it only for MCP-only work. Local **stdio** runs the server as a subprocess with your key. Those variants + the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
+OAuth authenticates the MCP only. runpodctl and flash read their own key (`RUNPOD_API_KEY`, or `flash login`), so set that up too for CLI work. The user can also run the interactive `npx @runpod/mcp-server@latest add`. Local **stdio** runs the server as a subprocess with your key. Other clients and the stdio setup: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
 
 **Verify it's live (do this before relying on MCP):** in Claude Code run `/mcp`.
 `runpod` should show **Connected**, not *Needs authentication* (if it's the latter,
@@ -56,16 +55,7 @@ If the `runpod` tools aren't present at all, the server isn't connected: (re)run
 install above, or fall back to **runpodctl** for this task.
 
 **Check the server version (which REST API it drives):** the MCP `initialize` handshake
-returns it in `serverInfo.version`. `/mcp` in Claude Code shows it, or probe the hosted
-server directly:
-
-```bash
-printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"0"}}}' \
-| curl -s -X POST https://mcp.getrunpod.io/ \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json, text/event-stream" \
-    -H "Authorization: Bearer $RUNPOD_API_KEY" -d @-
-```
+returns it in `serverInfo.version`; `/mcp` in Claude Code shows it.
 
 ## The server is the source of truth
 
