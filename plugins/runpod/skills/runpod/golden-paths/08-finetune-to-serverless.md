@@ -15,12 +15,11 @@ GPU, dataset) — nothing structural changes.
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
 and generated. Section 3 is ported to the Runpod SDK: on 2026-10-17 the section 3 code,
-deployed with `rp flash deploy` on a build of `runpod` with the transitive-torch, GPU-pinning,
-and `vol.path` fixes, loaded TinyLlama plus a LoRA adapter from a network volume and
-generated text (the adapter was an untrained one saved by a helper function, standing in for the
-pod training step). `peft` and `accelerate` were plain `dependencies` and the worker ran the
-image's `torch 2.9.1+cu128`. Run it with `rp flash deploy` (flash SKILL gotcha 14 covers dev
-sessions on older runtime images).
+deployed with `rp flash deploy` on a pre-release `runpod` 2.0 build, loaded TinyLlama plus a
+LoRA adapter from a network volume and generated text (the adapter was an untrained one saved by
+a helper function, standing in for the pod training step). `peft` and `accelerate` were plain
+`dependencies` and the worker ran the image's `torch 2.9.1+cu128`. Run it with
+`rp flash deploy` (flash SKILL gotcha 14 covers dev sessions on older runtime images).
 The `runpod-flash` live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.

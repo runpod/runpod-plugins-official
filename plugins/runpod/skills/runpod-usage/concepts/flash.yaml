@@ -201,7 +201,7 @@ rules:
     status: verified
     evidence:
       - { source: live-probe, ref: "rp flash deploy of a gpu queue function with dependencies=[\"peft\"]: artifact 80.7 MB with no torch (645.6 MB with torch 2.14.1 before the fix); the worker returned torch 2.9.1+cu128 from site-packages with cuda True", seen: "2026-10-16" }
-      - { source: other, url: "https://github.com/runpod/runpod-python/pull/623", seen: "2026-10-16", note: Removes transitive torch-family wheels after vendoring and scopes the cold-start install list to CPU resources. }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/build.py#L322", seen: "2026-10-22", note: Removes transitive torch-family wheels after vendoring and scopes the cold-start install list to CPU resources. }
 
   - id: flash.gpu-device-names-pin-devices
     statement: >
@@ -225,7 +225,6 @@ rules:
     evidence:
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/deploy.py#L315", seen: "2026-10-22", note: "Deploy sets RUNPOD_API_KEY in every template env unless the resource's env already sets it." }
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/dev.py#L146", seen: "2026-10-22", note: "Dev sessions add the client's key to every dev endpoint." }
-      - { source: other, url: "https://github.com/runpod/runpod-python/pull/628", seen: "2026-10-22", note: "The change that limited the key to callers was closed unmerged, as was its replacement #641." }
 
   - id: flash.dev-session-stop-signals
     statement: >
@@ -237,7 +236,7 @@ rules:
     see: [flash.dev-session]
     evidence:
       - { source: live-probe, ref: "rp flash dev main.py < /dev/null & from a script, then kill -TERM and separately kill -INT: both logged 'cleaning up 1 deleted' and left no endpoints", seen: "2026-10-16" }
-      - { source: other, url: "https://github.com/runpod/runpod-python/pull/625", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/rp_cli/main.py#L498", seen: "2026-10-22", note: rp flash dev handles SIGINT and SIGTERM and ignores further signals during teardown. }
 
   - id: flash.legacy-dev-ships-body-only
     statement: >
