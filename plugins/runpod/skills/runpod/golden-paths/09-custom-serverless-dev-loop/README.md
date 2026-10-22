@@ -168,7 +168,7 @@ create the endpoint from that template, scale-to-zero:
 runpodctl template create --name whisper-dualmode-sl --serverless \
   --image <you>/whisper-dualmode:v1 --container-disk-in-gb 15 \
   --env '{"MODE_TO_RUN":"serverless"}'                  # → template id, e.g. nnbpsuubpi
-  # heavy models on a volume? keep MODEL_CACHE_DIR on local disk and wrap the load in VolumeCache (below)
+  # heavy models on a volume? wrap the model load in VolumeCache (see below)
 
 # 2. endpoint from that template (gpu-id, not gpu-type; workers-min 0 = scale-to-zero)
 runpodctl serverless create --name whisper-custom \
@@ -213,17 +213,19 @@ Small models (whisper `base` ≈ 140 MB) are fine baked in. For **large** weight
 volume** and restore it to local disk on each cold start. The volume is the same one golden
 path [07](../07-network-volume-handoff.md) hands off: the pod sees it at **`/workspace`**,
 serverless at **`/runpod-volume`**.
-- Keep the model cache on the container disk (`MODEL_CACHE_DIR=/app/model-cache`), not under
-  `/runpod-volume`. Loading straight off the mount reads every byte over the network, which
-  measured slower than restoring the files to local disk first.
-- Wrap the load in `VolumeCache` (Runpod Python SDK `runpod>=1.12.0`) inside `handler.py` (this step was not part of the 2026-07-10 live run). A cold
-  worker copies the files an earlier worker saved, loads from local disk, and saves anything
-  new back to the volume:
+- Keep the model cache on the container disk (the handler's default, `/app/whisper-cache`),
+  not under `/runpod-volume`. Loading straight off the mount reads every byte over the
+  network, which measured slower than restoring the files to local disk first.
+- Wrap the load in `VolumeCache` (Runpod Python SDK `runpod>=1.12.0`) inside `handler.py`.
+  A cold worker copies the files an earlier worker saved, loads from local disk, and saves
+  anything new back to the volume. This step was not part of the 2026-07-10 live run.
   ```python
   from runpod.serverless import VolumeCache
 
-  with VolumeCache(dirs=[os.environ["MODEL_CACHE_DIR"]]):
-      model = WhisperModel("large-v3", device="cuda", download_root=os.environ["MODEL_CACHE_DIR"])
+  with VolumeCache(dirs=[MODEL_CACHE_DIR]):          # replaces the plain _MODEL = WhisperModel(...)
+      _MODEL = WhisperModel(
+          MODEL_SIZE, device=_DEVICE, compute_type=_COMPUTE, download_root=MODEL_CACHE_DIR
+      )
   ```
 - Size `--container-disk-in-gb` for the whole model plus headroom; the restore writes there.
   Full behavior and measured numbers:

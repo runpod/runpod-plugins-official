@@ -87,7 +87,7 @@ robust).** Reuses the template's torch, installs only `peft` + `datasets`, train
 on a 200-row slice of `mhenrichsen/alpaca_2k_test`. Whole thing (install + download + train)
 ran in **~5 min** on one 4090:
 ```bash
-export HF_HOME=/workspace/hf-cache                     # cache base model on the VOLUME (reused at serve)
+export HF_HOME=/workspace/hf-cache                     # cache base model on the VOLUME (the runpod-flash serve run reused it)
 pip install --break-system-packages -q peft datasets
 python3 - <<'PY'
 import torch
@@ -168,9 +168,11 @@ rejected).
 `vol.path`. The base model is the large part: keep its Hugging Face cache on the worker's own
 disk and wrap the load in `VolumeCache`, so later cold starts copy it from the volume to local
 disk instead of downloading it or reading it over the network mount (flash
-[patterns](../../flash/reference/patterns.md#loading-ml-models)). `peft` and `accelerate` go in
-`dependencies` like any package; the build leaves their `torch` dependency to the GPU image
-(flash SKILL gotcha 13).
+[patterns](../../flash/reference/patterns.md#loading-ml-models)). The first SDK cold start
+downloads the base model from Hugging Face even though training cached it on the volume; that
+download fills the `VolumeCache` mirror, and later cold starts restore from it. `peft` and
+`accelerate` go in `dependencies` like any package; the build leaves their `torch` dependency to
+the GPU image (flash SKILL gotcha 13).
 
 The `runpod-flash` handler that ran used a function with a `global` cache and `**kwargs`.
 The SDK version keeps the same model code; the whole module ships, so the paths can be

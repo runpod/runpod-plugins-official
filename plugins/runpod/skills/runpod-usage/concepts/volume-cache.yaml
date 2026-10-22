@@ -127,11 +127,12 @@ rules:
 
   - id: volume-cache.restore-beats-mount-load
     statement: >
-      A cold start that restores the model with `VolumeCache` and loads it from
-      local disk is faster than loading it straight from the network volume or
-      downloading it. Measured with Qwen2.5-1.5B (3.1 GB): restore 5.2 s plus
+      With Qwen2.5-1.5B (3.1 GB), a cold start that restored the model with
+      `VolumeCache` and loaded it from local disk measured faster than loading
+      it straight from the network volume or downloading it: restore 5.2 s plus
       load 3.9 s, against 11 s loading from the mount and 16-21 s downloading
-      from Hugging Face and loading.
+      from Hugging Face and loading. Smaller models or a faster mount can narrow
+      or flip the gap, so time your own model.
     status: verified
     evidence:
       - { source: live-probe, ref: "Runpod SDK app, Qwen2.5-1.5B-Instruct on L4/RTX 4090 workers: fresh-worker VolumeCache hydrate 5.2 s + load 3.9 s (3.10 GB restored); load from /runpod-volume 10.7-11.6 s; Hugging Face download + load 16.3-21.4 s", seen: "2026-10-17" }
