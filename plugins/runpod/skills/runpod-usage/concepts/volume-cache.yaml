@@ -139,25 +139,28 @@ rules:
   - id: volume-cache.global-volume
     statement: >
       `VolumeCache` mirrors onto a global volume mounted at its `volume_path`
-      (`/runpod-volume` on a GPU endpoint). It needs `runpod>=2.0.0rc2`; older
-      versions fail to copy files of 256 KiB or more onto a global volume and
-      swallow the error, so every cold start downloads again. Restores from a
-      global volume are several times slower than from a network volume: 3.1 GB
-      took 26-51 s against 5.2 s.
+      (`/runpod-volume` on a GPU endpoint). Use `runpod>=2.0.1`. Before
+      2.0.0rc2, files of 256 KiB or more failed to copy onto a global volume.
+      Before 2.0.1, a restore from a global volume could drop large files. Both
+      failures are swallowed, so the worker downloads the model again. Restores
+      that copied whole files took 26-51 s for 3.1 GB, against 5.2 s from a
+      network volume. 2.0.1 restores files in parallel byte ranges and retries
+      failed reads.
     status: verified
     see: [volume-cache.best-effort-hides-failures]
     evidence:
       - { source: live-probe, ref: "Runpod SDK app, Qwen2.5-1.5B-Instruct, GlobalVolume mounted at /runpod-volume: fresh-worker hydrate restored all 3.10 GB in 26.2 s, 46.6 s and 51.4 s", seen: "2026-10-17" }
       - { source: other, url: "https://github.com/runpod/runpod-python/pull/620", seen: "2026-10-17", note: "copy2 copies mtime and mode after the data; the global volume rejects utime/chmod, so big files failed to copy. The fix copies the data and treats the metadata step as optional." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/621", seen: "2026-10-22", note: "Whole-file hydrate from a global volume lost 2 of 4 Qwen2.5-7B weight shards to ENOMEM; range-parallel hydrate with retries restored all 11 files in 17-22 s." }
 
   - id: volume-cache.namespace-per-endpoint
     statement: >
       The mirror is keyed by `namespace`, which defaults to the endpoint ID.
       Each Runpod SDK dev session creates new endpoints, so it starts from an
-      empty mirror and leaves its copy on the volume. Pass a fixed
-      `namespace=` to share one mirror across dev sessions and deploys.
+      empty mirror and leaves its copy on the volume. Pass a fixed `namespace=`
+      to share one mirror across dev sessions and deploys.
     status: documented
     see: [volume-cache.mirror-sizing, flash.dev-session]
     evidence:
-      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v1.12.0/runpod/serverless/utils/rp_volume_cache.py#L87", seen: "2026-10-15", note: "namespace falls back to RUNPOD_ENDPOINT_ID." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v1.12.0/runpod/serverless/utils/rp_volume_cache.py#L87", seen: "2026-10-15", note: namespace falls back to RUNPOD_ENDPOINT_ID. }
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: Dev sessions create temporary endpoints and delete them when the session ends. }
