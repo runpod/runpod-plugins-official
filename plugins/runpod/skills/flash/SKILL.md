@@ -44,6 +44,21 @@ Check before writing code. The two APIs do not mix.
 Write new code on the SDK. For an existing `runpod-flash` project, propose migrating and
 check its *Known differences* first; don't migrate silently.
 
+**If the SDK path fails, `runpod-flash` is the fallback.** A build, deploy or worker failure
+can be an SDK bug rather than your code: a traceback inside
+`runpod/apps/`, a worker that crashes before your function runs, or the same code working on
+`runpod-flash`. Then:
+1. Run `pip show runpod` and upgrade. Check the
+   [CHANGELOG](https://github.com/runpod/runpod-python/blob/main/CHANGELOG.md) and the
+   [commit history for `runpod/apps`](https://github.com/runpod/runpod-python/commits/main/runpod/apps)
+   for a fix or a behavior change. The [runpod-flash history](https://github.com/runpod/flash/commits/main)
+   shows how the old package handled the same case.
+2. Still broken: tell the user, and run that project on `runpod-flash` with the legacy reference
+   ([reference/runpod-flash-legacy.md](reference/runpod-flash-legacy.md)). Install it as an
+   isolated tool, `uv tool install runpod-flash --with "runpod<2"`, so the project's `runpod`
+   2.x stays put. It gets no fixes after October 29, 2026, so move back to the SDK once the fix
+   ships.
+
 **Worked examples first for anything multi-step.** Flash appears in end-to-end paths:
 [03 variant B (whisper endpoint)](../runpod/golden-paths/03-whisper-endpoint/variant-b-flash.md),
 [07 (network-volume handoff)](../runpod/golden-paths/07-network-volume-handoff.md) and

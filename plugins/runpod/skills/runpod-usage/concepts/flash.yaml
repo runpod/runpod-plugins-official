@@ -38,6 +38,21 @@ rules:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
       - { source: skill, path: plugins/runpod/skills/flash/reference/migrate-from-runpod-flash.md }
 
+  - id: flash.legacy-fallback
+    statement: >
+      `runpod-flash` still installs alongside the Runpod SDK: its CLI is
+      `flash`, separate from `rp`, and `runpod_flash` imports with `runpod` 2.x
+      installed. Install it as an isolated tool with `uv tool install
+      runpod-flash --with "runpod<2"` so it keeps its own `runpod` 1.x and the
+      project keeps 2.x. Use it as a fallback when an SDK build, deploy or
+      worker step fails in the SDK rather than in your code. It gets no fixes
+      after October 29, 2026.
+    status: verified
+    see: [flash.runpod-flash-deprecated]
+    evidence:
+      - { source: live-probe, ref: "one venv with runpod 2.0.0rc2 + runpod-flash 1.21.0: import runpod_flash ok, flash --help and rp --version both run; uv tool install runpod-flash --with 'runpod<2' resolved runpod 1.12.0 + runpod-flash 1.21.0 and flash --help exited 0", seen: "2026-10-22" }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
+
   - id: flash.not-flashboot
     statement: >
       Flash is the code-first SDK and CLI. FlashBoot is a separate endpoint

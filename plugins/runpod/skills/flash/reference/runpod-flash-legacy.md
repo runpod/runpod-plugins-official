@@ -4,15 +4,15 @@ concepts: [flash, serverless-handler, job, container-disk]
 
 # Legacy `runpod-flash` reference
 
-Use this only to maintain a project that still imports `runpod_flash`. `runpod-flash` is
-deprecated on October 29, 2026 and gets no fixes after that date; propose
-[migrating](migrate-from-runpod-flash.md). New code goes on the Runpod SDK
-([../SKILL.md](../SKILL.md)). `flash --help` is authoritative for the installed version.
+Use this to maintain a project that still imports `runpod_flash`, or as the fallback when the
+Runpod SDK path fails on an SDK bug ([../SKILL.md](../SKILL.md), *Which SDK is this project
+on?*). `runpod-flash` is deprecated on October 29, 2026 and gets no fixes after that date;
+propose [migrating](migrate-from-runpod-flash.md). New code goes on the Runpod SDK. `flash --help` is authoritative for the installed version.
 
 ## Setup and CLI
 
 ```bash
-uv tool install runpod-flash          # Python 3.10-3.13; or: pip install runpod-flash
+uv tool install runpod-flash --with "runpod<2"   # Python 3.10-3.13; isolated, keeps runpod 1.x
 flash login                           # saves a key to ~/.runpod/config.toml (--no-open for headless)
 flash init my-project                 # scaffold (writes AGENTS.md + CLAUDE.md)
 flash dev                             # local server on :8888; functions run on remote workers

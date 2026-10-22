@@ -12,6 +12,14 @@ not what is running.
 Run this as a plan with the user, not a silent rewrite: inventory, check *Known differences*,
 convert, smoke-test with `rp flash dev --once`, deploy, then remove the old endpoints.
 
+Keep a way back until the SDK version works: convert on a branch, and leave the
+`runpod-flash` endpoints running until the new ones pass. If the SDK fails on something the old
+package handled, roll back to the previous commit and keep deploying with `flash`, installed with
+`uv tool install runpod-flash --with "runpod<2"`. Check the runpod-python
+[CHANGELOG](https://github.com/runpod/runpod-python/blob/main/CHANGELOG.md) and
+[commit history](https://github.com/runpod/runpod-python/commits/main/runpod/apps) for a fix
+before retrying.
+
 ## 1. Inventory
 
 ```bash
@@ -146,7 +154,8 @@ rp flash deploy                      # creates the new endpoints (default enviro
 rp flash app list                    # confirm
 ```
 
-Then remove the endpoints deployed with `runpod-flash`, scoped to that app:
+Then, once the new endpoints pass, remove the ones deployed with `runpod-flash`, scoped to
+that app:
 `flash app delete OLD_APP` (with the old CLI still installed), or
 `runpodctl serverless delete ENDPOINT_ID` for each old endpoint id. Update CI to call `rp flash`
 instead of `flash`, and update any client that called the old endpoint ids.
