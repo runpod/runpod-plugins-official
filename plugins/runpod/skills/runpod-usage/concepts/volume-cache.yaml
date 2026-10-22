@@ -150,8 +150,8 @@ rules:
     see: [volume-cache.best-effort-hides-failures]
     evidence:
       - { source: live-probe, ref: "Runpod SDK app, Qwen2.5-1.5B-Instruct, GlobalVolume mounted at /runpod-volume: fresh-worker hydrate restored all 3.10 GB in 26.2 s, 46.6 s and 51.4 s", seen: "2026-10-17" }
-      - { source: other, url: "https://github.com/runpod/runpod-python/pull/620", seen: "2026-10-17", note: "copy2 copies mtime and mode after the data; the global volume rejects utime/chmod, so big files failed to copy. The fix copies the data and treats the metadata step as optional." }
-      - { source: other, url: "https://github.com/runpod/runpod-python/pull/621", seen: "2026-10-22", note: "Whole-file hydrate from a global volume lost 2 of 4 Qwen2.5-7B weight shards to ENOMEM; range-parallel hydrate with retries restored all 11 files in 17-22 s." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/serverless/utils/rp_volume_cache.py#L292", seen: "2026-10-22", note: "copy2 copies mtime and mode after the data; the global volume rejects utime/chmod, so big files failed to copy. The fix copies the data and treats the metadata step as optional." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/serverless/utils/rp_volume_cache.py#L389", seen: "2026-10-22", note: "Hydrate copies big files as parallel byte ranges and retries ENOMEM, EIO and EAGAIN reads, which a global volume returns under whole-file parallel copies." }
 
   - id: volume-cache.namespace-per-endpoint
     statement: >

@@ -179,9 +179,7 @@ measured on Runpod Serverless (L4 and RTX 4090 workers, 2026-10-17):
 - **Global volumes were the slowest source.** These restores copied whole files and were several
   times slower than from a network volume. 2.0.1 restores in parallel byte ranges, so re-time a
   global volume on 2.0.1 before ruling it out.
-- Treat these as direction, not a spec: time your own model in your data center. An independent
-  benchmark with 3B and 7B models, including Model Store, is
-  [flash-model-cache-bench](https://github.com/deanq/flash-model-cache-bench).
+- Treat these as direction, not a spec: time your own model in your data center.
 
 Exact rules: [`volume-cache`](../../runpod-usage/concepts/volume-cache.yaml).
 
