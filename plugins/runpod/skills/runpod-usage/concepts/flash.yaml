@@ -30,9 +30,9 @@ rules:
 
   - id: flash.runpod-flash-deprecated
     statement: >
-      The standalone `runpod-flash` package is deprecated on October 29, 2026
-      and gets no fixes after that date. Endpoints it deployed keep running.
-      Write new code on the Runpod SDK and migrate existing projects.
+      The standalone `runpod-flash` package is deprecated and gets no fixes
+      after October 29, 2026. Endpoints it deployed keep running. Write new code
+      on the Runpod SDK and migrate existing projects.
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
@@ -42,15 +42,16 @@ rules:
     statement: >
       `runpod-flash` still installs alongside the Runpod SDK: its CLI is
       `flash`, separate from `rp`, and `runpod_flash` imports with `runpod` 2.x
-      installed. Install it as an isolated tool with `uv tool install
-      runpod-flash --with "runpod<2"` so it keeps its own `runpod` 1.x and the
-      project keeps 2.x. Use it as a fallback when an SDK build, deploy or
-      worker step fails in the SDK rather than in your code. It gets no fixes
-      after October 29, 2026.
+      installed. To fall back from the SDK, give it its own environment with the
+      project's requirements and `runpod<2`, so the SDK project keeps 2.x;
+      `flash dev` and `flash deploy` import the project's modules. For cleanup
+      alone, `uv tool install runpod-flash --with "runpod<2"` is enough. Use it
+      when an SDK build, deploy or worker step fails in the SDK rather than in
+      your code. It gets no fixes after October 29, 2026.
     status: verified
     see: [flash.runpod-flash-deprecated]
     evidence:
-      - { source: live-probe, ref: "one venv with runpod 2.0.0rc2 + runpod-flash 1.21.0: import runpod_flash ok, flash --help and rp --version both run; uv tool install runpod-flash --with 'runpod<2' resolved runpod 1.12.0 + runpod-flash 1.21.0 and flash --help exited 0", seen: "2026-10-22" }
+      - { source: live-probe, ref: "one venv with runpod 2.0.0rc2 + runpod-flash 1.21.0: import runpod_flash ok, flash --help and rp --version both run; uv tool install runpod-flash --with 'runpod<2' resolved runpod 1.12.0 + runpod-flash 1.21.0 and flash --help exited 0; uv venv + uv pip install runpod-flash 'runpod<2' -r requirements.txt (numpy) gave runpod 1.12.0, numpy importable, flash --help ok", seen: "2026-10-22" }
       - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
 
   - id: flash.not-flashboot
@@ -125,11 +126,13 @@ rules:
     statement: >
       `rp flash deploy` packages an artifact of up to 1500 MB. On the built-in
       GPU images it leaves out `torch`, `torchvision`, `torchaudio` and
-      `triton`. Local Python must be 3.10 to 3.14, and `--python-version` picks
-      the worker's Python for deploys.
+      `triton`. Dev sessions and tasks need local Python 3.10 to 3.14. Deploy
+      falls back to Python 3.12 with a warning on other local versions, and
+      `--python-version` picks the worker's Python for deploys.
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/deploy", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/rp_cli/main.py#L190", seen: "2026-10-22", note: "On an unsupported local interpreter, deploy warns and builds for DEFAULT_PYTHON_VERSION." }
       - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
 
   - id: flash.sdk-defaults
@@ -159,11 +162,24 @@ rules:
     statement: >
       Deploy and tear down through the CLI rather than raw REST or GraphQL
       calls: `rp flash deploy`, `rp flash undeploy --app APP --env ENV` for one
-      environment, and `rp flash app delete APP` for every environment.
+      environment, and `rp flash app delete APP --yes` for every environment.
+      Without `--yes` the delete prompts for confirmation and aborts when there
+      is no terminal.
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/cli", seen: "2026-10-16" }
       - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/rp_cli/main.py#L718", seen: "2026-10-22", note: "app delete takes --yes/-y; otherwise click.confirm(..., abort=True)." }
+
+  - id: flash.resource-name-min-length
+    statement: >
+      `rp flash deploy` rejects queue and API resources whose name is shorter
+      than 3 characters. The name defaults to the function or class name, and
+      dev sessions do not check it, so a short name passes `rp flash dev` and
+      fails at deploy. Pass `name=` or rename the function or class.
+    status: documented
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/deploy.py#L133", seen: "2026-10-22", note: queue and api names must be at least 3 characters }
 
   - id: flash.api-key-precedence
     statement: >

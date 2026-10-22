@@ -59,10 +59,10 @@ On a queue or task handle:
 |---|---|
 | `fn.remote(*args, **kwargs)` | runs remotely, blocks for the result; on a queue, stops waiting after 300 s with `TimeoutError` |
 | `await fn.remote.aio(...)` | async form |
-| `fn.spawn(...)` | submits, returns a job immediately |
-| `fn.stream(...)` | yields chunks from a generator function |
+| `fn.spawn(...)` | submits, returns a job immediately (a `TaskJob` for a task) |
+| `fn.stream(...)` | queue only: yields chunks from a generator function |
 | `fn.local(...)` | runs the body in the local process |
-| `fn.with_options(webhook=..., execution_timeout=..., ttl=..., low_priority=...)` | a copy of the handle with per-job options |
+| `fn.with_options(webhook=..., execution_timeout=..., ttl=..., low_priority=...)` | queue only: a copy of the handle with per-job options |
 
 Queue jobs from `.spawn()`: `job.id`, `job.status()`, `job.result(timeout=...)`, `job.stream()`,
 `job.cancel()`, `job.retry()`; each has an `.aio` async form.

@@ -14,7 +14,8 @@ GPU, dataset) — nothing structural changes.
 **Status:** COVERED — live-verified 2026-07-10 end to end. A pod LoRA-trained
 TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the adapter to the
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
-and generated. Section 3 is ported to the Runpod SDK: on 2026-10-17 the section 3 code,
+and generated. Section 3 is ported to the Runpod SDK and not yet re-run as written: on
+2026-10-17 a variant that loaded the base model through `VolumeCache` instead of from the mount,
 deployed with `rp flash deploy` on a pre-release `runpod` 2.0 build, loaded TinyLlama plus a
 LoRA adapter from a network volume and generated text (the adapter was an untrained one saved by
 a helper function, standing in for the pod training step). `peft` and `accelerate` were plain
@@ -179,7 +180,7 @@ BASE = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 _M = _T = None
 
 
-@app.queue(gpu="ADA_24", workers=(0, 1), idle_timeout=60, datacenter="EU-RO-1",
+@app.queue(gpu="ADA_24", workers=(0, 1), idle_timeout=60, datacenter="<dc>",
            mounts={"/runpod-volume": vol},
            env={"HF_HOME": "/runpod-volume/hf-cache"},       # reuse training's base-model cache
            dependencies=["transformers", "peft", "accelerate"])
@@ -237,6 +238,7 @@ parameters, non-empty input. For high-throughput serving, swap the transformers 
 
 ## Cost & cleanup
 ```bash
+rp flash app delete ft-serve --yes            # SDK serve step; or delete the endpoint by id:
 runpodctl serverless delete <endpoint-id>     # (undeploy+redeploy for fresh workers if a code change is stuck — see 07)
 runpodctl network-volume delete <vol-id>      # pod already removed; deletes the adapter + cache
 ```

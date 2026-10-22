@@ -3,10 +3,10 @@ name: flash
 description: >-
   Code-first serverless with the Runpod Python SDK (`runpod` 2.0): define a
   `runpod.App` with `@app.queue` / `@app.api` / `@app.task`, iterate on remote
-  GPUs/CPUs with `rp flash dev`, ship with `rp flash deploy`. Also covers
-  maintaining and migrating legacy `runpod-flash` projects (`from runpod_flash
-  import Endpoint`). Use runpod-build-template for explicit Dockerfile/template
-  project authoring, and runpodctl/runpod-mcp for infrastructure management.
+  GPUs/CPUs with `rp flash dev`, ship with `rp flash deploy`, and maintain or
+  migrate legacy `runpod-flash` projects (`from runpod_flash import Endpoint`).
+  Use runpod-build-template for explicit Dockerfile/template project authoring,
+  and runpodctl/runpod-mcp for infrastructure management.
 user-invocable: true
 metadata:
   author: runpod
@@ -22,9 +22,9 @@ For an explicit Dockerfile/template project request, use
 deliverable with Flash unless the user chooses its code-first workflow.
 
 Write Python locally, run it on remote Runpod GPUs/CPUs with `rp flash dev`, then
-`rp flash deploy` to ship. Flash is now part of the `runpod` package (2.0): one SDK, one
-`rp` CLI, one login. The standalone `runpod-flash` package is deprecated on
-**October 29, 2026** and gets no fixes after that date.
+`rp flash deploy` to ship. Flash is part of the `runpod` package (2.0): one SDK, one
+`rp` CLI, one login. The standalone `runpod-flash` package is deprecated and gets no fixes
+after **October 29, 2026**.
 
 **`rp --help` and `rp flash <command> --help` are authoritative for the command surface.**
 This skill is the mental model, the decision rules, and the gotchas that help output does not
@@ -44,20 +44,10 @@ Check before writing code. The two APIs do not mix.
 Write new code on the SDK. For an existing `runpod-flash` project, propose migrating and
 check its *Known differences* first; don't migrate silently.
 
-**If the SDK path fails, `runpod-flash` is the fallback.** A build, deploy or worker failure
-can be an SDK bug rather than your code: a traceback inside
+**If the SDK path fails on an SDK bug, `runpod-flash` is the fallback**: a traceback inside
 `runpod/apps/`, a worker that crashes before your function runs, or the same code working on
-`runpod-flash`. Then:
-1. Run `pip show runpod` and upgrade. Check the
-   [CHANGELOG](https://github.com/runpod/runpod-python/blob/main/CHANGELOG.md) and the
-   [commit history for `runpod/apps`](https://github.com/runpod/runpod-python/commits/main/runpod/apps)
-   for a fix or a behavior change. The [runpod-flash history](https://github.com/runpod/flash/commits/main)
-   shows how the old package handled the same case.
-2. Still broken: tell the user, and run that project on `runpod-flash` with the legacy reference
-   ([reference/runpod-flash-legacy.md](reference/runpod-flash-legacy.md)). Install it as an
-   isolated tool, `uv tool install runpod-flash --with "runpod<2"`, so the project's `runpod`
-   2.x stays put. It gets no fixes after October 29, 2026, so move back to the SDK once the fix
-   ships.
+`runpod-flash`. Upgrade `runpod` first; the steps to check for a fix and fall back are in
+[reference/runpod-flash-legacy.md](reference/runpod-flash-legacy.md#fallback-from-the-sdk).
 
 **Worked examples first for anything multi-step.** Flash appears in end-to-end paths:
 [03 variant B (whisper endpoint)](../runpod/golden-paths/03-whisper-endpoint/variant-b-flash.md),
@@ -103,8 +93,8 @@ def main():
 | `@app.task(...)` on a function | One ephemeral **Pod per call**, terminated when it returns | Training, fine-tuning, long jobs |
 
 Call styles on a queue or task handle: `fn.remote(...)` (blocks), `await fn.remote.aio(...)`,
-`fn.spawn(...)` (returns a `Job`), `fn.stream(...)` (generator functions), `fn.local(...)`
-(runs on your machine). API classes are called by route: `MyApi.post("/path", body)`.
+`fn.spawn(...)` (returns a `Job`, or a `TaskJob` for a task), `fn.stream(...)` (queue generator
+functions only), `fn.local(...)` (runs on your machine). API classes are called by route: `MyApi.post("/path", body)`.
 
 ## Dev vs deploy
 
@@ -169,7 +159,8 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 ## Gotchas
 
 1. **Queue arguments and results must be JSON-serializable.** Queue jobs are plain JSON in dev
-   and deploy alike; a non-JSON argument fails with `arguments must be json-serializable`. Pass
+   and deploy alike. A non-JSON argument fails in dev with `arguments must be json-serializable`
+   and against a deployed endpoint with Python's own JSON `TypeError`. Pass
    URLs or base64, not objects. Whole-number floats can arrive as integers (`1.0` → `1`), so
    cast numeric inputs explicitly (`torch.tensor(x, dtype=torch.float32)`).
 2. **One file per app in dev.** A dev session ships only the module's source, so a sibling
@@ -191,9 +182,9 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
    keeps its Pod running after your script exits.
 10. **Native CUDA libraries go in `dependencies` too**, e.g. faster-whisper needs
     `nvidia-cublas-cu12` + `nvidia-cudnn-cu12` or it silently falls back to CPU.
-11. **Local Python must be 3.10–3.14.** Dev sessions and tasks ship code pickled by your
-    interpreter, so the worker matches your local version. `rp flash deploy --python-version`
-    sets it for deploys.
+11. **Dev sessions and tasks need local Python 3.10–3.14.** They ship code pickled by your
+    interpreter, so the worker matches your local version. Deploy falls back to 3.12 with a
+    warning on other versions; `rp flash deploy --python-version` sets it explicitly.
 12. **A set `RUNPOD_API_KEY` wins over `rp login`.** A stale exported key causes 401s while the
     saved login is fine. Check with `runpodctl user`, then `unset RUNPOD_API_KEY` or export a
     good key.
@@ -209,8 +200,15 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
     `AttributeError` on a `runpod.` name in a dev worker traceback means the image is behind
     your SDK; `rp flash deploy` runs your installed version.
 15. **Teardown by app and environment:** `rp flash undeploy --app APP --env default -y`
-    removes one environment's endpoints; `rp flash app delete APP` removes every environment.
-    Then delete volumes you no longer need.
+    removes one environment's endpoints; `rp flash app delete APP --yes` removes every
+    environment (without `--yes` it prompts, and aborts with no terminal). Then delete volumes
+    you no longer need.
+16. **Queue and API names need 3+ characters to deploy.** The name defaults to the function or
+    class name, and dev sessions don't check it, so `class SD` passes `rp flash dev` and fails
+    `rp flash deploy`. Rename it or pass `name=`.
+17. **Every endpoint gets your account API key.** Deploy and dev put `RUNPOD_API_KEY` in each
+    endpoint's template env, whether or not its code calls another resource, so anyone who can
+    read the template can read the key.
 
 ## Resources
 

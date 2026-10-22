@@ -18,8 +18,8 @@ The agent should:
 ## Assertions
 
 - Uses `runpod.Endpoint("abc123xyz")`
-- Passes `{"prompt": "hello"}` as the input (the client wraps it in `{"input": ...}`; the agent
-  does NOT double-wrap it as `{"input": {"prompt": ...}}`)
-- Sets a timeout above 60 seconds or uses `run()` + `output(timeout=...)`
+- Passes `{"prompt": "hello"}` as the input (the client wraps it in `{"input": ...}`; a dict
+  that already has an `input` key is sent unchanged)
+- Sets an explicit timeout that covers a cold start, or uses `run()` + `output(timeout=...)`
 - Does NOT create an `App` or decorate a function for this
 - Does NOT import from `runpod_flash`

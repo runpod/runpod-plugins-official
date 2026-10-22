@@ -4,7 +4,7 @@ concepts: [flash]
 
 # Migrate a `runpod-flash` project to the Runpod SDK
 
-`runpod-flash` is deprecated on October 29, 2026 and gets no fixes after that date. Its
+`runpod-flash` is deprecated and gets no fixes after October 29, 2026. Its
 features live in the `runpod` package (2.0) as SDK apps with the `rp flash` CLI. Endpoints
 already deployed with `runpod-flash` keep running; migrating changes how you build and deploy,
 not what is running.
@@ -14,11 +14,8 @@ convert, smoke-test with `rp flash dev --once`, deploy, then remove the old endp
 
 Keep a way back until the SDK version works: convert on a branch, and leave the
 `runpod-flash` endpoints running until the new ones pass. If the SDK fails on something the old
-package handled, roll back to the previous commit and keep deploying with `flash`, installed with
-`uv tool install runpod-flash --with "runpod<2"`. Check the runpod-python
-[CHANGELOG](https://github.com/runpod/runpod-python/blob/main/CHANGELOG.md) and
-[commit history](https://github.com/runpod/runpod-python/commits/main/runpod/apps) for a fix
-before retrying.
+package handled, roll back to the previous commit and keep deploying with `flash`
+([fallback steps](runpod-flash-legacy.md#fallback-from-the-sdk)).
 
 ## 1. Inventory
 
@@ -36,7 +33,8 @@ CI step that calls `flash`.
 These patterns behave differently in the SDK. If the project relies on one, tell the user
 before converting, and test it carefully or keep the project on `runpod-flash`:
 
-- Projects split across multiple local files. Discovery ships one module per app.
+- Projects split across multiple local files. Deploy packages the whole project, but a dev
+  session ships only the entry module, so sibling imports fail under `rp flash dev`.
 - Classes as remote resources, other than `@app.api` classes.
 - Path and query parameters on HTTP routes.
 - Resources that reference an existing template or endpoint with `template=` or `id=`.
@@ -47,7 +45,8 @@ before converting, and test it carefully or keep the project on `runpod-flash`:
 ## 3. Install and log in
 
 ```bash
-pip uninstall runpod-flash && pip install "runpod>=2.0.1"
+uv tool install runpod-flash --with "runpod<2"   # keeps `flash` for cleanup and rollback
+pip uninstall -y runpod-flash && pip install "runpod>=2.0.1"
 # uv: uv remove runpod-flash && uv add "runpod>=2.0.1"
 rp login            # a key saved by `flash login` keeps working
 ```
@@ -58,7 +57,7 @@ rp login            # a key saved by `flash login` keeps working
 |---|---|
 | `from runpod_flash import Endpoint, GpuGroup, GpuType` | `import runpod` |
 | project folder = app | `app = runpod.App("APP_NAME")` |
-| `@Endpoint(name="x", gpu=..., ...)` on a function | `@app.queue(name="x", gpu=...)` |
+| `@Endpoint(name="embed", gpu=..., ...)` on a function | `@app.queue(name="embed", gpu=...)` (queue and API names need 3+ characters to deploy) |
 | `api = Endpoint(name=..., ...)` + `@api.post("/p")` functions | `@app.api(...)` on a class with `@runpod.post("/p")` methods |
 | class `@Endpoint` with `__init__` loading a model | `@app.api` class with a `@runpod.init` method |
 | `await fn(x)` | `fn.remote(x)` or `await fn.remote.aio(x)` |
@@ -74,7 +73,9 @@ rp login            # a key saved by `flash login` keeps working
 | `env={"HF_TOKEN": "hf_..."}` | `env={"HF_TOKEN": runpod.Secret("hf-token")}` after `rp secret add hf-token` |
 | `Endpoint(id="ID")` + `await ep.runsync(...)` | `runpod.Endpoint("ID").run_sync({...}, timeout=120)` |
 | `Endpoint(name=..., image="IMG")` (image is a Serverless worker) | `image="IMG"` on a decorator (any Python 3 image); a prebuilt worker image goes through runpodctl/runpod-mcp + `runpod.Endpoint` |
-| `idle_timeout`, `execution_timeout_ms`, `flashboot`, `scaler_type`, `scaler_value`, `accelerate_downloads`, `datacenter`, `dependencies`, `system_dependencies`, `gpu_count`, `max_concurrency` | same names on the decorator |
+| `accelerate_downloads`, `datacenter`, `dependencies`, `system_dependencies`, `gpu_count` | same names on every decorator |
+| `idle_timeout`, `execution_timeout_ms`, `flashboot`, `scaler_type`, `scaler_value` | same names on `@app.queue` and `@app.api` (a task runs one Pod per call) |
+| `max_concurrency` | `@app.queue` only |
 
 Before and after for a queue function:
 
@@ -142,9 +143,8 @@ class MyApi:
 - **GPU device names pin the exact device**, as runpod-flash's pool exclusions did, now using
   the platform's live pool membership, so pool members runpod-flash didn't know about (MIG
   slices) are excluded too.
-- **Every resource gets `RUNPOD_API_KEY`** in its worker env. runpod-flash added it only to
-  endpoints that made remote calls, so after migrating, more endpoint templates hold the account
-  key.
+- **Every resource gets `RUNPOD_API_KEY`** in its worker env, including resources that never
+  call another one.
 
 ## 6. Smoke-test, deploy, clean up
 

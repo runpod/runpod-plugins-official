@@ -91,10 +91,11 @@ vol = runpod.NetworkVolume("<vol-id>", create=False)    # attach EXISTING by id 
 @app.queue(cpu="cpu3c-1-2", workers=(0, 1), datacenter="EU-RO-1",
            mounts={"/runpod-volume": vol})
 def read(path: str = "hello.txt") -> dict:              # input keys = parameter names
-    p = os.path.join("/runpod-volume", path)            # /runpod-volume, not /workspace
+    root = str(vol.path)                                 # /runpod-volume, not /workspace
+    p = os.path.join(root, path)
     return {"exists": os.path.exists(p),
             "content": open(p).read() if os.path.exists(p) else None,
-            "runpod_volume_listing": sorted(os.listdir("/runpod-volume"))}
+            "runpod_volume_listing": sorted(os.listdir(root))}
 
 @runpod.local_entrypoint
 def main():

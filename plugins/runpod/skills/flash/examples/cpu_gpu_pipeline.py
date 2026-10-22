@@ -33,5 +33,6 @@ def main():
     print("one batch:", score.remote(preprocess.remote(rows)))
 
     batches = [[{"a": i, "b": i + 1}] for i in range(4)]
-    jobs = [score.spawn(preprocess.remote(b)) for b in batches]
+    pre = [preprocess.spawn(b) for b in batches]
+    jobs = [score.spawn(j.result()) for j in pre]
     print("fan-out:", [job.result() for job in jobs])

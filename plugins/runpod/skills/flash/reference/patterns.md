@@ -40,7 +40,7 @@ app = runpod.App("sd")
 
 @app.api(gpu="5090", workers=(0, 3), idle_timeout=300,
          dependencies=["diffusers", "transformers"])
-class SD:
+class StableDiffusion:
     @runpod.init
     def load(self):
         import torch

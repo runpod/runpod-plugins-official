@@ -92,7 +92,10 @@ Take exact flags from `rp <command> --help`; the list above is the shape of the 
   **1,500 MB**. On the built-in GPU images `torch`, `torchvision`, `torchaudio` and `triton` are
   left out automatically, because the image ships them.
 - `.runpodignore` and the project's `.gitignore` files decide what source goes in. `.env`
-  files, keys and credential files are always left out.
+  files, keys and credential files are always left out, and so are tests (`tests/`, `test/`,
+  `test_*.py`, `*_test.py`), virtualenvs (`.venv/`, `venv/`, `env/`), caches and `*.tar.gz`.
+  A helper module named like a test (`test_utils.py`) is dropped too and fails to import on
+  the worker.
 - `--build-only` resolves dependencies and packages without touching your account, which makes
   it a quick check that discovery and dependency resolution succeed.
 

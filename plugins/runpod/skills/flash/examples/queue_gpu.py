@@ -17,7 +17,7 @@ def gpu_sum(values: list[float]) -> dict:
     # torch ships on the built-in GPU image; import heavy packages inside the function
     import torch
 
-    t = torch.tensor(values, device="cuda")
+    t = torch.tensor(values, dtype=torch.float32, device="cuda")
     return {"gpu": torch.cuda.get_device_name(0), "sum": t.sum().item()}
 
 

@@ -9,6 +9,10 @@ rp flash deploy queue_gpu.py            # persistent endpoints
 rp flash deploy queue_gpu.py --build-only   # offline check: discovery + dependency resolution
 ```
 
+Live checks ran on `runpod` 2.0.0rc1, before the GPU-pinning and build changes in 2.0.1;
+`queue_gpu.py` (float dtype) and `cpu_gpu_pipeline.py` (parallel CPU stage) changed slightly
+since. Re-run them on 2.0.1.
+
 | File | Shows | Live check (`runpod` 2.0.0rc1, `--once`) |
 |---|---|---|
 | [`queue_gpu.py`](queue_gpu.py) | `@app.queue` on a GPU list with `workers=(0, 5)` | ✅ 2026-10-16 |

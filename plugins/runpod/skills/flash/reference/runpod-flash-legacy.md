@@ -5,14 +5,15 @@ concepts: [flash, serverless-handler, job, container-disk]
 # Legacy `runpod-flash` reference
 
 Use this to maintain a project that still imports `runpod_flash`, or as the fallback when the
-Runpod SDK path fails on an SDK bug ([../SKILL.md](../SKILL.md), *Which SDK is this project
-on?*). `runpod-flash` is deprecated on October 29, 2026 and gets no fixes after that date;
-propose [migrating](migrate-from-runpod-flash.md). New code goes on the Runpod SDK. `flash --help` is authoritative for the installed version.
+Runpod SDK path fails on an SDK bug (see [Fallback from the SDK](#fallback-from-the-sdk)).
+`runpod-flash` is deprecated and gets no fixes after October 29, 2026; propose
+[migrating](migrate-from-runpod-flash.md). New code goes on the Runpod SDK. `flash --help` is
+authoritative for the installed version.
 
 ## Setup and CLI
 
 ```bash
-uv tool install runpod-flash --with "runpod<2"   # Python 3.10-3.13; isolated, keeps runpod 1.x
+pip install runpod-flash              # Python 3.10-3.13; next to runpod 2.x, see "Fallback from the SDK"
 flash login                           # saves a key to ~/.runpod/config.toml (--no-open for headless)
 flash init my-project                 # scaffold (writes AGENTS.md + CLAUDE.md)
 flash dev                             # local server on :8888; functions run on remote workers
@@ -25,6 +26,31 @@ flash update                          # upgrade the CLI
 ```
 
 1.21.0 and later print a deprecation notice; `RUNPOD_FLASH_SILENCE_DEPRECATION=1` silences it.
+
+
+## Fallback from the SDK
+
+When the Runpod SDK fails on what looks like an SDK bug (a traceback inside `runpod/apps/`, a
+worker that crashes before your function runs, or code that worked on `runpod-flash`):
+
+1. Run `pip show runpod` and upgrade. Check the runpod-python
+   [CHANGELOG](https://github.com/runpod/runpod-python/blob/main/CHANGELOG.md) and the
+   [commit history for `runpod/apps`](https://github.com/runpod/runpod-python/commits/main/runpod/apps)
+   for a fix or a behavior change. The
+   [runpod-flash history](https://github.com/runpod/flash/commits/main) shows how the old
+   package handled the same case.
+2. Still broken: tell the user, and run the project on `runpod-flash` from the pre-migration
+   code. Give it its own environment with the project's requirements and `runpod` 1.x, so the
+   SDK project keeps 2.x:
+   ```bash
+   uv venv .venv-flash
+   uv pip install --python .venv-flash runpod-flash "runpod<2" -r requirements.txt
+   .venv-flash/bin/flash deploy
+   ```
+   `flash dev` and `flash deploy` import your modules locally, so that environment needs the
+   project's own imports. For cleanup only, `uv tool install runpod-flash --with "runpod<2"`
+   is enough.
+3. It gets no fixes after October 29, 2026, so move back to the SDK once the fix ships.
 
 ## Modes
 
