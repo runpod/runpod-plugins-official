@@ -10,7 +10,7 @@ description: 'Bring any source (a HuggingFace repo, a ComfyUI workflow, a Hub re
   own handler image.'
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.8.1" # x-release-please-version
   concepts: [serverless-endpoint, serverless-handler, worker, job, gpu-pool, gpu-availability, hub-repo, template, network-volume, endpoint-release, flashboot, registry-credential, volume-cache]
 license: Apache-2.0
 ---

@@ -10,7 +10,7 @@ description: >-
   provisioning task even when it is not.
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.8.1" # x-release-please-version
   concepts: [runpod-platform, pod, serverless-endpoint, template, network-volume, hub-repo]
 license: Apache-2.0
 ---
