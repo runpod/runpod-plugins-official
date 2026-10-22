@@ -20,7 +20,7 @@ and cost notes live in the [folder README](README.md); the flash skill is at
 
 - Python 3.10–3.14 and the Runpod SDK in the project environment:
   ```bash
-  pip install "runpod>=2.0.0rc2"        # installs the rp CLI
+  pip install "runpod>=2.0.1"        # installs the rp CLI
   ```
 - A Runpod API key for non-interactive use:
   ```bash

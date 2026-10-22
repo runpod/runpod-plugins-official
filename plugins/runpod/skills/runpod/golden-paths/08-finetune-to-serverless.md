@@ -16,7 +16,7 @@ TinyLlama-1.1B (loss 2.07→1.68, ~5 min incl. install + download), wrote the ad
 volume; a `runpod-flash` serverless worker then loaded base + adapter from `/runpod-volume`
 and generated. Section 3 is ported to the Runpod SDK: on 2026-10-17 the section 3 code,
 deployed with `rp flash deploy` on a build of `runpod` with the transitive-torch, GPU-pinning,
-`vol.path` and API-key fixes, loaded TinyLlama plus a LoRA adapter from a network volume and
+and `vol.path` fixes, loaded TinyLlama plus a LoRA adapter from a network volume and
 generated text (the adapter was an untrained one saved by a helper function, standing in for the
 pod training step). `peft` and `accelerate` were plain `dependencies` and the worker ran the
 image's `torch 2.9.1+cu128`. Run it with `rp flash deploy` (flash SKILL gotcha 14 covers dev
@@ -52,7 +52,7 @@ A 1.1B LoRA on a 4090 trains in **minutes** — fast enough to iterate the loop 
 spending on a real run.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable; `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.0rc2"`, which provides `rp`).
+- `RUNPOD_API_KEY` resolvable; `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.1"`, which provides `rp`).
 - An SSH key registered **before** creating the pod (`runpodctl ssh list-keys`; see
   `../../runpod-usage/reference/getting-started.md`).
 - `HF_TOKEN` only if you scale to a **gated** base model (TinyLlama is ungated).

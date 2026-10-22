@@ -40,7 +40,7 @@ that DC.
 
 ## Prerequisites
 - `RUNPOD_API_KEY` resolvable (runpodctl and the Runpod SDK both read it).
-- `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.0rc2"`, which provides `rp`).
+- `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.1"`, which provides `rp`).
 - An SSH key registered **before** creating the pod — Runpod injects registered keys into
   the pod at startup, so a key added after boot won't work until a restart (`runpodctl ssh
   list-keys`; see

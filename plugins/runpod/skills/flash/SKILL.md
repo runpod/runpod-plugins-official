@@ -61,8 +61,7 @@ live in [`examples/`](examples/).
 | Moving a `runpod-flash` project to the SDK | [reference/migrate-from-runpod-flash.md](reference/migrate-from-runpod-flash.md) |
 | Maintaining a `runpod-flash` project as it is | [reference/runpod-flash-legacy.md](reference/runpod-flash-legacy.md) |
 
-Quick start: `uv add "runpod>=2.0.0rc2"` (or `pip install "runpod>=2.0.0rc2"`; this resolves
-to the release candidate until 2.0.0 is stable) → `rp login` (or `export RUNPOD_API_KEY=...`)
+Quick start: `uv add "runpod>=2.0.1"` (or `pip install "runpod>=2.0.1"`) → `rp login` (or `export RUNPOD_API_KEY=...`)
 → `rp flash init my-app` → `cd my-app && rp flash dev main.py`.
 
 ## The app model

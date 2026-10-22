@@ -22,8 +22,7 @@ rules:
     statement: >
       Flash ships in the `runpod` package from version 2.0, with the `rp` CLI
       (`rp flash init`, `dev`, `deploy`, `app`, `env`, `undeploy`). The CLI is
-      also installed as `runpod`. Install `runpod>=2.0.0rc2`; that specifier
-      also accepts the 2.0 release candidate.
+      also installed as `runpod`. Install `runpod>=2.0.1`.
     status: verified
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/cli", seen: "2026-10-16" }
@@ -176,8 +175,8 @@ rules:
 
   - id: flash.torch-family-from-gpu-image
     statement: >
-      From `runpod` 2.0.0rc2, builds leave `torch`, `torchvision`, `torchaudio`
-      and `triton` out of the artifact whether a requirement lists them or a
+      From `runpod` 2.0.1, builds leave `torch`, `torchvision`, `torchaudio` and
+      `triton` out of the artifact whether a requirement lists them or a
       dependency pulls them in (`peft`, `accelerate`, `sentence-transformers`),
       together with the wheels only they need. GPU workers on the built-in
       images use the image's `torch 2.9.1+cu128`, and version pins on these
@@ -191,7 +190,7 @@ rules:
 
   - id: flash.gpu-device-names-pin-devices
     statement: >
-      From `runpod` 2.0.0rc2, GPU device names in `gpu=` pin those devices.
+      From `runpod` 2.0.1, GPU device names in `gpu=` pin those devices.
       Endpoints select GPUs by pool, so the SDK selects each device's pool and
       excludes the pool's other devices, reading membership from the live GPU
       catalog. A pool id allows every device in the pool, including MIG slices.
@@ -201,24 +200,24 @@ rules:
       - { source: live-probe, ref: "gpu=[\"NVIDIA GeForce RTX 4090\", \"NVIDIA L4\", \"NVIDIA RTX A5000\"] stored gpuIds ADA_24,AMPERE_24,-NVIDIA GeForce RTX 3090,-NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb; four parallel jobs all reported NVIDIA GeForce RTX 4090", seen: "2026-10-16" }
       - { source: live-probe, ref: "GET https://api.runpod.io/v2/catalog/gpus lists NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb with pool AMPERE_24", seen: "2026-10-16" }
 
-  - id: flash.worker-api-key-for-callers
+  - id: flash.worker-api-key-every-endpoint
     statement: >
-      From `runpod` 2.0.0rc2, deploy and dev add the account API key
-      (`RUNPOD_API_KEY`) only to resources whose code can call another resource:
-      a reference to another resource, `.remote()` or `.spawn()`, a `runpod`
-      client, or code the build cannot follow (a local helper module, a nested
-      function). Other resources run without the key.
+      `rp flash deploy` and `rp flash dev` add the account API key
+      (`RUNPOD_API_KEY`) to every endpoint's template env, including endpoints
+      whose code never calls another resource. Anyone who can read the
+      endpoint's template can read the key.
     status: verified
     evidence:
-      - { source: live-probe, ref: "deployed leaf + caller queues: only caller's template had RUNPOD_API_KEY; caller returned {'has_key': True, 'nested': {'has_key': False, 'x': 42}}", seen: "2026-10-16" }
-      - { source: other, url: "https://github.com/runpod/runpod-python/pull/628", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/deploy.py#L315", seen: "2026-10-22", note: "Deploy sets RUNPOD_API_KEY in every template env unless the resource's env already sets it." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/dev.py#L146", seen: "2026-10-22", note: "Dev sessions add the client's key to every dev endpoint." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/pull/628", seen: "2026-10-22", note: "The change that limited the key to callers was closed unmerged, as was its replacement #641." }
 
   - id: flash.dev-session-stop-signals
     statement: >
-      From `runpod` 2.0.0rc2, a dev session deletes its endpoints when it
-      receives SIGINT or SIGTERM, including a background session started with
-      SIGINT ignored. A second signal stops waiting for a running entrypoint.
-      `kill -9` skips the cleanup.
+      From `runpod` 2.0.1, a dev session deletes its endpoints when it receives
+      SIGINT or SIGTERM, including a background session started with SIGINT
+      ignored. A second signal stops waiting for a running entrypoint. `kill -9`
+      skips the cleanup.
     status: verified
     see: [flash.dev-session]
     evidence:

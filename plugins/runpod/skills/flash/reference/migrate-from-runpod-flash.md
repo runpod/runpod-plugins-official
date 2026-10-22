@@ -39,8 +39,8 @@ before converting, and test it carefully or keep the project on `runpod-flash`:
 ## 3. Install and log in
 
 ```bash
-pip uninstall runpod-flash && pip install "runpod>=2.0.0rc2"
-# uv: uv remove runpod-flash && uv add "runpod>=2.0.0rc2"
+pip uninstall runpod-flash && pip install "runpod>=2.0.1"
+# uv: uv remove runpod-flash && uv add "runpod>=2.0.1"
 rp login            # a key saved by `flash login` keeps working
 ```
 
@@ -134,9 +134,9 @@ class MyApi:
 - **GPU device names pin the exact device**, as runpod-flash's pool exclusions did, now using
   the platform's live pool membership, so pool members runpod-flash didn't know about (MIG
   slices) are excluded too.
-- **Only resources that call other resources get `RUNPOD_API_KEY`** in their worker env. A
-  helper that calls `.remote()` from a separate local module counts, so nested calls keep
-  working.
+- **Every resource gets `RUNPOD_API_KEY`** in its worker env. runpod-flash added it only to
+  endpoints that made remote calls, so after migrating, more endpoint templates hold the account
+  key.
 
 ## 6. Smoke-test, deploy, clean up
 

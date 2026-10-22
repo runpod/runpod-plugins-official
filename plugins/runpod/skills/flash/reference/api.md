@@ -185,11 +185,10 @@ RAM. `runpod.CpuInstanceType` holds the same values.
 
 ## Credentials on workers
 
-A worker that calls another resource (`.remote()`, `.spawn()`, a `runpod.Queue`/`Api` client)
-needs the account API key, so deploy and dev add `RUNPOD_API_KEY` to the endpoints whose code
-can reach one. The build reads the resource's own body and the module-level helpers it calls.
-Code it cannot follow (a local helper module, a nested function) gets the key too, so a caller
-never goes without it. Resources that make no such call run without the key.
+Deploy and dev add the account API key as `RUNPOD_API_KEY` to every endpoint's template env, so
+a worker can call another resource (`.remote()`, `.spawn()`, a `runpod.Queue`/`Api` client).
+Endpoints that never make such a call get it too, and anyone who can read the template can read
+the key.
 
 ## Exact rules
 
