@@ -43,9 +43,9 @@ worker that crashes before your function runs, or code that worked on `runpod-fl
    SDK project keeps 2.x. Create it outside the project directory so a deploy doesn't package
    it (`rp flash deploy` skips only `.venv/`, `venv/` and `env/`).
    ```bash
-   uv venv ~/.venvs/flash-fallback
-   uv pip install --python ~/.venvs/flash-fallback runpod-flash "runpod<2" -r requirements.txt
-   ~/.venvs/flash-fallback/bin/flash deploy
+   uv venv ~/.venvs/flash-<project>          # one per project, so packages don't mix
+   uv pip install --python ~/.venvs/flash-<project> runpod-flash "runpod<2" -r requirements.txt
+   ~/.venvs/flash-<project>/bin/flash deploy
    ```
    `flash dev` and `flash deploy` import your modules locally, so that environment needs the
    project's own imports. For cleanup only, `uv tool install runpod-flash --with "runpod<2"`
