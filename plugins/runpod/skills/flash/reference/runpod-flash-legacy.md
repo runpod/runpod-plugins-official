@@ -13,7 +13,7 @@ authoritative for the installed version.
 ## Setup and CLI
 
 ```bash
-pip install runpod-flash              # Python 3.10-3.13; next to runpod 2.x, see "Fallback from the SDK"
+pip install runpod-flash              # Python 3.10-3.13; to run next to runpod 2.x, see "Fallback from the SDK"
 flash login                           # saves a key to ~/.runpod/config.toml (--no-open for headless)
 flash init my-project                 # scaffold (writes AGENTS.md + CLAUDE.md)
 flash dev                             # local server on :8888; functions run on remote workers
@@ -26,7 +26,6 @@ flash update                          # upgrade the CLI
 ```
 
 1.21.0 and later print a deprecation notice; `RUNPOD_FLASH_SILENCE_DEPRECATION=1` silences it.
-
 
 ## Fallback from the SDK
 
@@ -41,11 +40,12 @@ worker that crashes before your function runs, or code that worked on `runpod-fl
    package handled the same case.
 2. Still broken: tell the user, and run the project on `runpod-flash` from the pre-migration
    code. Give it its own environment with the project's requirements and `runpod` 1.x, so the
-   SDK project keeps 2.x:
+   SDK project keeps 2.x. Create it outside the project directory so a deploy doesn't package
+   it (`rp flash deploy` skips only `.venv/`, `venv/` and `env/`).
    ```bash
-   uv venv .venv-flash
-   uv pip install --python .venv-flash runpod-flash "runpod<2" -r requirements.txt
-   .venv-flash/bin/flash deploy
+   uv venv ~/.venvs/flash-fallback
+   uv pip install --python ~/.venvs/flash-fallback runpod-flash "runpod<2" -r requirements.txt
+   ~/.venvs/flash-fallback/bin/flash deploy
    ```
    `flash dev` and `flash deploy` import your modules locally, so that environment needs the
    project's own imports. For cleanup only, `uv tool install runpod-flash --with "runpod<2"`

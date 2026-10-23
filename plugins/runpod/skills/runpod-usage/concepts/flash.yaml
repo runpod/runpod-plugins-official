@@ -44,7 +44,9 @@ rules:
       `flash`, separate from `rp`, and `runpod_flash` imports with `runpod` 2.x
       installed. To fall back from the SDK, give it its own environment with the
       project's requirements and `runpod<2`, so the SDK project keeps 2.x;
-      `flash dev` and `flash deploy` import the project's modules. For cleanup
+      `flash dev` and `flash deploy` import the project's modules. Create that
+      environment outside the project directory so a deploy does not package it;
+      `rp flash deploy` skips only `.venv/`, `venv/` and `env/`. For cleanup
       alone, `uv tool install runpod-flash --with "runpod<2"` is enough. Use it
       when an SDK build, deploy or worker step fails in the SDK rather than in
       your code. It gets no fixes after October 29, 2026.
@@ -53,6 +55,7 @@ rules:
     evidence:
       - { source: live-probe, ref: "one venv with runpod 2.0.0rc2 + runpod-flash 1.21.0: import runpod_flash ok, flash --help and rp --version both run; uv tool install runpod-flash --with 'runpod<2' resolved runpod 1.12.0 + runpod-flash 1.21.0 and flash --help exited 0; uv venv + uv pip install runpod-flash 'runpod<2' -r requirements.txt (numpy) gave runpod 1.12.0, numpy importable, flash --help ok", seen: "2026-10-22" }
       - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/apps/deploy.py#L35", seen: "2026-10-23", note: "DEFAULT_IGNORES skips .venv/, venv/ and env/, not other virtualenv names." }
 
   - id: flash.not-flashboot
     statement: >
