@@ -143,8 +143,9 @@ existing = runpod.NetworkVolume("vol_id_or_name", create=False)          # must 
 - Read `models.path` **inside** the remote function. Volumes are not mounted locally.
 - Load model weights through `VolumeCache(dirs=[...])`, which copies them to the worker's disk,
   rather than from the mount ([patterns.md](patterns.md#loading-ml-models)). Its `volume_path`
-  defaults to `/runpod-volume`; pass `volume_path=str(models.path)` when the volume mounts
-  elsewhere, as on a task.
+  defaults to `/runpod-volume`. On a task, pass `volume_path=str(models.path)` and a
+  `namespace=`: a task runs on a pod, which has no `RUNPOD_ENDPOINT_ID`, and without a namespace
+  the cache silently does nothing.
 - Undeploying an app or ending a dev session leaves its volumes in place, and they keep billing.
 
 ## Models and secrets
