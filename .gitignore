@@ -9,3 +9,6 @@ result-*
 # Concept graph tooling (ontology/)
 node_modules/
 ontology/build/
+
+# Python bytecode
+*.pyc

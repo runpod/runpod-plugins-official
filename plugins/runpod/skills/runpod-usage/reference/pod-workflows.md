@@ -135,7 +135,7 @@ does, read the service log on the volume to diagnose.
 
 Re-run setup/service commands over the same SSH channel. Logs and artifacts on the
 volume survive restarts. Use a framework's hot-reload/dev mode when it has one
-(e.g. `flash dev` in the flash lane).
+(e.g. `rp flash dev` in the flash lane).
 
 ## 8. Escalate on manual steps
 
