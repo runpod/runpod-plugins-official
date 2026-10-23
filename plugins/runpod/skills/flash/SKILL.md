@@ -178,6 +178,8 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 8. **Volumes outlive everything.** Dev sessions and `rp flash undeploy` delete endpoints, not
    the `NetworkVolume`s they created, and those keep billing. Queue and API resources mount one
    volume at `/runpod-volume`; read `vol.path` inside the remote function, never at import time.
+   Load model weights through `VolumeCache`, not straight off the mount
+   ([reference/patterns.md](reference/patterns.md#loading-ml-models)).
 9. **Tasks bill until they return.** A `.spawn()`ed task that you never `wait()` or `cancel()`
    keeps its Pod running after your script exits.
 10. **Native CUDA libraries go in `dependencies` too**, e.g. faster-whisper needs

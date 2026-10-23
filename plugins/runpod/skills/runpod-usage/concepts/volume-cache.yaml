@@ -124,3 +124,44 @@ rules:
     see: [network-volume.concurrent-writes]
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14" }
+
+  - id: volume-cache.restore-beats-mount-load
+    statement: >
+      With Qwen2.5-1.5B (3.1 GB), a cold start that restored the model with
+      `VolumeCache` and loaded it from local disk measured faster than loading
+      it straight from the network volume or downloading it: restore 5.2 s plus
+      load 3.9 s, against 11 s loading from the mount and 16-21 s downloading
+      from Hugging Face and loading. Smaller models or a faster mount can narrow
+      or flip the gap, so time your own model.
+    status: verified
+    evidence:
+      - { source: live-probe, ref: "Runpod SDK app, Qwen2.5-1.5B-Instruct on L4/RTX 4090 workers: fresh-worker VolumeCache hydrate 5.2 s + load 3.9 s (3.10 GB restored); load from /runpod-volume 10.7-11.6 s; Hugging Face download + load 16.3-21.4 s", seen: "2026-10-17" }
+
+  - id: volume-cache.global-volume
+    statement: >
+      `VolumeCache` mirrors onto a global volume mounted at its `volume_path`
+      (`/runpod-volume` on a GPU endpoint). Use `runpod>=2.0.1`. Before
+      2.0.0rc2, files of 256 KiB or more failed to copy onto a global volume.
+      Before 2.0.1, a restore from a global volume could drop large files. Both
+      failures are swallowed, so the worker downloads the model again. Restores
+      that copied whole files took 26-51 s for 3.1 GB, against 5.2 s from a
+      network volume. 2.0.1 restores files in parallel byte ranges and retries
+      failed reads.
+    status: verified
+    see: [volume-cache.best-effort-hides-failures]
+    evidence:
+      - { source: live-probe, ref: "Runpod SDK app, Qwen2.5-1.5B-Instruct, GlobalVolume mounted at /runpod-volume: fresh-worker hydrate restored all 3.10 GB in 26.2 s, 46.6 s and 51.4 s", seen: "2026-10-17" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/serverless/utils/rp_volume_cache.py#L292", seen: "2026-10-22", note: "copy2 copies mtime and mode after the data; the global volume rejects utime/chmod, so big files failed to copy. The fix copies the data and treats the metadata step as optional." }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/serverless/utils/rp_volume_cache.py#L389", seen: "2026-10-22", note: "Hydrate copies big files as parallel byte ranges and retries ENOMEM, EIO and EAGAIN reads, which a global volume returns under whole-file parallel copies." }
+
+  - id: volume-cache.namespace-per-endpoint
+    statement: >
+      The mirror is keyed by `namespace`, which defaults to the endpoint ID.
+      Each Runpod SDK dev session creates new endpoints, so it starts from an
+      empty mirror and leaves its copy on the volume. Pass a fixed `namespace=`
+      to share one mirror across dev sessions and deploys.
+    status: documented
+    see: [volume-cache.mirror-sizing, flash.dev-session]
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v1.12.0/runpod/serverless/utils/rp_volume_cache.py#L87", seen: "2026-10-15", note: namespace falls back to RUNPOD_ENDPOINT_ID. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: Dev sessions create temporary endpoints and delete them when the session ends. }

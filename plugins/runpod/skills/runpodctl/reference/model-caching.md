@@ -157,8 +157,31 @@ runpod.serverless.start({"handler": handler})
 - **Populate with one worker.** Workers that cold-start together on an empty mirror each
   download and sync a full copy back.
 
-Measure it like the rest of this page: time a cold start with and without it on your model,
-in your data center. Exact rules: [`volume-cache`](../../runpod-usage/concepts/volume-cache.yaml).
+- **A global volume works too.** Mount it where the network volume would go (`/runpod-volume`
+  on an endpoint; GPU compute only) and the same code mirrors there. Use `runpod>=2.0.1`:
+  older versions can skip or drop large files on a global volume and swallow the error, so the
+  worker downloads the model again. Use one when the endpoint spans data centers.
+
+### Measured cold starts
+
+What a fresh worker spent getting Qwen2.5-1.5B-Instruct (3.1 GB) from storage onto the GPU,
+measured on Runpod Serverless (L4 and RTX 4090 workers, 2026-10-17):
+
+| Where the weights come from | Download or restore | Load | Total |
+|---|---|---|---|
+| Download from Hugging Face every cold start | — | — | 16–21 s |
+| Load straight from a network volume | — | 11 s | 11 s |
+| `VolumeCache` restore from a network volume | 5.2 s | 3.9 s | **9.1 s** |
+| `VolumeCache` restore from a global volume (before 2.0.1) | 26–51 s | 2–4 s | 30–55 s |
+
+- **Copy first, then load.** The restore read the volume at about 600 MB/s, and loading from
+  local disk is quick. Loading straight off the mount reads every byte over the network.
+- **Global volumes were the slowest source.** These restores copied whole files and were several
+  times slower than from a network volume. 2.0.1 restores in parallel byte ranges, so re-time a
+  global volume on 2.0.1 before ruling it out.
+- Treat these as direction, not a spec: time your own model in your data center.
+
+Exact rules: [`volume-cache`](../../runpod-usage/concepts/volume-cache.yaml).
 
 ## HF model cache — `--model-reference`
 

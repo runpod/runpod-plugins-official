@@ -141,6 +141,9 @@ existing = runpod.NetworkVolume("vol_id_or_name", create=False)          # must 
 - A new network volume is placed in a data center that has network storage and stock for every
   resource sharing it; resources using it are scheduled in that data center.
 - Read `models.path` **inside** the remote function. Volumes are not mounted locally.
+- Load model weights through `VolumeCache(dirs=[...], volume_path=str(models.path))`, which
+  copies them to the worker's disk, rather than from the mount
+  ([patterns.md](patterns.md#loading-ml-models)).
 - Undeploying an app or ending a dev session leaves its volumes in place, and they keep billing.
 
 ## Models and secrets
