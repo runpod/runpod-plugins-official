@@ -172,7 +172,7 @@ measured on Runpod Serverless (L4 and RTX 4090 workers, 2026-10-17):
 | Download from Hugging Face every cold start | — | — | 16–21 s |
 | Load straight from a network volume | — | 11 s | 11 s |
 | `VolumeCache` restore from a network volume | 5.2 s | 3.9 s | **9.1 s** |
-| `VolumeCache` restore from a global volume (before 2.0.1) | 26–51 s | 2–4 s | 30–55 s |
+| `VolumeCache` restore from a global volume (before 2.0.1) | 26–51 s | ~4 s | 30–55 s |
 
 - **Copy first, then load.** The restore read the volume at about 600 MB/s, and loading from
   local disk is quick. Loading straight off the mount reads every byte over the network.

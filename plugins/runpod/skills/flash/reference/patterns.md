@@ -112,8 +112,9 @@ start unless you cache. Pick one:
 
   The same code works on a `runpod.GlobalVolume` (GPU resources only): mount it at
   `/runpod-volume` and `VolumeCache` mirrors there. Restores from a global volume measured
-  slower than from a network volume, so prefer a network volume when the endpoint stays in one
-  data center ([model-caching](../../runpodctl/reference/model-caching.md#measured-cold-starts)).
+  slower than from a network volume before 2.0.1's parallel restore; re-time on your version,
+  and prefer a network volume when the endpoint stays in one data center
+  ([model-caching](../../runpodctl/reference/model-caching.md#measured-cold-starts)).
 
 **Don't load weights straight off the mount** (`HF_HOME=/runpod-volume/...` or
 `from_pretrained("/runpod-volume/model")`). Every read then crosses the network; restoring with
