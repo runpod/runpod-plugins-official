@@ -183,12 +183,70 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
   `os.cpu_count()` may say 48 or 96), but it can only use the vCPUs it rents.
   PyTorch, OpenMP, MKL and similar libraries start a thread per visible core,
   and the extra threads get throttled.
-- **Fix:** read the real limit from `/sys/fs/cgroup/cpu.max` (or
-  `/sys/fs/cgroup/cpu/cpu.cfs_quota_us` divided by `cpu.cfs_period_us`) and cap
-  threads to it: `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `torch.set_num_threads()`,
-  and data loader `num_workers`. Rising `nr_throttled` in the cgroup's
-  `cpu.stat` confirms it. A test pod with 5.1 cores of CPU ran a CPU matmul
-  about 1.7 times faster at 5 threads than at PyTorch's default of 24.
+- **Fix:** read the real limit from the cgroup and cap threads to it. Rising
+  `nr_throttled` in the cgroup's `cpu.stat` confirms the problem. A test pod with
+  5.1 cores of CPU ran a CPU matmul about 1.7 times faster at 5 threads than at
+  PyTorch's default of 24.
+
+  In a shell or start script, source this before launching the workload. It
+  handles cgroup v2 (`cpu.max`) and v1 (`cpu.cfs_quota_us`), and falls back to
+  the visible cores when there is no limit:
+
+  ```bash
+  # CPUs this container can actually use: its cgroup CPU limit rounded down,
+  # capped at the cores it can see. Falls back to nproc when there is no limit.
+  cpu_limit() {
+    local quota="" period="" visible n
+    visible=$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)
+    if [ -r /sys/fs/cgroup/cpu.max ]; then                 # cgroup v2
+      read -r quota period < /sys/fs/cgroup/cpu.max
+    elif [ -r /sys/fs/cgroup/cpu/cpu.cfs_quota_us ]; then  # cgroup v1
+      quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+      period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
+    fi
+    if [ -z "$quota" ] || [ "$quota" = max ] || [ "$quota" -le 0 ]; then
+      echo "$visible"; return
+    fi
+    n=$(( quota / period ))
+    [ "$n" -lt 1 ] && n=1
+    [ "$n" -gt "$visible" ] && n=$visible
+    echo "$n"
+  }
+  export CPUS=$(cpu_limit)
+  export OMP_NUM_THREADS=$CPUS MKL_NUM_THREADS=$CPUS OPENBLAS_NUM_THREADS=$CPUS NUMEXPR_NUM_THREADS=$CPUS
+  ```
+
+  In Python, run this before importing `torch` or `numpy`, and also set data
+  loader `num_workers` to at most `CPUS`:
+
+  ```python
+  import os
+
+  def cpu_limit() -> int:
+      """CPUs this container can actually use: its cgroup CPU limit rounded down,
+      capped at the cores it can see. Falls back to the visible cores when there
+      is no limit."""
+      visible = len(os.sched_getaffinity(0))
+      try:
+          quota, period = open("/sys/fs/cgroup/cpu.max").read().split()  # cgroup v2
+      except OSError:
+          try:  # cgroup v1
+              quota = open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read().strip()
+              period = open("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read().strip()
+          except OSError:
+              return visible
+      if quota == "max" or int(quota) <= 0:
+          return visible
+      return max(1, min(visible, int(quota) // int(period)))
+
+  CPUS = cpu_limit()
+  # Set these before importing torch or numpy so their thread pools pick them up.
+  for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+      os.environ[var] = str(CPUS)
+
+  import torch  # noqa: E402
+  torch.set_num_threads(CPUS)
+  ```
 
 ## Serverless worker "ready" but jobs never run
 
