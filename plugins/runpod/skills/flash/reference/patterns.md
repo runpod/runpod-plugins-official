@@ -1,128 +1,214 @@
 ---
 concepts: [flash, serverless-handler, network-volume, container-disk, volume-cache, model-store]
 ---
-# Flash — Common Patterns
+# Runpod SDK — common patterns
+
+Complete runnable versions live in [`../examples/`](../examples/).
 
 ## Choosing a model
 
-Flash has **no model catalog** — name a HuggingFace repo id in code and it downloads to the
-worker at runtime (see *Loading ML models* below). Other sources: a custom image's `MODEL_NAME` env
-(vLLM etc.), a URL, or your own weights on a NetworkVolume.
+The SDK has **no model catalog**: name a HuggingFace repo id in code and the worker downloads
+it at runtime, or attach it with `runpod.Model` so the platform stages it on the host first.
 
 - **Start with the smallest model that proves the pipeline** (`gpt2`, `stabilityai/sd-turbo`,
-  a 0.5–1B variant) — it provisions in seconds, so you validate the `@Endpoint` wiring, deps,
-  GPU, and I/O fast under `flash dev`, then change *only the id string* to the real model.
+  a 0.5–1B variant). It loads in seconds, so you validate the decorator, dependencies, GPU and
+  I/O fast under `rp flash dev`, then change only the id string.
 - **Match the model to GPU VRAM** (fp16 ≈ params × 2 bytes + overhead):
 
   | Model (fp16) | ~VRAM | `gpu=` |
   |---|---|---|
-  | ≤3B / SD1.5 / sd-turbo | ≤8 GB | `GpuGroup.AMPERE_16` or `GpuGroup.ADA_24` |
-  | 7–8B | ~16 GB | `GpuGroup.ADA_24` or `GpuGroup.AMPERE_24` |
-  | 13B | ~28 GB | `GpuGroup.ADA_32_PRO` or `GpuGroup.AMPERE_48` |
-  | 70B | ~140 GB | `GpuGroup.HOPPER_141` / `GpuGroup.BLACKWELL_180` (or quantize) |
+  | ≤3B / SD1.5 / sd-turbo | ≤8 GB | `"AMPERE_16"` or `"4090"` |
+  | 7–8B | ~16 GB | `"4090"`, `"L4"`, `"AMPERE_24"` |
+  | 13B | ~28 GB | `"5090"` or `"AMPERE_48"` |
+  | 70B | ~140 GB | `"H200"` / `"B200"` (or quantize) |
 
-- A ready-made hosted model with **no code** is [Runpod Public Endpoints / Hub](https://docs.runpod.io/hub) — a different product, not Flash.
+- A hosted model with **no code** is a [Public Endpoint](https://docs.runpod.io/hub/public-endpoints),
+  a different product.
 
-> **Big model? Naming it still works — but mind the re-download.** Model size is not a
-> flash limit: naming a large HF repo streams the weights to the worker at runtime. The
-> catch is that a scaled-to-zero worker **re-downloads on every cold start**. For a large
-> model you call often, cache it so it isn't re-pulled each time — persist to a
-> **NetworkVolume** with `VolumeCache` (see *Loading ML models* below), or on the runpodctl/serverless side use
-> the **HF model cache** (`--model-reference`, attached after `flash deploy`) or bake it into the image. This is the same
-> tradeoff as the delivery-methods table in
-> [`runpodctl/reference/model-caching.md`](../../runpodctl/reference/model-caching.md): easy
-> streaming vs. faster/cheaper cold starts for reused weights — not a contradiction.
+## Loading ML models
 
-## Loading ML models (warm workers)
+Model weights are not part of the 1,500 MB build artifact; the artifact is your code plus pip
+dependencies. Two things make loading fast and cheap.
 
-Model **weights are not part of the 1.5GB build artifact** — that cap is your code + pip
-deps (torch is auto-excluded). Weights download on the worker at runtime (HuggingFace,
-etc.), so **model size is not a Flash limit**. Two things make this fast and cheap:
-
-- **Load once per worker, not per request** — use a *class* `@Endpoint`: `__init__` loads
-  the model into VRAM once when the worker starts; methods handle requests and reuse it.
-- **Keep the weights close so a cold worker doesn't re-pull them from the Hub.** Two ways:
-  - **Model Store**, when the model is on HuggingFace and the endpoint is GPU: no volume and
-    no cache code. Set `env={"HF_HUB_CACHE": "/runpod-volume/huggingface-cache/hub"}` on the
-    `@Endpoint`, then after `flash deploy` attach the model with
-    `runpodctl serverless update <endpoint-id> --model-reference https://huggingface.co/<org>/<model>:main`.
-    Later `flash deploy` runs keep the reference. Worker start waits until a host holds the
-    model, so time the whole cold request; if that wait is too long, use the volume below.
-  - **A NetworkVolume mirrored with `VolumeCache`**: a cold worker copies the weights an
-    earlier worker downloaded onto its local disk and loads from there, not over the network
-    mount. Keep the HF cache on container disk (not under `/runpod-volume`) and wrap the load
-    in `VolumeCache` from the Runpod Python SDK (`runpod>=1.12.0`). It hydrates the local cache
-    from the volume's mirror, then syncs new files back:
+**Load once per worker, not per request.** Put the load in an `@app.api` class's
+`@runpod.init` method. It runs once when a worker starts, and every route reuses `self`:
 
 ```python
-from runpod_flash import Endpoint, GpuType, DataCenter, NetworkVolume
+import runpod
 
-vol = NetworkVolume(name="model-cache", size=100, datacenter=DataCenter.US_GA_2)
+app = runpod.App("sd")
 
-@Endpoint(
-    name="sd",
-    gpu=GpuType.NVIDIA_GEFORCE_RTX_5090,
-    workers=(0, 3),
-    idle_timeout=300,                                # keep workers warm between calls
-    datacenter=DataCenter.US_GA_2,
-    volume=vol,
-    env={"HF_HUB_CACHE": "/opt/hf-cache"},           # local container disk, mirrored by VolumeCache
-    dependencies=["torch", "diffusers", "transformers", "accelerate", "runpod>=1.12.0"],
-)
-class SD:
-    def __init__(self):                              # runs ONCE per worker
+@app.api(gpu="5090", workers=(0, 3), idle_timeout=300,
+         dependencies=["diffusers", "transformers"])
+class StableDiffusion:
+    @runpod.init
+    def load(self):
         import torch
         from diffusers import StableDiffusionPipeline
-        from runpod.serverless import VolumeCache
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            "stabilityai/sd-turbo", torch_dtype=torch.float16).to("cuda")
 
-        with VolumeCache(dirs=["/opt/hf-cache"]):    # hydrate from the volume, then sync back
-            self.pipe = StableDiffusionPipeline.from_pretrained(
-                "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
-            ).to("cuda")
-
-    async def generate(self, prompt: str) -> dict:   # per request, reuses self.pipe
-        image = self.pipe(prompt=prompt).images[0]
-        image.save("/runpod-volume/out.png")         # /runpod-volume/ persists; elsewhere is wiped
-        return {"saved": "/runpod-volume/out.png"}
+    @runpod.post("/generate")
+    async def generate(self, body: dict):
+        import base64, io
+        image = self.pipe(prompt=body["prompt"], num_inference_steps=1).images[0]
+        buf = io.BytesIO(); image.save(buf, format="PNG")
+        return {"png_b64": base64.b64encode(buf.getvalue()).decode()}
 ```
 
-- **Gated** models: pass `env={"HF_TOKEN": "..."}`.
-- **`VolumeCache` is best-effort.** Any cache error is logged and swallowed, and the worker
-  does a normal cold start, so a broken cache looks like a slow cold start. Pass
-  `VolumeCache(..., best_effort=False)` while debugging. It never copies symlinks, which the HF
-  cache uses for `snapshots/`. Leave Hub access on (don't set `HF_HUB_OFFLINE=1`) so
-  `from_pretrained` can re-link the snapshot with a metadata call. Size the volume for the
-  mirror (`/runpod-volume/.cache/<endpoint id>`), and size the **container disk** for the whole
-  local cache plus headroom. It defaults to 64 GB, so a 70B fp16 model (~140 GB) needs
-  `template=PodTemplate(containerDiskInGb=200)` on the `@Endpoint`. Let one worker populate it first: workers
-  that cold-start together on an empty mirror each download and sync a full copy. Full
-  behavior: [`concepts/volume-cache.yaml`](../../runpod-usage/concepts/volume-cache.yaml).
-- `workers=(1, n)` keeps one worker warm (no cold start on the first request); `(0, n)` scales to zero and cold-starts after `idle_timeout`.
-- The class form is the cleanest way to load once. In function-form `@Endpoint` the same effect needs the module-global cache trick (see Gotcha #11 in the skill); the class form is preferred for real inference.
-
-## CPU + GPU Pipeline
+In a queue function, cache in a module global. Deployed workers import the module once, so the
+load runs once per worker:
 
 ```python
-from runpod_flash import Endpoint, GpuGroup, CpuInstanceType
+_PIPE = None
 
-@Endpoint(name="preprocess", cpu=CpuInstanceType.CPU5C_4_8, workers=5, dependencies=["pandas"])
-async def preprocess(raw):
+@app.queue(gpu="4090", dependencies=["transformers"])
+def generate(prompt: str) -> str:
+    global _PIPE
+    if _PIPE is None:
+        from transformers import pipeline
+        _PIPE = pipeline("text-generation", model="gpt2", device=0)
+    return _PIPE(prompt, max_new_tokens=20)[0]["generated_text"]
+```
+
+**Keep the weights close to the worker.** A scaled-to-zero worker re-downloads on every cold
+start unless you cache. Pick one:
+
+- **`runpod.Model`** (HuggingFace model, GPU resource). The platform stages the weights on the
+  host and holds the worker until they are ready, so the cold request includes that wait. Time
+  the whole cold request before deciding it is fast enough.
+
+  ```python
+  qwen = runpod.Model("Qwen/Qwen2.5-7B-Instruct")
+
+  @app.queue(gpu="4090", model=qwen, dependencies=["transformers"])
+  def chat(prompt: str) -> str:
+      from transformers import pipeline
+      pipe = pipeline("text-generation", model=str(qwen.path), device=0)
+      return pipe(prompt, max_new_tokens=64)[0]["generated_text"]
+  ```
+
+- **A `NetworkVolume` mirrored with `VolumeCache`.** A cold worker copies weights an earlier
+  worker downloaded onto its local disk and loads from there instead of over the network mount.
+  Keep the HF cache on container disk (not under `/runpod-volume`) and wrap the load:
+
+  ```python
+  cache = runpod.NetworkVolume("model-cache", size=100)
+
+  @app.api(gpu="5090", mounts={"/runpod-volume": cache}, container_disk_gb=60,
+           env={"HF_HUB_CACHE": "/opt/hf-cache"}, dependencies=["transformers"])
+  class Chat:
+      @runpod.init
+      def load(self):
+          from runpod.serverless import VolumeCache
+          from transformers import pipeline
+          with VolumeCache(dirs=["/opt/hf-cache"]):   # hydrate from the volume, then sync back
+              self.pipe = pipeline("text-generation", model="Qwen/Qwen2.5-7B-Instruct", device=0)
+  ```
+
+  `rp flash deploy` vendors your local `runpod` package into the artifact, so
+  `runpod.serverless.VolumeCache` is importable on the worker without listing `runpod` in
+  `dependencies`.
+
+  The same code works on a `runpod.GlobalVolume` (GPU resources only): mount it at
+  `/runpod-volume` and `VolumeCache` mirrors there. Restores from a global volume measured
+  slower than from a network volume before 2.0.1's parallel restore; re-time on your version,
+  and prefer a network volume when the endpoint stays in one data center
+  ([model-caching](../../runpodctl/reference/model-caching.md#measured-cold-starts)).
+
+**Don't load weights straight off the mount** (`HF_HOME=/runpod-volume/...` or
+`from_pretrained("/runpod-volume/model")`). Every read then crosses the network; restoring with
+`VolumeCache` and loading from local disk measured faster
+([model-caching](../../runpodctl/reference/model-caching.md#measured-cold-starts)).
+
+`VolumeCache` details that bite:
+- **Best-effort.** Cache errors are logged and swallowed, and the worker cold-starts normally,
+  so a broken cache looks like a slow cold start. Use `VolumeCache(..., best_effort=False)`
+  while debugging.
+- It never copies symlinks, which the HF cache uses for `snapshots/`. Leave Hub access on
+  (don't set `HF_HUB_OFFLINE=1`) so `from_pretrained` can re-link with a metadata call.
+- Size the volume for the mirror and `container_disk_gb` for the whole local cache plus
+  headroom; the default is 30 GB on GPU.
+- Let one worker populate the mirror first. Workers that cold-start together on an empty mirror
+  each download and sync a full copy.
+- The mirror is keyed by endpoint ID (`namespace` defaults to `RUNPOD_ENDPOINT_ID`). Every dev
+  session creates new endpoints, so each session starts from an empty mirror and leaves its copy
+  on the volume. Pass a fixed `namespace="qwen-7b"` to share one mirror across dev sessions and
+  deploys.
+
+Full behavior: [`concepts/volume-cache.yaml`](../../runpod-usage/concepts/volume-cache.yaml).
+
+## CPU + GPU pipeline
+
+```python
+@app.queue(cpu="cpu5c-4-8", dependencies=["pandas"])
+def preprocess(rows: list[dict]) -> list[list[float]]:
     import pandas as pd
-    return pd.DataFrame(raw).to_dict("records")
+    return pd.DataFrame(rows).dropna().astype(float).values.tolist()
 
-@Endpoint(name="infer", gpu=GpuGroup.AMPERE_80, workers=5, dependencies=["torch"])
-async def infer(clean):
+@app.queue(gpu="AMPERE_80")
+def score(matrix: list[list[float]]) -> list[float]:
     import torch
-    t = torch.tensor([[v for v in r.values()] for r in clean], device="cuda")
-    return {"predictions": t.mean(dim=1).tolist()}
+    return torch.tensor(matrix, dtype=torch.float32, device="cuda").mean(dim=1).tolist()
 
-async def pipeline(data):
-    return await infer(await preprocess(data))
+@runpod.local_entrypoint
+def main():
+    print(score.remote(preprocess.remote([{"a": 1, "b": 3}, {"a": 5, "b": 7}])))
 ```
 
-## Parallel Execution
+Each stage is its own endpoint with its own workers and hardware. A remote function can also
+call another resource's `.remote()` directly.
+
+## Parallel execution
 
 ```python
-import asyncio
-results = await asyncio.gather(compute(a), compute(b), compute(c))
+jobs = [score.spawn(batch) for batch in batches]     # submit all, don't wait
+results = [job.result() for job in jobs]             # collect
+
+# async code
+results = await asyncio.gather(*(score.remote.aio(b) for b in batches))
 ```
+
+## Training jobs as tasks
+
+`@app.task` gets a Pod per call and terminates it when the function returns, which fits
+training. Share artifacts through a volume:
+
+```python
+ckpts = runpod.NetworkVolume("ckpts", size=50)
+
+@app.task(gpu="H100", gpu_count=2, mounts={"/ckpts": ckpts})
+def finetune(steps: int = 1000) -> str:
+    ...
+    return str(ckpts.path / "adapter")
+```
+
+A queue endpoint that mounts the same volume at `/runpod-volume` reads what the task wrote (golden
+path 07 shows the volume handoff). Small results can skip the volume: return them from the task
+as JSON, as [`train_then_serve.py`](../examples/train_then_serve.py) does. For a long run, `job = finetune.spawn()`
+then `await job.wait(timeout=...)`, which terminates the Pod when it finishes or times out.
+
+## Streaming results
+
+```python
+@app.queue(cpu="cpu3c-1-2")
+def tokens(prompt: str):
+    for word in prompt.split():
+        yield word
+
+for chunk in tokens.stream("hello streaming world"):
+    print(chunk)
+```
+
+## Returning binary output
+
+Requests and results go through the job API as JSON, capped at 10 MB. Return images and audio
+as base64 (`{"png_b64": ...}`) and decode on the client. For larger outputs, write to a volume
+or object storage and return a path or URL.
+
+## Calling from outside Python
+
+Deployed queue resources take their keyword arguments as the job `input`:
+`def generate(prompt: str)` takes `{"input": {"prompt": "hi"}}` on `/run` or `/runsync`.
+Deployed API routes take the JSON body itself on `https://ENDPOINT_ID.api.runpod.ai/PATH`.
+Full examples in [api.md](api.md#raw-http-to-a-deployed-queue-resource).

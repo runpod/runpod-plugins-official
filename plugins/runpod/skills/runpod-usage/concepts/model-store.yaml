@@ -114,12 +114,26 @@ rules:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/huggingface-models", seen: "2026-10-13" }
       - { source: skill, path: plugins/runpod/skills/runpod-build-template/reference/model-delivery.md, note: Connect configuration to the loader. }
 
+  - id: model-store.flash-model-parameter
+    statement: >
+      In a Flash SDK app, attach a Hugging Face model with
+      `model=runpod.Model("owner/name")` on `@app.queue` or `@app.api`. The
+      platform stages the weights on the host before the worker starts, and
+      `Model.path` gives the staged directory. Gated models need `HF_TOKEN` on
+      the same resource.
+    status: documented
+    see: [model-store.attach-by-reference, model-store.best-effort-locality]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/overview", seen: "2026-10-16" }
+      - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/model.py", seen: "2026-10-16" }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Models and secrets. }
+
   - id: model-store.flash-attach-after-deploy
     statement: >
-      For a Flash endpoint, attach the model after `flash deploy` with
-      `runpodctl serverless update <endpoint-id> --model-reference <url>:<ref>`,
-      which prints the saved `modelReferences`. Later `flash deploy` runs keep
-      the reference. Point `HF_HUB_CACHE` at
+      For a legacy `runpod-flash` endpoint, attach the model after `flash
+      deploy` with `runpodctl serverless update <endpoint-id> --model-reference
+      <url>:<ref>`, which prints the saved `modelReferences`. Later `flash
+      deploy` runs keep the reference. Point `HF_HUB_CACHE` at
       `/runpod-volume/huggingface-cache/hub` so the load finds it.
     status: verified
     see: [model-store.attach-by-reference, model-store.best-effort-locality]

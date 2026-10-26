@@ -10,8 +10,11 @@ concepts: [pod, network-volume, data-center, serverless-endpoint, worker, server
 **serverless endpoint** read that same data — the pattern behind "fine-tune on a pod,
 then serve the adapter from an endpoint."
 **Status:** COVERED — live-verified 2026-07-10 end to end (pod wrote `/workspace/hello.txt`;
-a flash serverless worker read it back at `/runpod-volume/hello.txt` and returned the exact
-contents). The earlier read-back failures were a handler-signature / empty-input bug, not the
+a `runpod-flash` serverless worker read it back at `/runpod-volume/hello.txt` and returned the
+exact contents). Step 3 is ported to the Runpod SDK (`runpod` 2.0.0rc1): on 2026-10-16 an SDK
+app deployed with `rp flash deploy` wrote to a network volume from one endpoint and read the
+exact contents back from another. Run it with `rp flash deploy`, not `rp flash dev`; dev
+sessions on the built-in runtime images fail on volume apps (flash SKILL gotcha 14). The earlier read-back failures were a handler-signature / empty-input bug, not the
 handoff — see [Root cause](#root-cause-why-the-reader-first-timed-out-found-via-mcp-worker-logs).
 **Lane(s):** runpodctl (volume + pod) + flash (serverless reader) + Runpod MCP (`stream-worker-logs`, for diagnosis)
 
@@ -36,8 +39,8 @@ The volume is **pinned to one data center**; the pod AND the endpoint workers mu
 that DC.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable (both runpodctl and flash read it).
-- `runpodctl` + `flash` installed.
+- `RUNPOD_API_KEY` resolvable (runpodctl and the Runpod SDK both read it).
+- `runpodctl` + the Runpod SDK installed (`pip install "runpod>=2.0.1"`, which provides `rp`).
 - An SSH key registered **before** creating the pod — Runpod injects registered keys into
   the pod at startup, so a key added after boot won't work until a restart (`runpodctl ssh
   list-keys`; see
@@ -73,51 +76,59 @@ Verified: the file was written and read back on the pod (48 bytes), and after
 `pod remove` the volume still listed — data persists independent of the pod.
 
 ### 3. Serverless endpoint attaches the SAME volume and reads at `/runpod-volume`
-Use **flash** for a code-first reader. Attach the existing volume **by id** (deterministic
-— no name matching), pin the same DC:
+Use the **Runpod SDK** for a code-first reader. Reference the existing volume **by id** with
+`create=False` (deterministic, and it fails instead of creating a new one), and pin the same DC:
 
 ```python
 # main.py
 import os
-from runpod_flash import Endpoint, DataCenter, NetworkVolume
-from runpod_flash.core.resources.cpu import CpuInstanceType
+import runpod
 
-vol = NetworkVolume(id="<vol-id>", datacenter=DataCenter.EU_RO_1)   # attach EXISTING by id
+app = runpod.App("handoff")
 
-@Endpoint(name="handoff-reader", cpu=CpuInstanceType.CPU3C_1_2,
-          workers=(0, 1), datacenter=DataCenter.EU_RO_1, volume=vol)
-async def read(**kwargs) -> dict:                    # see Root cause: flash calls read(**job_input)
-    p = "/runpod-volume/hello.txt"                   # NOTE: /runpod-volume, not /workspace
+vol = runpod.NetworkVolume("<vol-id>", create=False)    # attach EXISTING by id (or name)
+
+@app.queue(cpu="cpu3c-1-2", workers=(0, 1), datacenter="EU-RO-1",
+           mounts={"/runpod-volume": vol})
+def read(path: str = "hello.txt") -> dict:              # input keys = parameter names
+    root = str(vol.path)                                 # /runpod-volume, not /workspace
+    p = os.path.join(root, path)
     return {"exists": os.path.exists(p),
-            "content": open(p).read() if os.path.exists(p) else None}
+            "content": open(p).read() if os.path.exists(p) else None,
+            "runpod_volume_listing": sorted(os.listdir(root))}
+
+@runpod.local_entrypoint
+def main():
+    print(read.remote())
 ```
-**Handler signature matters** — flash invokes the handler as `read(**job_input)`, spreading
-the request's `input` dict as keyword arguments. Use `**kwargs` (or name parameters to match
-the input keys); a plain `def read(input: dict)` fails with
+**Handler signature matters** — the worker calls the function as `read(**job_input)`, so
+the request's `input` keys must be parameter names. A plain `def read(input: dict)` fails with
 `read() got an unexpected keyword argument …`. See [Root cause](#root-cause-why-the-reader-first-timed-out-found-via-mcp-worker-logs).
 ```bash
-RUNPOD_API_KEY=... flash deploy
+rp flash deploy main.py          # app "handoff", environment "default"
 runpodctl serverless list        # confirm the endpoint's networkVolumeId == your volume id
 ```
-Verified: the deployed endpoint reported `networkVolumeId` equal to the volume the pod
-wrote to — the **same volume is attached to both sides**. `NetworkVolume(id=...)` attaches
-the existing volume deterministically (there is also a `name=`/`dataCenterId=` form).
+The `runpod-flash` run verified that the deployed endpoint reported `networkVolumeId` equal to
+the volume the pod wrote to — the **same volume is attached to both sides**.
 
 ### 4. Invoke and read the artifact back
-Send a **non-empty** `input` (an empty `{}` is rejected by the worker SDK as "missing input"):
+Send a **non-empty** `input` whose keys are the function's parameters (an empty `{}` is
+rejected by the worker SDK as "missing input"):
 ```bash
 curl -s https://api.runpod.ai/v2/<endpoint-id>/run -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  -H 'Content-Type: application/json' -d '{"input":{"noop":true}}'   # then poll /status/<job-id>
+  -H 'Content-Type: application/json' -d '{"input":{"path":"hello.txt"}}'   # then poll /status/<job-id>
 ```
+From Python: `runpod.Queue(app="handoff", name="read").remote(path="hello.txt")`.
 Verified result (2026-07-10) — the serverless worker read exactly what the pod wrote:
 ```json
 "output": { "exists": true, "content": "handoff via MCP+skills 2026-07-10\n",
             "runpod_volume_listing": ["hello.txt"] }, "status": "COMPLETED"
 ```
 
-> **Redeploy note:** flash keeps warm workers on the **old** artifact after a `flash deploy`
-> until they recycle. If a code change doesn't take effect, `flash undeploy <name> --force`
-> then `flash deploy` for fresh workers.
+> **Redeploy note:** with `runpod-flash`, warm workers kept the **old** artifact after a
+> `flash deploy` until they recycled. If a code change doesn't take effect after
+> `rp flash deploy`, `rp flash undeploy --app handoff --env default --yes` then deploy again
+> for fresh workers.
 
 ## Root cause: why the reader first timed out (found via MCP worker logs)
 Early runs returned `"job timed out after 1 retries"` with the worker `IN_PROGRESS` but never
@@ -140,6 +151,7 @@ from a broken worker — get the logs before assuming the worker is bad. This ru
 
 ## Cost & cleanup
 ```bash
+rp flash app delete handoff --yes                # SDK reader; or delete endpoints by id:
 runpodctl serverless delete <endpoint-id>        # (flash may create a new endpoint per
 runpodctl serverless delete <endpoint-id-2>      #  compute-type change — delete each)
 runpodctl network-volume delete <vol-id>         # pod must already be removed
@@ -162,11 +174,11 @@ this specific fine-tune variant hasn't been run end to end (spec).
 ## Skill facts confirmed / folded back
 - `storage.md` already documents the `/workspace` (pod) vs `/runpod-volume` (serverless)
   mount-path split — confirmed correct in practice.
-- flash attaches an existing volume via `NetworkVolume(id=...)` (deterministic); the pod
-  side uses `--network-volume-id`. Both must be in the volume's DC.
-- **flash handler contract:** flash calls `read(**job_input)` — the handler must accept the
-  input keys as kwargs (`**kwargs` is safest), and the `input` must be non-empty (an empty
-  `{}` is rejected as "missing input"). A `def read(input: dict)` handler fails.
+- The SDK attaches an existing volume via `runpod.NetworkVolume("<vol-id>", create=False)`
+  (deterministic); the pod side uses `--network-volume-id`. Both must be in the volume's DC.
+- **Handler contract:** the worker calls `read(**job_input)` — the `input` keys must be the
+  function's parameter names, and the `input` must be non-empty (an empty `{}` is rejected as
+  "missing input"). A `def read(input: dict)` handler fails.
 - **Diagnosis:** the Runpod MCP `stream-worker-logs` distinguishes a job-reject (healthy
   worker, bad payload/handler) from a genuinely broken worker — reach for it before assuming
   the worker image is bad. Requires the prod v2 REST API to be reachable.

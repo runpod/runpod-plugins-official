@@ -17,7 +17,7 @@ lane below. If you already know the lane, go straight to it.
 | [`runpod`](skills/runpod/SKILL.md) | Router / entrypoint. Start here when the right skill is unclear. |
 | [`runpod-mcp`](skills/runpod-mcp/SKILL.md) | Manage infra (pods, endpoints, jobs, templates, volumes, catalog, billing) via the Runpod **MCP server**'s structured tool calls. |
 | [`runpodctl`](skills/runpodctl/SKILL.md) | Manage infra from the **CLI**, plus Hub deploys, file transfer (`send`/`receive`), SSH, and `doctor` setup. |
-| [`flash`](skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless — `@remote`/`@Endpoint`, `flash dev`, `flash deploy`. |
+| [`flash`](skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless with the Runpod SDK — `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; migrates legacy `runpod-flash` projects. |
 | [`companion-clis`](skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf` (models), `docker` (images), `gh` (repos/releases), `aws` (S3 to volumes). |
 | [`runpod-usage`](skills/runpod-usage/SKILL.md) | **Concepts** — how pods/serverless work, building containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness/runtime gotchas, version pinning; ComfyUI, PyTorch, Ubuntu. |
@@ -123,7 +123,7 @@ For one-off actions, just ask — the router picks the lane:
 - "Create a pod with an RTX 4090"
 - "Deploy a serverless endpoint from this image"
 - "Which GPU should I use for a 13B model?"
-- "Write an `@remote` function and run it on a GPU"
+- "Write a Python function and run it on a GPU with the Runpod SDK"
 - "Download a model, containerize it, and deploy it"
 - "Find the missing model links in this ComfyUI workflow and download the verified files to my Pod"
 
@@ -156,7 +156,7 @@ skills/
     golden-paths/    worked end-to-end reference tasks (indexed by the router)
   runpod-mcp/        Runpod MCP server (structured tool calls)
   runpodctl/         Runpod CLI (+ Hub, transfer, SSH, doctor)
-  flash/             write & deploy your own code (@remote)
+  flash/             write & deploy your own code (Runpod SDK apps)
   companion-clis/    hf / gh / docker / aws prerequisites
   runpod-usage/      concepts + reference/*.md
   runpod-templates/  official pod templates + repair guide + scripts
