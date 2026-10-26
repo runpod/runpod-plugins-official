@@ -39,14 +39,13 @@ a whole job in.
 
 ## Connect
 
-Connect the hosted server with **your API key as a Bearer header** if you also use runpodctl/flash. That one key auths the MCP *and* the CLIs (the 80% path):
+With a user present, connect the hosted server with **OAuth** ("Sign in with Runpod"; no key on disk). That's the default from the onboarding guide at https://agents.runpod.io/:
 
 ```bash
-claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/ \
-  --header "Authorization: Bearer $RUNPOD_API_KEY"
+claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
 
-Plain **OAuth** ("Sign in with Runpod"; the user can set it up with the interactive `npx @runpod/mcp-server@latest add`) is MCP-only: the CLIs stay unauthed, so use it only for MCP-only work. Local **stdio** runs the server as a subprocess with your key. Those variants + the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
+OAuth signs in the MCP only. When a task later needs runpodctl or flash, get a `RUNPOD_API_KEY` at that point. With no user in the loop, or a client whose OAuth callback the server rejects (`redirect_uri is not allowed`), send the key as a header instead: `--header "Authorization: Bearer $RUNPOD_API_KEY"`. Local **stdio** runs the server as a subprocess with your key. Other clients and the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
 
 **Verify it's live (do this before relying on MCP):** in Claude Code run `/mcp`.
 `runpod` should show **Connected**, not *Needs authentication* (if it's the latter,
@@ -61,7 +60,7 @@ server directly:
 
 ```bash
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"0"}}}' \
-| curl -s -X POST https://mcp.getrunpod.io/ \
+| curl -s -X POST https://mcp.runpod.io/ \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
     -H "Authorization: Bearer $RUNPOD_API_KEY" -d @-
@@ -256,5 +255,5 @@ rules and report templates; they never weaken these.
 
 - Server source: https://github.com/runpod/runpod-mcp
 - Package (npm): https://www.npmjs.com/package/@runpod/mcp-server
-- Hosted endpoint: https://mcp.getrunpod.io/
+- Hosted endpoint: https://mcp.runpod.io/
 - Docs: https://docs.runpod.io

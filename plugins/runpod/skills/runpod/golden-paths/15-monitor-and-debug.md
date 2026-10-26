@@ -295,7 +295,7 @@ v1 control plane and returns the raw worker records — far more fields, includi
 when you just need ids and states, and don't paste `--include-workers` output into a ticket.
 
 ### Route C — Runpod MCP `stream-worker-logs`
-The hosted Runpod MCP (`https://mcp.getrunpod.io/`) wraps the exact same endpoint as a tool:
+The hosted Runpod MCP (`https://mcp.runpod.io/`) wraps the exact same endpoint as a tool:
 `list-endpoint-workers` → pick a `workerId` → `stream-worker-logs` (params `source`, `tail`,
 `since`, `maxWaitMs`). It returns a bounded, already-parsed snapshot — `{"items":[{"source",
 "line","ts"}…],"count","truncated"}` — a convenient shape inside an agent (✅ used live

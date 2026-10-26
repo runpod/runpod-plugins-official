@@ -17,7 +17,7 @@ lane's `SKILL.md` (linked). You don't need all of them.
 | --- | --- | --- |
 | **runpodctl** (CLI) | `curl -sSL https://cli.runpod.net \| bash` (or `brew install runpod/runpodctl/runpodctl`) | [source](https://github.com/runpod/runpodctl) · [`runpodctl/SKILL.md`](../../runpodctl/SKILL.md) |
 | **flash** (deploy your own code) | `uv tool install runpod-flash` (or `pip install runpod-flash`; Python 3.10–3.13) | [source](https://github.com/runpod/flash) · [`flash/SKILL.md`](../../flash/SKILL.md) |
-| **runpod-mcp** (hosted) | `npx @runpod/mcp-server@latest add` (guided; OAuth) | [source](https://github.com/runpod/runpod-mcp) · [`runpod-mcp/SKILL.md`](../../runpod-mcp/SKILL.md) |
+| **runpod-mcp** (hosted) | `npx @runpod/mcp-server@latest add --client <id>` (OAuth; `--list` shows ids) | [source](https://github.com/runpod/runpod-mcp) · [`runpod-mcp/SKILL.md`](../../runpod-mcp/SKILL.md) |
 | **runpod-mcp** (local stdio) | `claude mcp add runpod -e RUNPOD_API_KEY=... -- npx -y @runpod/mcp-server` | same as above |
 | **companion CLIs** (`hf`/`gh`/`docker`/`aws`) | per-tool; see the skill | [`companion-clis/SKILL.md`](../../companion-clis/SKILL.md) |
 
@@ -30,7 +30,7 @@ Nothing to install for the **hosted MCP** beyond configuring your client, and th
 npx skills add runpod/runpod-plugins-official # the skills — works with any agent
 curl -sSL https://cli.runpod.net | bash       # runpodctl — infra CLI (or: brew install runpod/runpodctl/runpodctl)
 uv tool install runpod-flash                  # flash — deploy your own code (or: pip install runpod-flash)
-npx @runpod/mcp-server@latest add             # hosted MCP server — guided setup, OAuth
+npx @runpod/mcp-server@latest add --client <id> # hosted MCP server, OAuth (--list shows ids)
 ```
 
 Companion CLIs (`docker`, `gh`, `hf`, `aws`) are separate and OS-specific — install only the

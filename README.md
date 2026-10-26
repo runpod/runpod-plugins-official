@@ -84,7 +84,7 @@ Codex may **not** auto-wire the bundled MCP — if the `runpod` MCP tools don't 
 after install, add the hosted server manually:
 
 ```bash
-codex mcp add runpod --url https://mcp.getrunpod.io/
+codex mcp add runpod --url https://mcp.runpod.io/
 ```
 
 **Verify:** ask a Runpod task (the skill/router should answer); once the MCP is added,
@@ -134,7 +134,7 @@ Auth is needed in **two places**, and **one Runpod API key covers both**:
    - **OAuth (easiest, no key on disk):** in Claude Code, `/mcp` → **runpod** → *Sign in with Runpod*.
    - **Reuse the key you just set:**
      ```bash
-     claude mcp add --transport http runpod -s user https://mcp.getrunpod.io/ \
+     claude mcp add --transport http runpod -s user https://mcp.runpod.io/ \
        --header "Authorization: Bearer $RUNPOD_API_KEY"
      ```
 

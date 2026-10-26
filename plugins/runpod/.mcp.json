@@ -2,7 +2,7 @@
   "mcpServers": {
     "runpod": {
       "type": "http",
-      "url": "https://mcp.getrunpod.io/"
+      "url": "https://mcp.runpod.io/"
     }
   }
 }
