@@ -104,6 +104,7 @@ nothing except an unnecessary poll — whereas retrying on the wrong one buys a 
 | `timeout` | **v2.9.0+.** The CLI stopped waiting — two outcomes sharing one code, told apart by the message. If it names a `serverless status` command, the **job is still running server-side**: poll it, never re-invoke (that buys a second job). Otherwise a single API call ran out of time and nothing is running, so a retry is fine |
 | `job_failed` | **v2.9.0+.** A serverless job reached a terminal status other than `COMPLETED` (`FAILED`/`CANCELLED`/`TIMED_OUT`). The request itself succeeded — the job payload, including the worker's own `error`, is still on **stdout** |
 | `wait_timeout` `wait_interrupted` | **v2.9.0+.** A `create --wait` gave up (budget) or was cancelled (ctrl-c / SIGTERM). The resource **was created and still bills**; its id is in the `id` field above |
+| `transfer_incomplete` | A `network-volume upload/download` stopped partway: ctrl-c, a network failure or 5xx that outlasted the retries, or a file that changed mid-transfer. Rerun the **same command** — it skips finished files and continues partial ones. Failures a rerun would hit again keep their own code and don't resume: `not_found` (missing path), `unauthorized`/`forbidden`/`bad_request` (with `status`), `usage_error` (bad path, data center without the S3 API), `cli_error` (local disk errors, names that would collide on disk, uploading a file onto a folder) |
 
 Treat this as **the set the CLI generates, not an exhaustive list** — an explicit code
 from the API is passed through lowercased, so a code outside the table can arrive from
@@ -280,6 +281,7 @@ invocation instead of `exec`.
 | `TIMEOUT` | `30s` | per-API-call deadline — **no `RUNPOD_` prefix** (the CLI reads env vars unprefixed, so this one looks nothing like the others). Exceeding it is `code: "timeout"`. Also settable as a top-level `timeout` in `~/.runpod/config.toml` — it must sit **above** any `[section]` header, or it becomes `section.timeout` and is silently ignored. Distinct from `--wait`, which bounds a whole job or readiness wait rather than one call |
 | `RUNPOD_API_URL` | `https://rest.runpod.io/v1` | REST control plane (config key `restApiUrl`) |
 | `RUNPOD_GRAPHQL_URL` | `https://api.runpod.io/graphql` | GraphQL control plane (config key `apiUrl`) |
+| `RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY` | — | S3 API keys for `network-volume upload/download` (config keys `s3AccessKey` / `s3SecretKey`). Separate from the API key; the API key is still used to look up the volume's data center unless `--data-center-id` is passed |
 | `RUNPOD_INVOKE_URL` | `https://api.runpod.ai/v2` | base for the invoke URLs reported by `serverless create`/`get`/`list`/`update` (config key `invokeUrl`) |
 
 **Invoke is a separate service from the control plane.** Pointing `RUNPOD_API_URL` or
