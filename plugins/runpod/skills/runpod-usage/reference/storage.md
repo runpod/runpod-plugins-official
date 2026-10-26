@@ -29,16 +29,25 @@ above is about datasets, checkpoints, and everything else worth keeping.
 ### Container / ephemeral disk
 
 - Exists only while the container runs; **wiped when the pod stops or the worker
-  scales down**. Fastest (locally attached).
+  scales down**. Local to the machine, so it's several times faster than a
+  network-backed `/workspace` and the place for heavy I/O.
 - Everything a serverless handler writes goes here by default.
 - On pods, editing/resetting a running pod also erases it — only `/workspace`
   survives (see below).
-- Use for: OS, temp files, scratch, caches you don't need to keep.
+- Use for: OS, package installs, builds, temp files, scratch, caches you don't need
+  to keep. Size `--container-disk-in-gb` for them.
 
 ### Volume disk (pods only)
 
-- Persistent local disk mounted at `/workspace`. Retained across stop/restart,
-  but **deleted when the pod is terminated**. Not shareable.
+- Persistent storage mounted at `/workspace`. Retained across stop/restart, but
+  **deleted when the pod is terminated**. Not shareable.
+- Whether it's local depends on the data center. Where the data center offers
+  network volumes, expect `/workspace` to be network-backed and several times
+  slower than the container disk. Where it doesn't, `/workspace` may be local or
+  network-backed. Check from inside the pod with `findmnt /workspace`: `fuse`
+  means network-backed, `xfs` on a device means local. Either way, install
+  packages outside `/workspace` (the container disk is always local) rather
+  than picking a data center for disk speed.
 - Roughly $0.10/GB/month running, $0.20/GB/month while stopped. Can be increased
   (never decreased); optionally encrypted at rest.
 - Use for: models, datasets, and checkpoints you reuse across sessions on one pod.
@@ -148,7 +157,8 @@ skill for full AWS CLI usage; each volume on the Storage page shows a pre-filled
 
 ## Quick decision guide
 
-- Throwaway scratch during a run → container disk (nothing to configure).
+- Throwaway scratch, package installs and builds → container disk (local; size it
+  with `--container-disk-in-gb`).
 - Keep data between sessions on one pod → volume disk (`/workspace`).
 - Share models/data across workers or pods, or persist past termination →
   network volume — and put your compute in the volume's DC.
