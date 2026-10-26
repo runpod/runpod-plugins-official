@@ -45,12 +45,12 @@ rules:
       Whether `/workspace` is local depends on the data center. In a data center
       that offers network volumes, expect `/workspace` to be network-backed
       storage, with writes several times slower than on the container disk. In a
-      data center without network volumes it can go either way: some give a local
-      `/workspace` as fast as the container disk, others still use network-backed
-      storage. Check from inside the pod with `findmnt /workspace`: a `fuse`
-      mount is network-backed, a block device such as `xfs` is local. Either
-      way, the container disk is local, so you don't need to pick a data center
-      for disk speed.
+      data center without network volumes it can go either way: some give a
+      local `/workspace` as fast as the container disk, others still use
+      network-backed storage. Check from inside the pod with `findmnt
+      /workspace`: a `fuse` mount is network-backed, a block device such as
+      `xfs` is local. Either way, the container disk is local, so you don't need
+      to pick a data center for disk speed.
     status: verified
     see: [container-disk.fastest-local-storage]
     evidence:
