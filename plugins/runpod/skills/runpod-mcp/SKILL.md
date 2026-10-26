@@ -45,7 +45,7 @@ With a user present, connect the hosted server with **OAuth** ("Sign in with Run
 claude mcp add --transport http runpod -s user https://mcp.runpod.io/
 ```
 
-OAuth auths the MCP only. When a task later needs runpodctl or flash, get a `RUNPOD_API_KEY` then. With no user in the loop, or a client whose OAuth callback the server rejects (`redirect_uri is not allowed`), send the key as a header instead: `--header "Authorization: Bearer $RUNPOD_API_KEY"`. Local **stdio** runs the server as a subprocess with your key. Other clients and the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
+OAuth signs in the MCP only. When a task later needs runpodctl or flash, get a `RUNPOD_API_KEY` at that point. With no user in the loop, or a client whose OAuth callback the server rejects (`redirect_uri is not allowed`), send the key as a header instead: `--header "Authorization: Bearer $RUNPOD_API_KEY"`. Local **stdio** runs the server as a subprocess with your key. Other clients and the key-vs-OAuth tradeoff: **[reference/connect.md](reference/connect.md)**. After connecting, reconnect the client (in Claude Code, `/mcp`) so the tools load.
 
 **Verify it's live (do this before relying on MCP):** in Claude Code run `/mcp`.
 `runpod` should show **Connected**, not *Needs authentication* (if it's the latter,

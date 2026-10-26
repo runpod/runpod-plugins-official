@@ -23,8 +23,8 @@ config without prompts when you name the client: `npx @runpod/mcp-server@latest 
 Other clients: add an HTTP (streamable HTTP) server entry named `runpod` with URL
 `https://mcp.runpod.io/` to the client's MCP config.
 
-If sign-in fails with `redirect_uri is not allowed`, the client's OAuth callback isn't one the
-server accepts. Use the API key instead (below).
+If sign-in fails with `redirect_uri is not allowed`, this client can't use OAuth with the
+hosted server. Use an API key instead (below).
 
 **Hosted + API key**: for no user in the loop, or a client that can't do OAuth. The same key
 also unlocks runpodctl + flash:
