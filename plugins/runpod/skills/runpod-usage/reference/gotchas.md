@@ -175,6 +175,21 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 - **Fix:** reduce batch size / context length, or pick a larger-VRAM GPU. For
   vLLM, lower `GPU_MEMORY_UTILIZATION` and/or `MAX_MODEL_LEN`.
 
+## CPU-bound work on a GPU pod is slower than it should be
+
+- **Symptom:** preprocessing, decoding, CPU inference or a data loader runs slowly,
+  and gets worse when you add threads or workers.
+- **Cause:** the pod can see every core on the machine (`nproc` and
+  `os.cpu_count()` may say 48 or 96), but it can only use the vCPUs it rents.
+  PyTorch, OpenMP, MKL and similar libraries start a thread per visible core,
+  and the extra threads get throttled.
+- **Fix:** read the real limit from `/sys/fs/cgroup/cpu.max` (or
+  `/sys/fs/cgroup/cpu/cpu.cfs_quota_us` divided by `cpu.cfs_period_us`) and cap
+  threads to it: `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `torch.set_num_threads()`,
+  and data loader `num_workers`. Rising `nr_throttled` in the cgroup's
+  `cpu.stat` confirms it. A test pod with 5.1 cores of CPU ran a CPU matmul
+  about 1.7 times faster at 5 threads than at PyTorch's default of 24.
+
 ## Serverless worker "ready" but jobs never run
 
 - **Symptom:** the endpoint has `ready` workers but jobs sit `IN_QUEUE` with
