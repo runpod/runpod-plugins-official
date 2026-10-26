@@ -221,6 +221,7 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 
   ```python
   import os
+  from pathlib import Path
 
   def cpu_limit() -> int:
       """CPUs this container can actually use: its cgroup CPU limit rounded down,
@@ -228,11 +229,11 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
       is no limit."""
       visible = len(os.sched_getaffinity(0))
       try:
-          quota, period = open("/sys/fs/cgroup/cpu.max").read().split()  # cgroup v2
+          quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()  # cgroup v2
       except OSError:
           try:  # cgroup v1
-              quota = open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read().strip()
-              period = open("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read().strip()
+              quota = Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read_text().strip()
+              period = Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read_text().strip()
           except OSError:
               return visible
       if quota == "max" or int(quota) <= 0:
@@ -244,9 +245,16 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
   for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
       os.environ[var] = str(CPUS)
 
-  import torch  # noqa: E402
+  import torch  # noqa: E402  (drop these two lines if you don't use torch)
   torch.set_num_threads(CPUS)
   ```
+
+  Both snippets give one process the whole limit. When you launch several
+  processes, such as `torchrun --nproc_per_node=N` ranks or parallel workers,
+  give each one `CPUS / N` threads instead, for example
+  `export OMP_NUM_THREADS=$(( CPUS / N > 0 ? CPUS / N : 1 ))` after sourcing the
+  bash snippet.
+  Otherwise every process starts `CPUS` threads and they throttle again.
 
 ## Serverless worker "ready" but jobs never run
 

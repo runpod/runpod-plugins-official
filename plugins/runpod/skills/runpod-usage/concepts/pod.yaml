@@ -199,10 +199,12 @@ rules:
       from the cgroup (`/sys/fs/cgroup/cpu.max`, or `cpu.cfs_quota_us` divided
       by `cpu.cfs_period_us` under `/sys/fs/cgroup/cpu/`), then cap threads to
       it: set `OMP_NUM_THREADS`, `MKL_NUM_THREADS` and similar, call
-      `torch.set_num_threads()`, and size worker pools to the vCPU count. The
-      throttle counters in the cgroup's `cpu.stat` confirm the problem.
+      `torch.set_num_threads()`, and size worker pools to the vCPU count,
+      divided across processes when you run several. The throttle counters in
+      the cgroup's `cpu.stat` confirm the problem.
     status: verified
     evidence:
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md }
       - { source: live-probe, ref: "runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2404 on an RTX 2000 Ada secure cloud pod: nproc, os.cpu_count() and the affinity mask reported 48, the cgroup CPU limit was 5.1 cores, and torch.get_num_threads() defaulted to 24. 30 CPU 2048x2048 matmuls took 2.0 s at 24 threads (throttled in every period, about 33 s of throttled time) and 1.15 s at 5 threads (no throttling)", seen: "2026-10-26" }
       - { source: live-probe, ref: "Same image on an RTX 2000 Ada secure cloud pod with cgroup v2: nproc reported 128 and cpu.max 2720000 100000 (27.2 cores). The cgroup-reading snippet in reference/gotchas.md returned 27 in bash and Python, and torch.get_num_threads() read 27 after it ran. On a CPU pod (ubuntu:22.04, cpu.max max, nproc 2) it returned 2", seen: "2026-10-26" }
 
