@@ -251,10 +251,13 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 
   Both snippets give one process the whole limit. When you launch several
   processes, such as `torchrun --nproc_per_node=N` ranks or parallel workers,
-  give each one `CPUS / N` threads instead, for example
-  `export OMP_NUM_THREADS=$(( CPUS / N > 0 ? CPUS / N : 1 ))` after sourcing the
-  bash snippet.
-  Otherwise every process starts `CPUS` threads and they throttle again.
+  give each one `CPUS / N` threads instead, or every process starts `CPUS`
+  threads and they throttle again. After sourcing the bash snippet:
+
+  ```bash
+  PER=$(( CPUS / N > 0 ? CPUS / N : 1 ))
+  export OMP_NUM_THREADS=$PER MKL_NUM_THREADS=$PER OPENBLAS_NUM_THREADS=$PER NUMEXPR_NUM_THREADS=$PER
+  ```
 
 ## Serverless worker "ready" but jobs never run
 
