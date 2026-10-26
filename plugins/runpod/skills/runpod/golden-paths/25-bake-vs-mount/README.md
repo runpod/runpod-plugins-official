@@ -40,9 +40,10 @@ block first. For this path specifically:
 | Mount path | anywhere you `COPY`/build it | pod `/workspace`, serverless `/runpod-volume` |
 | Put here | packages, libs, lots of small static files | model weights, datasets, anything to persist |
 
-> In a network-volume-enabled region, "container disk vs volume disk" is mostly fiction — the
-> **only** thing truly on local disk is the image and what's baked into it. Everything written
-> to the volume path is on the network mount.
+> In a network-volume-enabled region, `/workspace` is on the network mount even without an
+> attached network volume. The image and anything written outside the mount path (the container
+> disk, such as `/root`, `/opt` or `/tmp`) are local. Everything under `/workspace` is on the
+> network mount.
 
 ## The image
 

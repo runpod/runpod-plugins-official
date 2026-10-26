@@ -33,15 +33,16 @@ rules:
       - { source: rest-v2-spec, ref: ContainerConfig.disk, seen: "2026-09-28", note: Wiped on restart. }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 
-  - id: container-disk.fastest-local-storage
+  - id: container-disk.always-local
     applies_to: ["field:disk"]
     statement: >
-      The container disk is always local to the machine, in every data center.
-      Where `/workspace` is network-backed, 512 MB direct writes measured
-      2.4-4.1 GB/s on the container disk against 443-713 MB/s on `/workspace`.
-      Install packages, build and keep scratch files on the container disk (for
-      example `/root`, `/opt` or `/tmp`), and keep only what must survive a stop
-      or restart in `/workspace`. Size the container disk for those installs.
+      The container disk is local to the machine. Where `/workspace` is
+      network-backed, writes to the container disk run several times faster than
+      writes to `/workspace`; where `/workspace` is local, the two are about the
+      same. Install packages, build and keep scratch files on the container disk
+      (for example `/root`, `/opt` or `/tmp`), and keep only what must survive a
+      stop or restart in `/workspace`. Size the container disk for those
+      installs.
     status: verified
     see: [pod-volume-disk.network-filesystem-backed, container-disk.what-survives]
     evidence:

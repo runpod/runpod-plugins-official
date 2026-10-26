@@ -10,8 +10,8 @@ center without network volumes to get a local disk. Is that right?
 
 The agent should:
 
-1. Say the container disk (`/`, including `/root`, `/opt`, `/tmp`) is local and the fastest
-   storage a pod has, in every data center, so installs outside `/workspace` are fast anywhere
+1. Say the container disk (`/`, including `/root`, `/opt`, `/tmp`) is local, so installs
+   outside `/workspace` are fast wherever the pod runs
 2. Say `/workspace` (the volume disk) is network-backed in data centers that offer network
    volumes, and that a data center without network volumes does not guarantee a local
    `/workspace`
@@ -19,6 +19,8 @@ The agent should:
 4. Recommend installing packages, building and unpacking scratch data on the container disk,
    sized with `--container-disk-in-gb`, and keeping only what must survive a restart in
    `/workspace`
+5. Note that the container disk is wiped when the pod stops or restarts, so anything that must
+   survive goes in `/workspace` or a network volume
 
 ## Assertions
 

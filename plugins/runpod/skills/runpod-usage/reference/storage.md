@@ -29,8 +29,8 @@ above is about datasets, checkpoints, and everything else worth keeping.
 ### Container / ephemeral disk
 
 - Exists only while the container runs; **wiped when the pod stops or the worker
-  scales down**. Always local to the machine, so it's the fast place for I/O
-  (2.4–4.1 GB/s measured, against 443–713 MB/s on a network-backed `/workspace`).
+  scales down**. Local to the machine, so it's several times faster than a
+  network-backed `/workspace` and the place for heavy I/O.
 - Everything a serverless handler writes goes here by default.
 - On pods, editing/resetting a running pod also erases it — only `/workspace`
   survives (see below).
@@ -157,7 +157,7 @@ skill for full AWS CLI usage; each volume on the Storage page shows a pre-filled
 
 ## Quick decision guide
 
-- Throwaway scratch, package installs and builds → container disk (fastest; size it
+- Throwaway scratch, package installs and builds → container disk (local; size it
   with `--container-disk-in-gb`).
 - Keep data between sessions on one pod → volume disk (`/workspace`).
 - Share models/data across workers or pods, or persist past termination →

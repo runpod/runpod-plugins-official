@@ -48,11 +48,11 @@ rules:
       data center without network volumes it can go either way: some give a
       local `/workspace` as fast as the container disk, others still use
       network-backed storage. Check from inside the pod with `findmnt
-      /workspace`: a `fuse` mount is network-backed, a block device such as
-      `xfs` is local. Either way, the container disk is local, so you don't need
-      to pick a data center for disk speed.
+      /workspace`: a `fuse` mount is network-backed, an `xfs` filesystem on a
+      device is local. Either way, the container disk is local, so you don't
+      need to pick a data center for disk speed.
     status: verified
-    see: [container-disk.fastest-local-storage]
+    see: [container-disk.always-local]
     evidence:
       - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk and no network volume. findmnt showed / as a local overlay and /workspace as a fuse mount in EU-RO-1 (offers network volumes) and in EU-SE-1 and US-MO-2 (no network volumes). dd 512 MB oflag=direct: /workspace 713, 443 and 568 MB/s; container disk 2.8, 4.1 and 2.4 GB/s", seen: "2026-10-26" }
       - { source: live-probe, ref: "Same probe in OC-AU-1, US-TX-4 and US-PA-1 (no network volumes): findmnt showed /workspace as a local xfs block device. dd 512 MB oflag=direct: /workspace 5.0, 4.3 and 0.58 GB/s; container disk 5.4, 4.3 and 0.56 GB/s", seen: "2026-10-26" }
