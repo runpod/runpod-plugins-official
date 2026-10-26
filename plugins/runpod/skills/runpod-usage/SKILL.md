@@ -7,7 +7,7 @@ description: >-
   infrastructure with runpodctl/runpod-mcp and code-first work with flash.
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.8.1" # x-release-please-version
   concepts: [pod, serverless-endpoint, network-volume, container-disk, pod-volume-disk, gpu-type, exposed-port, worker]
 license: Apache-2.0
 ---
