@@ -41,13 +41,13 @@ above is about datasets, checkpoints, and everything else worth keeping.
 
 - Persistent storage mounted at `/workspace`. Retained across stop/restart, but
   **deleted when the pod is terminated**. Not shareable.
-- Where it lives depends on the data center. If the data center runs a network
-  storage cluster, `/workspace` is a directory on that network filesystem and
-  several times slower than the container disk. Some data centers without
-  network volumes still run one, so the network-volume list doesn't tell you. In
-  a data center without one, `/workspace` is a local disk. Check from inside
-  the pod with `findmnt /workspace`: `fuse` means network, `xfs` on a device
-  means local.
+- Whether it's local depends on the data center. Where the data center offers
+  network volumes, expect `/workspace` to be network-backed and several times
+  slower than the container disk. Where it doesn't, `/workspace` may be local or
+  network-backed. Check from inside the pod with `findmnt /workspace`: `fuse`
+  means network-backed, `xfs` on a device means local. Either way, install
+  packages outside `/workspace` (the container disk is always local) rather
+  than picking a data center for disk speed.
 - Roughly $0.10/GB/month running, $0.20/GB/month while stopped. Can be increased
   (never decreased); optionally encrypted at rest.
 - Use for: models, datasets, and checkpoints you reuse across sessions on one pod.

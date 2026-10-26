@@ -45,7 +45,7 @@ rules:
     status: verified
     see: [pod-volume-disk.network-filesystem-backed, container-disk.what-survives]
     evidence:
-      - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk and no network volume: findmnt showed / as a local overlay and /workspace as a fuse mount of the data center network filesystem (mfs#<dc>:9421[/podvolumes/<machine>/<pod>]) on an RTX 2000 Ada in EU-RO-1, an A40 in EU-SE-1 and an L4 in US-MO-2; EU-SE-1 and US-MO-2 list storageSupport false. dd 512 MB oflag=direct: /workspace 713, 443 and 568 MB/s; container disk 2.8, 4.1 and 2.4 GB/s", seen: "2026-10-26" }
+      - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk and no network volume in EU-RO-1, EU-SE-1, US-MO-2, OC-AU-1, US-TX-4 and US-PA-1: findmnt showed / as a local overlay on every pod. Where /workspace was a fuse mount (EU-RO-1, EU-SE-1, US-MO-2), dd 512 MB oflag=direct ran 713, 443 and 568 MB/s on /workspace and 2.8, 4.1 and 2.4 GB/s on the container disk", seen: "2026-10-26" }
 
   - id: container-disk.billing
     applies_to: ["field:disk"]
