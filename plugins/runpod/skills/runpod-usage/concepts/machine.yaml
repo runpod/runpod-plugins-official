@@ -49,9 +49,9 @@ rules:
   - id: machine.host-local-storage
     statement: >
       The pod's volume disk is tied to its machine. The data stays while the pod
-      is stopped, is lost if the machine fails, and is not billed while the
-      machine is unavailable. Use a network volume for data that must outlive
-      the machine.
+      is stopped, can become unavailable or be lost if the machine fails, and is
+      not billed while the machine is unavailable. Use a network volume for data
+      that must outlive the machine.
     status: documented
     see: [pod-volume-disk.deprecated-prefer-network]
     evidence:

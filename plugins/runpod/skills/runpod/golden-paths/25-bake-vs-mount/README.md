@@ -42,8 +42,7 @@ block first. For this path specifically:
 
 > In a network-volume-enabled region, `/workspace` is on the network mount even without an
 > attached network volume. The image and anything written outside the mount path (the container
-> disk, such as `/root`, `/opt` or `/tmp`) are local. Everything under `/workspace` is on the
-> network mount.
+> disk, such as `/root`, `/opt` or `/tmp`) are local.
 
 ## The image
 
