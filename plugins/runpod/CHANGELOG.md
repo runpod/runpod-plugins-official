@@ -6,6 +6,23 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.1](https://github.com/runpod/runpod-plugins-official/compare/v1.8.0...v1.8.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* lead with MCP OAuth and point at mcp.runpod.io ([#100](https://github.com/runpod/runpod-plugins-official/issues/100)) ([98e9f7c](https://github.com/runpod/runpod-plugins-official/commit/98e9f7c219d2691d2ed33c075dd1638ef28e1034))
+
+
+### Documentation
+
+* **pods:** cap CPU threads to the pod's vCPU limit, not the visible core count ([#99](https://github.com/runpod/runpod-plugins-official/issues/99)) ([890604f](https://github.com/runpod/runpod-plugins-official/commit/890604f93db8e7d8c5b1bf8c43e62a31ba9f2a64))
+* point agents to agents.runpod.io ([#91](https://github.com/runpod/runpod-plugins-official/issues/91)) ([08b981e](https://github.com/runpod/runpod-plugins-official/commit/08b981e3c522d96e002b6cdcf977281b2d3e0e7f))
+* remove stale MCP delete-returns-JSON-error guidance ([#92](https://github.com/runpod/runpod-plugins-official/issues/92)) ([74e0748](https://github.com/runpod/runpod-plugins-official/commit/74e0748c365632ffc695c3d449fbae650d1bae04))
+* **runpodctl:** align pod guidance with REST API v2 ([#64](https://github.com/runpod/runpod-plugins-official/issues/64)) ([f45f259](https://github.com/runpod/runpod-plugins-official/commit/f45f2595e6653ea6b64fc2aa8f05a4fe608f387f))
+* **runpodctl:** route project workflows to the Runpod SDK (CON-874) ([#96](https://github.com/runpod/runpod-plugins-official/issues/96)) ([926087d](https://github.com/runpod/runpod-plugins-official/commit/926087d9f605645ef52b82dba1fc9714dd2da4d1))
+* **storage:** /workspace can be network-backed; install on the container disk ([#98](https://github.com/runpod/runpod-plugins-official/issues/98)) ([242709b](https://github.com/runpod/runpod-plugins-official/commit/242709ba0d21f23f55108ddc86ff88a3224f9b9b))
+
 ## [1.8.0](https://github.com/runpod/runpod-plugins-official/compare/v1.7.4...v1.8.0) (2026-10-19)
 
 
