@@ -42,16 +42,20 @@ rules:
   - id: pod-volume-disk.network-filesystem-backed
     applies_to: ["field:mounts.persistent.size"]
     statement: >
-      The volume disk is not a disk inside the machine. On the GPU pods probed,
-      `/workspace` was a pod-scoped directory on the data center's network
-      filesystem (a `fuse` mount), including in data centers that do not offer
-      network volumes, and its writes ran several times slower than the
-      container disk's. Choosing a data center without network volumes does not
-      give the volume disk local storage.
+      Where the volume disk lives depends on whether the pod's data center runs
+      a network storage cluster, not on whether it offers network volumes. In a
+      data center with one, `/workspace` is a pod-scoped directory on the data
+      center's network filesystem and writes run several times slower than on
+      the container disk; some data centers without network volumes still run
+      one. In a data center without one, `/workspace` is a local disk as fast as
+      the container disk. From inside the pod, `findmnt /workspace` tells them
+      apart: a `fuse` mount is network storage, a block device such as `xfs` is
+      local.
     status: verified
     see: [container-disk.fastest-local-storage]
     evidence:
       - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk and no network volume: findmnt showed / as a local overlay and /workspace as a fuse mount of the data center network filesystem (mfs#<dc>:9421[/podvolumes/<machine>/<pod>]) on an RTX 2000 Ada in EU-RO-1, an A40 in EU-SE-1 and an L4 in US-MO-2; EU-SE-1 and US-MO-2 list storageSupport false. dd 512 MB oflag=direct: /workspace 713, 443 and 568 MB/s; container disk 2.8, 4.1 and 2.4 GB/s", seen: "2026-10-26" }
+      - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk in data centers whose dataCenters entry lists no storage cluster: findmnt showed /workspace as a local xfs Docker volume (/dev/mdN[.../volumes/<pod>/_data]) on an L40S in OC-AU-1, an L40S in US-TX-4 and an RTX PRO 6000 MIG slice in US-PA-1. dd 512 MB oflag=direct: /workspace 5.0, 4.3 and 0.58 GB/s; container disk 5.4, 4.3 and 0.56 GB/s", seen: "2026-10-26" }
 
   - id: pod-volume-disk.lifetime-and-billing
     applies_to: ["field:mounts.persistent.size"]

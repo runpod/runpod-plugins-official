@@ -29,8 +29,8 @@ above is about datasets, checkpoints, and everything else worth keeping.
 ### Container / ephemeral disk
 
 - Exists only while the container runs; **wiped when the pod stops or the worker
-  scales down**. Fastest: it's the only local disk a pod gets (2.4–4.1 GB/s
-  measured, against 443–713 MB/s on `/workspace`).
+  scales down**. Always local to the machine, so it's the fast place for I/O
+  (2.4–4.1 GB/s measured, against 443–713 MB/s on a network-backed `/workspace`).
 - Everything a serverless handler writes goes here by default.
 - On pods, editing/resetting a running pod also erases it — only `/workspace`
   survives (see below).
@@ -41,10 +41,13 @@ above is about datasets, checkpoints, and everything else worth keeping.
 
 - Persistent storage mounted at `/workspace`. Retained across stop/restart, but
   **deleted when the pod is terminated**. Not shareable.
-- Not a local disk: it's a pod-scoped directory on the data center's network
-  filesystem, even in data centers that don't offer network volumes, so it's
-  several times slower than the container disk. Picking a different data center
-  doesn't change that; do heavy I/O on the container disk instead.
+- Where it lives depends on the data center. If the data center runs a network
+  storage cluster, `/workspace` is a directory on that network filesystem and
+  several times slower than the container disk. Some data centers without
+  network volumes still run one, so the network-volume list doesn't tell you. In
+  a data center without one, `/workspace` is a local disk. Check from inside
+  the pod with `findmnt /workspace`: `fuse` means network, `xfs` on a device
+  means local.
 - Roughly $0.10/GB/month running, $0.20/GB/month while stopped. Can be increased
   (never decreased); optionally encrypted at rest.
 - Use for: models, datasets, and checkpoints you reuse across sessions on one pod.
