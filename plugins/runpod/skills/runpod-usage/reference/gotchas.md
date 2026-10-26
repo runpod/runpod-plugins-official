@@ -255,6 +255,7 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
   threads and they throttle again. After sourcing the bash snippet:
 
   ```bash
+  N=4  # number of processes you launch
   PER=$(( CPUS / N > 0 ? CPUS / N : 1 ))
   export OMP_NUM_THREADS=$PER MKL_NUM_THREADS=$PER OPENBLAS_NUM_THREADS=$PER NUMEXPR_NUM_THREADS=$PER
   ```
