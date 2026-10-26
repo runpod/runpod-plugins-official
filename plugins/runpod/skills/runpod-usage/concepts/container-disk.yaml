@@ -33,6 +33,20 @@ rules:
       - { source: rest-v2-spec, ref: ContainerConfig.disk, seen: "2026-09-28", note: Wiped on restart. }
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md }
 
+  - id: container-disk.fastest-local-storage
+    applies_to: ["field:disk"]
+    statement: >
+      The container disk is the pod's local storage and its fastest: 512 MB
+      direct writes measured 2.4-4.1 GB/s on it against 443-713 MB/s on
+      `/workspace` on the same pods. Install packages, build and keep scratch
+      files on the container disk (for example `/root`, `/opt` or `/tmp`), and
+      keep only what must survive a stop or restart in `/workspace`. Size the
+      container disk for those installs.
+    status: verified
+    see: [pod-volume-disk.network-filesystem-backed, container-disk.what-survives]
+    evidence:
+      - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk and no network volume: findmnt showed / as a local overlay and /workspace as a fuse mount of the data center network filesystem (mfs#<dc>:9421[/podvolumes/<machine>/<pod>]) on an RTX 2000 Ada in EU-RO-1, an A40 in EU-SE-1 and an L4 in US-MO-2; EU-SE-1 and US-MO-2 list storageSupport false. dd 512 MB oflag=direct: /workspace 713, 443 and 568 MB/s; container disk 2.8, 4.1 and 2.4 GB/s", seen: "2026-10-26" }
+
   - id: container-disk.billing
     applies_to: ["field:disk"]
     statement: >

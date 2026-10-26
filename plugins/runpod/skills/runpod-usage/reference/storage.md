@@ -29,16 +29,22 @@ above is about datasets, checkpoints, and everything else worth keeping.
 ### Container / ephemeral disk
 
 - Exists only while the container runs; **wiped when the pod stops or the worker
-  scales down**. Fastest (locally attached).
+  scales down**. Fastest: it's the only local disk a pod gets (2.4–4.1 GB/s
+  measured, against 443–713 MB/s on `/workspace`).
 - Everything a serverless handler writes goes here by default.
 - On pods, editing/resetting a running pod also erases it — only `/workspace`
   survives (see below).
-- Use for: OS, temp files, scratch, caches you don't need to keep.
+- Use for: OS, package installs, builds, temp files, scratch, caches you don't need
+  to keep. Size `--container-disk-in-gb` for them.
 
 ### Volume disk (pods only)
 
-- Persistent local disk mounted at `/workspace`. Retained across stop/restart,
-  but **deleted when the pod is terminated**. Not shareable.
+- Persistent storage mounted at `/workspace`. Retained across stop/restart, but
+  **deleted when the pod is terminated**. Not shareable.
+- Not a local disk: it's a pod-scoped directory on the data center's network
+  filesystem, even in data centers that don't offer network volumes, so it's
+  several times slower than the container disk. Picking a different data center
+  doesn't change that; do heavy I/O on the container disk instead.
 - Roughly $0.10/GB/month running, $0.20/GB/month while stopped. Can be increased
   (never decreased); optionally encrypted at rest.
 - Use for: models, datasets, and checkpoints you reuse across sessions on one pod.
@@ -148,7 +154,8 @@ skill for full AWS CLI usage; each volume on the Storage page shows a pre-filled
 
 ## Quick decision guide
 
-- Throwaway scratch during a run → container disk (nothing to configure).
+- Throwaway scratch, package installs and builds → container disk (fastest; size it
+  with `--container-disk-in-gb`).
 - Keep data between sessions on one pod → volume disk (`/workspace`).
 - Share models/data across workers or pods, or persist past termination →
   network volume — and put your compute in the volume's DC.

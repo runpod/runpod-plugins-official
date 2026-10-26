@@ -2,10 +2,10 @@ id: pod-volume-disk
 name: Pod volume disk
 kind: component
 summary: >
-  Persistent storage on the pod's own machine, mounted at `/workspace` by
-  default. Only that pod can use it. It survives stops and restarts and is
-  deleted when the pod is terminated. It is not a network volume, which lives at
-  the data center level.
+  Persistent storage scoped to one pod and tied to its machine, mounted at
+  `/workspace` by default. Only that pod can use it. It survives stops and
+  restarts and is deleted when the pod is terminated. It is not a network
+  volume, which lives at the data center level.
 product: pods
 is_a: null
 part_of: pod
@@ -28,16 +28,30 @@ rules:
   - id: pod-volume-disk.machine-level-not-data-center-level
     applies_to: ["field:mounts.persistent.size"]
     statement: >
-      The volume disk lives on the pod's machine, not in the data center, and
-      only that pod can use it. A network volume is the data-center-level
-      storage that any pod or endpoint in the data center can attach. A pod
-      mounts one or the other at `/workspace`, never both.
+      The volume disk belongs to one pod and is tied to that pod's machine; only
+      that pod can use it. A network volume is the data-center-level storage
+      that any pod or endpoint in the data center can attach. A pod mounts one
+      or the other at `/workspace`, never both.
     status: documented
     see: [network-volume.data-center-level-not-machine-level, machine.host-local-storage]
     evidence:
       - { source: rest-v2-spec, ref: "PersistentMount; Mounts", seen: "2026-09-28", note: "The persistent mount is pinned to the pod's host machine, and it cannot be combined with a network mount." }
       - { source: public-docs, url: "https://docs.runpod.io/pods/storage/types", seen: "2026-09-28", note: "A network volume replaces the volume disk at `/workspace`." }
       - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28", note: "A stopped pod's volume storage remains on the physical machine." }
+
+  - id: pod-volume-disk.network-filesystem-backed
+    applies_to: ["field:mounts.persistent.size"]
+    statement: >
+      The volume disk is not a disk inside the machine. On the GPU pods probed,
+      `/workspace` was a pod-scoped directory on the data center's network
+      filesystem (a `fuse` mount), including in data centers that do not offer
+      network volumes, and its writes ran several times slower than the
+      container disk's. Choosing a data center without network volumes does not
+      give the volume disk local storage.
+    status: verified
+    see: [container-disk.fastest-local-storage]
+    evidence:
+      - { source: live-probe, ref: "ubuntu:22.04 GPU pods with a 10 GB volume disk and no network volume: findmnt showed / as a local overlay and /workspace as a fuse mount of the data center network filesystem (mfs#<dc>:9421[/podvolumes/<machine>/<pod>]) on an RTX 2000 Ada in EU-RO-1, an A40 in EU-SE-1 and an L4 in US-MO-2; EU-SE-1 and US-MO-2 list storageSupport false. dd 512 MB oflag=direct: /workspace 713, 443 and 568 MB/s; container disk 2.8, 4.1 and 2.4 GB/s", seen: "2026-10-26" }
 
   - id: pod-volume-disk.lifetime-and-billing
     applies_to: ["field:mounts.persistent.size"]
