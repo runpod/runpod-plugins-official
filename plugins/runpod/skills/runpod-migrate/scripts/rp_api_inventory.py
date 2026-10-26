@@ -506,7 +506,7 @@ SIGNALS: list[Signal] = [
     Signal(
         Gen.MCP,
         "mcp",
-        r"@runpod/mcp-server|mcp\.getrunpod\.io",
+        r"@runpod/mcp-server|mcp\.(get)?runpod\.io",
         "Runpod MCP server — follows its own REST version (see serverInfo.version). "
         "Nothing to migrate.",
     ),

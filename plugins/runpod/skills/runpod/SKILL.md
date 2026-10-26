@@ -83,21 +83,27 @@ runpodctl user            # succeeds ⇒ a key is set and valid
 ```
 Plus, in Claude Code, `/mcp` should show `runpod` **Connected**.
 
-**Rule: get a key first — do not default to MCP OAuth.** The reason: one `RUNPOD_API_KEY`
-unlocks every tool — it authenticates **runpodctl + flash + the hosted MCP** (as `--header
-"Authorization: Bearer $RUNPOD_API_KEY"`). The MCP's "Sign in with Runpod" OAuth auths the **MCP alone** — the CLIs
-stay blocked, so you hit a wall on any CLI-only task (`send`/`receive`, SSH, `doctor`,
-model cache/Model Repository, CPU endpoints). ⚠️ **OAuth-only is a half-setup.** If nothing's
-set up, stop and get a key, in order:
-1. **`flash login`** — browser OAuth that saves a real key to `~/.runpod/config.toml` (runpodctl
-   + flash read it; reuse it for the MCP Bearer). One step, unlocks all. Human-only.
-2. **`export RUNPOD_API_KEY=…`** (https://console.runpod.io/user/settings) — same full unlock;
-   best for headless agents.
-3. **MCP OAuth only** (`/mcp` → *Sign in*) — last resort, MCP-only work; CLIs stay unauthed.
+**Rule: MCP OAuth first, a key only when a task needs one.** This matches the onboarding
+guide at https://agents.runpod.io/. With a user present, the hosted MCP's "Sign in with
+Runpod" (OAuth, no key on disk) is the default control plane: most infra tasks (pods,
+endpoints, jobs, volumes, templates) need nothing else. Don't install CLIs or create a
+key during setup "just in case".
 
-**Then:** if a lane already works, use it — but if *only* the MCP is OAuth'd, still get a key
-before any CLI-only step. Missing a CLI? `curl -sSL https://cli.runpod.net | bash` (runpodctl) ·
-`uv tool install runpod-flash` (flash) · `npx @runpod/mcp-server@latest add` (MCP). Full setup:
+OAuth authenticates **the MCP alone**. When a task reaches a CLI-only step
+(`send`/`receive`, SSH, `doctor`, model cache/Model Repository, CPU endpoints, a `flash` deploy), get a key
+**at that point**, in order:
+1. **`flash login`**: browser OAuth that saves a real key to `~/.runpod/config.toml`
+   (runpodctl + flash read it). Needs a human at the browser.
+2. **`export RUNPOD_API_KEY=…`** (https://console.runpod.io/user/settings): the same key,
+   best for headless agents.
+
+No user in the loop (CI, scheduled jobs, agent SDK runs)? Nobody can approve OAuth, so use
+`RUNPOD_API_KEY` from the start and send it to the hosted MCP as `--header "Authorization:
+Bearer $RUNPOD_API_KEY"`.
+
+**Then:** if a lane already works, use it. Missing a CLI? `curl -sSL https://cli.runpod.net | bash`
+(runpodctl) · `uv tool install runpod-flash` (flash) · `npx @runpod/mcp-server@latest add --client <id>`
+(MCP; `--list` shows the ids). Full setup:
 [`runpod-usage/reference/getting-started.md`](../runpod-usage/reference/getting-started.md).
 
 ## How to route
