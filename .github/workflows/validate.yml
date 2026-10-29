@@ -8,7 +8,7 @@ on:
 jobs:
   example-changes:
     # Keep the repository checks unconditional; only image jobs need this filter.
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 5
     outputs:
       changed: ${{ steps.paths.outputs.changed }}
@@ -35,7 +35,7 @@ jobs:
           PY
 
   validate:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -74,7 +74,7 @@ jobs:
     # so their tests also run on the oldest version we support: 3.9, the macOS
     # system python3. The validate job above only proves they work on 3.14.
     # Pinned: ubuntu-latest is 26.04, which has no Python 3.9 build for setup-python.
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -88,7 +88,7 @@ jobs:
   concepts:
     # The concept files under runpod-usage/concepts: schema, cross-file refs,
     # REST v2 snapshot, public-only wording, and that every cited skill file exists.
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:
         working-directory: ontology/tools
@@ -117,7 +117,7 @@ jobs:
     # Small CPU fixtures only: no Runpod credentials, GPU, push or billable resources.
     needs: example-changes
     if: needs.example-changes.outputs.changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 20
     strategy:
       matrix:
@@ -170,7 +170,7 @@ jobs:
     # Mock torch and a small base service: no CUDA image, GPU or Runpod resources.
     needs: example-changes
     if: needs.example-changes.outputs.changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 10
     defaults:
       run:
@@ -190,7 +190,7 @@ jobs:
     # shellcheck, shfmt, biome, nixfmt, deadnix, statix) hermetically. The
     # `validate` job above stays the source of truth for the domain-specific
     # hooks; this job adds lint/type/security/format/tests.
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main

@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
     steps:
@@ -32,7 +32,7 @@ jobs:
   publish-knowledge:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
       contents: read
       id-token: write  # npm trusted publishing (OIDC) and provenance; no npm token is stored

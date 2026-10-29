@@ -104,7 +104,14 @@ let
       (src + "/.yamllint.yaml")
     ]
   );
-  workflowSrc = toSrc (filesWithExt "yml" (src + "/.github/workflows"));
+  # The workflows plus actionlint's config, which declares the Blacksmith
+  # runner labels.
+  workflowSrc = toSrc (
+    fs.unions [
+      (filesWithExt "yml" (src + "/.github/workflows"))
+      (src + "/.github/actionlint.yaml")
+    ]
+  );
 
   # Walk the scoped copy for tools that don't recurse a directory themselves
   # (shellcheck, nixfmt): every match, NUL-delimited so paths with spaces are
@@ -179,9 +186,9 @@ let
         versions.shellcheck
       ];
       src = workflowSrc;
-      # Explicit files: the sandboxed copy is not a git repo, so actionlint cannot
-      # discover .github/workflows on its own.
-      text = walk "yml" "actionlint";
+      # Explicit files and config: the sandboxed copy is not a git repo, so
+      # actionlint cannot discover .github/workflows or its config on its own.
+      text = walk "yml" "actionlint -config-file .github/actionlint.yaml";
     };
     nixfmt = {
       runtimeInputs = [ versions.nixfmt ];
