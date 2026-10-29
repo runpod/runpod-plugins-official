@@ -99,11 +99,15 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
   host CUDA version, and a modern image can land on a host too old to run it. Why 12.8
   and when to use 13.0:
   [`runpod-usage` gpu-selection](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
-- **Hand pod creation to runpodctl** for a **multi-GPU priority list** (v2 `create-pod`
-  takes one GPU type; check the live schema before assuming, and watch for a `_warning`
-  on an otherwise-successful create), or for a **template + CPU** pod together, which
-  v2 does not express. Each alone is fine in MCP: `templateId` (each field you pass
-  replaces the template's whole value rather than merging) or `computeType: "CPU"`.
+- **Pod creates:** `create-pod` takes one GPU type (`gpu.id`; check the live schema
+  before assuming, and watch for a `_warning` on an otherwise-successful create), so a
+  multi-GPU priority list means one create per type, retried in order on a capacity
+  error. A CPU pod sends a `cpu` object (`{id, vcpuCount}` from `list-cpu-types`) in
+  place of `gpu`. `templateId` works for GPU and CPU pods: each field you pass replaces
+  the template's value, except `env`, which merges per key with yours winning; a CPU pod
+  skips the template's persistent mount and CUDA constraint (template + CPU live-verified
+  2026-10-29, even with an NVIDIA-category template). runpodctl v3 sends the same v2
+  create, so it is no fallback.
 - **Not this lane:** authoring a template project or Hub listing files
   (→ [runpod-build-template](../runpod-build-template/SKILL.md)); writing/deploying
   your own Python with Flash (→ flash); downloading models or building/pushing

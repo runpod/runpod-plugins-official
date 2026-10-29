@@ -141,7 +141,7 @@ and dev hosts (verified 2026-07-29: both serve a byte-identical OpenAPI spec).
 invoke URL from the reply's `requestUrls.base` rather than assembling it:
 
 ```bash
-curl -s -X POST https://v2-rest.runpod.io/v2/serverless \
+curl -s -X POST https://api.runpod.io/v2/serverless \
   -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
   -d '{"name":"gp14-lb-ep","image":"<your-registry>/gp14-lb:v1","type":"LOAD_BALANCER",
        "gpu":{"pools":["ADA_24"],"count":1},"disk":5,"ports":["5000/http"],
@@ -153,16 +153,22 @@ curl -s -X POST https://v2-rest.runpod.io/v2/serverless \
 #                   "health":"https://<endpoint-id>.api.runpod.ai/ping"}, ...}
 ```
 
+Live-verified 2026-10-29 (inline image, `"cpu":[{"id":"cpu3c","vcpuCount":2}]` in place of
+`gpu`, `REQUEST_COUNT` 1): with no `ports`/`env` given, the reply filled in `"80/http"` and
+`PORT`/`PORT_HEALTH` = `80`, so pass your own port as above. No template appeared in the
+template list.
+
 This is image-based (no template needed), so step 2 is optional on this route. `type` is
 **required** on create (the spec lists it alongside `name`/`image`/`gpu`/`scaling`) and
 **fixed** afterwards — `UpdateEndpointRequest` has no `type` field, so no PATCH can change
 it.
 
-> **Via the Runpod MCP server:** `create-endpoint` takes `endpointType: "LOAD_BALANCER"` and
-> rejects `scalerType: QUEUE_DELAY` for it client-side, before spending a round trip — the
+> **Via the Runpod MCP server:** `create-endpoint` takes the same v2 body as the call above
+> (`"type": "LOAD_BALANCER"`, `"scaling": {"type": "REQUEST_COUNT", "requestCount": 4}`).
+> Its full schema is served on demand, so read it with `describe-tool` first. This is the
 > shortest path when MCP is connected.
 >
-> If your server's `create-endpoint` has **no `endpointType` parameter**, it predates the v2
+> If your server's `create-endpoint` has **no `type` or `scaling` field**, it predates the v2
 > serverless reshape and will 422 against production on any endpoint create or update. Upgrade
 > it, or use the raw v2 REST call above meanwhile.
 
@@ -249,9 +255,21 @@ you're talking to the worker's own long-lived process directly, not a stateless 
 
 ## Cost & cleanup
 Endpoint is scale-to-zero (`workersMin: 0`), so idle cost is ~$0; a GPU worker only bills
-during the brief warm test. Delete the endpoint (set workers to 0 first) and the template;
-the image can stay in the registry.
+during the brief warm test. Delete the endpoint, then any template you created for it; the
+image can stay in the registry.
 
+```bash
+# v2 REST (or MCP delete-endpoint) → 204; terminates the workers. Live-verified 2026-11-02:
+# a template you created and passed as templateId SURVIVES this delete (GET /v2/templates/<id>
+# still 200), so delete it yourself. The spec's "bound template" is the endpoint's own
+# resolved copy, not one in your template list.
+curl -s -X DELETE https://api.runpod.io/v2/serverless/<endpoint-id> \
+  -H "Authorization: Bearer $RUNPOD_API_KEY"
+runpodctl serverless list          # confirm the endpoint is gone
+runpodctl template list            # find the <template-id> you created
+runpodctl template delete <template-id>   # a template passed as templateId survives the endpoint delete
+```
+The live 2026-07-13 run used the legacy GraphQL route instead:
 ```bash
 # set workers to 0, then delete the endpoint
 curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_API_KEY" \

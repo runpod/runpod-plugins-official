@@ -183,11 +183,12 @@ runpodctl template create --name gp17-ws-tpl --serverless \
 the `8888/http` default and set `--env '{"PORT":"8888"}'` — the two just have to match.)
 
 ### 3. Create the endpoint as **type `LB`** (GraphQL `saveEndpoint`)
-The REST `POST /v1/endpoints` schema has **no endpoint-type field** — it only makes
-queue-based (`QB`) endpoints. Load-balancing endpoints are created with the GraphQL
-`saveEndpoint` mutation and `type: "LB"` (Console: New Endpoint → **Endpoint Type →
-Load Balancer** does the same) — the same `LB` creation recipe documented in golden path
-[14](14-load-balancing-endpoint.md). `api.runpod.io/graphql` needs a browser-ish `User-Agent`
+The REST **v1** `POST /v1/endpoints` schema has **no endpoint-type field**; it only makes
+queue-based (`QB`) endpoints. REST **v2** `POST /v2/serverless` (and MCP `create-endpoint`)
+takes `"type": "LOAD_BALANCER"` with a `REQUEST_COUNT` scaler: the preferred route in golden
+path [14, step 3a](14-load-balancing-endpoint.md). This path's live run (below) used the
+GraphQL `saveEndpoint` mutation with `type: "LB"` (Console: New Endpoint → **Endpoint Type →
+Load Balancer** does the same). `api.runpod.io/graphql` needs a browser-ish `User-Agent`
 (Cloudflare), and LB endpoints require a **GPU tier** (`gpuIds`, e.g. `AMPERE_16`):
 ```bash
 curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_API_KEY" \
