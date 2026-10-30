@@ -8,6 +8,8 @@ name: spec-drift
 #
 # The runpodctl half exists because a release has twice falsified "the CLI cannot do
 # X" claims in the skills (v2.9.0 -> `serverless health`, v2.10.0 -> `serverless logs`).
+# The runpod-mcp half exists because renamed MCP tools have outlived their rename in
+# the docs.
 
 on:
   schedule:
@@ -34,3 +36,17 @@ jobs:
         run: python3 hooks/check_migrate_class3.py --live
       - name: CLI absence claims vs. the latest runpodctl release
         run: python3 hooks/check_cli_absence_claims.py --live
+      - name: Check out runpod-mcp
+        if: ${{ !cancelled() }}
+        uses: actions/checkout@v4
+        with:
+          repository: runpod/runpod-mcp
+          path: runpod-mcp
+      - name: MCP tool names vs. runpod-mcp main
+        if: ${{ !cancelled() }}
+        run: |
+          pip install pyyaml==6.0.3
+          python3 hooks/check_skill_lint.py --refresh runpod-mcp
+          git --no-pager diff -- testdata/runpod-mcp/tools.json
+          python3 hooks/check_skill_lint.py --self-test
+          python3 hooks/check_skill_lint.py

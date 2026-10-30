@@ -6,8 +6,7 @@ description: >-
   and verify. Use when someone asks to move to v2, asks what v2 would change, or
   asks which Runpod API their code is on. For managing infrastructure rather than
   migrating code, use runpod-mcp or runpodctl.
-user-invocable: true
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/runpod-migrate/scripts/rp_api_inventory.py:*), Bash(rg:*)
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/runpod-migrate/scripts/rp_api_inventory.py:*) Bash(rg:*)
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
