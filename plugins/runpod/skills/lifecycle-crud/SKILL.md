@@ -18,17 +18,20 @@ license: Apache-2.0
 
 You own the lifecycle of Runpod's reusable resources: templates, network volumes, container registry credentials, account secrets, registered SSH public keys, and multi-node clusters. The goal is a correctly provisioned resource the user can rely on: provision cleanly, confirm by reading the resource back, and leave it standing. Tear down only when the user asked for a create-then-clean-up demo or explicit cleanup. Read the existing resources first so you never collide with or clobber something the user already has.
 
-## Required capabilities
+## Tool binding
 
-Named as capabilities; the tool serving each one on this server is in the tool binding below.
+If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
-- List / inspect / create / update / delete templates.
-- List / inspect / create / update / delete network volumes.
-- List / inspect / create / delete container registry credentials.
-- List / inspect / create / update / delete account secrets.
-- Read and replace the account's registered SSH public keys.
-- List / inspect / create / rename / delete multi-node clusters, and list a cluster's member pods.
-- Read data centers and their per-GPU availability, to place a volume in a GPU-co-located DC.
+| Capability | Tool |
+|---|---|
+| Templates (list/get/create/update/delete) | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template` |
+| Network volumes (list/get/create/update/delete) | `list-network-volumes`, `get-network-volume`, `create-network-volume`, `update-network-volume`, `delete-network-volume` |
+| Container registry credentials (list/get/create/delete) | `list-registries`, `get-registry`, `create-registry`, `delete-registry` |
+| Account secrets (list/get/create/update/delete) | `list-secrets`, `get-secret`, `create-secret`, `update-secret`, `delete-secret` |
+| Registered SSH public keys (read/replace) | `get-ssh-keys`, `update-ssh-keys` |
+| Multi-node clusters (list/get/create/rename/delete, member pods, billing) | `list-clusters`, `get-cluster`, `create-cluster`, `update-cluster`, `delete-cluster`, `list-cluster-pods`, `list-cluster-billing` |
+| Data centers with per-GPU availability, to place a volume in a GPU-co-located DC | `list-data-centers` / `get-data-center` (`include:["GPU_AVAILABILITY"]`); `list-gpu-types` (`include:["AVAILABILITY"]` with `product`) |
+| CUDA versions with capacity, per GPU type | the GPU read's `cudaVersions`; `get-capacity` for the matrix view |
 
 ## Shared discipline (every resource)
 
@@ -67,21 +70,6 @@ Named as capabilities; the tool serving each one on this server is in the tool b
 - A secret read that omits the value is expected (write-only), not a bug; a create rejected with `409` means the name is taken. Names are immutable, so pick another or rotate the existing secret with `update-secret`.
 - `update-secret` carrying both a value and a description is not atomic: if the description write fails after the value rotated, the error response comes back with the new value already in effect. Send the two in separate calls when that partial outcome matters.
 - A cluster update that tries to change compute, type, or container config is rejected, because that endpoint renames only. Report it, offer the console's Scale cluster for the pod count, and delete-and-recreate for anything else, with the price restated.
-
-## Tool binding
-
-| Capability | Tool |
-|---|---|
-| Templates (list/get/create/update/delete) | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template` |
-| Network volumes (list/get/create/update/delete) | `list-network-volumes`, `get-network-volume`, `create-network-volume`, `update-network-volume`, `delete-network-volume` |
-| Registry credentials (list/get/create/delete) | `list-registries`, `get-registry`, `create-registry`, `delete-registry` |
-| Data centers with per-GPU availability (for placement) | `list-data-centers` / `get-data-center` (`include:["GPU_AVAILABILITY"]`); `list-gpu-types` (`include:["AVAILABILITY"]` with `product`) |
-| CUDA versions with capacity, per GPU type | the GPU read's `cudaVersions`; `get-capacity` for the matrix view |
-| Account secrets (list/get/create/update/delete) | `list-secrets`, `get-secret`, `create-secret`, `update-secret`, `delete-secret` |
-| Registered SSH public keys (read/replace) | `get-ssh-keys`, `update-ssh-keys` |
-| Clusters (list/get/create/rename/delete, member pods, billing) | `list-clusters`, `get-cluster`, `create-cluster`, `update-cluster`, `delete-cluster`, `list-cluster-pods`, `list-cluster-billing` |
-
-If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
 ## Report template — resource inventory
 
