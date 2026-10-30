@@ -7,7 +7,7 @@ description: >-
   or when the Runpod MCP tools are not connected; prefer runpod-mcp for structured
   tool calls in an MCP-enabled session.
 allowed-tools: Bash(runpodctl:*)
-compatibility: Linux, macOS
+compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
   version: "1.9.0" # x-release-please-version

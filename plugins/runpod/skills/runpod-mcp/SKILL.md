@@ -74,7 +74,10 @@ Once connected, read the server. Do not reason about its tools from memory.
    connected server: `/mcp` in Claude Code, or `tools/list`. Each tool carries its
    own parameter descriptions, generated from Runpod's REST v2 contract. Check there
    before concluding a capability exists *or* doesn't. When a journey skill's tool
-   binding disagrees with the live tool list, the live list wins.
+   binding disagrees with the live tool list, the live list wins. Some large
+   create/update tools (`create-pod`, `create-endpoint`, `create-template` and others;
+   the listing says so) list only their call shape: call `describe-tool` with the tool
+   name for the full argument schema before the first use.
 2. **The server serves these same skills** from this plugin's release: `read-guide`
    (start with `read-guide runpod-mcp`) and the `runpod://guides/<id>` resources. With
    this plugin installed, the journey skills below are the procedure; the server's
@@ -120,7 +123,7 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
 | The user wants to… | Journey skill |
 | --- | --- |
 | Know what GPUs/workers/endpoints exist, what fits a model, what it costs | **discovery** |
-| Create/inspect/update/delete pods, endpoints, templates, volumes, account secrets, SSH keys, clusters; inventory of the account | **lifecycle-crud** |
+| Create/inspect/update/delete pods, endpoints, templates, network or global volumes, account secrets, SSH keys, clusters; inventory of the account; who changed what (audit log) or who is in the organization | **lifecycle-crud** |
 | Stand up a serverless endpoint for a model/workload and verify it with a real job | **serverless-deploy** |
 | Host a ComfyUI workflow (workflow.json, custom Civitai models/LoRAs) as an endpoint | **serverless-deploy**, then its [ComfyUI reference](../serverless-deploy/reference/comfyui-serverless.md) |
 | Rent/configure an interactive GPU pod; create a pod then pause/stop it for later | **pod-deploy** |

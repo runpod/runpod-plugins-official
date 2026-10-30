@@ -1,0 +1,50 @@
+id: organization
+name: Organization
+kind: resource
+summary: >
+  The organization the caller belongs to, with its members and the role each
+  holds. REST v2 and MCP read it; they do not change it. A team account is not
+  an organization: these reads answer it `404`.
+product: account
+is_a: null
+part_of: runpod-platform
+aliases: [org, Organization]
+
+surfaces:
+  rest_v2: { schema: Organization, paths: [/v2/organization, /v2/organization/users, "/v2/organization/users/{id}"] }
+  mcp: [get-organization, list-organization-users, get-organization-user]
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: name, type: string, set: read }
+
+rules:
+  - id: organization.membership-required
+    statement: >
+      The organization reads return `404` when the caller does not belong to an
+      organization, and `403` when organizations are unavailable to the caller.
+      State either as the answer, not as a tool failure.
+    on_violation: 404 not a member, 403 unavailable
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/organization, seen: "2026-11-02" }
+      - { source: rest-v2-spec, ref: GET /v2/organization/users, seen: "2026-11-02" }
+
+  - id: organization.roster-readable-by-members
+    statement: >
+      Any member can read the full member list, which takes no pagination, and
+      each member's role. A user who is not a member, including one from another
+      organization, returns `404` on the single-member read.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/organization/users, seen: "2026-11-02" }
+      - { source: rest-v2-spec, ref: "GET /v2/organization/users/{id}", seen: "2026-11-02" }
+
+  - id: organization.roles
+    statement: >
+      A member's role is a built-in Runpod role (`builtin:admin`, `builtin:dev`,
+      `builtin:billing` or `builtin:basic`) or a custom role the organization
+      defined under its own id.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "OrganizationRoleRef.id; OrganizationRoleType", seen: "2026-11-02" }
