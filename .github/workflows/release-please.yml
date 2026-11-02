@@ -32,7 +32,7 @@ jobs:
   publish-knowledge:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: runpod-4vCPU-ubuntu-2404  # GitHub-hosted, which npm trusted publishing needs
     permissions:
       contents: read
       id-token: write  # npm trusted publishing (OIDC) and provenance; no npm token is stored

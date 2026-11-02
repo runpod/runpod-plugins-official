@@ -1,4 +1,6 @@
-# Blacksmith runner labels, so actionlint accepts them in runs-on.
+# Org runner labels, so actionlint accepts them in runs-on: Blacksmith, plus the
+# GitHub-hosted runner that npm trusted publishing needs.
 self-hosted-runner:
   labels:
     - blacksmith-2vcpu-ubuntu-2404
+    - runpod-4vCPU-ubuntu-2404
