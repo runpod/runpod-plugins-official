@@ -22,6 +22,16 @@ relations:
   - { type: uses, target: hub-repo, cardinality: "0..n" }
 
 rules:
+  - id: runpodctl.https-install
+    statement: >
+      Fetch the install script from `https://cli.runpod.net` with curl's
+      `--proto '=https' --proto-redir '=https' -fsSL` options before piping it
+      to `sudo bash`. Certificate verification and HTTPS-only redirects protect
+      the script before it executes.
+    status: documented
+    evidence:
+      - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Install command. }
+
   - id: runpodctl.project-sdk-notice
     statement: >
       Use the Runpod SDK for serverless development workflows on every CLI

@@ -25,7 +25,7 @@ Gemini, opencode, +more). The first line is all you need; drop any others you wo
 
 ```bash
 npx skills add runpod/runpod-plugins-official # the skills — any agent (essential)
-curl -sSL https://cli.runpod.net | bash       # runpodctl — infra CLI (or: brew install runpod/runpodctl/runpodctl)
+curl --proto '=https' --proto-redir '=https' -fsSL https://cli.runpod.net | sudo bash       # runpodctl — infra CLI (or: brew install runpod/runpodctl/runpodctl)
 uv tool install runpod-flash                  # flash — deploy your own code (optional; or: pip install runpod-flash)
 npx @runpod/mcp-server@latest add            # hosted MCP server — guided setup, OAuth (optional)
 ```

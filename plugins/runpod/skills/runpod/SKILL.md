@@ -101,7 +101,7 @@ No user in the loop (CI, scheduled jobs, agent SDK runs)? Nobody can approve OAu
 `RUNPOD_API_KEY` from the start and send it to the hosted MCP as `--header "Authorization:
 Bearer $RUNPOD_API_KEY"`.
 
-**Then:** if a lane already works, use it. Missing a CLI? `curl -sSL https://cli.runpod.net | bash`
+**Then:** if a lane already works, use it. Missing a CLI? `curl --proto '=https' --proto-redir '=https' -fsSL https://cli.runpod.net | sudo bash`
 (runpodctl) · `uv tool install runpod-flash` (flash) · `npx @runpod/mcp-server@latest add --client <id>`
 (MCP; `--list` shows the ids). Full setup:
 [`runpod-usage/reference/getting-started.md`](../runpod-usage/reference/getting-started.md).
