@@ -20,7 +20,9 @@ from __future__ import annotations
 import importlib
 import json
 import sys
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Any, Protocol
 
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN_PATHS = ROOT / "plugins/runpod/skills/runpod/golden-paths"
@@ -34,14 +36,19 @@ except ModuleNotFoundError:
     sys.exit(2)
 
 
-def validator():
+class Validator(Protocol):
+    def iter_errors(self, instance: object) -> Iterable[Any]: ...
+
+
+def validator() -> Validator:
     schema = json.loads(SCHEMA_PATH.read_text())
-    return jsonschema.Draft202012Validator(
+    check: Validator = jsonschema.Draft202012Validator(
         schema, format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER
     )
+    return check
 
 
-def problems(data: object, folder: str, check) -> list[str]:
+def problems(data: object, folder: str, check: Validator) -> list[str]:
     """Every reason the backend sync would reject this skill.json."""
     found = [
         f"{'/'.join(str(p) for p in error.absolute_path) or '(root)'}: {error.message}"
@@ -59,12 +66,14 @@ def problems(data: object, folder: str, check) -> list[str]:
 
     urls = [("skill", data["skill"])]
     urls += [(f"variants/{v['id']}", v["url"]) for v in data.get("variants", [])]
-    urls += [(f"supplementalSkills/{s['name']}", s["url"]) for s in data.get("supplementalSkills", [])]
+    urls += [
+        (f"supplementalSkills/{s['name']}", s["url"]) for s in data.get("supplementalSkills", [])
+    ]
     for where, url in urls:
         if not url.startswith(RAW_PREFIX):
             found.append(f"{where}: {url} is not on this repo's main branch")
-        elif not (ROOT / url[len(RAW_PREFIX):]).is_file():
-            found.append(f"{where}: {url[len(RAW_PREFIX):]} does not exist in this repo")
+        elif not (ROOT / url[len(RAW_PREFIX) :]).is_file():
+            found.append(f"{where}: {url[len(RAW_PREFIX) :]} does not exist in this repo")
     return found
 
 
@@ -72,19 +81,25 @@ def self_test() -> None:
     check = validator()
     folder = "02-comfyui-pod"
     base = f"{RAW_PREFIX}plugins/runpod/skills/runpod/golden-paths/{folder}/"
-    good = {
+    variant: dict[str, object] = {
+        "id": "variant-b-prebuilt",
+        "name": "B",
+        "url": base + "variant-b-prebuilt.md",
+        "default": True,
+    }
+    good: dict[str, object] = {
         "id": folder,
         "name": "ComfyUI",
         "description": "x",
         "skill": base + "README.md",
-        "variants": [{"id": "variant-b-prebuilt", "name": "B", "url": base + "variant-b-prebuilt.md", "default": True}],
+        "variants": [variant],
         "tags": ["comfyui"],
         "createdAt": "2026-07-14T21:20:11Z",
         "updatedAt": "2026-10-13T14:51:26Z",
     }
     assert problems(good, folder, check) == [], problems(good, folder, check)
 
-    def fails(change: dict, expect: str) -> None:
+    def fails(change: dict[str, object], expect: str) -> None:
         found = problems({**good, **change}, folder, check)
         assert any(expect in p for p in found), f"expected {expect!r} in {found}"
 
@@ -94,8 +109,7 @@ def self_test() -> None:
     fails({"tags": ["Image Gen"]}, "does not match")
     fails({"id": "03-other"}, "folder name")
     fails({"skill": base + "MISSING.md"}, "does not exist")
-    two = [dict(good["variants"][0]), {**good["variants"][0], "id": "variant-a"}]
-    fails({"variants": two}, "only one may be default")
+    fails({"variants": [variant, {**variant, "id": "variant-a"}]}, "only one may be default")
     print("skill.json self-test OK")
 
 
