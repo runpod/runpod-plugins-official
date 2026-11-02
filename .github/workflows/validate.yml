@@ -73,7 +73,7 @@ jobs:
     # The skill scripts run on users' machines with whatever `python3` they have,
     # so their tests also run on the oldest version we support: 3.9, the macOS
     # system python3. The validate job above only proves they work on 3.14.
-    # Pinned: ubuntu-latest is 26.04, which has no Python 3.9 build for setup-python.
+    # Needs a 24.04 image: ubuntu-latest is 26.04, which has no Python 3.9 build for setup-python.
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4

@@ -102,6 +102,7 @@ let
       (filesWithExt "yaml" (src + "/ontology/tools/test/fixtures/good"))
       (filesWithExt "yml" (src + "/.github/workflows"))
       (src + "/.yamllint.yaml")
+      (src + "/.github/actionlint.yaml")
     ]
   );
   # The workflows plus actionlint's config, which declares the Blacksmith
