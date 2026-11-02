@@ -56,6 +56,10 @@ concepts: [pod, network-volume, pod-ssh-access]
 ---
 ```
 
+A folder path can also carry a `skill.json`, which the Runpod backend syncs into the Hub. It
+follows [`skill.schema.json`](skill.schema.json); `hooks/check_skill_json.py` checks it in CI,
+including that `id` is the folder name and every URL points at a file in this repo.
+
 Each doc follows the same template: **Goal · Status · Lane(s) → When to use →
 Prerequisites → Walkthrough (real commands) → Verify it works (the actual test +
 observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded back.**

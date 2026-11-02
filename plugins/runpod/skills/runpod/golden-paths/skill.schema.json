@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Runpod Golden Path",
+  "description": "skill.json that sits in each golden path folder (plugins/runpod/skills/runpod/golden-paths/<NN-name>/). Synced to the Runpod DB and read by the Hub.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "skill", "createdAt", "updatedAt"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9]{2}-[a-z0-9-]+$",
+      "description": "Folder name, e.g. 02-comfyui-pod. Used as the DB key."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name in the Hub."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the path does and when to use it."
+    },
+    "skill": {
+      "$ref": "#/$defs/rawUrl",
+      "description": "Raw GitHub URL of the folder's README.md."
+    },
+    "variants": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "url"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Variant filename without .md, e.g. variant-b-prebuilt."
+          },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "url": { "$ref": "#/$defs/rawUrl" },
+          "default": {
+            "type": "boolean",
+            "description": "The recommended variant. At most one should be true."
+          }
+        }
+      }
+    },
+    "supplementalSkills": {
+      "type": "array",
+      "default": [],
+      "description": "Skills and reference docs this path needs, e.g. runpodctl/SKILL.md or runpod-usage/reference/storage.md.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "url"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "url": { "$ref": "#/$defs/rawUrl" }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "default": [],
+      "maxItems": 20,
+      "uniqueItems": true,
+      "description": "Labels the Hub filters on, e.g. comfyui or image-generation.",
+      "items": {
+        "type": "string",
+        "maxLength": 40,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "mcp": {
+      "enum": ["full", "partial", "none"],
+      "description": "Same as the README frontmatter: can an agent with only the Runpod MCP finish this path."
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "rawUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://raw\\.githubusercontent\\.com/runpod/runpod-plugins-official/"
+    }
+  }
+}
