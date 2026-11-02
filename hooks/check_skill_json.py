@@ -108,6 +108,7 @@ def self_test() -> None:
     fails({"extra": 1}, "Additional properties")
     fails({"tags": ["Image Gen"]}, "does not match")
     fails({"id": "03-other"}, "folder name")
+    fails({"name": "a" * 192}, "is too long")
     fails({"skill": base + "MISSING.md"}, "does not exist")
     fails({"variants": [variant, {**variant, "id": "variant-a"}]}, "only one may be default")
     print("skill.json self-test OK")
