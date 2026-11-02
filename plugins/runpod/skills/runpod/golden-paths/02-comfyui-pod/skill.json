@@ -36,6 +36,11 @@
       "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-templates/reference/comfyui-model-repair.md"
     }
   ],
+  "tags": [
+    "comfyui",
+    "image-generation",
+    "pod"
+  ],
   "mcp": "partial",
   "createdAt": "2026-07-14T21:20:11Z",
   "updatedAt": "2026-10-13T14:51:26Z"
