@@ -52,6 +52,11 @@ jobs:
           pip install pyyaml==6.0.3
           python3 hooks/check_frontmatter.py --self-test
           python3 hooks/check_frontmatter.py
+      - name: Check golden path skill.json files against the schema
+        run: |
+          pip install 'jsonschema[format-nongpl]==4.26.0'
+          python3 hooks/check_skill_json.py --self-test
+          python3 hooks/check_skill_json.py
       - name: Check Markdown links
         run: python3 hooks/check_links.py
       - name: Check CLI absence claims against the vendored runpodctl surface

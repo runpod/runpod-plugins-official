@@ -1,0 +1,43 @@
+{
+  "id": "02-comfyui-pod",
+  "name": "ComfyUI server on a pod",
+  "description": "Provisions a GPU pod, gets ComfyUI running with a checkpoint and the default text-to-image workflow, and returns a proxy URL for the web UI.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/02-comfyui-pod/README.md",
+  "variants": [
+    {
+      "id": "variant-a-from-scratch",
+      "name": "From scratch",
+      "description": "Install ComfyUI yourself on a PyTorch template. Pick this for custom versions or nodes.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/02-comfyui-pod/variant-a-from-scratch.md"
+    },
+    {
+      "id": "variant-b-prebuilt",
+      "name": "Prebuilt official image",
+      "description": "Deploy Runpod's official ComfyUI image. Least effort, most reliable.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/02-comfyui-pod/variant-b-prebuilt.md",
+      "default": true
+    }
+  ],
+  "supplementalSkills": [
+    {
+      "name": "Pod workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/pod-workflows.md"
+    },
+    {
+      "name": "Storage",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/storage.md"
+    },
+    {
+      "name": "Networking",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/networking.md"
+    },
+    {
+      "name": "ComfyUI model repair",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-templates/reference/comfyui-model-repair.md"
+    }
+  ],
+  "tags": ["comfyui", "image-generation", "pod"],
+  "mcp": "partial",
+  "createdAt": "2026-07-14T21:20:11Z",
+  "updatedAt": "2026-10-13T14:51:26Z"
+}
