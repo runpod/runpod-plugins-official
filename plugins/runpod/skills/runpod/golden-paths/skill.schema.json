@@ -9,11 +9,13 @@
     "id": {
       "type": "string",
       "pattern": "^[0-9]{2}-[a-z0-9-]+$",
+      "maxLength": 191,
       "description": "Folder name, e.g. 02-comfyui-pod. Used as the DB key."
     },
     "name": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 191,
       "description": "Display name in the Hub."
     },
     "description": {
