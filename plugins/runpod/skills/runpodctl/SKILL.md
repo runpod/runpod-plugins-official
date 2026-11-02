@@ -24,7 +24,7 @@ For serverless development workflows, use the
 
 ## Install
 
-`curl --proto '=https' --proto-redir '=https' -fsSL https://cli.runpod.net | sudo bash` (Linux/macOS, and Windows via WSL) or `brew install runpod/runpodctl/runpodctl`. Manual binaries and the Windows and conda steps live in the [runpodctl README](https://github.com/runpod/runpodctl#install), beside the `install.sh` they describe. The command surface comes from the binary — `runpodctl <resource> <action> --help` — or the generated pages under [`runpodctl/docs/`](https://github.com/runpod/runpodctl/tree/main/docs).
+`curl -fsSL https://cli.runpod.net | sudo bash` (Linux/macOS, and Windows via WSL) or `brew install runpod/runpodctl/runpodctl`. Manual binaries and the Windows and conda steps live in the [runpodctl README](https://github.com/runpod/runpodctl#install), beside the `install.sh` they describe. The command surface comes from the binary — `runpodctl <resource> <action> --help` — or the generated pages under [`runpodctl/docs/`](https://github.com/runpod/runpodctl/tree/main/docs).
 
 > Old runpodctl builds silently lack newer flags/behaviors (e.g. `--model-reference` doesn't
 > exist before v2.4.0) and produce confusing downstream errors — and the Homebrew tap can lag

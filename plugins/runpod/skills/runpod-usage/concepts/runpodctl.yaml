@@ -24,10 +24,9 @@ relations:
 rules:
   - id: runpodctl.https-install
     statement: >
-      Fetch the install script from `https://cli.runpod.net` with curl's
-      `--proto '=https' --proto-redir '=https' -fsSL` options before piping it
-      to `sudo bash`. Certificate verification and HTTPS-only redirects protect
-      the script before it executes.
+      Fetch the install script with `curl -fsSL https://cli.runpod.net` and pipe
+      it to `sudo bash`. Use an explicit HTTPS URL and keep certificate
+      verification enabled.
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Install command. }
