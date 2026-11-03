@@ -29,7 +29,7 @@ loop:
 | Output from a **model Runpod already hosts** (Flux, WAN, Qwen3, TTS, …) | **Public Endpoint (this path)** — zero infra, pay-per-output |
 | Your **own model / custom code / pinned deps** served as an endpoint | Self-deploy: golden path [05](05-model-to-endpoint-pipeline.md) (custom image) or [09](09-custom-serverless-dev-loop/README.md) (dev loop) |
 | A **standard OSS model** but you want to control the worker/scaling | Hub worker / flash — golden path [03](03-whisper-endpoint/README.md) |
-| A long-running interactive session (Jupyter, SSH, training) | A **pod** — golden paths [01](01-ollama-pod.md), [04](04-finetune-pod.md), [06](06-dev-pod.md) |
+| A long-running interactive session (Jupyter, SSH, training) | A **pod** — golden paths [01](01-ollama-pod/README.md), [04](04-finetune-pod.md), [06](06-dev-pod.md) |
 
 Rule of thumb: **if the model is on the Public Endpoints list and the schema fits, do
 not deploy.** You only move to 05/09 when there's no hosted model for your use case, or

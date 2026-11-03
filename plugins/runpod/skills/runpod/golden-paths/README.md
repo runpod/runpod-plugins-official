@@ -68,7 +68,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 
 | # | Golden path | Kind | Approach(es) | Status |
 | --- | --- | --- | --- | --- |
-| 01 | [Ollama server on a pod + URL](01-ollama-pod.md) | pod / server | runpodctl pod + SSH | ✅ live-verified |
+| 01 | [Ollama server on a pod + URL](01-ollama-pod/README.md) | pod / server | runpodctl pod + SSH | ✅ live-verified |
 | 02 | [ComfyUI server on a pod + URL](02-comfyui-pod/README.md) | pod / server | — | ✅ live-verified |
 | | ↳ [Variant A — from scratch](02-comfyui-pod/variant-a-from-scratch.md) | | PyTorch template + install | ✅ |
 | | ↳ [Variant B — prebuilt official image](02-comfyui-pod/variant-b-prebuilt.md) | | official template (auto-starts) | ✅ (faster) |

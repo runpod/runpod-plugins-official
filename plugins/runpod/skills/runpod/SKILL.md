@@ -241,7 +241,7 @@ tables above when nothing here is close.
 
 | Want to… | Golden path |
 | --- | --- |
-| Run a server (Ollama/ComfyUI) on a pod at a URL | [01](./golden-paths/01-ollama-pod.md), [02](./golden-paths/02-comfyui-pod/README.md) |
+| Run a server (Ollama/ComfyUI) on a pod at a URL | [01](./golden-paths/01-ollama-pod/README.md), [02](./golden-paths/02-comfyui-pod/README.md) |
 | Deploy a serverless model endpoint (Hub / flash / custom image) | [03](./golden-paths/03-whisper-endpoint/README.md), [05](./golden-paths/05-model-to-endpoint-pipeline.md) |
 | Serve a HuggingFace model without baking it in or a volume (host-cached) | [20 — model caching (`--model-reference`)](./golden-paths/20-model-caching-endpoint.md) |
 | Call a ready hosted model (no deploy) | [11 — Public Endpoints](./golden-paths/11-public-endpoints.md) |

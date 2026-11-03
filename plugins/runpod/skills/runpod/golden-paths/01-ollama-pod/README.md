@@ -15,7 +15,7 @@ storage.
 **Lane(s):** runpodctl (pod) + SSH
 
 Grounded in the official tutorial `docs/tutorials/pods/run-ollama.mdx` and the
-reusable pod loop in [`../../runpod-usage/reference/pod-workflows.md`](../../runpod-usage/reference/pod-workflows.md).
+reusable pod loop in [`../../../runpod-usage/reference/pod-workflows.md`](../../../runpod-usage/reference/pod-workflows.md).
 
 ## When to use this (and why a pod, not serverless)
 
@@ -23,7 +23,7 @@ Ollama is a **long-lived HTTP server you keep open and talk to interactively**
 (`/api/generate`, `/api/chat`, `/api/tags`). That is the classic pod shape: a
 service reached at a proxy URL, not a request/response job that should scale to
 zero. See the workload-shape decision in
-[`../../runpod-usage/reference/development-loop.md`](../../runpod-usage/reference/development-loop.md).
+[`../../../runpod-usage/reference/development-loop.md`](../../../runpod-usage/reference/development-loop.md).
 
 Use a **pod** here because:
 
@@ -47,7 +47,7 @@ exec in one lane (see the router).
 | Need | How |
 | --- | --- |
 | **Auth** (non-interactive) | `export RUNPOD_API_KEY=your_key` — runpodctl reads it. `runpodctl doctor` is the interactive human first-run (also sets up SSH keys). |
-| **runpodctl** installed | `curl -fsSL https://cli.runpod.net \| sudo bash` (see [`../../runpodctl/SKILL.md`](../../runpodctl/SKILL.md)). |
+| **runpodctl** installed | `curl -fsSL https://cli.runpod.net \| sudo bash` (see [`../../../runpodctl/SKILL.md`](../../../runpodctl/SKILL.md)). |
 | **An SSH key** registered | `runpodctl doctor` or `runpodctl ssh add-key`; needed so the agent can exec on the pod. |
 | **A GPU + a co-located DC** | `runpodctl datacenter list` shows per-DC GPU availability — pick a DC that has your GPU *and* will hold the volume. |
 
@@ -78,7 +78,7 @@ runpodctl network-volume create --name ollama-models --size 30 --data-center-id 
 
 *Model weights are large and slow to pull. Put them on a network volume so they
 persist across stop/restart and aren't re-downloaded (see
-[`../../runpod-usage/reference/storage.md`](../../runpod-usage/reference/storage.md),
+[`../../../runpod-usage/reference/storage.md`](../../../runpod-usage/reference/storage.md),
 "prefer a network volume by default"). The volume is **DC-locked** — the pod has
 to be created in the same data center or scheduling fails.*
 
@@ -129,7 +129,7 @@ ssh <pod-ssh> 'set -e; DEBIAN_FRONTEND=noninteractive apt-get update && \
   need these; `-y` + `DEBIAN_FRONTEND=noninteractive` keep apt from prompting (an
   agent can't answer a TTY prompt). System deps go through **apt**; any Python
   tooling would use **uv** — see
-  [`../../runpod-usage/reference/on-pod-setup.md`](../../runpod-usage/reference/on-pod-setup.md).*
+  [`../../../runpod-usage/reference/on-pod-setup.md`](../../../runpod-usage/reference/on-pod-setup.md).*
 - *`curl -fsSL https://ollama.com/install.sh | sh` — the vendor's supported
   install path.*
 - *`env OLLAMA_HOST=0.0.0.0 OLLAMA_MODELS=/workspace/ollama ollama serve …` — the
@@ -145,7 +145,7 @@ ssh <pod-ssh> 'set -e; DEBIAN_FRONTEND=noninteractive apt-get update && \
 > **Detach note (guidance):** the verified run backgrounded `ollama serve` in a
 > subshell (`( … & )`) inside a single SSH command that then continued to `pull`.
 > For a server that must outlive the SSH session on its own,
-> [`../../runpod-usage/reference/on-pod-setup.md`](../../runpod-usage/reference/on-pod-setup.md)
+> [`../../../runpod-usage/reference/on-pod-setup.md`](../../../runpod-usage/reference/on-pod-setup.md)
 > recommends full detachment — `setsid bash -c "…" > /workspace/ollama.log 2>&1 <
 > /dev/null &` — so a channel-close SIGHUP can't kill it. Either way, keep the env
 > passed explicitly.
@@ -158,7 +158,7 @@ echo "Ollama: https://<pod-id>-11434.proxy.runpod.net  (POST /api/generate)"
 
 *Proxy URL shape is `https://<pod-id>-<internal-port>.proxy.runpod.net` — HTTPS
 only, port `11434` (see
-[`../../runpod-usage/reference/networking.md`](../../runpod-usage/reference/networking.md)).*
+[`../../../runpod-usage/reference/networking.md`](../../../runpod-usage/reference/networking.md)).*
 
 ## Verify it works
 
@@ -235,13 +235,13 @@ generic, reusable capabilities — not Ollama-specific recipes.
 
 **Skill changes folded back (done):**
 
-1. [`../../runpod-usage/reference/pod-workflows.md`](../../runpod-usage/reference/pod-workflows.md)
+1. [`../../../runpod-usage/reference/pod-workflows.md`](../../../runpod-usage/reference/pod-workflows.md)
    — the reusable pod development loop (provision → ssh-exec → set up → run → poll
    readiness → escalate → deliver).
-2. [`../../runpod-usage/reference/on-pod-setup.md`](../../runpod-usage/reference/on-pod-setup.md)
+2. [`../../../runpod-usage/reference/on-pod-setup.md`](../../../runpod-usage/reference/on-pod-setup.md)
    — install hygiene (uv/apt, pin, non-interactive, cache on volume, background +
    log, detach long-lived servers).
-3. [`../../runpod-usage/reference/storage.md`](../../runpod-usage/reference/storage.md)
+3. [`../../../runpod-usage/reference/storage.md`](../../../runpod-usage/reference/storage.md)
    — "prefer a network volume by default" policy.
 4. **Router + runpodctl** — service pods declare port + env at creation; both
    point at the pod development loop.
