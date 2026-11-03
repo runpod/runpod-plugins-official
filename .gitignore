@@ -9,3 +9,6 @@ result-*
 # Concept graph tooling (ontology/)
 node_modules/
 ontology/build/
+
+# Local output of scripts/live_free_evals.py (full account listings)
+live-evals/

@@ -41,6 +41,7 @@ packages/knowledge/               @runpod/plugin-knowledge: the skills, golden p
 .claude/skills/add-concept/       contributor procedure for adding or changing a concept
 .github/workflows/validate.yml    runs the hooks + the ComfyUI workflow helper unittests on PRs
 .github/workflows/spec-drift.yml  weekly, non-blocking: the same spec checks against the live API + the latest runpodctl release
+.github/workflows/live-evals.yml  weekly, non-blocking, needs the RUNPOD_API_KEY secret (skips without it): free create/read/delete evals (scripts/live_free_evals.py)
 ```
 
 ## Architecture: a router + lanes

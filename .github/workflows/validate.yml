@@ -77,6 +77,8 @@ jobs:
         run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p "test_*.py"
       - name: Test runpod-migrate scanner helpers
         run: python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p "test_*.py"
+      - name: Live-evals script self-test (offline)
+        run: python3 scripts/live_free_evals.py --self-test
 
   skill-scripts-oldest-python:
     # The skill scripts run on users' machines with whatever `python3` they have,

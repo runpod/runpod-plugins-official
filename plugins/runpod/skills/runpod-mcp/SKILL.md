@@ -104,6 +104,10 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
   host CUDA version, and a modern image can land on a host too old to run it. Why 12.8
   and when to use 13.0:
   [`runpod-usage` gpu-selection](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
+- **Set `timeout` on every `create-endpoint`** (per-request execution limit, ms): omitted,
+  v2 returns `"timeout": 0` (live-verified 2026-10-29; the spec claims 300000), which
+  the server treats as no per-request limit. After `deploy-hub-repo`, read
+  `timeout` back and set it with `update-endpoint` if it is 0.
 - **Pod creates:** `create-pod` takes one GPU type (`gpu.id`; check the live schema
   before assuming, and watch for a `_warning` on an otherwise-successful create), so a
   multi-GPU priority list means one create per type, retried in order on a capacity

@@ -50,7 +50,8 @@ workers. Tune scaling once concurrency is right.
 | **Scaler value / threshold** | `--scale-threshold N` | 4 | requests → jobs-per-worker target; delay → seconds of wait before adding | lower = more aggressive |
 | **Idle timeout** | `--idle-timeout` | 5 s | How long a worker stays warm (billed) after finishing before scaling down | ↑ = fewer cold starts on bursty traffic, **more idle $** |
 
-> **Execution timeout** (`--execution-timeout`, default **600 s**) and **Job TTL**
+> **Execution timeout** (`--execution-timeout <seconds>`: no CLI default, so an omitted flag
+> reads back 0; the console default is 600 s) and **Job TTL**
 > (24 h) aren't scaling knobs but bound each job — see
 > [endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations)
 > and the workspace notes on TTL vs execution timeout.

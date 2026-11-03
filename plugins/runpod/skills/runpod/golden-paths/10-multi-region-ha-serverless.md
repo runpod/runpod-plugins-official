@@ -230,10 +230,12 @@ curl -s -X POST https://api.runpod.io/v2/serverless \
        "cpu":[{"id":"<cpu-flavor-id>","vcpuCount":2}],
        "dataCenterIds":["EU-RO-1","EU-CZ-1"],
        "mounts":{"network":[{"volumeId":"<vol-ro>"},{"volumeId":"<vol-cz>"}]},
-       "workers":{"min":0,"max":4,"idleTimeout":10},
+       "workers":{"min":0,"max":4,"idleTimeout":10},"timeout":600000,
        "scaling":{"type":"QUEUE_DELAY","queueDelay":1}}'
 curl -s https://api.runpod.io/v2/serverless/<endpoint-id> -H "Authorization: Bearer $RUNPOD_API_KEY"
-# → confirm mounts.network lists <vol-ro> and <vol-cz>
+# → confirm mounts.network lists <vol-ro> and <vol-cz>, and timeout is 600000 (not re-run with
+#   `timeout` set). The live run omitted timeout and it read back 0 (the server treats 0 as
+#   no per-request limit); always send it.
 ```
 
 **Fallback B — legacy GraphQL `saveEndpoint`** (the 2026-07 live-verified route, kept for
