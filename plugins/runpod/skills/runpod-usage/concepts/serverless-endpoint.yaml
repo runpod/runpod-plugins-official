@@ -31,7 +31,8 @@ fields:
   - { name: image, type: string, set: "create,update" }
   - { name: env, type: object, set: "create,update" }
   - { name: registry, type: string, ref: registry-credential, set: "create,update" }
-  - { name: networkVolumes, type: "string[]", ref: network-volume, set: "create,update" }
+  - { name: mounts.network, type: "EndpointMount[]", ref: network-volume, set: "create,update", note: "list of {volumeId}, at most one per data center; no path, workers mount at /runpod-volume" }
+  - { name: networkVolumes, type: "string[]", ref: network-volume, set: "create,update", note: "deprecated; plain volume ids, superseded by mounts.network" }
   - { name: dataCenterIds, type: "string[]", ref: data-center, set: "create,update", note: placement preference }
   - { name: workers.min, type: integer, default: 0, set: "create,update" }
   - { name: workers.max, type: integer, default: 3, set: "create,update" }
@@ -151,7 +152,7 @@ rules:
       - { source: rest-v2-spec, ref: "CreateEndpointGpuConfig; UpdateEndpointGpuConfig", seen: "2026-09-28" }
 
   - id: serverless-endpoint.network-volume-pins-dc
-    applies_to: ["field:networkVolumes", "field:dataCenterIds"]
+    applies_to: ["field:mounts.network", "field:networkVolumes", "field:dataCenterIds"]
     statement: >
       Attaching network volumes limits workers to those volumes' data centers.
       To spread workers across data centers, attach one volume per data center.
@@ -159,6 +160,19 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md, note: Attach one volume per data center to spread workers. }
+
+  - id: serverless-endpoint.volumes-via-mounts-network
+    applies_to: ["field:mounts.network", "field:networkVolumes"]
+    statement: >
+      A v2 create or update attaches network volumes as `mounts.network`, a list
+      of `{volumeId}` entries with at most one volume per data center. There is
+      no `path`: every worker mounts the volume at `/runpod-volume`. A list you
+      send replaces the endpoint's current one, and `[]` detaches it. The flat
+      `networkVolumes` list of ids is deprecated, and if both are sent they must
+      agree exactly.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateEndpointRequest; EndpointMountsInput; EndpointMount", seen: "2026-11-02" }
 
   - id: serverless-endpoint.leave-placement-broad
     applies_to: ["field:gpu.pools", "field:dataCenterIds"]

@@ -66,8 +66,8 @@ pod still bills for disk and any volume.
 Find a data center that has both your GPU and (for co-location) your volume with
 `runpodctl datacenter list` — its output includes per-DC GPU availability.
 
-(MCP's `create-pod` also sets `ports`/`env`; use runpodctl when you need a
-template, CPU pod, or multi-GPU list — see the router.)
+(MCP's `create-pod` also takes `templateId`, a `cpu` object, `ports` and `env`; a
+multi-GPU priority list is one create per type in either lane — see the router.)
 
 ## 3. Connect (the control channel)
 

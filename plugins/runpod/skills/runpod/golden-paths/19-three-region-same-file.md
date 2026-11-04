@@ -1,5 +1,5 @@
 ---
-lanes: [runpodctl, aws]
+lanes: [runpodctl, aws, rest]
 mcp: partial
 concepts: [network-volume, data-center, serverless-endpoint, serverless-handler, worker, template, file-transfer]
 ---
@@ -217,6 +217,13 @@ curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_API_KEY" \
 `GET /v1/endpoints/<endpoint-id>` confirmed all three attached:
 `"networkVolumeIds":["<vol-is>","<vol-ro>","<vol-cz>"]`.
 
+> **REST v2 does it in one create** (live-verified 2026-10-29 with two volumes; see path 10):
+> `POST /v2/serverless` with `"type":"QUEUE"`, `"cpu":[{"id":"<cpu-flavor-id>","vcpuCount":2}]`,
+> the three `dataCenterIds`, and `"mounts":{"network":[{"volumeId":"<vol-ro>"},{"volumeId":"<vol-cz>"},{"volumeId":"<vol-is>"}]}`
+> (at most one volume per data center); the full body is in
+> [path 10, step 4, Fallback A](10-multi-region-ha-serverless.md). Read the endpoint back
+> and confirm all three volumes.
+>
 > On **runpodctl ≥ v2.4.0** you can skip the GraphQL step entirely:
 > `runpodctl serverless create --template-id <template-id> --compute-type CPU
 > --network-volume-ids <vol-ro>,<vol-cz>,<vol-is> --data-center-ids
@@ -279,8 +286,9 @@ now across three disks:
   Instant handlers + sequential requests reuse one DC's warm workers. Force spread with
   concurrent submission + a `hold` + higher `workersMax` (step 6).
 - **Multi-volume attach needs runpodctl ≥ v2.4.0** for the one-shot
-  `--network-volume-ids v1,v2,v3`; on older CLIs use the GraphQL `saveEndpoint` object
-  shape (step 5). The Console UI (Edit Endpoint → Advanced → Network Volumes) also works.
+  `--network-volume-ids v1,v2,v3`; without the CLI, REST v2 `mounts.network` takes all
+  three in one create (step 5), and the legacy GraphQL `saveEndpoint` object shape still
+  works. The Console UI (Edit Endpoint → Advanced → Network Volumes) also works.
 - **GraphQL `saveEndpoint` needs `User-Agent: Mozilla/5.0`** on `api.runpod.io/graphql`.
 - **`EndpointInput` has no `computeType`** — express CPU via `instanceIds` (a CPU flavor
   like `cpu3c-2-4`) + empty `gpuIds`. Omit both and the endpoint stays GPU.

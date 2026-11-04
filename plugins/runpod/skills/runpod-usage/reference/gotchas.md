@@ -57,11 +57,11 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 - **Fix:** add container-registry credentials in Console → Settings → Container
   Registry, then select them on the template/endpoint. Runpod uses
   `docker login`-style creds. Headless equivalent: MCP
-  `create-container-registry-auth`, then pass the id as `containerRegistryAuthId`
-  on create-pod/create-endpoint.
+  `create-registry` (REST v2 `POST /v2/registries`), then pass the returned id as
+  `registry` on create-pod/create-endpoint/create-template.
 - **Fix for AWS ECR:** you can register the repository instead of storing
-  credentials — MCP `create-registry-delegation` grants Runpod scoped pull access
-  to an ECR repo ARN. See that tool's parameter descriptions for the specifics.
+  credentials — MCP `create-delegation` (REST v2 `POST /v2/registries/delegations`)
+  grants Runpod scoped pull access to an ECR repo ARN. See that tool's parameter descriptions for the specifics.
 
 ## Image builds, then inference crashes with "Numpy is not available"
 

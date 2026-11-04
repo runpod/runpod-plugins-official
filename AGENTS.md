@@ -69,8 +69,7 @@ skills/runpod-build-template/  create/improve complete template projects (Pod / 
 same infra CRUD. Which one wins is decided by the **capability-first, environment-second**
 precedence rule, canonical in `skills/runpod/SKILL.md`'s capability matrix (roughly: runpod-mcp
 for simple structured CRUD when connected, runpodctl the moment an op needs a capability MCP
-lacks — `send`/`receive`, SSH, `doctor`, models, pod-from-template / CPU / multi-GPU — or
-whenever the agent is shell-only). Consult the matrix there; don't rely on this summary.
+lacks — `send`/`receive`, SSH, `doctor`, models — or whenever the agent is shell-only). Consult the matrix there; don't rely on this summary.
 
 ## Skill file format
 
