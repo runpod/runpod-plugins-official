@@ -47,7 +47,7 @@ exec in one lane (see the router).
 | Need | How |
 | --- | --- |
 | **Auth** (non-interactive) | `export RUNPOD_API_KEY=your_key` — runpodctl reads it. `runpodctl doctor` is the interactive human first-run (also sets up SSH keys). |
-| **runpodctl** installed | `curl -sSL https://cli.runpod.net \| bash` (see [`../../runpodctl/SKILL.md`](../../runpodctl/SKILL.md)). |
+| **runpodctl** installed | `curl -fsSL https://cli.runpod.net \| sudo bash` (see [`../../runpodctl/SKILL.md`](../../runpodctl/SKILL.md)). |
 | **An SSH key** registered | `runpodctl doctor` or `runpodctl ssh add-key`; needed so the agent can exec on the pod. |
 | **A GPU + a co-located DC** | `runpodctl datacenter list` shows per-DC GPU availability — pick a DC that has your GPU *and* will hold the volume. |
 

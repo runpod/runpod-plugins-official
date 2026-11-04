@@ -21,7 +21,7 @@ Manage GPU pods, serverless endpoints, templates, volumes, and models. For serve
 
 ## Install
 
-`curl -sSL https://cli.runpod.net | bash` (Linux/macOS, and Windows via WSL) or `brew install runpod/runpodctl/runpodctl`. Manual binaries and the Windows and conda steps: the [runpodctl README](https://github.com/runpod/runpodctl#install), beside the `install.sh` they describe. API key: https://console.runpod.io/user/settings
+`curl -fsSL https://cli.runpod.net | sudo bash` (Linux/macOS, and Windows via WSL) or `brew install runpod/runpodctl/runpodctl`. Manual binaries and the Windows and conda steps: the [runpodctl README](https://github.com/runpod/runpodctl#install), beside the `install.sh` they describe. API key: https://console.runpod.io/user/settings
 
 > Old builds silently lack newer flags/behaviors (e.g. `--model-reference` doesn't exist before
 > v2.4.0) and produce confusing downstream errors, and the Homebrew tap can lag well behind.
