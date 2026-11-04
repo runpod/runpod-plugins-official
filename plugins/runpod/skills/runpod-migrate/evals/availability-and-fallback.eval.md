@@ -31,7 +31,10 @@ Per `runpod-migrate/SKILL.md` and `reference/breaking-changes.md`:
    optional — it is the default for every catalog call this skill writes — and `product`
    is not optional either: the API rejects `include=AVAILABILITY` without it. `POD` is
    the right context here because the code creates pods.
-4. Flags the removal in the summary rather than silently dropping to a single GPU type.
+4. Ranks each type by its per-data-center stock (`dataCenters[].availability`), skips a
+   type with no stock where the pod can go, and names the in-stock data centers in one
+   create's `dataCenterIds` rather than one create per data center.
+5. Flags the removal in the summary rather than silently dropping to a single GPU type.
 
 ## Assertions
 
@@ -41,6 +44,7 @@ Per `runpod-migrate/SKILL.md` and `reference/breaking-changes.md`:
   include so this eval cannot pass code that 400s.
 - Produces a fallback loop over the original preference list; does NOT quietly reduce it
   to `gpu: {"id": "NVIDIA GeForce RTX 4090"}` with the other type discarded.
+- Does NOT send a create for a type whose stock is `NONE` everywhere the pod can go.
 - Uses `mounts.persistent` with an explicit `path` (no reliance on a `/workspace`
   default, which v2 does not have).
 - Does NOT invent a v2 `gpuTypeIds`, `gpuTypePriority`, or `gpuCount` field — all three

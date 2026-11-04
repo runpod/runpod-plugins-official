@@ -74,11 +74,18 @@ body = {
 stock = SESSION.get(f"{V2_BASE}/catalog/gpus", params={
     "include": "AVAILABILITY", "product": "POD", "count": 1, "cloud": "SECURE",
 }).json()["gpus"]
-rank = {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "NONE": 3}
-levels = {g["id"]: g.get("availability", "NONE") for g in stock}
+rank = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}   # NONE is left out: never try a type with no stock
+# Rank by stock in our data centers, not the top-level figure across all of them.
+in_stock = {g["id"]: {dc["id"]: rank[dc["availability"]] for dc in g.get("dataCenters", [])
+                      if dc["id"] in DATA_CENTERS and dc["availability"] in rank}
+            for g in stock if g["id"] in GPU_PREFERENCE}
+candidates = [g for g in GPU_PREFERENCE if in_stock.get(g)]
+if not candidates:
+    raise RuntimeError(f"no stock for {GPU_PREFERENCE} in {DATA_CENTERS}")
 
-for gpu_id in sorted(GPU_PREFERENCE, key=lambda g: rank[levels.get(g, "NONE")]):
+for gpu_id in sorted(candidates, key=lambda g: min(in_stock[g].values())):
     body["gpu"] = {"id": gpu_id, "count": 1}
+    body["dataCenterIds"] = list(in_stock[gpu_id])   # only the data centers with stock
     resp = SESSION.post(f"{V2_BASE}/pods", json=body)
     if resp.status_code == 201:
         return resp.json()

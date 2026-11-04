@@ -65,6 +65,7 @@ spending on a real run.
 
 ## 1. Storage — one volume, reused across both phases
 ```bash
+runpodctl datacenter list          # per-DC GPU availability → <dc> is one with the GPU in stock
 runpodctl network-volume create --name ft-loop --size 30 --data-center-id <dc>
 # → <vol-id>, pinned to <dc>. The pod AND the endpoint must run in this DC.
 ```

@@ -236,16 +236,37 @@ are placed on whichever pool has capacity; narrow a pool with `gpu.excludedTypes
 
 ```python
 PREFERENCE = ["NVIDIA GeForce RTX 4090", "NVIDIA RTX A5000", "NVIDIA L40S"]
-RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "NONE": 3}
+RANK = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}  # NONE is left out: never try a type with no stock
 
 cat = session.get(f"{V2}/catalog/gpus",
                   params={"include": "AVAILABILITY", "product": "POD",
                           "count": 1, "cloud": "SECURE"}).json()["gpus"]
-stock = {g["id"]: g.get("availability", "NONE") for g in cat}
+
+# A network volume pins the pod to the volume's data center, so only stock there
+# counts. Without one, stock counts in the body's dataCenterIds, or anywhere if unset.
+pinned = set(body.get("dataCenterIds") or [])
+network = (body.get("mounts") or {}).get("network") or []
+if network and not pinned:
+    volume = session.get(f"{V2}/network-volumes/{network[0]['volumeId']}").json()
+    pinned = {volume["dataCenter"]}
+candidates = []
+for g in cat:
+    if g["id"] not in PREFERENCE:
+        continue
+    dcs = [dc for dc in g.get("dataCenters", [])
+           if dc["availability"] in RANK and (not pinned or dc["id"] in pinned)]
+    if dcs:
+        best = min(RANK[dc["availability"]] for dc in dcs)
+        candidates.append((best, PREFERENCE.index(g["id"]), g["id"],
+                           [dc["id"] for dc in dcs]))
+if not candidates:
+    raise RuntimeError(f"no stock for {PREFERENCE} in {sorted(pinned) or 'any data center'}")
 
 last = None
-for gpu_id in sorted(PREFERENCE, key=lambda g: RANK[stock.get(g, "NONE")]):
-    r = session.post(f"{V2}/pods", json={**body, "gpu": {"id": gpu_id, "count": 1}})
+for _, _, gpu_id, dcs in sorted(candidates):
+    # One create names every data center with stock; the scheduler picks one.
+    r = session.post(f"{V2}/pods", json={**body, "gpu": {"id": gpu_id, "count": 1},
+                                          "dataCenterIds": dcs})
     if r.status_code == 201:
         return r.json()
     # 422 is a bad *body*, not scarce capacity — the next GPU will fail identically.
@@ -260,8 +281,18 @@ raise RuntimeError(f"no GPU available from {PREFERENCE} — last error: {last}")
 Keep the response body in the error. A bare "no GPU available" during a migration sends
 people hunting for capacity when the real cause is usually a field they missed.
 
-For per-datacenter placement, read `dataCenters[].availability` off the same response
-instead of the top-level `availability`.
+The loop reads `dataCenters[].availability`, not the top-level `availability`: the top
+level is one overall figure across data centers and says nothing about the one a volume
+pins you to.
+
+**Storage stays outside the loop.** Create any network volume once, before the loop, in
+a data center the same read shows in stock. A body with `mounts.network` and no
+`dataCenterIds` is pinned to the volume's `dataCenter`, read from
+`GET /v2/network-volumes/{id}`; the loop then varies only the GPU type. Never create a
+volume inside the loop, and never delete one to walk on to the next data center. When
+every candidate is refused with the volume in place, stop and ask the user: wait, accept
+another GPU type there, use the console's Deploy when available, or move to another data
+center, which is the user's call and leaves the first volume billing until they delete it.
 
 ### Replacing `countryCodes` (and the rest of the placement constraints)
 

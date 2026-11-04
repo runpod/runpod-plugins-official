@@ -173,7 +173,10 @@ floor** on every GPU create (`--min-cuda-version 12.8` / `gpu.minCudaVersion: "1
 image can land on a host too old for it and die at startup or silently run on CPU;
 [why](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor)); **default to
 Secure Cloud**; **cache vs network volume is a latency call** (download time is not billed, but a cache miss
-holds the worker start, so the job queues and the endpoint looks idle); and **verify with a real
+holds the worker start, so the job queues and the endpoint looks idle); **stock picks the data
+center, the network volume follows** (read per-data-center GPU stock, create the volume once
+where the GPU is, and on a stock refusal keep it: retry once there or let the user choose;
+[why](../runpod-usage/reference/storage.md#default-prefer-a-network-volume)); and **verify with a real
 request from outside before delivering** — "Running"/"ready" does not mean serving.
 
 It branches to two sub-loops:
