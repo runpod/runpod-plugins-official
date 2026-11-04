@@ -43,7 +43,7 @@
       "heading": "## The answer contract",
       "allow": [
         {
-          "path": "lifecycle-crud/SKILL.md",
+          "path": "runpod-lifecycle-crud/SKILL.md",
           "reason": "create-cluster go rule: an MCP-critical safety rule the lifecycle journey states inline with its cluster-specific fields (exception in the one-home rule)"
         }
       ]

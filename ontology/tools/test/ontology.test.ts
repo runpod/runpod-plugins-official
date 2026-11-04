@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { collectGuides } from "../src/build-bundle.ts";
+import { buildAliases, collectGuides } from "../src/build-bundle.ts";
 import { graphData, renderGraph } from "../src/build-graph.ts";
 import { buildDatabase } from "../src/build-sqlite.ts";
 import { formatConcept } from "../src/format.ts";
@@ -308,7 +308,7 @@ test("the database stores guides and the tree hangs concepts and their guides of
 test("a guide whose id matches a concept id stays a separate graph node", () => {
   const { concepts } = validate(join(fixtures, "good"), noFile, noFile);
   const { guides, links } = collectGuides(concepts, join(fixtures, "skills"), fixtures);
-  // A skill named like a concept, as the flash skill and the Flash concept are.
+  // A skill named like a concept, as a "flash" skill and the Flash concept would be.
   const clash = { ...guides[0]!, id: "volume" };
   const { nodes, links: graphLinks } = graphData(
     concepts,
@@ -387,4 +387,14 @@ test("a guide whose frontmatter is not a map is an error, not a crash", () => {
   writeFileSync(join(skill, "reference", "scalar.md"), "---\njust text\n---\n# Scalar\n");
   const { errors } = collectGuides(concepts, join(root, "skills"), root);
   assertHasError(errors, "scalar.md: frontmatter must be a map of keys");
+});
+
+test("a renamed skill aliases its old id and every reference doc under it", () => {
+  const g = (id: string) => ({ id }) as Parameters<typeof buildAliases>[0][number];
+  const guides = [g("runpod-pod-doctor"), g("runpod-pod-doctor/gpu"), g("runpod-pod-doctorx"), g("runpodctl")];
+  const { aliases, errors } = buildAliases(guides, { "pod-doctor": "runpod-pod-doctor" });
+  assert.deepEqual(errors, []);
+  assert.deepEqual(aliases, { "pod-doctor": "runpod-pod-doctor", "pod-doctor/gpu": "runpod-pod-doctor/gpu" });
+  assert.match(buildAliases(guides, { runpodctl: "runpod-pod-doctor" }).errors.join(), /still a guide id/);
+  assert.match(buildAliases(guides, { old: "missing" }).errors.join(), /not a guide id/);
 });

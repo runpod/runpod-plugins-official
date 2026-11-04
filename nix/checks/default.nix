@@ -16,7 +16,7 @@
 # / shell / JS source sets are explicit unions of the first-party roots, so the
 # intentionally-broken scanner corpora under `testdata/**`, the container
 # payloads under `**/golden-paths/**/template/**`, and the eval fixtures under
-# `skills/flash/evals/fixtures/**` are never linted.
+# `skills/runpod-flash/evals/fixtures/**` are never linted.
 #
 # Policy: these are ALL hard gates and there are NO suppressions. A finding is
 # fixed by changing the code, never by an ignore comment. mypy runs `--strict`

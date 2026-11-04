@@ -87,7 +87,7 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/development/volume-cache", seen: "2026-10-14", note: VolumeCache restores cached files into the local directories. }
       - { source: public-docs, url: "https://docs.runpod.io/sdk/configuration/parameters", seen: "2026-10-16", note: container_disk_gb defaults to 30 on GPU and 10 on CPU. }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: PodTemplate containerDiskInGb defaults to 64. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/runpod-flash-legacy.md, note: PodTemplate containerDiskInGb defaults to 64. }
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md }
 
   - id: volume-cache.silent-without-namespace

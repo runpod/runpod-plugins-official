@@ -14,7 +14,7 @@ evals: [runpod-build-template/evals/runtime-contracts]
 ## Goal · Status · Lane(s)
 
 Package the text-statistics HTTP app as an application-only Pod. **Not live-verified.**
-Lane: runpod-build-template, then companion-clis and infra lanes when deployment is requested.
+Lane: runpod-build-template, then runpod-companion-clis and infra lanes when deployment is requested.
 
 ## When to use
 

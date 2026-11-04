@@ -9,7 +9,7 @@
 - Requires `runpod>=2.0.0` installed in the active environment and a valid key
   (`rp login` or `RUNPOD_API_KEY`).
 - Copy the fixture to a scratch dir so the graded fix does not mutate the committed
-  fixture: `cp -r flash/evals/fixtures/dev-loop /tmp/dev-loop-eval && cd /tmp/dev-loop-eval`.
+  fixture: `cp -r runpod-flash/evals/fixtures/dev-loop /tmp/dev-loop-eval && cd /tmp/dev-loop-eval`.
 - The fixture's `describe` function imports `humanize`, which is not in its `dependencies`, so
   it fails on the worker with `No module named 'humanize'` until the dependency is declared.
 
@@ -50,4 +50,4 @@ The agent should actually execute (not merely describe) the following:
 - The dev session must delete its temporary endpoint. Verify with `runpodctl serverless list`
   that no `dev-dev-loop-eval-` endpoint remains.
 - The agent must only stop processes it started.
-- Restore the fixture if it was edited in place: `git checkout flash/evals/fixtures/dev-loop`.
+- Restore the fixture if it was edited in place: `git checkout runpod-flash/evals/fixtures/dev-loop`.

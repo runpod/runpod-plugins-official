@@ -12,7 +12,7 @@ port 3000. Don't deploy it yet.”
 ## Expected behavior
 
 Authoring/improvement uses runpod-build-template and golden path 26. Ordinary official
-template discovery uses runpod-templates; single build/push mechanics use companion-clis;
+template discovery uses runpod-templates; single build/push mechanics use runpod-companion-clis;
 explicit Flash stays there. Existing examples inform the requested deliverable without
 replacing it. Improve mode preserves a baseline and names an optimization objective.
 

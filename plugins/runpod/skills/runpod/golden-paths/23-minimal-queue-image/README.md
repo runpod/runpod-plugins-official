@@ -30,7 +30,7 @@ block first. For this path specifically:
 - **Runpod auth** (shared block) powers `runpodctl` + the invoke below.
 - **Docker**, logged in to Docker Hub or another registry (shared block) — substitute your
   namespace for `<namespace>` below. See
-  [companion-clis docker](../../../companion-clis/reference/docker.md).
+  [runpod-companion-clis docker](../../../runpod-companion-clis/reference/docker.md).
 
 ## The image
 

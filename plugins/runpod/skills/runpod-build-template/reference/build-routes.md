@@ -27,7 +27,7 @@ Runpod Pod is not automatically capable of building Docker images.
 
 On Windows, identify native PowerShell versus WSL and the Docker engine; use commands
 and paths for that shell. Docker Desktop/WSL installation is conditional on choosing
-local builds: follow its current requirements via [Docker setup](../../companion-clis/reference/docker-setup.md).
+local builds: follow its current requirements via [Docker setup](../../runpod-companion-clis/reference/docker-setup.md).
 On ARM laptops, select the deployment architecture explicitly; CPU emulation is not
 GPU validation. Most CUDA compilation can occur without a GPU, but app-specific build
 hooks may probe devices: verify before rejecting or promising a builder.

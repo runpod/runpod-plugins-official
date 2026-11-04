@@ -23,7 +23,7 @@ The honest answer *is* the deliverable here. Do not invent a file-transfer call,
 
 ## Served now — route, don't refuse
 
-Two operations that were console-only for a long time are served tools on this server. They are normal lifecycle journeys: hand them to **lifecycle-crud** and run them:
+Two operations that were console-only for a long time are served tools on this server. They are normal lifecycle journeys: hand them to **runpod-lifecycle-crud** and run them:
 
 - **Account secrets** — `create-secret`, `list-secrets`, `get-secret`, `update-secret`, `delete-secret`. A secret's value is write-only: no read returns it, and it is consumed by setting an env var on a pod, endpoint, or template to `{{ RUNPOD_SECRET_<name> }}`, which Runpod substitutes at boot. The console route still exists; it is no longer the only one.
 - **Instant Clusters** — `create-cluster`, `list-clusters`, `get-cluster`, `update-cluster` (rename only), `delete-cluster`, `list-cluster-pods`, with `list-cluster-billing` for the spend read.

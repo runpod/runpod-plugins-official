@@ -30,7 +30,7 @@ Scope note: **Methods 2/3 (pod-based population) were *not* re-run here** — al
 live-proven by golden path [07](07-network-volume-handoff.md) (a pod writing to a mounted
 volume). This path's live proof is the **S3-API sync + multi-volume attach + multi-DC
 verification**.
-**Lane(s):** runpodctl ≥ v2.4.0 (volumes + `serverless create --network-volume-ids`) + `aws`/S3 API (sync, see [companion-clis](../../companion-clis/SKILL.md#aws-cli)) + GraphQL `saveEndpoint` (fallback for old CLI / REST-only; Console also works) + optionally a CPU/GPU pod (in-DC population, per [07](07-network-volume-handoff.md))
+**Lane(s):** runpodctl ≥ v2.4.0 (volumes + `serverless create --network-volume-ids`) + `aws`/S3 API (sync, see [runpod-companion-clis](../../runpod-companion-clis/SKILL.md#aws-cli)) + GraphQL `saveEndpoint` (fallback for old CLI / REST-only; Console also works) + optionally a CPU/GPU pod (in-DC population, per [07](07-network-volume-handoff.md))
 
 ## Prerequisites
 - Shared setup first: [../README.md](README.md#before-you-run-any-path-shared-prerequisites) and
@@ -39,7 +39,7 @@ verification**.
 - `aws` CLI configured with **Runpod S3 API keys** (access key = your Runpod `user_...` id, secret =
   `rps_...`). These are **Console-only** to create (Settings → S3 API Keys) — an agent can't
   self-provision them; escalate if they aren't already in `~/.aws/credentials`/env
-  ([companion-clis → AWS CLI](../../companion-clis/SKILL.md#aws-cli)). Not needed if you populate
+  ([runpod-companion-clis → AWS CLI](../../runpod-companion-clis/SKILL.md#aws-cli)). Not needed if you populate
   volumes via a pod (Method 2/3).
 - `runpodctl` installed + authenticated, **≥ v2.4.0** for headless multi-volume attach
   (`serverless create --network-volume-ids`). Verify: `runpodctl version`; if behind, install from
@@ -84,7 +84,7 @@ job; escalate only when it can't.
 
 The S3-compatible API writes straight to a volume with **no pod running** — cheapest
 and fastest for file data. Full setup (S3 API keys, `aws configure`, endpoints,
-path mapping) is in [companion-clis → AWS CLI](../../companion-clis/SKILL.md#aws-cli).
+path mapping) is in [runpod-companion-clis → AWS CLI](../../runpod-companion-clis/SKILL.md#aws-cli).
 
 > **Manual step — S3 API keys are Console-only.** They cannot be created via
 > `runpodctl` or any REST/GraphQL call — only in the Console (Settings → S3 API Keys →
@@ -329,7 +329,7 @@ same synced data. `RUNPOD_DC_ID` is the clean per-request DC identifier; poll wi
 - **Cost scales with N** — storage billed per volume ($0.07/GB/mo to 1TB, then $0.05).
 - **Access key gotcha** — for the S3 API the AWS "access key" is your Runpod **user
   id** (`user_...`), the secret is the S3 key (`rps_...`) — not your `RUNPOD_API_KEY`
-  ([companion-clis](../../companion-clis/SKILL.md#aws-cli)).
+  ([runpod-companion-clis](../../runpod-companion-clis/SKILL.md#aws-cli)).
 
 ## Cost & cleanup
 ```bash
@@ -360,7 +360,7 @@ cd Runpod-Network-Volume-Storage-Tool && uv sync
 export RUNPOD_API_KEY=... RUNPOD_S3_ACCESS_KEY=user_... RUNPOD_S3_SECRET_KEY=rps_...
 uv run runpod-storage upload ./model-artifacts <vol-id>   # resumable; re-run to resume
 ```
-> Registered in [companion-clis → optional: resumable volume transfers](../../companion-clis/reference/aws.md#optional-resumable-volume-transfers-community-tool).
+> Registered in [runpod-companion-clis → optional: resumable volume transfers](../../runpod-companion-clis/reference/aws.md#optional-resumable-volume-transfers-community-tool).
 
 ## Relation to other paths & skill gaps
 - **07 (network-volume handoff)** is the single-volume pod↔serverless case; **10 scales

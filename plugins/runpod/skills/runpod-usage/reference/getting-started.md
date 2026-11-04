@@ -62,10 +62,10 @@ lane's `SKILL.md` (linked). You don't need all of them.
 | Lane | Quick install | Source / docs |
 | --- | --- | --- |
 | **runpodctl** (CLI) | `curl -fsSL https://cli.runpod.net \| sudo bash` (or `brew install runpod/runpodctl/runpodctl`) | [source](https://github.com/runpod/runpodctl) · [`runpodctl/SKILL.md`](../../runpodctl/SKILL.md) |
-| **flash** (deploy your own code) | `pip install "runpod>=2.0.0"` (or `uv add`; Python 3.10–3.14; installs the `rp` CLI) | [source](https://github.com/runpod/runpod-python) · [`flash/SKILL.md`](../../flash/SKILL.md) |
+| **flash** (deploy your own code) | `pip install "runpod>=2.0.0"` (or `uv add`; Python 3.10–3.14; installs the `rp` CLI) | [source](https://github.com/runpod/runpod-python) · [`runpod-flash/SKILL.md`](../../runpod-flash/SKILL.md) |
 | **runpod-mcp** (hosted) | `npx @runpod/mcp-server@latest add --client <id>` (OAuth; `--list` shows ids) | [source](https://github.com/runpod/runpod-mcp) · [`runpod-mcp/SKILL.md`](../../runpod-mcp/SKILL.md) |
 | **runpod-mcp** (local stdio) | `claude mcp add runpod -e RUNPOD_API_KEY=... -- npx -y @runpod/mcp-server` | same as above |
-| **companion CLIs** (`hf`/`gh`/`docker`/`aws`) | per-tool; see the skill | [`companion-clis/SKILL.md`](../../companion-clis/SKILL.md) |
+| **companion CLIs** (`hf`/`gh`/`docker`/`aws`) | per-tool; see the skill | [`runpod-companion-clis/SKILL.md`](../../runpod-companion-clis/SKILL.md) |
 
 Nothing to install for the **hosted MCP** beyond configuring your client, and the
 `runpod-usage` concepts need no install. After installing, set the key below.
@@ -80,7 +80,7 @@ npx @runpod/mcp-server@latest add --client <id> # hosted MCP server, OAuth (--li
 ```
 
 Companion CLIs (`docker`, `gh`, `hf`, `aws`) are separate and OS-specific — install only the
-ones a task needs, per [`companion-clis/SKILL.md`](../../companion-clis/SKILL.md).
+ones a task needs, per [`runpod-companion-clis/SKILL.md`](../../runpod-companion-clis/SKILL.md).
 
 ## The Runpod API key
 
@@ -128,7 +128,7 @@ Serverless endpoints need no SSH.
 
 ## Companion CLI credentials (separate from RUNPOD_API_KEY)
 
-Do NOT reuse the Runpod key for these — each has its own (see the `companion-clis`
+Do NOT reuse the Runpod key for these — each has its own (see the `runpod-companion-clis`
 skill for details):
 
 - **`hf`** — HuggingFace token (`hf auth login`); read scope to pull, write to push.

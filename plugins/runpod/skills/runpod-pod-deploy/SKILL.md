@@ -1,5 +1,5 @@
 ---
-name: pod-deploy
+name: runpod-pod-deploy
 description: Provision a Runpod Pod for interactive, development or training use and tell the user exactly
   how to connect to it. Reads stock before creating, picks the image and GPU class from the catalog reads,
   exposes only the ports the workload needs, hands back the working proxy URL or SSH address, and for
@@ -18,7 +18,7 @@ license: Apache-2.0
 
 You provision one Pod the user asked for and hand back exactly how to reach it. Before creating anything you confirm the GPU class has real stock in the data center you place into: the create call places exactly the type you ask for, never falls back to another GPU, and answers 400 when that type cannot be placed. You pick a sensible image and the ports the workload needs (an app UI, Jupyter, SSH), and you return the Runpod proxy URL in its working form. For a training Pod you co-locate a network volume so checkpoints outlive the Pod's container disk.
 
-Creating a Pod is billable. State the hourly cost before you create it. Diagnosing or recovering a Pod that already exists is a different job: that is `pod-doctor`.
+Creating a Pod is billable. State the hourly cost before you create it. Diagnosing or recovering a Pod that already exists is a different job: that is `runpod-pod-doctor`.
 
 ## Tool binding
 
@@ -26,10 +26,10 @@ This skill reads stock before it creates, and creates only the Pod the user aske
 
 | Capability | Tool |
 |---|---|
-| GPU stock per data center: confirm the class is available before creating (the fuller catalog read is `discovery`'s) | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["POD"]`) |
+| GPU stock per data center: confirm the class is available before creating (the fuller catalog read is `runpod-discovery`'s) | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["POD"]`) |
 | CUDA versions with capacity, per GPU type, when a CUDA floor matters | the same read (`cudaVersions`); `get-capacity` for the matrix view across host CUDA versions |
 | Data centers | `list-data-centers`, `get-data-center` |
-| Create a network volume: checkpoint durability for training (the CRUD hygiene is `lifecycle-crud`'s) | `create-network-volume` |
+| Create a network volume: checkpoint durability for training (the CRUD hygiene is `runpod-lifecycle-crud`'s) | `create-network-volume` |
 | Create a Pod (image, GPU or CPU, disk, ports, env, data center, mounts) | `create-pod` |
 | Inspect a Pod: status, exposed ports, the proxy/public address | `get-pod` |
 | List Pods: resolve "which Pod" and confirm what already exists | `list-pods` |
@@ -50,8 +50,8 @@ This skill reads stock before it creates, and creates only the Pod the user aske
 ## Phase 2 — create and connect
 
 - **Interactive / dev Pod.** Create the Pod with the chosen image, GPU class, disk, ports, and data center. After it reaches running, inspect it and read back the exposed ports and the live mappings. The Pod's `runtime.ports` stay empty while the container initializes, so poll until they are populated before handing back a URL. App images are large and can take minutes to pull. A slow boot is NOT a failure: never create a second Pod because the first is still pulling. State the proxy URL form (`https://<podId>-<port>.proxy.runpod.net`) as soon as the Pod id exists. If the app has not bound after the waits your tools can hold, deliver the evidenced status report (pod id, state, last log line) and the recommended next step; offering to keep watching is fine. The reachable form for an HTTP port is the proxy URL `https://<podId>-<port>.proxy.runpod.net`. For SSH, hand back the Pod's `ssh` block: `ssh.direct` (needs `22/tcp`; full SSH including scp and rsync) or, on a machine with no public IP, `ssh.proxy` (interactive shell only). `ssh.direct` can appear minutes after RUNNING and changes on every stop/start, so say so when it is missing. Confirm the app bound (read the boot log for the "listening on 0.0.0.0:PORT" line) before telling the user it is reachable.
-- **Create then stop for later.** When the user wants the Pod created but not running yet, create it, confirm it reached running, then STOP it. Never terminate: terminate deletes the volume disk the user wants to keep. After the stop, state the consequences: compute billing ends and the GPU is released; the stop clears the container disk, while the volume disk (`/workspace` by default) survives and bills at the stopped-disk rate until the Pod is terminated; the Pod stays on its machine and resumes there, so if another renter takes that GPU in the meantime a start can be refused for lack of a free GPU on that host, or come back without one; anything on a network volume is unaffected. Tell the user how to resume (start the Pod) and what to do if the GPU is gone: wait and retry, start with zero GPUs to reach the files, or migrate the Pod from the console (`pod-doctor` covers that).
-- **Training Pod with durable checkpoints.** Checkpoints written to container disk die with the Pod, so co-locate a network volume. Create the volume in the same data center you will place the Pod (see `lifecycle-crud`; network volumes attach to Secure Cloud Pods only, so the Pod goes to Secure Cloud). Then create the Pod with that volume mounted at a checkpoint path (e.g. `/workspace` or `/checkpoints`) and pin the Pod to that data center. Tell the user the mount path and that checkpoints there survive the Pod being stopped or terminated, while container disk does not. Size the volume to the expected checkpoint total with headroom. On a Pod the mount path is the one you set in `mounts` (no default); a Serverless worker always sees the volume at `/runpod-volume`. If these checkpoints will later be read by a serverless endpoint, its handler must read them at `/runpod-volume`, not the pod path.
+- **Create then stop for later.** When the user wants the Pod created but not running yet, create it, confirm it reached running, then STOP it. Never terminate: terminate deletes the volume disk the user wants to keep. After the stop, state the consequences: compute billing ends and the GPU is released; the stop clears the container disk, while the volume disk (`/workspace` by default) survives and bills at the stopped-disk rate until the Pod is terminated; the Pod stays on its machine and resumes there, so if another renter takes that GPU in the meantime a start can be refused for lack of a free GPU on that host, or come back without one; anything on a network volume is unaffected. Tell the user how to resume (start the Pod) and what to do if the GPU is gone: wait and retry, start with zero GPUs to reach the files, or migrate the Pod from the console (`runpod-pod-doctor` covers that).
+- **Training Pod with durable checkpoints.** Checkpoints written to container disk die with the Pod, so co-locate a network volume. Create the volume in the same data center you will place the Pod (see `runpod-lifecycle-crud`; network volumes attach to Secure Cloud Pods only, so the Pod goes to Secure Cloud). Then create the Pod with that volume mounted at a checkpoint path (e.g. `/workspace` or `/checkpoints`) and pin the Pod to that data center. Tell the user the mount path and that checkpoints there survive the Pod being stopped or terminated, while container disk does not. Size the volume to the expected checkpoint total with headroom. On a Pod the mount path is the one you set in `mounts` (no default); a Serverless worker always sees the volume at `/runpod-volume`. If these checkpoints will later be read by a serverless endpoint, its handler must read them at `/runpod-volume`, not the pod path.
 
 ## Phase 3 — hand back
 
@@ -72,7 +72,7 @@ This skill reads stock before it creates, and creates only the Pod the user aske
 
 - Create returns `400` with a placement or stock error → the class ran out in that data center between the read and the create; surface it and offer another class or data center rather than retrying the same one. The same 400 ("no instances available") also answers an invalid GPU type id; check the id against the catalog read before calling it a stock-out.
 - The Pod reaches running but `runtime.ports` is still empty → it is still initializing; poll `get-pod` until it is populated before handing back a URL. This is normal Runpod API behavior, not a failure.
-- The proxy URL 502s right after create → the app inside has not bound to the port yet, or bound to `127.0.0.1` instead of `0.0.0.0`; read the boot log to confirm before declaring the Pod broken (deeper diagnosis is `pod-doctor`).
+- The proxy URL 502s right after create → the app inside has not bound to the port yet, or bound to `127.0.0.1` instead of `0.0.0.0`; read the boot log to confirm before declaring the Pod broken (deeper diagnosis is `runpod-pod-doctor`).
 - `create-network-volume` is refused → read the error: the data center may not offer network storage (an empty `networkVolumeTypes` on the data-center read), the size may be outside 10–4096 GB, or the account balance may be too low; tell the user the exact reason and stop.
 - A create call fails → report it and stop; do not retry blindly or create a second Pod.
 - The Pod is running but the app is still pulling/booting after minutes → that is normal for multi-GB images, not grounds for a replacement Pod or an open-ended wait; follow the bounded-wait hand-back above.

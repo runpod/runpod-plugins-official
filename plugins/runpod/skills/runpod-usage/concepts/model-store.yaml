@@ -126,7 +126,7 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/overview", seen: "2026-10-16" }
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/model.py", seen: "2026-10-16" }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Models and secrets. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/api.md, note: Models and secrets. }
 
   - id: model-store.flash-attach-after-deploy
     statement: >

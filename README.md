@@ -47,7 +47,7 @@ That's it. Notes:
 - **Claude Code** can install natively instead (auto-wires the hosted **MCP server** + OAuth) —
   see [Install → Claude Code](#claude-code). MCP auth details: [Authentication](#authentication).
 - Companion CLIs (`docker`/`gh`/`hf`/`aws`) install separately, per task — see
-  [`companion-clis`](plugins/runpod/skills/companion-clis/SKILL.md).
+  [`runpod-companion-clis`](plugins/runpod/skills/runpod-companion-clis/SKILL.md).
 
 ## Install
 
@@ -140,7 +140,7 @@ Auth is needed in **two places**, and **one Runpod API key covers both**:
 
 Codex and local-stdio MCP variants are in [`runpod-mcp`](plugins/runpod/skills/runpod-mcp/SKILL.md).
 Companion CLIs (`hf`, `docker`, `gh`, `aws`) use their own credentials — see
-[`companion-clis`](plugins/runpod/skills/companion-clis/SKILL.md). If nothing is set up, the
+[`runpod-companion-clis`](plugins/runpod/skills/runpod-companion-clis/SKILL.md). If nothing is set up, the
 `runpod` skill detects it and walks you through this.
 
 ## Updating
@@ -154,6 +154,13 @@ it up yet, force it manually:
 | **Claude Code** | `/plugin marketplace update runpod` then `/reload-plugins` |
 | **Codex** | `codex plugin marketplace upgrade runpod` |
 | **skills.sh** | re-run `npx skills add runpod/runpod-plugins-official` |
+
+**Renamed skills.** Every skill name now starts with `runpod`: `discovery`, `lifecycle-crud`,
+`serverless-deploy`, `pod-deploy`, `pod-doctor`, `endpoint-ops`, `cost-audit`, `flash` and
+`companion-clis` became `runpod-discovery`, `runpod-lifecycle-crud` and so on. A skills.sh
+install made before the rename may keep the old directories next to the new ones. If it does,
+delete the old directories so an agent does not load both copies. The Runpod MCP server still
+resolves the old guide ids (`read-guide pod-doctor`) to the new ones.
 
 ## Uninstall
 
@@ -180,13 +187,13 @@ Start with the **`runpod`** router; it points at the right lane.
 | [`runpod`](plugins/runpod/skills/runpod/SKILL.md) | Router / entrypoint. Start here when the right skill is unclear. |
 | [`runpod-mcp`](plugins/runpod/skills/runpod-mcp/SKILL.md) | Manage infra via the Runpod **MCP server**'s structured tool calls. |
 | [`runpodctl`](plugins/runpod/skills/runpodctl/SKILL.md) | Manage infra from the **CLI**, plus Hub, file transfer, SSH, `doctor`. |
-| [`flash`](plugins/runpod/skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless with the Runpod SDK (`runpod.App`, `rp flash`). |
-| [`companion-clis`](plugins/runpod/skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf`, `docker`, `gh`, `aws`. |
+| [`runpod-flash`](plugins/runpod/skills/runpod-flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless with the Runpod SDK (`runpod.App`, `rp flash`). |
+| [`runpod-companion-clis`](plugins/runpod/skills/runpod-companion-clis/SKILL.md) | Prerequisite CLIs: `hf`, `docker`, `gh`, `aws`. |
 | [`runpod-usage`](plugins/runpod/skills/runpod-usage/SKILL.md) | **Concepts** — pods/serverless, containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](plugins/runpod/skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness, gotchas. |
 | [`runpod-build-template`](plugins/runpod/skills/runpod-build-template/SKILL.md) | **Create or improve complete template projects** for Pods and queue/load-balanced Serverless, from code, GitHub or an app request. |
 | [`runpod-migrate`](plugins/runpod/skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2. |
-| [`discovery`](plugins/runpod/skills/discovery/SKILL.md), [`lifecycle-crud`](plugins/runpod/skills/lifecycle-crud/SKILL.md), [`serverless-deploy`](plugins/runpod/skills/serverless-deploy/SKILL.md), [`pod-deploy`](plugins/runpod/skills/pod-deploy/SKILL.md), [`pod-doctor`](plugins/runpod/skills/pod-doctor/SKILL.md), [`endpoint-ops`](plugins/runpod/skills/endpoint-ops/SKILL.md), [`cost-audit`](plugins/runpod/skills/cost-audit/SKILL.md) | **MCP journeys** — the step-by-step playbooks `runpod-mcp` routes to. |
+| [`runpod-discovery`](plugins/runpod/skills/runpod-discovery/SKILL.md), [`runpod-lifecycle-crud`](plugins/runpod/skills/runpod-lifecycle-crud/SKILL.md), [`runpod-serverless-deploy`](plugins/runpod/skills/runpod-serverless-deploy/SKILL.md), [`runpod-pod-deploy`](plugins/runpod/skills/runpod-pod-deploy/SKILL.md), [`runpod-pod-doctor`](plugins/runpod/skills/runpod-pod-doctor/SKILL.md), [`runpod-endpoint-ops`](plugins/runpod/skills/runpod-endpoint-ops/SKILL.md), [`runpod-cost-audit`](plugins/runpod/skills/runpod-cost-audit/SKILL.md) | **MCP journeys** — the step-by-step playbooks `runpod-mcp` routes to. |
 
 See the plugin's [README](plugins/runpod/README.md) for the full guide, the
 development loop, and setup. Worked end-to-end examples live in

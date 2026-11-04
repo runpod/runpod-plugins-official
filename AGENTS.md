@@ -54,8 +54,8 @@ lane is unclear, then follows its decision table into a lane's `SKILL.md`.
 skills/runpod/            router / entrypoint — decides the lane
 skills/runpod-mcp/        manage infra via the Runpod MCP server (structured tool calls)
 skills/runpodctl/         manage infra via the CLI (+ Hub, file transfer, SSH, doctor)
-skills/flash/             write & deploy your own code on Runpod serverless (Runpod SDK apps, rp flash)
-skills/companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
+skills/runpod-flash/             write & deploy your own code on Runpod serverless (Runpod SDK apps, rp flash)
+skills/runpod-companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
 skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a tool
   reference/*.md          detailed topics, loaded on demand
   concepts/*.yaml         the concept graph: one file per concept, rules with public evidence
@@ -114,6 +114,14 @@ editing the repo. Each is its own checkable rule.
 
 1. **Adding a skill** — list its path in the `skills` array of
    `.claude-plugin/marketplace.json` (that array is what skills.sh resolves).
+   - **Name it `runpod-<what>`** (the CLI skill keeps the tool's own name, `runpodctl`). Skill
+     names share one namespace with every other plugin an agent loads, so a bare `discovery` or
+     `flash` collides; the directory name is also the guide id the Runpod MCP serves.
+   - **Renaming a skill** — `git mv` the directory, set `name:`, update the marketplace
+     `skills` array, `release-please-config.json` and every link, and add `old -> new` to
+     `ontology/guide-aliases.json` so the bundle's `aliases` keep old guide ids resolving in
+     the Runpod MCP. The runpod-mcp repo hard-codes journey ids in its tests and server
+     instructions, so land its companion change in the same release window.
 2. **Skill `description`** —
    - Keep each `description` to 1–2 sentences.
    - If a skill overlaps another, its `description` names the sibling and states when to defer to it.

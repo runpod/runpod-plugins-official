@@ -4,7 +4,7 @@ concepts: [serverless-endpoint, job, worker]
 
 # Serverless deploy — error handling
 
-The failure → action table for the [serverless-deploy](../SKILL.md) playbook, moved here.
+The failure → action table for the [runpod-serverless-deploy](../SKILL.md) playbook, moved here.
 The playbook's phases and hard rules still apply; this says what to do when a
 create or the smoke job fails.
 

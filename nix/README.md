@@ -176,7 +176,7 @@ All tools come straight from the `flake.lock`-pinned nixpkgs (via `versions.nix`
 - **actionlint** — the GitHub Actions workflows, including shellcheck on their `run:` steps
 - **nixfmt** / **deadnix** / **statix** — the Nix tree lints itself
 
-**Scope.** The Python / shell / JS checks are scoped to the **first-party** tree only. The intentionally-broken scanner corpora under `testdata/**`, the container payloads under `**/golden-paths/**/template/**`, and the eval fixtures under `skills/flash/evals/fixtures/**` are never linted — linting or "fixing" them would corrupt the fixtures the migrate scanner is tested against.
+**Scope.** The Python / shell / JS checks are scoped to the **first-party** tree only. The intentionally-broken scanner corpora under `testdata/**`, the container payloads under `**/golden-paths/**/template/**`, and the eval fixtures under `skills/runpod-flash/evals/fixtures/**` are never linted — linting or "fixing" them would corrupt the fixtures the migrate scanner is tested against.
 
 All Nix packages come from [nixpkgs](https://github.com/NixOS/nixpkgs) and are searchable at [search.nixos.org](https://search.nixos.org/packages?channel=unstable).
 

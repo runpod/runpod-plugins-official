@@ -81,6 +81,13 @@ export interface Knowledge {
   guides: Guide[];
   concepts: Concept[];
   links: Link[];
+  /**
+   * Old guide id -> current guide id, for skills that were renamed (for example
+   * "pod-doctor" -> "runpod-pod-doctor", "pod-doctor/<ref>" -> "runpod-pod-doctor/<ref>").
+   * Resolve an unknown id through it before reporting it missing. Absent in bundles
+   * built before the first rename.
+   */
+  aliases?: Record<string, string>;
 }
 
 export function loadKnowledge(): Knowledge;

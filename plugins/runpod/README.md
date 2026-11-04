@@ -17,13 +17,13 @@ lane below. If you already know the lane, go straight to it.
 | [`runpod`](skills/runpod/SKILL.md) | Router / entrypoint. Start here when the right skill is unclear. |
 | [`runpod-mcp`](skills/runpod-mcp/SKILL.md) | Manage infra (pods, endpoints, jobs, templates, volumes, catalog, billing) via the Runpod **MCP server**'s structured tool calls. |
 | [`runpodctl`](skills/runpodctl/SKILL.md) | Manage infra from the **CLI**, plus Hub deploys, file transfer (`send`/`receive`), SSH, and `doctor` setup. |
-| [`flash`](skills/flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless with the Runpod SDK — `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; migrates legacy `runpod-flash` projects. |
-| [`companion-clis`](skills/companion-clis/SKILL.md) | Prerequisite CLIs: `hf` (models), `docker` (images), `gh` (repos/releases), `aws` (S3 to volumes). |
+| [`runpod-flash`](skills/runpod-flash/SKILL.md) | **Write and deploy your own code** on Runpod serverless with the Runpod SDK — `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; migrates legacy `runpod-flash` projects. |
+| [`runpod-companion-clis`](skills/runpod-companion-clis/SKILL.md) | Prerequisite CLIs: `hf` (models), `docker` (images), `gh` (repos/releases), `aws` (S3 to volumes). |
 | [`runpod-usage`](skills/runpod-usage/SKILL.md) | **Concepts** — how pods/serverless work, building containers, storage, GPU selection, gotchas. |
 | [`runpod-templates`](skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness/runtime gotchas, version pinning; ComfyUI, PyTorch, Ubuntu. |
 | [`runpod-build-template`](skills/runpod-build-template/SKILL.md) | **Create or improve a complete template project** — documented Dockerfile, app-specific files and a precise deployment handoff. |
 | [`runpod-migrate`](skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2 — inventory, rewrite, flag breaking changes. |
-| [`discovery`](skills/discovery/SKILL.md), [`lifecycle-crud`](skills/lifecycle-crud/SKILL.md), [`serverless-deploy`](skills/serverless-deploy/SKILL.md), [`pod-deploy`](skills/pod-deploy/SKILL.md), [`pod-doctor`](skills/pod-doctor/SKILL.md), [`endpoint-ops`](skills/endpoint-ops/SKILL.md), [`cost-audit`](skills/cost-audit/SKILL.md) | **MCP journeys** — the step-by-step playbooks `runpod-mcp` routes to for work done with the MCP tools. |
+| [`runpod-discovery`](skills/runpod-discovery/SKILL.md), [`runpod-lifecycle-crud`](skills/runpod-lifecycle-crud/SKILL.md), [`runpod-serverless-deploy`](skills/runpod-serverless-deploy/SKILL.md), [`runpod-pod-deploy`](skills/runpod-pod-deploy/SKILL.md), [`runpod-pod-doctor`](skills/runpod-pod-doctor/SKILL.md), [`runpod-endpoint-ops`](skills/runpod-endpoint-ops/SKILL.md), [`runpod-cost-audit`](skills/runpod-cost-audit/SKILL.md) | **MCP journeys** — the step-by-step playbooks `runpod-mcp` routes to for work done with the MCP tools. |
 
 The migration flow also has a slash command: **`/runpod:migrate [scope] [path]`**
 runs the `runpod-migrate` workflow directly, e.g. `/runpod:migrate rest src/`.
@@ -157,7 +157,7 @@ skills/
   runpod-mcp/        Runpod MCP server (structured tool calls)
   runpodctl/         Runpod CLI (+ Hub, transfer, SSH, doctor)
   flash/             write & deploy your own code (Runpod SDK apps)
-  companion-clis/    hf / gh / docker / aws prerequisites
+  runpod-companion-clis/    hf / gh / docker / aws prerequisites
   runpod-usage/      concepts + reference/*.md
   runpod-templates/  official pod templates + repair guide + scripts
   runpod-build-template/  authoring + target/build-route references + evals

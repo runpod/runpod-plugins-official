@@ -21,6 +21,7 @@ const { version, commit, guides, concepts, links } = loadKnowledge();
 | `guides` | Every skill, reference doc and golden path: id, kind, title, description, markdown body, parent guide, the concepts it covers, and for golden paths the `lanes` it drives and its `mcp` level (`full`, `partial` or `none`: can an agent with only the Runpod MCP tools finish it). |
 | `concepts` | The concept graph: one entry per concept with fields, states, relations and rules, each rule with its public evidence. |
 | `links` | Guide-to-concept links: a golden path `uses` a concept, a doc `explains` it. |
+| `aliases` | Old guide id → current id for renamed skills (for example `pod-doctor` → `runpod-pod-doctor`, and each of its reference docs). Resolve an unknown id through it before reporting it missing. Bundles built before the first rename have no `aliases`. |
 | `version`, `commit` | The plugin release and commit the bundle was built from. |
 
 Guide ids follow the file layout: `runpod-usage` (a skill), `runpod-usage/storage` (a

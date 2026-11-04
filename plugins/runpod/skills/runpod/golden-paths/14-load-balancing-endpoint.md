@@ -4,12 +4,12 @@ mcp: partial
 concepts: [serverless-endpoint, worker, template, container-image, endpoint-autoscaling]
 status: live-verified
 verified: "2026-10-29"
-evals: [flash/evals/lb-multi-route-api, runpod/evals/load-balancer-endpoint, live:lb-endpoint]
+evals: [runpod-flash/evals/lb-multi-route-api, runpod/evals/load-balancer-endpoint, live:lb-endpoint]
 ---
 
 # Golden path 14 — load-balancing serverless endpoint (custom HTTP worker)
 
-> **Status:** live-verified 2026-10-29 — v2 route (step 3a) end to end with a public echo image; the custom worker and the GraphQL route were last run 2026-07-13. **Evals:** [lb-multi-route-api](../../flash/evals/lb-multi-route-api.eval.md) · [load-balancer-endpoint](../evals/load-balancer-endpoint.eval.md) · `live:lb-endpoint` (live CI check). Status key: [golden-paths README](README.md#status-legend).
+> **Status:** live-verified 2026-10-29 — v2 route (step 3a) end to end with a public echo image; the custom worker and the GraphQL route were last run 2026-07-13. **Evals:** [lb-multi-route-api](../../runpod-flash/evals/lb-multi-route-api.eval.md) · [load-balancer-endpoint](../evals/load-balancer-endpoint.eval.md) · `live:lb-endpoint` (live CI check). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** deploy a **load-balancing** Serverless endpoint — where your worker runs its own
 HTTP server and Runpod routes requests **directly** to it (custom URL paths, single-hop, no

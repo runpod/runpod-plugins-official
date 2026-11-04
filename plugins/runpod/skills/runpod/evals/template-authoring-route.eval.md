@@ -10,12 +10,12 @@ Then independently: “Run this application using an existing official template.
 
 The first request matches golden path 26 and runpod-build-template, preserving its
 source deliverable. The second keeps normal prebuilt discovery/deployment routing.
-The same behavior must hold when starting directly in runpod-templates, companion-clis,
+The same behavior must hold when starting directly in runpod-templates, runpod-companion-clis,
 runpod-usage or flash rather than first reading the router.
 
 ## Assertions
 
 - Explicit authoring is not replaced with prebuilt/Flash or an unrelated dual-mode image.
 - File authoring does not require cloud auth, SSH or local Docker.
-- A single existing-image build/push operation still routes to companion-clis.
+- A single existing-image build/push operation still routes to runpod-companion-clis.
 - Only relevant references are loaded; manual eval documentation is not called CI coverage.

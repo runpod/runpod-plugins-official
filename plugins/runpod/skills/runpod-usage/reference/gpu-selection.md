@@ -57,7 +57,7 @@ older host for an old image (a torch 2.1 / `cu118` build, say).
 |------|---------------|
 | `runpodctl` | `pod create --min-cuda-version 12.8` / `serverless create --min-cuda-version 12.8` (both verified against the vendored 2.10.0 command surface; `template create` has no such flag — templates carry `allowedCudaVersions` instead) |
 | REST v2 | `gpu.minCudaVersion: "12.8"` on `POST /v2/pods` and `POST /v2/serverless` |
-| flash | `min_cuda_version=CudaVersion.V12_8` — already the default (`skills/flash/reference/api.md`) |
+| flash | `min_cuda_version=CudaVersion.V12_8` — already the default (`skills/runpod-flash/reference/api.md`) |
 | Runpod MCP | `gpu.minCudaVersion: "12.8"` on `create-pod` and `create-endpoint` (the REST v2 body); `allowedCudaVersions` on `create-template` |
 
 ### Floor vs exact set
@@ -98,7 +98,7 @@ Runpod pick any available GPU in that tier (better availability); pinning an exa
 GPU type gives determinism but can be throttled when supply is tight. Pool names are
 used by Serverless configs, the Runpod Hub, flash's `GpuGroup`, and the GraphQL API.
 
-Pool reference (source of truth: `skills/flash/reference/api.md`):
+Pool reference (source of truth: `skills/runpod-flash/reference/api.md`):
 
 | Pool | GPUs | VRAM |
 |------|------|------|
@@ -172,7 +172,7 @@ GPU supply fluctuates by tier and region. To avoid throttling:
   center). Some features (e.g. global networking) are only in a subset of regions.
 - Regions span US (CA, GA, IL, KS, NC, TX, WA, etc.), EU (CZ, RO, IS, NO, SE, FR,
   NL), and others. See `docs/pods/networking.mdx` for the current data-center list
-  and `companion-clis/SKILL.md` for datacenter IDs used with S3.
+  and `runpod-companion-clis/SKILL.md` for datacenter IDs used with S3.
 
 ## Guaranteed capacity: reserved pricing
 

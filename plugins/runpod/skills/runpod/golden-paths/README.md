@@ -29,7 +29,7 @@ Every path assumes this baseline — set it up once, then follow the path:
 - **Companion CLIs** — image paths need `docker` running **and `docker login`** to a
   registry you can push to; some paths need `hf` (HF token) or `aws` (Runpod S3 keys,
   which are **Console-only** — an agent can't self-provision them). See
-  [`../../companion-clis/SKILL.md`](../../companion-clis/SKILL.md).
+  [`../../runpod-companion-clis/SKILL.md`](../../runpod-companion-clis/SKILL.md).
 - **Placeholders are yours to fill** — commands use `<template-id>`, `<endpoint-id>`,
   `<vol-…>`, etc.; capture the real id a command returns and reuse it in the next step.
   **Docker images shown as `<your-registry>/gpNN-…` are the original live-run images —

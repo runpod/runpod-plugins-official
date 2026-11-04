@@ -127,7 +127,7 @@ template deployed, fixed, or replaced. Land here, identify which, and hand off:
 | **Deploy** a template end to end | the matching golden path in the table above ([index](../runpod/golden-paths/README.md)) — live-verified runs with real commands |
 | **Fix a pod that won't serve** ("Running" but URL dead, 404/502) | the template's reference file, §Readiness — then [`runpod-usage/reference/gotchas.md`](../runpod-usage/reference/gotchas.md) |
 | **Fix a ComfyUI workflow whose models won't download** (missing/broken model metadata, imported workflow or PNG) | [the repair guide](reference/comfyui-model-repair.md) — it drives the repair scripts in [`scripts/`](scripts/). The official ComfyUI templates ship ComfyUI-RunpodDirect, so its automatic-download path applies |
-| **Add models / files** to a running template pod | the template's reference file (§What does not ship), or `companion-clis` for generic Hugging Face transfers |
+| **Add models / files** to a running template pod | the template's reference file (§What does not ship), or `runpod-companion-clis` for generic Hugging Face transfers |
 | **Customize beyond what the template ships** (pinned versions, extra nodes, lighter image) or **author a template project / Hub listing** | [`runpod-build-template`](../runpod-build-template/SKILL.md) — author the project, using the official base when it fits |
 | **A serverless worker**, not a pod | not a pod template — Hub workers via `runpodctl` / `runpod-mcp` |
 

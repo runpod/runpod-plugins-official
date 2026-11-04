@@ -1,5 +1,5 @@
 ---
-name: pod-doctor
+name: runpod-pod-doctor
 description: 'Diagnose a Runpod Pod that is unreachable, GPU-blind or stuck, and perform a recovery action
   only when the user authorizes one. Use when an existing Pod misbehaves, through the Runpod MCP tools:
   its proxy URL answers 502, CUDA is not available inside the container, a restarted Pod has no GPU, the
