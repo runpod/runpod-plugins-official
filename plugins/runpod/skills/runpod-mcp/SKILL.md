@@ -78,7 +78,9 @@ Once connected, read the server. Do not reason about its tools from memory.
 2. **The server serves these same skills** from this plugin's release: `read-guide`
    (start with `read-guide runpod-mcp`) and the `runpod://guides/<id>` resources. With
    this plugin installed, the journey skills below are the procedure; the server's
-   guides are the same text for an agent without the plugin.
+   guides are the same text for an agent without the plugin. A skill's
+   `reference/<name>.md` link is guide id `<skill>/<name>` (e.g.
+   `serverless-deploy/error-handling`).
 3. **The wire contract** is the Runpod v2 OpenAPI document at
    `https://api.runpod.io/v2/openapi.json`, for fields beyond the tool surface.
 

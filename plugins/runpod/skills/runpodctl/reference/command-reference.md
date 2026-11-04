@@ -105,8 +105,23 @@ that same `PATCH` and `{"gpu":{"pools":[...]}}`.
 **runpodctl ≥ v2.4.0**; data does not sync between volumes automatically — golden path
 [10](../../runpod/golden-paths/10-multi-region-ha-serverless.md).
 
+`serverless update --model-reference` includes the server-resolved `modelReferences` in
+JSON/YAML output; `--clear-models` returns `modelReferences: []`. Other updates do not fetch
+model references; use `serverless model-status <id>` to inspect them.
+
 ⚠️ `serverless get --include-workers` returns raw v1 worker records **including
 `RUNPOD_AI_API_KEY`/`RUNPOD_ENDPOINT_SECRET` in `env`** — don't paste its output into a ticket.
+
+### CPU endpoints and REST v1
+
+Verified evidence for why REST v1 must not be used for a CPU endpoint (the create
+instruction is in [SKILL.md](../SKILL.md)): 2026-07-14,
+`POST https://rest.runpod.io/v1/endpoints` with `"computeType":"CPU"` silently returned a GPU
+endpoint (`gpuCount:1`, `cpuFlavorIds:null`), while `runpodctl --compute-type CPU` correctly
+returned `computeType:"CPU"` with `instanceIds:["cpu3g-4-16"]`. The separate
+**runtime/invoke** API `https://api.runpod.ai/v2/<endpoint-id>/…`
+(health/run/runsync/openai) is a different v2 and works fine; the v1-vs-v2 caveat is only
+about the **control/management** REST.
 
 ### Error codes worth branching on
 

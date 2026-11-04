@@ -18,19 +18,24 @@ You operate a Serverless endpoint that already exists. Everything starts by read
 
 One property of the Runpod update path drives the central rule here: an endpoint update is a PATCH. Only the fields present in the body change and omitted fields are left untouched, so you send exactly the setting you were asked to change and nothing else. The one exception is the GPU selection: `gpu.pools` and `gpu.excludedTypes` are a single selection, so a PATCH that sends `pools` without `excludedTypes` clears the exclusions. When you touch either, send both. What the PATCH does not give you is proof: its own response is not a read. Read the config first for the before value, and read it back afterward for the after value.
 
-## Required capabilities
+## Tool binding
 
-Named as capabilities; the tool serving each one on this server is in the tool binding below. This skill reads before it mutates, and mutates only what the user authorized.
+This skill reads before it mutates, and mutates only what the user authorized. If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
-- List and inspect endpoints: resolve "which endpoint" and read the full current config.
-- Read endpoint health and list workers: the stuck-queue / dying-worker evidence.
-- Read a worker's logs: the crash / model-load failure line.
-- Read GPU stock per data center, with the CUDA versions that have capacity: is a stuck queue a capacity problem?
-- Update an endpoint (worker min/max, idle timeout, scaler, FlashBoot, disk, env): the gated tune.
-- Pin GPUs / set GPU count: the pool plus `excludedTypes` selection and `gpu.count`; `set-endpoint-gpus` builds it and preserves the other settings.
-- Read release history: which build the workers are running.
-- Cancel one job; purge the queue. These are the queue-management actions, each gated.
-- Submit and poll a job to re-verify after a change.
+| Capability | Tool |
+|---|---|
+| List / inspect endpoints: resolve "which endpoint" and read the full current config | `list-endpoints`, `get-endpoint` |
+| Endpoint health: the stuck-queue / dying-worker evidence | `endpoint-health` |
+| List workers (per-worker detail) | `list-endpoint-workers` |
+| Read a worker's logs: the crash / model-load failure line | `stream-worker-logs` (`source=system` for the container lifecycle) |
+| GPU stock per data center: is a stuck queue a capacity problem? | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["SERVERLESS"]`) |
+| CUDA versions with capacity, per GPU type | the same read (`cudaVersions`); `get-capacity` for the matrix view |
+| Update endpoint settings (worker min/max, idle timeout, scaler, FlashBoot, disk, env): the gated tune | `update-endpoint` (PATCH; send `gpu.pools` and `gpu.excludedTypes` together) |
+| Pin GPUs / set GPU count (`gpu.count`, the pool plus `excludedTypes`) | `set-endpoint-gpus` (`pools`, `excludeGpuTypeIds`, `gpuCount`; builds the exclusion list and preserves the other settings) |
+| Release history: which build the workers are running | `list-endpoint-releases` |
+| Cancel one job (gated) | `cancel-job` |
+| Purge the queue (gated) | `purge-endpoint-queue` |
+| Submit / poll a job to re-verify after a change | `run-endpoint`, `get-job-status`, `runsync-endpoint` |
 
 ## Phase 1 — diagnose (always, read-only)
 
@@ -75,25 +80,6 @@ Advance only when the prompt asks to change a *named* endpoint's setting.
 - Cancel/purge returns success but health still shows queued jobs → re-read after a moment; the queue count settles slightly after the action.
 - `get-job-status` answers 404 for a job id that was valid → the job's TTL (24 h from submission by default) expired and removed it; it is not a wrong id.
 - A GPU-pin request when `set-endpoint-gpus` is missing from the session → make the same selection through `update-endpoint`, sending `gpu.pools` and `gpu.excludedTypes` together.
-
-## Tool binding
-
-| Capability | Tool |
-|---|---|
-| List / inspect endpoints | `list-endpoints`, `get-endpoint` |
-| Endpoint health | `endpoint-health` |
-| List workers (per-worker detail) | `list-endpoint-workers` |
-| Read a worker's logs | `stream-worker-logs` (`source=system` for the container lifecycle) |
-| GPU stock per data center | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["SERVERLESS"]`) |
-| CUDA versions with capacity, per GPU type | the same read (`cudaVersions`); `get-capacity` for the matrix view |
-| Update endpoint settings | `update-endpoint` (PATCH; send `gpu.pools` and `gpu.excludedTypes` together) |
-| Pin GPUs / set GPU count | `set-endpoint-gpus` |
-| Release history | `list-endpoint-releases` |
-| Cancel one job | `cancel-job` |
-| Purge the queue | `purge-endpoint-queue` |
-| Submit / poll a job | `run-endpoint`, `get-job-status`, `runsync-endpoint` |
-
-If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
 ## Contract
 

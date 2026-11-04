@@ -18,17 +18,22 @@ You operate an existing Pod: first diagnose what went wrong, then, only if the u
 
 Every diagnosis follows the same steps: read the Pod's state and logs before saying anything, quote the decisive line from the tool output, and never mutate a Pod the user did not name.
 
-## Required capabilities
+## Tool binding
 
-Named as capabilities; the tool serving each one on this server is in the tool binding below. This skill reads before it acts.
+This skill reads before it acts. If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
-- List Pods: the account-wide stuck audit and the "which Pod" resolution.
-- Inspect one Pod: full status, ports, GPU count, mounts.
-- Read a Pod's boot/container logs: the model-load and crash evidence.
-- Trigger a Pod state transition (stop / start / restart): the gated action.
-- Terminate a Pod: the destructive transition, gated separately.
-- Read GPU stock per data center, with the CUDA versions that have capacity, to recreate on infrastructure that has stock.
-- Recreate a Pod, only inside an authorized recovery.
+| Capability | Tool |
+|---|---|
+| List Pods: the account-wide stuck audit and the "which Pod" resolution | `list-pods` |
+| Inspect one Pod: full status, ports, GPU count, mounts | `get-pod` |
+| Read Pod boot/container logs: the model-load and crash evidence | `stream-pod-logs` (`source=system` for lifecycle events) |
+| Stop a Pod (keep the volume disk): gated | `pod-action` (`{"action":"stop"}`) |
+| Restart / start a Pod: gated | `pod-action` (`{"action":"restart"}` / `"start"`) |
+| Terminate a Pod: destructive, gated separately | `delete-pod` (or `pod-action` `{"action":"terminate"}`) |
+| GPU stock per data center, to recreate on infrastructure that has stock | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["POD"]`) |
+| CUDA versions with capacity, per GPU type | the same read (`cudaVersions`); `get-capacity` for the matrix view |
+| Data centers | `list-data-centers` |
+| Recreate a Pod, only inside an authorized recovery | `create-pod` |
 
 ## Phase 1 — diagnose (always, read-only)
 
@@ -68,23 +73,6 @@ Advance only when the prompt explicitly asks to stop, restart, recreate, or term
 - A terminate/delete returns `204` with no body. That is success, not an error.
 - A state-transition request that is invalid for the Pod's current status returns `409`. The Pod record's `actions` lists the permitted transitions; read it and pick a valid one.
 - A recreate that returns `no gpu available` means the chosen GPU/DC also has no stock right now. Surface it and stop; do not silently retry elsewhere.
-
-## Tool binding
-
-| Capability | Tool |
-|---|---|
-| List Pods | `list-pods` |
-| Inspect one Pod | `get-pod` |
-| Read Pod boot/container logs | `stream-pod-logs` (`source=system` for lifecycle events) |
-| Stop a Pod (keep the volume disk) | `pod-action` (`{"action":"stop"}`) |
-| Terminate a Pod | `delete-pod` (or `pod-action` `{"action":"terminate"}`) |
-| Restart / start a Pod | `pod-action` (`{"action":"restart"}` / `"start"`) |
-| GPU stock per data center | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["POD"]`) |
-| CUDA versions with capacity, per GPU type | the same read (`cudaVersions`); `get-capacity` for the matrix view |
-| Data centers | `list-data-centers` |
-| Recreate a Pod | `create-pod` |
-
-If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
 ## Contract
 

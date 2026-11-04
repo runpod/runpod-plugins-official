@@ -76,57 +76,29 @@ Before using unfamiliar commands, inspect live help first. Do not rely on this s
 
 ## Output & errors
 
-Data is **JSON on stdout** (`--output=yaml` is the only alternative — there is no table
-format; anything else silently returns JSON). A failure from the resource commands is a
-single flat JSON object on **stderr** plus a **non-zero exit**:
+Data is **JSON on stdout** (`--output=yaml` is the only alternative; there is no table
+format; v2.10.0+ rejects any other value with `usage_error`, v2.9.0 and earlier silently return JSON). A failure is one flat JSON object on **stderr** plus a **non-zero exit**:
 
 ```jsonc
 {"error":"failed to get endpoint: endpoint not found","code":"not_found","status":404}
 ```
 
-**Branch on `code`, never on `status` or the message.** `status` is there only when the
-failure arrived on a non-2xx response — GraphQL reports a missing resource as HTTP 200 +
-null data, so `if status == 404` misses every GraphQL not-found.
+- **Branch on `code`, never on `status` or the message** (GraphQL reports a missing resource as
+  HTTP 200 + null data, so `status` is often absent).
+- **Retry with backoff only on `network_error`, `rate_limited`, `server_error`.** runpodctl never
+  retries internally. `no_credentials` = no key set; `unauthorized`/`forbidden` = a key is set
+  but wrong or lacks access (don't re-prompt). `usage_error`, `cli_error`, `bad_request`, `not_found`,
+  `conflict`: fix the input. Any other code is fatal: surface `error` verbatim.
+- **Gate on the exit code, then parse stderr**: deprecation `warning:`/`note:` lines go to stderr
+  on success too.
+- **Coded errors, the serverless `urls` object and GPU pricing need runpodctl ≥ v2.8.0.** Older binaries emit `{"error":"…"}` with no `code`,
+  so gate on `code` being present, not on `runpodctl version`.
+- **`project` behaves differently per build** (exit 0 with errors on stdout through v3.0.1; exit 1
+  with a Runpod SDK notice in builds with
+  [runpod/runpodctl#382](https://github.com/runpod/runpodctl/pull/382)). Treat that notice as fatal.
 
-| `code` | what to do |
-| --- | --- |
-| `network_error` | **retry with backoff** — the only code meaning "couldn't reach the API" |
-| `rate_limited` `server_error` | **retry with backoff** — 429/5xx from the API |
-| `usage_error` `cli_error` `bad_request` `not_found` `conflict` | don't retry, fix the input |
-| `no_credentials` | no key set: `export RUNPOD_API_KEY=…` or `runpodctl doctor` |
-| `unauthorized` `forbidden` | a key **is** set but is wrong/expired or lacks access — don't retry, don't re-prompt for a missing key |
-| anything else | treat as fatal, surface `error` verbatim — the API can pass through its own code |
-
-**runpodctl never retries internally**; nothing backs off for you.
-
-- **`not_found` always means the API lacks the resource**, never a mistyped local path
-  (that's `cli_error`).
-- **`cli_error` is a mixed bucket:** local environment problems *and* invocation mistakes
-  the command validates itself (e.g. `ssh remove-key` with neither `--name` nor
-  `--fingerprint`). Only cobra-enforced required flags are `usage_error`.
-- **`usage_error`** = unknown command/flag, bad args, missing cobra-required flag; usage
-  text follows the JSON. Runtime errors no longer print usage.
-- **Non-empty stderr does not mean failure** — deprecation `warning:` and `note:` lines go
-  to stderr on success too. Gate on the exit code, then parse stderr.
-
-Coded errors, the serverless `urls` object and GPU pricing all need **runpodctl ≥ v2.8.0**.
-Older binaries emit `{"error":"…"}` with **no `code` and no `status`** — still JSON-shaped,
-so a `switch (err.code)` silently gets `undefined` rather than failing loudly. **Gate on
-`code` being present**, not on JSON-vs-plaintext; `runpodctl version` is unreliable for
-this because source or custom builds can report a released version or a placeholder.
-
-**`project` behavior depends on the build.** In released versions through
-**v3.0.1**, runtime errors print to **stdout** and exit **0**, so inspect the output.
-In builds containing the unreleased [runpod/runpodctl#382](https://github.com/runpod/runpodctl/pull/382),
-`runpodctl project ...` invocations, including subcommands, aliases and flags, exit
-**1**, leave stdout empty, and print a Runpod SDK notice on stderr. Help forms such
-as `project --help`, `help project`, `-h project` and `--help project` share this
-contract. Treat that notice as fatal, surface it verbatim, and do not retry or
-require JSON. Check `runpodctl version`, but verify the commit for source or custom
-builds: their version string can match a released version.
-
-Full code table, plain-text exceptions, the exact Runpod SDK notice, and the env-var
-table (incl. `RUNPOD_INVOKE_URL`):
+Full code table, `cli_error` vs `usage_error`, plain-text exceptions, the exact SDK notice, and
+the env-var table (incl. `RUNPOD_INVOKE_URL`):
 **[reference/output-and-errors.md](reference/output-and-errors.md)**.
 
 ## Decision Rules
@@ -137,20 +109,18 @@ table (incl. `RUNPOD_INVOKE_URL`):
 - ⚠️ **A min-1 worker bills continuously, even while idle** (it defeats scale-to-zero). When you set `--workers-min 1` for dev, you **must** set it back to `--workers-min 0` (or delete the endpoint) when done — otherwise it quietly runs up cost.
   - **Needs runpodctl ≥ v2.10.0.** On earlier binaries `--workers-min 0` and `--idle-timeout 0` were **silently dropped** from the update request (`omitempty` ate the zero), so the reset looked like it applied and the endpoint kept billing. Check `runpodctl version`; on an older binary confirm with `serverless get <id>` and fall back to `PATCH https://api.runpod.io/v2/serverless/<id>` with an explicit `{"workers":{"min":0}}`.
 - `serverless update` has **no `--gpu-id` flag**. To change an existing endpoint's GPU pools, call `PATCH https://api.runpod.io/v2/serverless/<id>` with `{"gpu":{"pools":["ADA_24"]}}` directly (pool ids, from the `pool` field of `GET /v2/catalog/gpus`). Sending `pools` without `excludedTypes` clears any exclusions.
-- **CPU serverless endpoints:** create them with `runpodctl serverless create --compute-type CPU`, or with REST v2 `POST https://api.runpod.io/v2/serverless` and a `cpu` block in place of `gpu`. **Never** send `"computeType":"CPU"` to REST v1 `POST https://rest.runpod.io/v1/endpoints` — it silently provisions a **GPU** endpoint instead (verified evidence in the Serverless command section below).
+- **CPU serverless endpoints:** create them with `runpodctl serverless create --compute-type CPU`, or with REST v2 `POST https://api.runpod.io/v2/serverless` and a `cpu` block in place of `gpu`. **Never** send `"computeType":"CPU"` to REST v1 `POST https://rest.runpod.io/v1/endpoints` — it silently provisions a **GPU** endpoint instead (verified evidence in [reference/command-reference.md](reference/command-reference.md#cpu-endpoints-and-rest-v1)).
 - Use templates when the user already has a template ID, wants reusable image/config defaults, or needs lower-level control than Hub.
 - Use direct pod creation with `--image` when the user has a specific Docker image and does not need a saved template.
 - Use serverless for request/response inference APIs and scalable workers; use pods for interactive work, notebooks, training, debugging, or long-lived sessions.
 - Use CPU pods for preprocessing, file movement, lightweight scripts, and non-CUDA work. Use GPU pods when CUDA, model inference, training, or GPU memory is required.
 - **Leave `--cloud-type` at its `SECURE` default.** Community Cloud hosts are approved vendors; Secure Cloud hosts are data-center-grade providers and so tend toward more stable behavior. Only pass `--cloud-type COMMUNITY` when the user explicitly asks for it (a public port 22 there needs a machine with a public IP, which the CLI cannot request).
 - A CPU pod gets 2 vCPUs on whichever CPU flavor has the most stock; `--name` defaults to the image name without its tag. CPU pods take a network volume (`--network-volume-id`) but not a pod volume (`--volume-in-gb` is rejected). Do not pass GPU flags.
-- **Set a CUDA floor on every GPU create: `--min-cuda-version 12.8`.** It exists on both
-  `pod create` and `serverless create` (not `template create`) and it is the only thing
-  keeping a modern image off a host too old to run it — the create itself will not reject
-  the combination, the container just dies at startup or silently drops to CPU. Use `13.0`
-  only when the image is a CUDA-13 build (`runpod/comfyui:cuda13.0`, the `cu1300` cluster
-  PyTorch image), and omit it for CPU pods or a deliberately old image. Full rule, the
-  `allowedCudaVersions` exact-match variant, and how to check what has capacity:
+- **Set a CUDA floor on every GPU create: `--min-cuda-version 12.8`** (`pod create` and
+  `serverless create`; not `template create`). Without it a modern image can land on a host
+  too old to run it, and the create will not reject it: the container dies at startup or silently
+  runs on CPU. `13.0` only for a CUDA-13 image; omit
+  for CPU. The rule, its exceptions and how to check capacity:
   [`runpod-usage` gpu-selection "pin the CUDA floor"](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 - **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns as soon as the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner; `pod create --wait-for running` (v2.15.0+) returns when the container is up with no ssh needed — use it when container-up is all the task needs, or for an image that does not start sshd (most cpu images, since cpu pods get no Runpod-managed ssh), where plain `--wait` would bill through the whole timeout and then fail. A cpu image that starts its own sshd still satisfies plain `--wait`, so keep that when the user needs ssh; `serverless create --wait` when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept**, and its id is in the error object's `id` field — read that and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but will start one on the first request).
 - Standing up a **service on a pod** (Ollama, ComfyUI, a dev server)? Declare its `--ports` and `--env` at creation when possible; `runpodctl pod update` can change them on an existing pod. Then follow the pod development loop in the `runpod-usage` skill (`reference/pod-workflows.md`) — SSH-exec the install, bind to `0.0.0.0`, and poll the proxy URL until it answers.
@@ -169,7 +139,7 @@ table (incl. `RUNPOD_INVOKE_URL`):
 
 ## Commands
 
-Essentials below. **For flags, ask the binary** — `runpodctl <resource> <action> --help`, which is current by construction. [reference/command-reference.md](reference/command-reference.md) holds the part `--help` cannot answer: what a flag *means* when it succeeds, which field to trust, and what a failure looks like.
+Essentials only; flags come from `--help` (above). [reference/command-reference.md](reference/command-reference.md) holds what `--help` cannot answer: what a flag *means* when it succeeds, which field to trust, and what a failure looks like.
 
 ### Pods
 
@@ -239,10 +209,8 @@ runpodctl serverless logs <endpoint-id> --follow              # picks up workers
 runpodctl serverless logs <endpoint-id> --since 1h --source system   # why a worker will not start
 ```
 
-Logs belong to a **worker**, not the endpoint, so without `--worker` this reads them all at once and
-tags each line with its `workerId`. **The crash-loop tell:** repeated `system` "start container" lines
-with no `container` output means the container exits before the handler runs — jobs then sit in the
-queue with nothing wrong with capacity.
+Without `--worker` it reads every worker and tags each line with its `workerId`; the crash-loop
+tell is under [Serverless facts](#serverless-facts-context-not-rules).
 
 **Invoking an endpoint** (v2.9.0+) — first-class commands, so an agent does not hand-build a
 curl request or manage a bearer token:
@@ -267,22 +235,15 @@ Payload rules, the stdout/stderr split, exit codes and why `/runsync` is never u
 
 **Create from hub:** `--hub-id` resolves the hub listing, extracts the build image and config (GPU IDs, container disk, env vars), creates an inline template, and deploys. Accepts both SERVERLESS and POD listing types. GPU IDs and env var defaults from the hub config are included automatically; override with `--gpu-id` and `--env`.
 
-**CPU serverless endpoints** (the always/never rule is in Decision Rules above): create with `runpodctl serverless create --compute-type CPU` (optionally `--instance-id`, e.g. `cpu3g-4-16`). Verified evidence for why REST v1 must not be used: 2026-07-14, `POST https://rest.runpod.io/v1/endpoints` with `"computeType":"CPU"` silently returned a GPU endpoint (`gpuCount:1`, `cpuFlavorIds:null`), while `runpodctl --compute-type CPU` correctly returned `computeType:"CPU"` with `instanceIds:["cpu3g-4-16"]`. REST v2 (`POST https://api.runpod.io/v2/serverless`) expresses a CPU endpoint with a `cpu` block in place of `gpu`. The separate **runtime/invoke** API `https://api.runpod.ai/v2/<endpoint-id>/…` (health/run/runsync/openai) is a different v2 and works fine — the v1-vs-v2 caveat here is only about the **control/management** REST.
+**CPU serverless endpoints** (the rule is in Decision Rules above): `runpodctl serverless create --compute-type CPU` (optionally `--instance-id`, e.g. `cpu3g-4-16`). The 2026-07-14 evidence against REST v1, and why the invoke API is unaffected: [reference/command-reference.md](reference/command-reference.md#cpu-endpoints-and-rest-v1).
 
 **Model cache (`--model-reference`):** Attach a Hugging Face model to the endpoint by full URL with a ref, e.g. `https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct:main`. Runpod caches it host-side in the standard HF cache dir (`/runpod-volume/huggingface-cache/hub/`), so the worker loads it directly — no bake, no volume. Repeatable; works with `--template-id`/`--hub-id`, GPU only, **runpodctl v2.4.0+**. Full mechanics + how it compares to baking / network volume / the Model Repository: **[reference/model-caching.md](reference/model-caching.md)**. Worked end-to-end: golden path [20 — model-caching endpoint](../runpod/golden-paths/20-model-caching-endpoint.md).
 
-**Multi-region / high-availability (`--network-volume-ids`):** attach **multiple** network
-volumes (one per data center) so workers spread across DCs instead of being pinned to one —
-`runpodctl serverless create --template-id <t> --network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2> …`.
-**Requires runpodctl ≥ v2.4.0** (older versions don't support multi-volume attach). Check
-`runpodctl version`; the Homebrew tap can lag, so prefer the
-[GitHub releases](https://github.com/runpod/runpodctl/releases) binary. Data does **not**
-sync between volumes automatically — see golden path
-[10 — multi-region HA serverless](../runpod/golden-paths/10-multi-region-ha-serverless.md).
-
-For exact serverless flags, run `runpodctl serverless <action> --help`.
-
-`serverless update --model-reference` includes the server-resolved `modelReferences` in JSON/YAML output; `--clear-models` returns `modelReferences: []`. Other updates do not fetch model references; use `serverless model-status <id>` to inspect them.
+**Multi-region / HA:** `--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>` (one
+volume per DC; **runpodctl ≥ v2.4.0**, and the Homebrew tap can lag). Data does **not** sync
+between volumes: golden path [10](../runpod/golden-paths/10-multi-region-ha-serverless.md).
+Model-reference output on `update` and the `--clear-models` shape:
+[reference/command-reference.md](reference/command-reference.md#endpoint-update-and-zero-values).
 
 ### Templates (alias: tpl)
 
@@ -338,17 +299,14 @@ runpodctl datacenter list                            # datacenters (alias: dc)
 runpodctl ssh info <pod-id>                          # SSH connection details (command + key; NOT an interactive session)
 ```
 
-**`gpu list` carries pricing and placement data** — `securePricePerHr` /
-`communityPricePerHr` (explicitly `null` when that cloud doesn't offer the GPU) and a
-`dataCenterAvailability[]` breakdown. Read the breakdown, not just top-level
-`stockStatus` (which is only the *best* status across DCs), when a create has to
-schedule in a specific DC — and pass `--include-unavailable`, since the default listing
-hides no-stock GPUs and can omit one that has stock only in the DC you want. The prices
-are **pod on-demand** rates. Shape, stock-value vocabulary and the `"none"` vs
-omitted-key sentinel:
+**`gpu list` carries pod on-demand pricing and a `dataCenterAvailability[]` breakdown.** When
+a create must land in a specific DC, read the breakdown (top-level `stockStatus` is only the
+best across DCs) and pass `--include-unavailable` (the default listing hides no-stock GPUs and
+can omit one that has stock only in your DC). Shape, stock vocabulary, `null` prices and the
+`"none"` vs omitted-key sentinel:
 [reference/output-and-errors.md](reference/output-and-errors.md#gpu-pricing-and-per-data-center-availability).
 
-`ssh info` gives connection details, not a session. If interactive SSH isn't available, run `ssh user@host "command"`. **Registry auth, `billing` history, and SSH key management** (`ssh add-key`/`remove-key`) are in [reference/command-reference.md](reference/command-reference.md). `ssh info` leaves host key verification to the OpenSSH client you run against its output. Host key pinning applies to deprecated `exec python` (v2.15.0+) and legacy `project` SSH (v2.15.0 through v3.0.1); v2.14.0 and earlier disable host key checking on those paths. Version-specific scope and why `ssh forget` requires the operator's go-ahead are in [reference/command-reference.md](reference/command-reference.md#pod-host-key-trust-v2150).
+`ssh info` gives connection details, not a session: run `ssh user@host "command"` yourself. Registry auth, `billing` and SSH key management are in [reference/command-reference.md](reference/command-reference.md); host key pinning (which versions pin, and why **`ssh forget` needs the operator's go-ahead**) is under [Pod host key trust](reference/command-reference.md#pod-host-key-trust-v2150).
 
 ### File Transfer
 
@@ -393,9 +351,8 @@ https://api.runpod.ai/v2/<endpoint-id>/health     # Health check
 https://api.runpod.ai/v2/<endpoint-id>/status/<job-id>  # Job status
 ```
 
-`serverless create`/`get`/`list`/`update` already return `run`/`runsync`/`health` in a
-`urls` object — prefer those over hand-assembling, since a non-default
-`RUNPOD_INVOKE_URL` changes the base. Only `status/<job-id>` has to be built by hand.
+Prefer the `urls` object the endpoint commands return (see Serverless above); only
+`status/<job-id>` has to be built by hand.
 
 ## Source & docs
 
