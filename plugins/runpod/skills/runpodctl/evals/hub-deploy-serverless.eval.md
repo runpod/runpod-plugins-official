@@ -20,6 +20,7 @@ The agent should:
 - Finds the hub id via `runpodctl hub search vllm` (does not invent one)
 - Runs `runpodctl serverless create --hub-id <id> ...`
 - Sets `--workers-min 0` and `--workers-max 2`
+- Sets the execution timeout on the create (`--execution-timeout <seconds>`), or reads it back with `serverless get` and fixes a 0
 - If `--gpu-id` is passed, its value is a real GPU name from `runpodctl gpu list` or a pool id (e.g. `ADA_24`), not an invented value
 - Checks `runpodctl version` (or `--help`) before relying on GPU-name mapping on the hub path
 

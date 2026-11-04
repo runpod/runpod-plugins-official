@@ -1,0 +1,62 @@
+name: live-evals
+
+# Free live evals: create, read back and delete a template, an account secret and a
+# registry credential, and read the catalog, against the real REST v2 API. Nothing
+# billable is created. Gated on the RUNPOD_API_KEY repository secret: without it
+# (forks, or before a maintainer adds a dedicated test-account key) the job is a
+# no-op that passes. Use a key for a dedicated test account, never a personal one.
+#
+# Safety rails live in scripts/live_free_evals.py: a full baseline snapshot before
+# any write, `skills-test-free-<run>-<check>-<n>` names, a ledger of every created id,
+# delete-by-recorded-id only (never by prefix alone), and a final re-list diffed
+# against the baseline. The job fails if anything named skills-test- remains or a
+# baseline item disappeared. Scheduled and manual only; it never runs on a PR.
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: live-evals
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  free-evals:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 15
+    # The key is scoped to the two steps that read it, not the whole job.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Self-test (offline)
+        run: python3 scripts/live_free_evals.py --self-test
+      - name: Gate on RUNPOD_API_KEY
+        id: gate
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+        run: |
+          if [ -n "$RUNPOD_API_KEY" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT";
+          else echo "RUNPOD_API_KEY secret not set: skipping live evals."; echo "enabled=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Free live evals
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+        run: python3 scripts/live_free_evals.py --out live-evals
+      - name: Upload ledger and baseline diff
+        if: always() && steps.gate.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          # One artifact per attempt: a re-run must not replace an earlier attempt's ledger.
+          name: live-evals-${{ github.run_attempt }}
+          # Only the ledger and the diff report: the full snapshots stay on the runner,
+          # since they list every resource on the account.
+          path: |
+            live-evals/created.json
+            live-evals/report.json
+          retention-days: 14
