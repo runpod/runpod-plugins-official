@@ -1,0 +1,68 @@
+id: audit-log
+name: Audit log
+kind: resource
+summary: >
+  The account's audit trail: who did what to which resource, newest first. For a
+  member of an organization it is the organization's trail.
+product: account
+is_a: null
+part_of: runpod-platform
+aliases: [audit trail, AuditLog, audit logs]
+
+surfaces:
+  rest_v2: { schema: AuditLog, paths: [/v2/audit-logs] }
+  mcp: [list-audit-logs]
+
+fields:
+  - { name: actorId, type: string, set: read, note: null when the action is not attributable to a user }
+  - { name: email, type: string, set: read }
+  - { name: resourceType, type: string, set: read, note: "free-form, not an enum" }
+  - { name: resourceId, type: string, set: read }
+  - { name: action, type: string, set: read, note: "free-form, not an enum" }
+  - { name: value, type: string, set: read, note: JSON-encoded details of the change }
+  - { name: timestamp, type: string, set: read }
+
+relations:
+  - { type: uses, target: organization, cardinality: "0..1" }
+
+rules:
+  - id: audit-log.plan-gated
+    statement: >
+      An account whose plan does not include audit logs is answered `403`. State
+      that as the answer, not as a tool failure.
+    on_violation: 403
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/audit-logs, seen: "2026-11-02" }
+
+  - id: audit-log.organization-trail
+    statement: >
+      When the caller belongs to an organization, the trail is the
+      organization's; otherwise it is the trail of the account the request acts
+      for. Entries older than the account's retention window are not returned.
+    status: documented
+    see: [organization.membership-required]
+    evidence:
+      - { source: rest-v2-spec, ref: GET /v2/audit-logs, seen: "2026-11-02" }
+
+  - id: audit-log.actor-filter-organization-only
+    applies_to: ["field:actorId"]
+    statement: >
+      The `actorIds` filter works for organization accounts only; a personal or
+      team account that sends it is answered `400`. Filter by `actions`,
+      `startTime` and `endTime` on any account.
+    on_violation: 400
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: AuditLogActorIdsFilter, seen: "2026-11-02" }
+
+  - id: audit-log.free-form-values
+    applies_to: ["field:action", "field:resourceType"]
+    statement: >
+      `action` and `resourceType` are free-form strings recorded at write time,
+      and new values appear without an API version change. The `actions` filter
+      matches them exactly as recorded, so read a page first to learn the names.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "AuditLog.action; AuditLog.resourceType", seen: "2026-11-02" }
+      - { source: rest-v2-spec, ref: AuditLogActionsFilter, seen: "2026-11-02" }

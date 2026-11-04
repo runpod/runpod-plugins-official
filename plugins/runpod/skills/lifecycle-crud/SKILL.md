@@ -1,8 +1,9 @@
 ---
 name: lifecycle-crud
 description: 'Create, verify by read-back, and manage the lifecycle of Runpod''s reusable plumbing (templates,
-  network volumes, container registry credentials, account secrets, the account''s SSH public keys, and
-  Instant Clusters), plus staging large model files on a volume and diagnosing a private-image pull failure.
+  network and global volumes, container registry credentials, account secrets, the account''s SSH public keys, and
+  Instant Clusters), the account''s audit trail and organization members (reads), plus staging large model
+  files on a volume and diagnosing a private-image pull failure.
   Use when the user wants one of those resources created, changed, inspected or removed through the Runpod
   MCP tools, or asks where a volume should live so a GPU can mount it. Also use for an account cleanup
   request: only what this conversation created may be removed; everything else is reported for the user
@@ -10,13 +11,13 @@ description: 'Create, verify by read-back, and manage the lifecycle of Runpod''s
 metadata:
   author: runpod
   version: "1.9.0" # x-release-please-version
-  concepts: [template, network-volume, registry-credential, runpod-secret, ssh-key, instant-cluster, data-center, gpu-availability]
+  concepts: [template, network-volume, global-volume, audit-log, organization, registry-credential, runpod-secret, ssh-key, instant-cluster, data-center, gpu-availability]
 license: Apache-2.0
 ---
 
 # Lifecycle CRUD
 
-You own the lifecycle of Runpod's reusable resources: templates, network volumes, container registry credentials, account secrets, registered SSH public keys, and multi-node clusters. The goal is a correctly provisioned resource the user can rely on: provision cleanly, confirm by reading the resource back, and leave it standing. Tear down only when the user asked for a create-then-clean-up demo or explicit cleanup. Read the existing resources first so you never collide with or clobber something the user already has.
+You own the lifecycle of Runpod's reusable resources: templates, network and global volumes, container registry credentials, account secrets, registered SSH public keys, and multi-node clusters. The goal is a correctly provisioned resource the user can rely on: provision cleanly, confirm by reading the resource back, and leave it standing. Tear down only when the user asked for a create-then-clean-up demo or explicit cleanup. Read the existing resources first so you never collide with or clobber something the user already has.
 
 ## Tool binding
 
@@ -26,9 +27,12 @@ If a tool named here is missing from the session's tool list, say so and use the
 |---|---|
 | Templates (list/get/create/update/delete) | `list-templates`, `get-template`, `create-template`, `update-template`, `delete-template` |
 | Network volumes (list/get/create/update/delete) | `list-network-volumes`, `get-network-volume`, `create-network-volume`, `update-network-volume`, `delete-network-volume` |
+| Global volumes (list/get/create/rename/delete) | `list-global-volumes`, `get-global-volume`, `create-global-volume`, `update-global-volume`, `delete-global-volume` |
 | Container registry credentials (list/get/create/delete) | `list-registries`, `get-registry`, `create-registry`, `delete-registry` |
 | Account secrets (list/get/create/update/delete) | `list-secrets`, `get-secret`, `create-secret`, `update-secret`, `delete-secret` |
 | Registered SSH public keys (read/replace) | `get-ssh-keys`, `update-ssh-keys` |
+| Account audit trail: who changed what, newest first (read) | `list-audit-logs` |
+| Organization and its members, with roles (read) | `get-organization`, `list-organization-users`, `get-organization-user` |
 | Multi-node clusters (list/get/create/rename/delete, member pods, billing) | `list-clusters`, `get-cluster`, `create-cluster`, `update-cluster`, `delete-cluster`, `list-cluster-pods`, `list-cluster-billing` |
 | Data centers with per-GPU availability, to place a volume in a GPU-co-located DC | `list-data-centers` / `get-data-center` (`include:["GPU_AVAILABILITY"]`); `list-gpu-types` (`include:["AVAILABILITY"]` with `product`) |
 | CUDA versions with capacity, per GPU type | the GPU read's `cudaVersions`; `get-capacity` for the matrix view |
@@ -39,7 +43,7 @@ If a tool named here is missing from the session's tool list, say so and use the
 - **Touch nothing outside the resources this conversation created or the user named.** Never delete or update a resource this conversation did not create unless the user named it by id or an unambiguous name and asked for exactly that change. A user-named resource is deleted only on the user's ask for that delete. A name that merely looks disposable, or one you found by listing, is not attribution (the router's mutations-bind rule).
 - **Confirm by read-back.** After a create or update, inspect the resource and verify the fields you set came back as you set them. A write call's own response is not a read, so confirm from a fresh one. (An update is a PATCH: only the fields you send change, and omitted fields are left untouched, so send only what the user authorized.)
 - **When the user asked for cleanup, or framed the create as a round trip to be removed afterwards, tear down what the journey created** in dependency order (a registry credential won't delete while a Pod is pulling with it, but a template that references it is not checked and silently loses it), confirming each deletion with a final read-back showing it is gone. Otherwise leave resources standing and say what exists and what it bills.
-- **State cost before creating a billable resource.** A network volume bills storage per GB-month for as long as it exists. Say the size, and that it bills until deleted, before you create it. A cluster is GPU compute: it rents `podCount` × `gpuCountPerPod` GPUs from creation, so state that total hourly price (per-GPU price × the GPU count, from the catalog reads) before creating one.
+- **State cost before creating a billable resource.** A network volume bills storage per GB-month for as long as it exists. Say the size, and that it bills until deleted, before you create it. A global volume bills for stored data plus per-request fees until deleted (rates in [`runpod-usage` storage](../runpod-usage/reference/storage.md#global-volume-any-data-center)); say so before creating one. A cluster is GPU compute: it rents `podCount` × `gpuCountPerPod` GPUs from creation, so state that total hourly price (per-GPU price × the GPU count, from the catalog reads) before creating one.
 
 ## Journeys
 
@@ -47,6 +51,8 @@ If a tool named here is missing from the session's tool list, say so and use the
 - **Network volume lifecycle.** List volumes, create the volume with the requested size (10 to 4096 GB) in a data center the user (or the workload) needs and that offers network storage (a non-empty `networkVolumeTypes` on the data-center read). State the storage cost. Read it back and leave it to serve its purpose. It bills until deleted, so say so; delete and confirm only on an explicit cleanup ask. A volume's size may only increase; a shrink is rejected.
 - **Volume-backed model files.** Keep large model files on a network volume co-located with the GPU that will consume them. Read the data centers with their per-GPU availability (`include:["GPU_AVAILABILITY"]`) to pick a data center that has the target GPU in stock for the product you will run there, and create the volume there. Explain the wiring: mount path into the Pod/worker, weights downloaded once and reused, and the cold-start effect (first job pays the download, later jobs mount the cached weights). Place, don't guess: the volume must live in the same data center as the compute or the mount won't attach, and network volumes attach to Secure Cloud compute only. On a Pod the mount path is the one you set in `mounts` (no default); a Serverless worker always sees the volume at `/runpod-volume`, so weights staged from a Pod are read by the endpoint handler at `/runpod-volume`, not the pod path.
 - **Cleanup asks.** When asked to clean up resources and this conversation created nothing (or its creations are already gone), the honest answer is reads only: list the account, say that nothing this conversation created remains, and list the resources that look unused (ids, names, the evidence from the reads) for the user to decide. Never delete on a name-guess; that report is the complete answer.
+- **Global volume lifecycle.** List global volumes, create one with just a `name`, state the billing shape, and read it back. Attach it in the pod or endpoint create (`mounts.global`), then read it back (a pod's mount `path`; an endpoint's `mounts.global` entry, whose workers always see `/runpod-volume`). `update-global-volume` only renames. A delete is refused with `409` while any pod (stopped pods included) or endpoint still mounts it; surface that rather than terminating or detaching anything yourself. Limits, mount paths and caveats: [`runpod-usage` storage](../runpod-usage/reference/storage.md#global-volume-any-data-center).
+- **Account audit and organization reads.** "Who deleted my endpoint?" or "who is in my organization?" are reads: `list-audit-logs` (filter by action or time window, or by actor on an organization account only, since a personal or team account gets `400` for the actor filter) and the organization reads. An account whose plan does not include audit logs gets `403`, and the organization reads return `404` when the caller is not in an organization, a team account included (`403` when organizations are unavailable to the caller); state either as the answer, not as a tool failure.
 - **Private registry creds + pull-fail diagnosis.** Create the registry credential for the private image. Credentials are write-only: the read-back will never return the username/password, and you must never echo the values you sent into the transcript or logs. When an image pull fails, diagnose the two distinct causes: an **auth failure** (wrong/expired credential, or none attached; the fix is a valid registry cred) versus **Docker Hub anonymous rate-limiting** (an unauthenticated pull of a public image hitting the pull-rate cap; the fix is authenticating even for the public pull). Name which one from the error text; do not conflate them.
 - **Missing credential values.** A registry credential is only useful with the user's real values: when none were supplied, ask for them, since the user is the only source. Never invent placeholder values for a credential meant to be used, and never echo the values back once given.
 - **Account secret CRUD.** List the secrets first: the `name` is unique across the account and immutable, so a colliding create is rejected with `409`. Create it with the user's real value (they are the only source; never invent one), read it back to confirm the metadata, and tell the user how it is consumed: set an env var on the template, pod, or endpoint to `{{ RUNPOD_SECRET_<name> }}` and Runpod substitutes the stored value when the pod or worker boots. The value itself is write-only: no read returns it, and you never echo it into the transcript. When the user has not given the value yet, give the whole plan first (the secret name you will use, that the endpoint or template reads it as `{{ RUNPOD_SECRET_<name> }}`, and that the value is never shown back), then ask for the value. Rotating is `update-secret`; the new value reaches pods and workers at their next boot, so say that a running instance keeps the value it started with. Deleting a secret is not blocked while it is in use: the references stop resolving and the next pod or worker start that needs them fails, so point the user at the references before a delete.
@@ -59,7 +65,7 @@ If a tool named here is missing from the session's tool list, say so and use the
 - Never echo a registry credential value (username/password/token) or a secret value into chat, a log, or a committed file. Both are write-only by design; keep them that way.
 - Read the registered SSH keys before replacing them. `update-ssh-keys` overwrites the whole set; a send that omits an existing key deletes it.
 - Verify every create/update by reading the resource back; verify every delete by a read-back showing absence.
-- State the storage cost before creating a network volume and the total hourly price before creating a cluster. For a cluster, wait for the user's explicit go as well.
+- State the storage cost before creating a network or global volume and the total hourly price before creating a cluster. For a cluster, wait for the user's explicit go as well.
 - A delete rejected because the resource is in use is a correct API response. Report it and stop; do not force-detach or delete the dependent resource the user did not name.
 
 ## Error handling
@@ -74,7 +80,7 @@ If a tool named here is missing from the session's tool list, say so and use the
 ## Report template — resource inventory
 
 When asked what exists on the account (inventory, audit, "what's running"):
-list pods, endpoints, templates, and network volumes; a table per non-empty
+list pods, endpoints, templates, network volumes and global volumes; a table per non-empty
 kind works well (name, id, status, GPU/size, $/hr where the read provides it),
 with empty kinds noted in a line ("templates: none"). Close with the totals
 (counts per kind, summed $/hr of running pods) and, if the user implied a
