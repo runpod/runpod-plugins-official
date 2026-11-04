@@ -17,7 +17,7 @@ schema in these guides.
 
 ## Expected behavior
 
-Routes the read through runpod-mcp and its discovery journey. Reads the relevant
+Routes the read through runpod-mcp and its runpod-discovery journey. Reads the relevant
 listing configuration and reports it without creating an endpoint, installing
 runpodctl, or requesting CLI credentials. A working MCP connection is sufficient
 for this request.

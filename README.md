@@ -159,8 +159,9 @@ it up yet, force it manually:
 `serverless-deploy`, `pod-deploy`, `pod-doctor`, `endpoint-ops`, `cost-audit`, `flash` and
 `companion-clis` became `runpod-discovery`, `runpod-lifecycle-crud` and so on. A skills.sh
 install made before the rename may keep the old directories next to the new ones. If it does,
-delete the old directories so an agent does not load both copies. The Runpod MCP server still
-resolves the old guide ids (`read-guide pod-doctor`) to the new ones.
+delete the old directories so an agent does not load both copies. Runpod MCP server releases
+that ship this plugin version also resolve the old guide ids (`read-guide pod-doctor`) to the
+new ones; older server releases keep serving the old ids from their own bundled copy.
 
 ## Uninstall
 

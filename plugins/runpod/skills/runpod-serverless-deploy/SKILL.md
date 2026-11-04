@@ -61,7 +61,7 @@ Read and classify the source you were given: the engine follows the modality and
 
 ## Phase 1 — size the hardware (read the catalog, cite `runpod-discovery`)
 
-`discovery` owns the params×precision + KV/overhead VRAM math; apply its result to a real GPU pick.
+`runpod-discovery` owns the params×precision + KV/overhead VRAM math; apply its result to a real GPU pick.
 
 - Read the model's real metadata (parameter count, precision; for diffusion the checkpoint/LoRA/VAE sizes), not the repo name alone when the config is readable. **Big-model sizing is shown arithmetic, never a bare total:** the parameter count and where you read it, the bytes per parameter at the chosen precision, the weights total, the KV-cache/overhead allowance, and the GPU decision they add up to.
 - Pick the smallest GPU class whose VRAM fits, then confirm live stock: `include:["AVAILABILITY"]` goes with `product:["SERVERLESS"]` (stock differs by product), and the same read gives per-data-center stock and, in `cudaVersions`, which CUDA versions have capacity. Pin the CUDA floor on the create: `gpu.minCudaVersion` at the image's CUDA line (12.8 for a CUDA 12 image; 13.0 only for an image built on CUDA 13), or `gpu.allowedCudaVersions` for an exact set. They are mutually exclusive (400 if both are sent), and the floor must have stock in `cudaVersions`. Never create into a GPU class with no stock: a scale-to-zero endpoint that can never acquire a worker looks deployed but never runs.

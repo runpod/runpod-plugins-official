@@ -156,8 +156,8 @@ skills/
     golden-paths/    worked end-to-end reference tasks (indexed by the router)
   runpod-mcp/        Runpod MCP server (structured tool calls)
   runpodctl/         Runpod CLI (+ Hub, transfer, SSH, doctor)
-  flash/             write & deploy your own code (Runpod SDK apps)
-  runpod-companion-clis/    hf / gh / docker / aws prerequisites
+  runpod-flash/      write & deploy your own code (Runpod SDK apps)
+  runpod-companion-clis/  hf / gh / docker / aws prerequisites
   runpod-usage/      concepts + reference/*.md
   runpod-templates/  official pod templates + repair guide + scripts
   runpod-build-template/  authoring + target/build-route references + evals

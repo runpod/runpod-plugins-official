@@ -64,7 +64,7 @@ lane's `SKILL.md` (linked). You don't need all of them.
 | **runpodctl** (CLI) | `curl -fsSL https://cli.runpod.net \| sudo bash` (or `brew install runpod/runpodctl/runpodctl`) | [source](https://github.com/runpod/runpodctl) · [`runpodctl/SKILL.md`](../../runpodctl/SKILL.md) |
 | **flash** (deploy your own code) | `pip install "runpod>=2.0.0"` (or `uv add`; Python 3.10–3.14; installs the `rp` CLI) | [source](https://github.com/runpod/runpod-python) · [`runpod-flash/SKILL.md`](../../runpod-flash/SKILL.md) |
 | **runpod-mcp** (hosted) | `npx @runpod/mcp-server@latest add --client <id>` (OAuth; `--list` shows ids) | [source](https://github.com/runpod/runpod-mcp) · [`runpod-mcp/SKILL.md`](../../runpod-mcp/SKILL.md) |
-| **runpod-mcp** (local stdio) | `claude mcp add runpod -e RUNPOD_API_KEY=... -- npx -y @runpod/mcp-server` | same as above |
+| **runpod-mcp** (local stdio) | `claude mcp add runpod -e RUNPOD_API_KEY=... -- npx -y @runpod/mcp-server@latest` | same as above |
 | **companion CLIs** (`hf`/`gh`/`docker`/`aws`) | per-tool; see the skill | [`runpod-companion-clis/SKILL.md`](../../runpod-companion-clis/SKILL.md) |
 
 Nothing to install for the **hosted MCP** beyond configuring your client, and the

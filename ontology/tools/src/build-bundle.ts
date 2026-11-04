@@ -111,8 +111,8 @@ export function buildAliases(
     for (const id of ids) {
       if (id === to || id.startsWith(`${to}/`)) {
         const old = from + id.slice(to.length);
-        if (ids.has(old)) errors.push(`guide-aliases: "${old}" is still a guide id`);
-        else aliases[old] = id;
+        if (!ids.has(old)) aliases[old] = id;
+        else if (id !== to) errors.push(`guide-aliases: "${old}" is still a guide id`);
       }
     }
   }

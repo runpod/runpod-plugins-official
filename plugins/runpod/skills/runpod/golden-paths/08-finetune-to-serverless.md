@@ -266,7 +266,7 @@ scale-to-zero (`workers=(0,1)`), ~$0 idle. Keep the volume only while iterating.
 - **Handler contract:** the worker calls `generate(**job_input)` — `input` keys are the
   function's parameter names; invoke with a non-empty `input`.
 - **Load the model once per worker**, not per request: a module-level cache in a queue
-  function, or `@runpod.init` in an `@app.api` class (flash `reference/patterns.md`).
+  function, or `@runpod.init` in an `@app.api` class (runpod-flash `reference/patterns.md`).
 - **PEP 668** on the training pod: `pip install --break-system-packages …` (`on-pod-setup.md`).
 - **Diagnosis:** if the endpoint job times out, pull worker logs before assuming a broken
   worker — it's usually a payload/handler issue. `runpodctl serverless logs <id> --source

@@ -54,8 +54,8 @@ lane is unclear, then follows its decision table into a lane's `SKILL.md`.
 skills/runpod/            router / entrypoint — decides the lane
 skills/runpod-mcp/        manage infra via the Runpod MCP server (structured tool calls)
 skills/runpodctl/         manage infra via the CLI (+ Hub, file transfer, SSH, doctor)
-skills/runpod-flash/             write & deploy your own code on Runpod serverless (Runpod SDK apps, rp flash)
-skills/runpod-companion-clis/    prerequisite CLIs (hf, gh, docker, aws)
+skills/runpod-flash/      write & deploy your own code on Runpod serverless (Runpod SDK apps, rp flash)
+skills/runpod-companion-clis/  prerequisite CLIs (hf, gh, docker, aws)
 skills/runpod-usage/      conceptual knowledge ("how Runpod works") — not a tool
   reference/*.md          detailed topics, loaded on demand
   concepts/*.yaml         the concept graph: one file per concept, rules with public evidence

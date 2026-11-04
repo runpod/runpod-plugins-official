@@ -57,7 +57,7 @@ of you**:
 | --- | --- |
 | runpodctl | `runpodctl --help`, `runpodctl <resource> <action> --help`, `runpodctl version`. For failure shapes, run a command wrong on purpose and read the JSON |
 | runpod-mcp | your client's tool list (`/mcp` in Claude Code); rules in [runpod-mcp](../runpod-mcp/SKILL.md#the-server-is-the-source-of-truth) |
-| flash | `rp --help`, `rp flash <command> --help`, `pip show runpod`, and the dev/deploy output |
+| runpod-flash | `rp --help`, `rp flash <command> --help`, `pip show runpod`, and the dev/deploy output |
 | runpod-companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
 | runpod-templates | `runpodctl template list --type official`, `template get <id>` (its readme is authoritative) |
 | REST v2 | the live spec at `https://api.runpod.io/v2/openapi.json` |
