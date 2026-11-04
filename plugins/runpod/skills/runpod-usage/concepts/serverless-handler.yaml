@@ -53,7 +53,7 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md, note: Cold starts and timeouts. }
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 11. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/patterns.md, note: Loading ML models. }
 
   - id: serverless-handler.input-shape
     statement: >
@@ -62,7 +62,7 @@ rules:
     status: documented
     see: [job.input-envelope]
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 10. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: Dev server loop. }
 
   - id: serverless-handler.local-serve-flag
     statement: >
