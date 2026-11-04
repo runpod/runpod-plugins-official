@@ -2,24 +2,26 @@
 
 ## Prompt
 
-Using runpod-flash, I want a single GPU endpoint that exposes two HTTP routes:
+With the Runpod Python SDK, I want a single GPU endpoint that exposes two HTTP routes:
 `POST /predict` for inference and `GET /health` for a health check, sharing the
-same pool of workers (1 to 5). Write the code.
+same pool of workers (1 to 5). The model should load once per worker. Write the code.
 
 ## Expected behavior
 
 The agent should:
 
-1. Create an `Endpoint` INSTANCE (not a decorator on a function): `api = Endpoint(name=..., gpu=..., workers=(1, 5), ...)`
-2. Register routes with `@api.post("/predict")` and `@api.get("/health")`
-3. Put heavy imports inside the route handlers
-4. Make handlers `async def`
+1. Decorate a **class** with `@app.api(gpu=..., workers=(1, 5), ...)`
+2. Load the model in a `@runpod.init` method
+3. Register routes with `@runpod.post("/predict")` and `@runpod.get("/health")` methods
+4. Show how to call it: `MyApi.post("/predict", {...})` in a dev session, or a raw POST of the
+   JSON body itself to the deployed endpoint
 
 ## Assertions
 
-- Creates an `Endpoint(...)` instance assigned to a variable (load-balanced mode)
-- Uses `@<instance>.post("/predict")` and `@<instance>.get("/health")` to register routes
-- Uses `workers=(1, 5)` (explicit min/max tuple), NOT `workers=5`
-- Does NOT define each route as its own separate `@Endpoint(name=...)` decorator (that would be separate endpoints, not shared workers)
-- Route handlers are `async def`
-- Heavy/GPU imports are inside the handler functions
+- Uses `@app.api(...)` on a class, not one `@app.queue` per route
+- Uses `workers=(1, 5)`, NOT `workers=5` (which means `(0, 5)`)
+- Loads the model in `@runpod.init`, not inside the route methods
+- Routes are `@runpod.post("/predict")` and `@runpod.get("/health")`
+- The POST method takes one `body` argument; any raw HTTP example sends the object itself,
+  not `{"data": {...}}`
+- Does NOT import from `runpod_flash`

@@ -43,10 +43,12 @@ rules:
 
   - id: flashboot.flash-sdk-default-on
     statement: >
-      The Flash SDK exposes FlashBoot as the `flashboot` argument of `Endpoint`,
-      and it defaults to `True`. FlashBoot itself is an endpoint setting, not
-      part of Flash.
+      The Flash SDK exposes FlashBoot as the `flashboot` parameter of
+      `@app.queue` and `@app.api` (and of the legacy `Endpoint`), and it
+      defaults to `True`. FlashBoot itself is an endpoint setting, not part of
+      Flash.
     status: documented
     see: [flash.not-flashboot]
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Endpoint constructor. }
+      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Parameters table. }
+      - { source: public-docs, url: "https://docs.runpod.io/sdk/configuration/parameters", seen: "2026-10-16" }

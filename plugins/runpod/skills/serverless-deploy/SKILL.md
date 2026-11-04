@@ -21,7 +21,7 @@ Turn *any* deployable source into a queue-backed Serverless endpoint proven with
 
 Two decisions are yours, unprompted: the **engine family** (the right worker image for this modality and model format) and the **provisioning path** (bake weights in, download-on-start, or a network volume; each costs a different cold start). Size hardware from the model's real metadata, never a guess. Among suitable workers prefer the smallest, most-proven image for a smoke-able deploy (a giant image makes the first job a many-minute cold start; the smoke test proves the journey, not maximal quality), and name the trade-off if the request implies a heavier engine. Creating an endpoint bills: state the GPU class's hourly cost before creating; the smoke job costs money too.
 
-Code-first Python (writing endpoint functions and iterating with the runpod-flash dev loop) has no path in this MCP-only bundle: say so instead of improvising one. This skill deploys an existing source (Hub repo, container image, ComfyUI workflow, Hub release) through the MCP tools.
+For code-first Python (writing endpoint functions in a project and iterating with the Runpod SDK's `rp flash dev` loop), this MCP-only bundle has no path. Say so instead of improvising one. This skill deploys an existing source (Hub repo, container image, ComfyUI workflow, Hub release) to an endpoint through the MCP tools.
 
 ## Tool binding
 

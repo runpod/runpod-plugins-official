@@ -25,13 +25,10 @@ import runpod
 MODE_TO_RUN = os.getenv("MODE_TO_RUN", "pod")
 MODEL_SIZE = os.getenv("WHISPER_MODEL", "base")  # tiny|base|small|medium|large-v3
 
-# Cache the model weights on the network volume when one is mounted, so every
-# serverless worker (and pod restart) reuses the same download instead of pulling
-# it again. /runpod-volume is the serverless mount; fall back to local disk.
-MODEL_CACHE_DIR = os.getenv(
-    "MODEL_CACHE_DIR",
-    "/runpod-volume/whisper-cache" if os.path.isdir("/runpod-volume") else "/app/whisper-cache",
-)
+# Keep the model cache on local disk. Loading weights straight off a network volume
+# reads every byte over the network; to reuse downloads across workers, wrap the load
+# below in VolumeCache (see the README's "Heavy things -> network volume").
+MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "/app/whisper-cache")
 
 # --- Load the model ONCE, at import (cold-start rule). Runs in BOTH modes. -------
 print("------- BOOT -------")
