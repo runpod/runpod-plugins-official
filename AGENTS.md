@@ -30,11 +30,12 @@ plugins/runpod/                   THE plugin
   README.md  CHANGELOG.md
   skills/                         the skills: router, lanes, MCP journeys (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
-hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_frontmatter / check_skill_json / check_cli_absence_claims / check_migrate_scanner / check_migrate_tables / check_migrate_class3
+hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_frontmatter / check_skill_json / check_cli_absence_claims / check_skill_lint / check_migrate_scanner / check_migrate_tables / check_migrate_class3
                                   gen_cli_surface.py regenerates the runpodctl snapshot
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
 testdata/runpodctl/command-surface.json   vendored runpodctl command surface the absence check gates against
+testdata/runpod-mcp/tools.json            vendored MCP tool names check_skill_lint gates against (--refresh to update)
 ontology/                         Node 24 tooling for the concept files: validator, bundle, SQLite build, graph page
 packages/knowledge/               @runpod/plugin-knowledge: the skills, golden paths and concepts as one JSON bundle, published to npm on release
 .claude/skills/add-concept/       contributor procedure for adding or changing a concept
@@ -77,7 +78,9 @@ lacks — `send`/`receive`, SSH, `doctor`, models — or whenever the agent is s
 - `name`, `description` — skill identity. The `description` is the **routing surface**
   (always in the agent's context).
 - `allowed-tools` — tool permissions (e.g., `Bash(runpodctl:*)`).
-- `user-invocable` — set for skills a user invokes directly.
+- Omit `user-invocable`: Claude Code defaults it to true, and it is not an
+  [Agent Skills](https://agentskills.io/specification) field, so uploads that validate
+  against the spec reject it. `hooks/check_skill_lint.py` allows only the spec's keys.
 - `compatibility`, `metadata` (author, version), `license`.
 
 The body is markdown the agent consumes, following **progressive disclosure** (see Contributor
@@ -168,12 +171,18 @@ editing the repo. Each is its own checkable rule.
    - Prefer a positive claim ("read them with `serverless logs`") or silence. If an absence
      claim is genuinely load-bearing, give it a **version floor** ("needs ≥ v2.10.0") rather
      than an open-ended "cannot", and add it to the check's `ALLOW` list with a reason.
-   - **The MCP tool list is not documented in this repo.** No hook can gate it — the
-     server ships on its own cadence and publishes its tools with generated parameter
-     descriptions, so a copy here is stale by construction. The MCP journey playbooks are
-     the exception: they live here (`runpod-mcp` and the journey skills it routes to) and
-     reach the server through `@runpod/plugin-knowledge`, so a playbook's tool binding
-     defers to the live tool list.
+   - **The MCP tool schemas are not documented in this repo.** The server ships on its own
+     cadence and publishes its tools with generated parameter descriptions, so a copy of
+     their schemas here is stale by construction. Only the tool *names* are vendored, in
+     `testdata/runpod-mcp/tools.json`, so `hooks/check_skill_lint.py` can fail any Markdown
+     file under `plugins/` (the changelog excepted) that cites a tool the server no longer
+     serves (and name its replacement); the `surfaces.mcp` lists in the concept YAML files
+     are not checked yet. After a runpod-mcp release, run
+     `python3 hooks/check_skill_lint.py --refresh <runpod-mcp checkout>`; the weekly
+     spec-drift job shows the diff. The MCP journey playbooks live here (`runpod-mcp` and
+     the journey skills it routes to) and reach the server through
+     `@runpod/plugin-knowledge`; for parameters, a playbook's tool binding defers to the
+     live tool list.
    - **An eval asserting a false negative is the worst case** — it trains the wrong behavior
      in rather than merely misinforming a reader. This has already happened twice: v2.9.0
      added `serverless health` and v2.10.0 added `serverless logs`/`pod logs`, each
