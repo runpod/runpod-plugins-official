@@ -14,7 +14,7 @@ allowed-tools: Bash(claude mcp:*)
 compatibility: Linux, macOS, Windows
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [runpod-platform, pod, serverless-endpoint, job, template, network-volume, registry-credential, gpu-type, log-stream, api-key, api-rate-limit, hub-repo]
 license: Apache-2.0
 ---
@@ -74,11 +74,16 @@ Once connected, read the server. Do not reason about its tools from memory.
    connected server: `/mcp` in Claude Code, or `tools/list`. Each tool carries its
    own parameter descriptions, generated from Runpod's REST v2 contract. Check there
    before concluding a capability exists *or* doesn't. When a journey skill's tool
-   binding disagrees with the live tool list, the live list wins.
+   binding disagrees with the live tool list, the live list wins. Some large
+   create/update tools (`create-pod`, `create-endpoint`, `create-template` and others;
+   the listing says so) list only their call shape: call `describe-tool` with the tool
+   name for the full argument schema before the first use.
 2. **The server serves these same skills** from this plugin's release: `read-guide`
    (start with `read-guide runpod-mcp`) and the `runpod://guides/<id>` resources. With
    this plugin installed, the journey skills below are the procedure; the server's
-   guides are the same text for an agent without the plugin.
+   guides are the same text for an agent without the plugin. A skill's
+   `reference/<name>.md` link is guide id `<skill>/<name>` (e.g.
+   `serverless-deploy/error-handling`).
 3. **The wire contract** is the Runpod v2 OpenAPI document at
    `https://api.runpod.io/v2/openapi.json`, for fields beyond the tool surface.
 
@@ -99,11 +104,19 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
   host CUDA version, and a modern image can land on a host too old to run it. Why 12.8
   and when to use 13.0:
   [`runpod-usage` gpu-selection](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
-- **Hand pod creation to runpodctl** for a **multi-GPU priority list** (v2 `create-pod`
-  takes one GPU type; check the live schema before assuming, and watch for a `_warning`
-  on an otherwise-successful create), or for a **template + CPU** pod together, which
-  v2 does not express. Each alone is fine in MCP: `templateId` (each field you pass
-  replaces the template's whole value rather than merging) or `computeType: "CPU"`.
+- **Set `timeout` on every `create-endpoint`** (per-request execution limit, ms): omitted,
+  v2 returns `"timeout": 0` (live-verified 2026-10-29; the spec claims 300000), which
+  the server treats as no per-request limit. After `deploy-hub-repo`, read
+  `timeout` back and set it with `update-endpoint` if it is 0.
+- **Pod creates:** `create-pod` takes one GPU type (`gpu.id`; check the live schema
+  before assuming, and watch for a `_warning` on an otherwise-successful create), so a
+  multi-GPU priority list means one create per type, retried in order on a capacity
+  error. A CPU pod sends a `cpu` object (`{id, vcpuCount}` from `list-cpu-types`) in
+  place of `gpu`. `templateId` works for GPU and CPU pods: each field you pass replaces
+  the template's value, except `env`, which merges per key with yours winning; a CPU pod
+  skips the template's persistent mount and CUDA constraint (template + CPU live-verified
+  2026-10-29, even with an NVIDIA-category template). runpodctl v3 sends the same v2
+  create, so it is no fallback.
 - **Not this lane:** authoring a template project or Hub listing files
   (→ [runpod-build-template](../runpod-build-template/SKILL.md)); writing/deploying
   your own Python with Flash (→ flash); downloading models or building/pushing
@@ -114,7 +127,7 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
 | The user wants to… | Journey skill |
 | --- | --- |
 | Know what GPUs/workers/endpoints exist, what fits a model, what it costs | **discovery** |
-| Create/inspect/update/delete pods, endpoints, templates, volumes, account secrets, SSH keys, clusters; inventory of the account | **lifecycle-crud** |
+| Create/inspect/update/delete pods, endpoints, templates, network or global volumes, account secrets, SSH keys, clusters; inventory of the account; who changed what (audit log) or who is in the organization | **lifecycle-crud** |
 | Stand up a serverless endpoint for a model/workload and verify it with a real job | **serverless-deploy** |
 | Host a ComfyUI workflow (workflow.json, custom Civitai models/LoRAs) as an endpoint | **serverless-deploy**, then its [ComfyUI reference](../serverless-deploy/reference/comfyui-serverless.md) |
 | Rent/configure an interactive GPU pod; create a pod then pause/stop it for later | **pod-deploy** |

@@ -50,7 +50,8 @@ workers. Tune scaling once concurrency is right.
 | **Scaler value / threshold** | `--scale-threshold N` | 4 | requests → jobs-per-worker target; delay → seconds of wait before adding | lower = more aggressive |
 | **Idle timeout** | `--idle-timeout` | 5 s | How long a worker stays warm (billed) after finishing before scaling down | ↑ = fewer cold starts on bursty traffic, **more idle $** |
 
-> **Execution timeout** (`--execution-timeout`, default **600 s**) and **Job TTL**
+> **Execution timeout** (`--execution-timeout <seconds>`: no CLI default, so an omitted flag
+> reads back 0; the console default is 600 s) and **Job TTL**
 > (24 h) aren't scaling knobs but bound each job — see
 > [endpoint settings](https://docs.runpod.io/serverless/endpoints/endpoint-configurations)
 > and the workspace notes on TTL vs execution timeout.
@@ -91,18 +92,20 @@ a scaler-specific object instead of a shared `value`, and the idle timeout sits 
 (min `1`); `idleTimeout` is `1`–`3600` and on a queue-based endpoint scaling on
 `requestCount` it is **rejected on create and update** — not silently ignored.
 
-You only need the right-hand column when calling **v2 REST by hand**. Neither CLI makes you
-write it, but for different reasons, and the distinction matters:
+You need the right-hand column when calling **v2 REST**, by hand or through the MCP server;
+runpodctl does not make you write it. The two lanes differ, and the distinction matters:
 
-- **runpodctl** never talks to v2 REST at all — `serverless create` goes through GraphQL
-  `saveEndpoint` and `serverless update` through v1 REST, both of which take the flat
-  `scalerType`/`scalerValue`/`idleTimeout` natively. Note `--scale-threshold` is an integer
+- **runpodctl** writes scaler settings without v2 REST: in runpodctl v3.0.1,
+  `serverless create` goes through GraphQL `saveEndpoint` and `serverless update` through
+  v1 REST, both of which take the flat `scalerType`/`scalerValue`/`idleTimeout` natively
+  (its endpoint reads and delete use v2). Note `--scale-threshold` is an integer
   with a floor of 1, so runpodctl **cannot express a fractional `queueDelay`** like `0.5`;
   use v2 REST or the Console for that.
-- **The Runpod MCP server** keeps the flat `scalerType`/`scalerValue` parameters and maps them
-  onto the nested v2 body for you. A server old enough to predate the reshape sends the flat
-  shape straight through and gets a 422 on both `create-endpoint` and `update-endpoint`; the
-  tell is a `create-endpoint` with no `endpointType` parameter.
+- **The Runpod MCP server** passes the v2 body through: `create-endpoint` and
+  `update-endpoint` take the nested `scaling` object (`{"type":"QUEUE_DELAY","queueDelay":…}`
+  or `{"type":"REQUEST_COUNT","requestCount":…}`) and `workers.idleTimeout`. A server old
+  enough to predate the reshape sends a flat shape and gets a 422 on both tools; the tell is
+  a `create-endpoint` with no `scaling` field.
 
 ## Walkthrough (verified commands)
 

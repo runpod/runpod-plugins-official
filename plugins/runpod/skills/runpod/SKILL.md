@@ -3,14 +3,16 @@ name: runpod
 description: >-
   Start here for any Runpod task — running GPU/CPU pods, deploying serverless
   endpoints, templates, network volumes, building images, or understanding how
-  Runpod works. Routes to the right skill (runpod-mcp, runpodctl, flash,
-  companion-clis, runpod-usage, runpod-templates, runpod-build-template, runpod-migrate)
-  and indexes two dozen live-verified end-to-end examples
-  (golden paths) — use it when the lane is unclear, and for any multi-step or
-  provisioning task even when it is not.
+  Runpod works. Routes to the right skill (runpod-mcp and its journey playbooks
+  such as serverless-deploy, pod-deploy, pod-doctor and cost-audit; runpodctl,
+  flash, companion-clis, runpod-usage, runpod-templates, runpod-build-template,
+  runpod-migrate) and indexes two dozen live-verified end-to-end examples (golden
+  paths). Use it when the lane is unclear, and before any multi-step or
+  provisioning task even when the lane is clear, to check for a matching golden
+  path.
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [runpod-platform, pod, serverless-endpoint, template, network-volume, hub-repo]
 license: Apache-2.0
 ---
@@ -176,8 +178,9 @@ Capability matrix (pick the preferred lane per operation):
 | --- | --- | --- |
 | List/get anything; start/stop/restart/delete a pod; simple CRUD on endpoints, templates, volumes, registries; catalog; billing | **runpod-mcp** if connected, else runpodctl | Simple structured ops — MCP is typed and convenient |
 | Create a **simple** pod (one image + one GPU) | **runpod-mcp** if connected, else runpodctl | Both handle it |
-| Create a pod **from a template** or a **CPU** pod | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` (v2-only) and `computeType: "CPU"` |
-| Create a pod with a **multi-GPU priority list**, or **template + CPU together** | **runpodctl** | MCP narrows to one GPU type, and rejects a template deploy for a CPU pod |
+| Create a pod **from a template** or a **CPU** pod | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` and, for CPU, a `cpu` object (`{id, vcpuCount}` from `list-cpu-types`) in place of `gpu` |
+| Create a pod from a template **and** a CPU flavor together | **runpod-mcp** if connected, else runpodctl | Live-verified 2026-10-29: one v2 create with `templateId` + `cpu` took the template's image, args, ports and disk, merged `env` (your keys win), and kept no template link (a CPU pod skips the template's persistent mount and CUDA constraint). runpodctl v3 sends the same v2 create |
+| Create a pod with a **multi-GPU priority list** | **neither**: one GPU type per create | v2 `create-pod` takes one `gpu.id`, and runpodctl rejects a comma list in `--gpu-id` (`only one gpu id is supported`; checked through v3.0.1). Pick one type from the stock read; on a capacity error, retry with the next |
 | Browse or deploy an existing **Hub** listing | **runpod-mcp** if connected and it exposes the requested operation, else runpodctl | Check the live tool surface; Hub is not a reason by itself to switch to the CLI |
 | **File transfer** (`send`/`receive`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
 | Invoke a serverless job (`run`/`runsync`/status/stream) | **runpod-mcp** if connected, else runpodctl | Both lanes have first-class job commands now (runpodctl `serverless run`/`status`/`health`, v2.9.0+); MCP is typed, and only MCP streams a job's incremental output (`stream-job`) |

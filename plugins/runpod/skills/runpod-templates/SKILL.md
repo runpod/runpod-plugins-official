@@ -5,10 +5,10 @@ description: >-
   workflow model metadata repair. For creating or optimizing Dockerfiles and
   application template projects use runpod-build-template; deploy through runpod-mcp
   or runpodctl.
-allowed-tools: Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/extract_png_workflow.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/inventory_workflow_models.py:*), Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/apply_model_metadata.py:*)
+allowed-tools: Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/extract_png_workflow.py:*) Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/inventory_workflow_models.py:*) Bash(python3 -B ${CLAUDE_PLUGIN_ROOT}/skills/runpod-templates/scripts/apply_model_metadata.py:*)
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [template, container-image, pod, exposed-port]
 license: Apache-2.0
 ---

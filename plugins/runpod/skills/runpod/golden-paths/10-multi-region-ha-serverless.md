@@ -210,15 +210,37 @@ runpodctl serverless create --template-id <template-id> --compute-type CPU \
 ✅ **Live 2026-07-10** (runpodctl built from `main`) — endpoint created, then
 `GET /v1/endpoints/<id>` confirmed `"networkVolumeIds":["<vol-ro>","<vol-cz>"]` (both
 attached). Under the hood runpodctl calls the GraphQL `saveEndpoint` mutation with the ids
-as **objects** — see the fallback below for what that looks like.
+as **objects** — see Fallback B below for what that looks like.
 
 > **Version requirement:** multi-volume `--network-volume-ids` needs **runpodctl ≥ v2.4.0**;
 > older versions don't support it. **Check `runpodctl version` first.** The Homebrew tap can
 > lag, so if you're behind, install ≥v2.4.0 from the
 > [GitHub releases](https://github.com/runpod/runpodctl/releases).
 
-**Fallback A — raw GraphQL `saveEndpoint`** (REST-only, or stuck on an old CLI). This is
-exactly what runpodctl does internally; `networkVolumeIds` takes **objects**, not strings.
+**Fallback A — REST v2 `POST /v2/serverless` (or MCP `create-endpoint` with the same body)**
+for a REST-only agent. v2 takes the whole volume set in one create, as `mounts.network`
+(at most one volume per data center), and expresses CPU as a `cpu` array of
+`{id, vcpuCount}` (flavor ids from `GET /v2/catalog/cpus`). Live-verified 2026-10-29: a
+`cpu3c` × 2 QUEUE endpoint with two volumes (EU-RO-1, EU-CZ-1) created in one call, and the
+read-back listed both under `mounts.network`. Read the endpoint back and confirm both volumes:
+```bash
+curl -s -X POST https://api.runpod.io/v2/serverless \
+  -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"rp-gp10-ha","templateId":"<template-id>","type":"QUEUE",
+       "cpu":[{"id":"<cpu-flavor-id>","vcpuCount":2}],
+       "dataCenterIds":["EU-RO-1","EU-CZ-1"],
+       "mounts":{"network":[{"volumeId":"<vol-ro>"},{"volumeId":"<vol-cz>"}]},
+       "workers":{"min":0,"max":4,"idleTimeout":10},"timeout":600000,
+       "scaling":{"type":"QUEUE_DELAY","queueDelay":1}}'
+curl -s https://api.runpod.io/v2/serverless/<endpoint-id> -H "Authorization: Bearer $RUNPOD_API_KEY"
+# → confirm mounts.network lists <vol-ro> and <vol-cz>, and timeout is 600000 (not re-run with
+#   `timeout` set). The live run omitted timeout and it read back 0 (the server treats 0 as
+#   no per-request limit); always send it.
+```
+
+**Fallback B — legacy GraphQL `saveEndpoint`** (the 2026-07 live-verified route, kept for
+reference). This is what runpodctl's `serverless create` still sends; `networkVolumeIds`
+takes **objects**, not strings.
 ⚠️ **Do not put `"computeType":"CPU"` in the REST create** — the public control REST v1
 silently provisions a **GPU** endpoint (see the runpodctl skill). Express CPU in the GraphQL
 step via `instanceIds` + empty `gpuIds` (`EndpointInput` has no `computeType` field), exactly
@@ -243,11 +265,11 @@ curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_API_KEY" \
 > was known); the CPU expression above is corrected to match path 19's live-verified shape
 > (2026-07-13). Verify: `saveEndpoint` should return `"computeType":"CPU","instanceIds":["cpu3c-2-4"]`.
 
-**Fallback B — Console:** Serverless → Edit Endpoint → Advanced → Network Volumes, one per DC, Save.
+**Fallback C — Console:** Serverless → Edit Endpoint → Advanced → Network Volumes, one per DC, Save.
 
 The handler reads its data from `/runpod-volume/...` exactly as in the single-volume case.
-> **Note:** prefer the `runpodctl` path above — it carries `--compute-type` (CPU/GPU)
-> directly. The raw GraphQL `saveEndpoint` has no `computeType` field, but it can **still
+> **Note:** prefer the `runpodctl` path or Fallback A — both express CPU directly
+> (`--compute-type`, or the v2 `cpu` array). The raw GraphQL `saveEndpoint` has no `computeType` field, but it can **still
 > make a CPU endpoint** — pass `instanceIds` (a CPU flavor, e.g. `cpu3c-2-4`) with an empty
 > `gpuIds` (live-verified in golden path [19](19-three-region-same-file.md)); omit those and
 > it defaults to GPU. HA behavior (multi-DC, per-DC volume, parity) is identical.
@@ -287,7 +309,8 @@ same synced data. `RUNPOD_DC_ID` is the clean per-request DC identifier; poll wi
   --network-volume-ids v1,v2` (check `runpodctl version`; install from
   [GitHub releases](https://github.com/runpod/runpodctl/releases) if the Homebrew tap is
   behind). `--network-volume-id` (singular) attaches one volume on any version. REST-only
-  fallback: GraphQL `saveEndpoint` with the object shape (step 4); the Console UI also works.
+  fallback: REST v2 `mounts.network` in one create (step 4, Fallback A); the legacy GraphQL
+  `saveEndpoint` object shape and the Console UI also work.
 - **GraphQL fallback needs a browser-ish `User-Agent`** on `api.runpod.io/graphql`
   (`User-Agent: Mozilla/5.0`); not needed for the `runpodctl` path.
 - **GraphQL fallback has no `computeType` field** — but a CPU endpoint is still expressible

@@ -9,7 +9,7 @@ description: Provision a Runpod Pod for interactive, development or training use
   endpoint, through the Runpod MCP tools.
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [pod, template, gpu-type, gpu-availability, data-center, cloud-tier, exposed-port, container-disk, pod-volume-disk, network-volume]
 license: Apache-2.0
 ---
@@ -20,17 +20,24 @@ You provision one Pod the user asked for and hand back exactly how to reach it. 
 
 Creating a Pod is billable. State the hourly cost before you create it. Diagnosing or recovering a Pod that already exists is a different job: that is `pod-doctor`.
 
-## Required capabilities
+## Tool binding
 
-Named as capabilities; the tool serving each one on this server is in the tool binding below. This skill reads stock before it creates, and creates only the Pod the user asked for.
+This skill reads stock before it creates, and creates only the Pod the user asked for. If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
-- Read GPU stock per data center, with the CUDA versions that have capacity when a CUDA floor matters: confirm the class is available before creating (delegate the fuller catalog read to `discovery`).
-- Create a network volume: checkpoint durability for training (delegate the CRUD hygiene to `lifecycle-crud`).
-- Create a Pod (image, GPU or CPU, disk, ports, env, data center, mounts).
-- Inspect a Pod: read back its status, exposed ports, and the proxy/public address.
-- List Pods: resolve "which Pod" and confirm what already exists.
-- Read a Pod's boot logs: confirm the app came up on the port before handing back a URL.
-- Stop / terminate a Pod: create-then-pause, and cleanup when the user asks for it.
+| Capability | Tool |
+|---|---|
+| GPU stock per data center: confirm the class is available before creating (the fuller catalog read is `discovery`'s) | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["POD"]`) |
+| CUDA versions with capacity, per GPU type, when a CUDA floor matters | the same read (`cudaVersions`); `get-capacity` for the matrix view across host CUDA versions |
+| Data centers | `list-data-centers`, `get-data-center` |
+| Create a network volume: checkpoint durability for training (the CRUD hygiene is `lifecycle-crud`'s) | `create-network-volume` |
+| Create a Pod (image, GPU or CPU, disk, ports, env, data center, mounts) | `create-pod` |
+| Inspect a Pod: status, exposed ports, the proxy/public address | `get-pod` |
+| List Pods: resolve "which Pod" and confirm what already exists | `list-pods` |
+| Read Pod boot logs: confirm the app came up on the port before handing back a URL | `stream-pod-logs` |
+| Stop a Pod (keep the volume disk): create-then-pause | `pod-action` (`{"action":"stop"}`) |
+| Resume a stopped Pod | `pod-action` (`{"action":"start"}`) |
+| Terminate a Pod: cleanup when the user asks for it | `delete-pod` |
+| Account SSH keys | `get-ssh-keys` / `update-ssh-keys` |
 
 ## Phase 1 — confirm stock and shape the Pod
 
@@ -78,25 +85,6 @@ template, Hub or pod read it came from); the GPU class with the stock figure
 from the availability read; and the reachable URL in its proxy form (or
 the `ssh` connect string for SSH). Then the mount path if a volume was attached, and the
 billing consequence of the Pod's current state.
-
-## Tool binding
-
-| Capability | Tool |
-|---|---|
-| GPU stock per data center | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]`, `product:["POD"]`) |
-| CUDA versions with capacity, per GPU type | the same read (`cudaVersions`); `get-capacity` for the matrix view across host CUDA versions |
-| Data centers | `list-data-centers`, `get-data-center` |
-| Create a network volume | `create-network-volume` |
-| Create a Pod | `create-pod` |
-| Inspect a Pod | `get-pod` |
-| List Pods | `list-pods` |
-| Read Pod boot logs | `stream-pod-logs` |
-| Stop a Pod (keep the volume disk) | `pod-action` (`{"action":"stop"}`) |
-| Resume a stopped Pod | `pod-action` (`{"action":"start"}`) |
-| Terminate a Pod | `delete-pod` |
-| Account SSH keys | `get-ssh-keys` / `update-ssh-keys` |
-
-If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
 ## Contract
 

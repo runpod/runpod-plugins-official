@@ -13,7 +13,7 @@ weights into the image or managing a network volume. Get me there.
 The two halves must route **differently** — that split is the point of this eval.
 
 **(a) is a single CRUD call → skip step 0.** Goes straight to the lane per the
-capability matrix (`stop-pod` if MCP is connected, else `runpodctl pod stop abc123`).
+capability matrix (`pod-action` with `action: "stop"` if MCP is connected, else `runpodctl pod stop abc123`).
 Opening a golden path for this is wrong: it burns a file read on a one-liner.
 
 **(b) is multi-resource and provisions something billable → step 0 applies.** Before
@@ -65,13 +65,16 @@ different data centers so a regional outage doesn't take me down. Walk me throug
    lane's own "for a multi-step job, read the worked example before calling tools"
    pointer — not because the user said "check the examples".
 2. **Lands on path 19** (3-region) or path 10 (2-region HA).
-3. **One endpoint, one volume per DC** — `--network-volume-ids v1,v2,v3` with
-   `--data-center-ids`. Not three separate endpoints behind a hand-rolled failover
+3. **One endpoint, one volume per DC** — MCP `create-endpoint` with `mounts.network`
+   listing one volume per DC plus `dataCenterIds` (runpodctl: `--network-volume-ids v1,v2,v3`
+   with `--data-center-ids`). Not three separate endpoints behind a hand-rolled failover
    layer, and not "bake the weights, volumes can't do this".
 4. **Flags that volumes do not replicate automatically** — a partial sync means a
    fraction of traffic silently serves stale weights.
-5. Notes that MCP's `create-endpoint` does not express a multi-volume attach, so this
-   step needs runpodctl or the GraphQL `saveEndpoint` fallback.
+5. Attaches the whole set in the same create: MCP `create-endpoint` (REST v2
+   `POST /v2/serverless`) takes every per-DC volume as `mounts.network` (at most one per
+   data center). runpodctl `--network-volume-ids` (≥ v2.4.0) and GraphQL `saveEndpoint`
+   are fallbacks, not requirements.
 
 ### Assertions
 
@@ -80,6 +83,7 @@ different data centers so a regional outage doesn't take me down. Walk me throug
 - Warns about non-replication
 - Does **not** assert that a multi-DC endpoint cannot mount per-DC volumes — that is a
   false absence claim, and it is the observed failure mode when the example is not read
+- Does **not** claim MCP `create-endpoint` cannot attach several volumes
 
 ### Measured 2026-08-19
 

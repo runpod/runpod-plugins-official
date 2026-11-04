@@ -1,10 +1,10 @@
 ---
-concepts: [network-volume, container-disk, pod-volume-disk, model-store, volume-cache]
+concepts: [network-volume, global-volume, container-disk, pod-volume-disk, model-store, volume-cache]
 ---
 # Where data lives on Runpod
 
 Pick storage based on whether data must survive a stop, be shared across
-machines, and where your compute runs. There are three layers.
+machines, and where your compute runs. There are four layers.
 
 ## Default: prefer a network volume
 
@@ -24,7 +24,7 @@ data-center pin narrowing your GPU availability. See
 [Getting a model to the worker](#getting-a-model-to-the-worker) below; the default
 above is about datasets, checkpoints, and everything else worth keeping.
 
-## The three layers
+## The four layers
 
 ### Container / ephemeral disk
 
@@ -62,7 +62,7 @@ above is about datasets, checkpoints, and everything else worth keeping.
     `volumeType` (`STANDARD` | `HIGH_PERFORMANCE`); omit it for the data center's default.
     `runpodctl` has no tier flag, so from the CLI request **High-Performance** via the
     console (a ⚡ data center → toggle) or a raw v2 REST call (`POST
-    https://v2-rest.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`); the tier
+    https://api.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`); the tier
     is immutable after creation. High-Performance (~3× throughput / 4× IOPS) is worth it when
     I/O is the bottleneck — training, checkpointing, many small files. Launch: golden path
     [21 — storage tiers](../../runpod/golden-paths/21-storage-tiers.md); more:
@@ -75,6 +75,44 @@ above is about datasets, checkpoints, and everything else worth keeping.
 - Use for: sharing models/datasets across workers or pods, and anything that must
   outlive a single machine.
 
+### Global volume (any data center)
+
+A **global volume** is storage that mounts into workloads in **any** data center, so it has
+no data-center constraint. It is usage-billed, so it has no size: create it with just a
+`name` (REST v2 `POST https://api.runpod.io/v2/global-volumes`, or MCP
+`create-global-volume`). Accounts hold a capped number; a create past the cap is `400`.
+
+- **Pods:** at most one global volume per pod, on GPU pods and on CPU pods (CPU pods
+  through the API only), under `mounts.global`. It combines with a network volume but not
+  with a pod volume disk (`400`). A CPU pod created through REST v2 or MCP without a
+  `path` or a network volume mounts it at `/workspace-global` (for other cases the spec
+  names no default); the console's deploy flow mounts it at `/workspace` when no network
+  volume is attached.
+  Read `mounts.global[0].path` back rather than assuming.
+  The mount is fixed at create; only its `path` can change later.
+- **Serverless:** at most one per endpoint, **GPU endpoints only** (a CPU endpoint gets
+  `400`), under `mounts.global`, seen by workers at `/runpod-volume`. An endpoint carries
+  network volumes or a global volume, not both.
+- **Delete** removes the stored data and is refused with `409` while any pod (stopped pods
+  count) or endpoint mounts it.
+- **Limits (beta):** object-backed, so no file locking, atomic rename, hard links or
+  permission bits. A template that installs a Python environment into `/workspace` (the
+  official ComfyUI template, for one) cannot use it as its primary volume; mount it at a
+  second path for model files. Changes made after a pod or worker starts may not be
+  visible inside it, and concurrent writes to one file are last-write-wins.
+- **Billing:** stored data plus requests: Class A (writes, creates, lists) $0.005 and
+  Class B (reads, metadata lookups) $0.0005 per 1,000 requests. It is permanently deleted
+  15 days after the account balance reaches $0.
+- Use for: model weights and other read-mostly files shared across data centers; keep
+  write-heavy work (training, checkpoints) on a network volume.
+
+Source: the REST v2 spec (`GlobalVolume`, `Mounts`, `EndpointMountsInput`,
+`/v2/global-volumes`) and the public docs
+([global volumes](https://docs.runpod.io/storage/globalvolume/overview)); live-verified 2026-10-29 (name-only create, CPU pod mount, `409`
+delete while mounted, `400` on a CPU endpoint, `204` delete after the pod was gone).
+The GPU-endpoint mount and `/runpod-volume` path were not live-run; the REST default
+`/workspace-global` on a CPU pod was live-verified 2026-11-02.
+
 ### Data-center constraint (important)
 
 A network volume is pinned to its data center, so any compute that mounts it must
@@ -82,6 +120,8 @@ be placed in that **same DC**. That narrows GPU availability. To improve
 availability, attach multiple volumes from different DCs (one per DC) — but data
 does **not** sync between them automatically; copy it yourself (S3 API /
 runpodctl). **Do not write to one volume from multiple workers concurrently** — it can corrupt data.
+For read-mostly files needed in several data centers, a
+[global volume](#global-volume-any-data-center) avoids the pin, within its limits.
 
 ## Getting a model to the worker
 
@@ -162,6 +202,8 @@ skill for full AWS CLI usage; each volume on the Storage page shows a pre-filled
 - Keep data between sessions on one pod → volume disk (`/workspace`).
 - Share models/data across workers or pods, or persist past termination →
   network volume — and put your compute in the volume's DC.
+- Read-mostly models/files shared across data centers → global volume (no file locking
+  or permission bits).
 - Public/gated HF model on serverless → cached model, not a bake.
 - Big files that blow past API payload limits → network volume or external S3;
   return references, not bytes.

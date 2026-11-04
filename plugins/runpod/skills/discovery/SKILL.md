@@ -9,7 +9,7 @@ description: 'Answer what is available, what fits and the price against Runpod''
   MCP tools.'
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [gpu-type, gpu-availability, gpu-pool, cpu-flavor, data-center, cloud-tier, hub-repo, template, public-endpoint]
 license: Apache-2.0
 ---
@@ -22,18 +22,20 @@ You also own the model→VRAM sizing math the deploy skills cite: given a model'
 
 The raw catalog reads are `runpod-mcp` tool calls; this skill is the discovery journey on top of them: filter, fit, price, none-found honesty.
 
-## Required capabilities
+## Tool binding
 
-Named as capabilities; the tool serving each one on this server is in the tool binding below. Every capability here is a read.
+Every capability here is a read. If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
-- Read the GPU catalog with price and live availability.
-- Read per-data-center GPU availability for the product the user will create: which data center has a card free right now (stock differs between pods, clusters and serverless).
-- Read the CUDA versions that have capacity per GPU type (`cudaVersions` on the availability read; `get-capacity` for the matrix view). A CUDA floor is a capacity question, not only a compatibility one.
-- Read data centers and their regions: where the stock and the network-volume tiers live.
-- Read the CPU catalog for CPU-pod and CPU-serverless sizing questions.
-- Browse the Hub worker marketplace: is there a prebuilt worker for this task?
-- Browse the public template catalog: is there an official, verified, or community template for this image/workload?
-- Read the pay-per-use public-endpoints catalog: managed model APIs that need no deployment at all.
+| Capability | Tool |
+|---|---|
+| GPU catalog + price + live stock | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]` with `product`) |
+| Per-data-center GPU availability for the product the user will create (stock differs between pods, clusters and serverless) | the same read (`dataCenters[]`); `list-data-centers` / `get-data-center` (`include:["GPU_AVAILABILITY"]`) |
+| CUDA versions with capacity, per GPU type (a CUDA floor is a capacity question, not only a compatibility one) | the same read (`cudaVersions`); `get-capacity` for the matrix view |
+| Data centers and regions: where the stock and the network-volume tiers live | `list-data-centers`, `get-data-center` |
+| CPU catalog, for CPU-pod and CPU-serverless sizing | `list-cpu-types`, `get-cpu-type` (`include:["AVAILABILITY"]` with `product`) |
+| Hub worker marketplace: is there a prebuilt worker for this task? | `list-hub-repos` (`searchTerm`, `category`, `includeConfig`) |
+| Public template catalog: an official, verified, or community template for this image/workload | `list-public-templates` (`source`: `official` / `verified` / `community`) |
+| Pay-per-use Public Endpoints: managed model APIs that need no deployment | `list-public-endpoints` (`modality`, `owner`) |
 
 ## Journeys
 
@@ -80,21 +82,6 @@ When the user wants a one-off result ("run this model once on my input") and doe
 - A catalog read returns an empty list → report "none found" for that filter; do not widen the search silently or fabricate entries.
 - The user gives a VRAM tier no card matches → say no card in that tier is in the catalog (or has stock) rather than rounding to a nearby card unasked.
 - A read fails → report the failure and stop; do not answer from memory.
-
-## Tool binding
-
-| Capability | Tool |
-|---|---|
-| GPU catalog + price + stock | `list-gpu-types` / `get-gpu-type` (`include:["AVAILABILITY"]` with `product`) |
-| Per-data-center GPU availability | the same read (`dataCenters[]`); `list-data-centers` / `get-data-center` (`include:["GPU_AVAILABILITY"]`) |
-| CUDA versions with capacity, per GPU type | the same read (`cudaVersions`); `get-capacity` for the matrix view |
-| Data centers | `list-data-centers`, `get-data-center` |
-| CPU catalog | `list-cpu-types`, `get-cpu-type` (`include:["AVAILABILITY"]` with `product`) |
-| Browse the Hub | `list-hub-repos` (`searchTerm`, `category`, `includeConfig`) |
-| Browse the public template catalog | `list-public-templates` (`source`: `official` / `verified` / `community`) |
-| Pay-per-use Public Endpoints | `list-public-endpoints` (`modality`, `owner`) |
-
-If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
 ## Contract
 

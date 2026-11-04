@@ -5,10 +5,9 @@ description: >-
   flash dev, resource configuration, and debugging. Use runpod-build-template for
   explicit Dockerfile/template project authoring, and runpodctl/runpod-mcp for
   infrastructure management.
-user-invocable: true
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [flash, serverless-endpoint, serverless-handler, worker, volume-cache]
 license: Apache-2.0
 ---

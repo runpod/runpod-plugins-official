@@ -31,7 +31,8 @@ fields:
   - { name: image, type: string, set: "create,update" }
   - { name: env, type: object, set: "create,update" }
   - { name: registry, type: string, ref: registry-credential, set: "create,update" }
-  - { name: networkVolumes, type: "string[]", ref: network-volume, set: "create,update" }
+  - { name: mounts.network, type: "EndpointMount[]", ref: network-volume, set: "create,update", note: "list of {volumeId}, at most one per data center; no path, workers mount at /runpod-volume" }
+  - { name: networkVolumes, type: "string[]", ref: network-volume, set: "create,update", note: "deprecated; plain volume ids, superseded by mounts.network" }
   - { name: dataCenterIds, type: "string[]", ref: data-center, set: "create,update", note: placement preference }
   - { name: workers.min, type: integer, default: 0, set: "create,update" }
   - { name: workers.max, type: integer, default: 3, set: "create,update" }
@@ -39,7 +40,7 @@ fields:
   - { name: scaling.type, type: enum, values: [QUEUE_DELAY, REQUEST_COUNT], set: "create,update", required: true }
   - { name: scaling.queueDelay, type: number, unit: seconds, set: "create,update", note: minimum 0.5 }
   - { name: scaling.requestCount, type: integer, set: "create,update", note: minimum 1 }
-  - { name: timeout, type: integer, unit: ms, default: 300000, set: "create,update", note: per-request execution timeout }
+  - { name: timeout, type: integer, unit: ms, default: 300000, set: "create,update", note: "per-request execution timeout; the spec default, but a create that omits it reads back 0" }
   - { name: flashboot, type: enum, values: ["OFF", FLASHBOOT, PRIORITY_FLASHBOOT], default: "OFF", set: "create,update" }
   - { name: requestUrls, type: EndpointRequestUrls, set: read, note: "invoke URLs for the endpoint's type" }
 
@@ -151,7 +152,7 @@ rules:
       - { source: rest-v2-spec, ref: "CreateEndpointGpuConfig; UpdateEndpointGpuConfig", seen: "2026-09-28" }
 
   - id: serverless-endpoint.network-volume-pins-dc
-    applies_to: ["field:networkVolumes", "field:dataCenterIds"]
+    applies_to: ["field:mounts.network", "field:networkVolumes", "field:dataCenterIds"]
     statement: >
       Attaching network volumes limits workers to those volumes' data centers.
       To spread workers across data centers, attach one volume per data center.
@@ -159,6 +160,19 @@ rules:
     status: documented
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/gotchas.md, note: Attach one volume per data center to spread workers. }
+
+  - id: serverless-endpoint.volumes-via-mounts-network
+    applies_to: ["field:mounts.network", "field:networkVolumes"]
+    statement: >
+      A v2 create or update attaches network volumes as `mounts.network`, a list
+      of `{volumeId}` entries with at most one volume per data center. There is
+      no `path`: every worker mounts the volume at `/runpod-volume`. A list you
+      send replaces the endpoint's current one, and `[]` detaches it. The flat
+      `networkVolumes` list of ids is deprecated, and if both are sent they must
+      agree exactly.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: "CreateEndpointRequest; EndpointMountsInput; EndpointMount", seen: "2026-11-02" }
 
   - id: serverless-endpoint.leave-placement-broad
     applies_to: ["field:gpu.pools", "field:dataCenterIds"]
@@ -209,13 +223,15 @@ rules:
     applies_to: ["field:workers.idleTimeout", "field:timeout", "field:flashboot", "field:workers.max"]
     statement: >
       Defaults depend on the tool that creates the endpoint. REST v2 create uses
-      `workers.max` 3, `idleTimeout` 10 seconds, `timeout` 300 seconds and
-      `flashboot` `OFF`. The console uses a 5-second idle timeout, a 600-second
-      execution timeout and FlashBoot on. runpodctl and the Flash SDK set their
-      own defaults, so set these values explicitly.
+      `workers.max` 3, `idleTimeout` 10 seconds and `flashboot` `OFF`. The spec
+      documents a `timeout` default of 300 seconds, but a create that omits
+      `timeout` reads back 0, so always send it. The console uses a 5-second
+      idle timeout, a 600-second execution timeout and FlashBoot on. runpodctl
+      and the Flash SDK set their own defaults, so set these values explicitly.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "CreateEndpointRequest (workers, timeout and flashboot defaults)", seen: "2026-09-28" }
+      - { source: live-probe, ref: "POST /v2/serverless without timeout read back \"timeout\": 0", seen: "2026-10-29" }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: "Console defaults for idle timeout, execution timeout and FlashBoot." }
       - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: "The Flash SDK's defaults differ from the platform's." }
 

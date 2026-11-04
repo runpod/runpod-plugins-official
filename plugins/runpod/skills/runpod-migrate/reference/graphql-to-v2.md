@@ -148,7 +148,7 @@ Response fields: `desiredStatus` → `status`, `costPerHr` → `cost`,
 | `flashBootType: FLASHBOOT` | `flashboot: "FLASHBOOT"` (string, same values: `OFF`/`FLASHBOOT`/`PRIORITY_FLASHBOOT`) |
 | `locations: "US"` (region/country string) | `dataCenterIds: ["US-KS-2", …]` — explicit IDs |
 | `templateId` | `templateId` — still accepted, but resolved once with no link retained ([Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone)) |
-| `networkVolumeId` | `networkVolumes: ["vol1"]` |
+| `networkVolumeId` | `mounts: {"network": [{"volumeId": "vol1"}]}` — at most one volume per data center, always mounted at `/runpod-volume` (no `path`, unlike pods). The flat `networkVolumes: ["vol1"]` still parses but is deprecated |
 | — | `type: "QUEUE" \| "LOAD_BALANCER"` — **required on create** |
 | `executionTimeoutMs` | `timeout` (still ms) |
 

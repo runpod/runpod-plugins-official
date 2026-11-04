@@ -93,10 +93,8 @@ CMD_IN_TEXT = re.compile(rf"\b({RESOURCES})\s+([a-z][a-z-]+)\b", re.IGNORECASE)
 ALLOW = {
     # (substring that must appear in the matched text, why it is allowed)
     "MCP has no tool for these": "about MCP's surface, not runpodctl's",
-    "MCP rejects that combination": "about MCP's surface, not runpodctl's",
     "no worker-log path on REST v1": "about REST v1, not runpodctl",
     "v1 has no worker-log path at all": "about REST v1, not runpodctl",
-    "MCP narrows to one GPU type": "about MCP's surface",
     "no CPU concept": "about MCP's surface",
     "cannot change it": "about the API, not a missing command",
     "cannot express a SKU": "about MCP's surface",

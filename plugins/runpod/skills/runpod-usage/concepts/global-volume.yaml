@@ -1,0 +1,149 @@
+id: global-volume
+name: Global volume
+kind: resource
+summary: >
+  Persistent, usage-billed storage that is not tied to a data center, so pods
+  and GPU Serverless endpoints in any data center can mount it. It suits
+  read-mostly files such as model weights.
+product: storage
+is_a: null
+part_of: runpod-platform
+aliases: [global storage, GlobalVolume, global volumes]
+
+surfaces:
+  rest_v2: { schema: GlobalVolume, paths: [/v2/global-volumes, "/v2/global-volumes/{id}"] }
+  mcp: [create-global-volume, list-global-volumes, get-global-volume, update-global-volume, delete-global-volume]
+  console: Storage
+
+fields:
+  - { name: id, type: string, set: read }
+  - { name: name, type: string, set: "create,update", required: true, note: not unique }
+
+relations:
+  - { type: constrained_by, target: credit-balance, cardinality: "1" }
+
+rules:
+  - id: global-volume.any-data-center
+    statement: >
+      A global volume has no data center. Compute in any supported data center
+      can mount it, so it does not narrow GPU choice the way a network volume
+      does.
+    status: documented
+    see: [network-volume.same-dc-only]
+    evidence:
+      - { source: rest-v2-spec, ref: POST /v2/global-volumes, seen: "2026-11-02" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/overview", seen: "2026-11-02" }
+
+  - id: global-volume.name-only-create
+    applies_to: ["field:name"]
+    statement: >
+      A create takes only a `name`; there is no size or data center to choose,
+      and storage grows with the data. An account holds a capped number of
+      global volumes, and a create past the cap is answered `400`.
+    on_violation: 400
+    status: verified
+    evidence:
+      - { source: rest-v2-spec, ref: CreateGlobalVolumeRequest.name, seen: "2026-11-02" }
+      - { source: rest-v2-spec, ref: POST /v2/global-volumes, seen: "2026-11-02" }
+      - { source: live-probe, ref: POST /v2/global-volumes with only name, seen: "2026-10-29" }
+
+  - id: global-volume.rename-only
+    applies_to: ["field:name"]
+    statement: >
+      An update can only change `name`; an empty update body is rejected.
+    status: documented
+    evidence:
+      - { source: rest-v2-spec, ref: UpdateGlobalVolumeRequest, seen: "2026-11-02" }
+
+  - id: global-volume.pod-mount
+    statement: >
+      A pod mounts at most one global volume, under `mounts.global`, on GPU and
+      CPU pods; CPU pods take one through the API only, since the console
+      attaches it to GPU pods only. It combines with a network volume but not
+      with a pod volume disk (`400`), and the mount is fixed at create: only its
+      `path` can change later.
+    on_violation: 400
+    status: verified
+    see: [pod.mount-kind-fixed]
+    evidence:
+      - { source: rest-v2-spec, ref: Mounts.global, seen: "2026-11-02" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/overview", note: "See \"Limitations\".", seen: "2026-11-02" }
+      - { source: live-probe, ref: "POST /v2/pods, CPU pod with mounts.global", note: "Mounted; a delete of the volume was then refused with 409.", seen: "2026-10-29" }
+      - { source: live-probe, ref: "POST /v2/pods, CPU pod with mounts.global", seen: "2026-11-02" }
+
+  - id: global-volume.pod-default-path
+    statement: >
+      A CPU pod created through REST v2 or MCP with a global mount, no `path`
+      and no network volume mounts it at `/workspace-global`; for a GPU pod, or
+      a pod that also mounts a network volume, the spec names no default. The
+      console's deploy flow mounts it at `/workspace` when no network volume is
+      attached. Read `mounts.global[0].path` back rather than assuming.
+    status: verified
+    evidence:
+      - { source: rest-v2-spec, ref: GlobalMount.path, seen: "2026-11-02" }
+      - { source: live-probe, ref: "POST /v2/pods with mounts.global and no path, then GET /v2/pods/{id}", note: "One CPU pod (cpu3c, 2 vCPU), no network volume, no path; the create response and the read both returned mounts.global[0].path /workspace-global.", seen: "2026-11-02" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/globalvolume-pods", note: "See \"Mount paths\" for the console deploy flow.", seen: "2026-11-02" }
+
+  - id: global-volume.endpoint-mount
+    statement: >
+      A Serverless endpoint mounts at most one global volume, under
+      `mounts.global`, on GPU endpoints only; a CPU endpoint is answered `400`.
+      Workers see it at `/runpod-volume`, and an endpoint carries network
+      volumes or a global volume, not both.
+    on_violation: 400
+    status: verified
+    see: [serverless-endpoint.volumes-via-mounts-network]
+    evidence:
+      - { source: rest-v2-spec, ref: EndpointMountsInput.global, seen: "2026-11-02" }
+      - { source: rest-v2-spec, ref: EndpointMount, seen: "2026-11-02" }
+      - { source: live-probe, ref: POST /v2/serverless on a CPU endpoint with mounts.global, note: Answered 400., seen: "2026-10-29" }
+
+  - id: global-volume.delete-blocked-while-mounted
+    statement: >
+      Deleting a global volume removes its stored data permanently. The delete
+      is refused with `409` while any pod, stopped pods included, or endpoint
+      still mounts it, and nothing is detached or terminated for you.
+    on_violation: 409
+    status: verified
+    evidence:
+      - { source: rest-v2-spec, ref: "DELETE /v2/global-volumes/{id}", seen: "2026-11-02" }
+      - { source: live-probe, ref: "DELETE /v2/global-volumes/{id} while mounted, then after the pod was deleted", note: "409 then 204.", seen: "2026-10-29" }
+
+  - id: global-volume.object-backed
+    statement: >
+      A global volume is object-backed: no file locking, atomic rename, hard
+      links or permission bits. A template that installs a Python environment
+      into `/workspace`, such as the official ComfyUI template, cannot use it as
+      its primary volume; mount it at a second path for model files.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/overview", note: "See \"Limitations\".", seen: "2026-11-02" }
+
+  - id: global-volume.eventual-consistency
+    statement: >
+      Changes made to a global volume after a pod or worker starts may not be
+      visible inside it, and when two writers write the same file at once the
+      last write wins. Keep write-heavy work on a network volume.
+    status: documented
+    see: [network-volume.concurrent-writes]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/overview", note: "See \"Limitations\".", seen: "2026-11-02" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/overview", seen: "2026-11-02" }
+
+  - id: global-volume.billing
+    statement: >
+      A global volume bills for stored data plus per-request fees, with Class A
+      requests (writes, creates, lists) priced above Class B requests (reads,
+      metadata lookups). State that shape before creating one.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/overview", note: "See \"Request costs\".", seen: "2026-11-02" }
+
+  - id: global-volume.low-balance-deletion
+    statement: >
+      When the account balance reaches $0, a global volume is flagged and
+      permanently deleted after 15 days. Turn on low-balance notifications.
+    status: documented
+    see: [credit-balance.low-balance-actions]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/overview", seen: "2026-11-02" }

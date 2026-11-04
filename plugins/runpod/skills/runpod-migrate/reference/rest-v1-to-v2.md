@@ -275,10 +275,17 @@ pods = [p for p in SESSION.get(f"{V2}/pods").json()["pods"]
   "scalerValue": 4,                        //  or {"type": "REQUEST_COUNT", "requestCount": N}
   "executionTimeoutMs": 600000,            "timeout": 600000,              // still milliseconds
   "flashboot": true,                       "flashboot": "FLASHBOOT",       // enum, not boolean
-  "networkVolumeId" / "networkVolumeIds",  "networkVolumes": ["vol1"],
+  "networkVolumeId" / "networkVolumeIds",  "mounts": {"network": [{"volumeId": "vol1"}]},  // no path; see below
   "dataCenterIds": [...]                   "dataCenterIds": [...]
 }                                        }
 ```
+
+**Endpoint volumes go in `mounts.network`, without a `path`.** Each entry is
+`{"volumeId": …}`, at most one volume per data center, and every worker mounts it at
+`/runpod-volume` — unlike a pod's `mounts.network`, where `path` is required. A list you
+send replaces the endpoint's current one and `[]` detaches it. The flat
+`networkVolumes: ["vol1"]` still parses but is deprecated; if you send both, they must
+agree exactly.
 
 **`gpu.pools` takes pool IDs, not GPU type IDs.** `"NVIDIA GeForce RTX 4090"` is not a
 valid pool. Resolve it at runtime — never hardcode the table, it grows:
@@ -321,10 +328,15 @@ specifically so they are unrepresentable here.
 | `category` | `category` — unchanged (already `CPU`/`NVIDIA`/`AMD`, default `NVIDIA`, in v1) |
 | `readme`, `earned`, `isRunpod`, `runtimeInMin` | **gone** |
 
-Templates are still worth keeping as a config preset — but v2 pods and endpoints do not
-reference one by ID. Fetch the template and spread its container fields into the create
-body. Deleting a template is rejected while a pod references it or an endpoint is bound
-to it.
+Templates are still worth keeping as a config preset. v2 `POST /v2/pods` and
+`POST /v2/serverless` take a `templateId` (a pod template for pods, a serverless template
+for endpoints): it is resolved once at create time into the container settings, explicit
+body fields override it except `env`, which merges per key with the body winning, and
+later template edits do not reach the resource
+([Class 2 §13](breaking-changes.md#13-templateid-still-works-but-the-link-is-gone)).
+Spreading the template's fields into the body yourself still works when you need to
+change one first. Deleting a template is rejected while a pod references it or an
+endpoint is bound to it.
 
 ## Network volumes
 

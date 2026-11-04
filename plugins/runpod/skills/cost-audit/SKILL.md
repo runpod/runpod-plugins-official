@@ -9,7 +9,7 @@ description: 'Read-only Runpod spend audit: find idle spend, explain serverless 
   is made.'
 metadata:
   author: runpod
-  version: "1.8.0" # x-release-please-version
+  version: "1.9.0" # x-release-please-version
   concepts: [billing-record, pod-billing, serverless-billing, network-volume-billing, public-endpoint, credit-balance, endpoint-autoscaling]
 license: Apache-2.0
 ---
@@ -22,14 +22,19 @@ Every figure comes from a read: hourly rates from the resource list, spend-to-da
 
 The raw billing and list reads are `runpod-mcp` tool calls; this skill is the *audit journey* on top of them: the idle-scoring, the idle-worker-vs-idle-pod disambiguation, and the per-resource attribution the plain reads don't do.
 
-## Required capabilities
+## Tool binding
 
-Named as capabilities; the tool serving each one on this server is in the tool binding below. All are reads.
+All are reads. If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
-- List Pods with cost info, and inspect one Pod.
-- List serverless endpoints and inspect one, for min/max workers config.
-- List network volumes.
-- Aggregate billing history, and per-resource billing (pods, serverless endpoints, Public Endpoints, network volumes, clusters).
+| Capability | Tool |
+|---|---|
+| List Pods (with cost) | `list-pods` |
+| Inspect one Pod | `get-pod` |
+| List / inspect endpoints, for min/max workers config | `list-endpoints`, `get-endpoint` |
+| Endpoint worker config / counts | `list-endpoint-workers`, `endpoint-health` |
+| List network volumes | `list-network-volumes` |
+| Aggregate billing (per type, one call) | `list-billing` |
+| Per-resource billing | `list-pod-billing`, `list-serverless-billing` (serverless endpoints), `list-endpoint-billing` (Public Endpoints), `list-network-volume-billing`, `list-cluster-billing` |
 
 ## The four journeys
 
@@ -58,20 +63,6 @@ Read first, always. Match the prompt to one journey; do not run all four unasked
 - A `401` on any list means the API key is invalid. Say so and stop; there is nothing to audit without it.
 - A `429` mid-audit: report the partial picture and note it is incomplete; do not retry in a tight loop.
 - A missing `cost` on a pod row, or an empty billing bucket, is data, not an error. Render `?` / $0 and keep going.
-
-## Tool binding
-
-| Capability | Tool |
-|---|---|
-| List Pods (with cost) | `list-pods` |
-| Inspect one Pod | `get-pod` |
-| List / inspect endpoints | `list-endpoints`, `get-endpoint` |
-| Endpoint worker config / counts | `list-endpoint-workers`, `endpoint-health` |
-| List network volumes | `list-network-volumes` |
-| Aggregate billing (per type, one call) | `list-billing` |
-| Per-resource billing | `list-pod-billing`, `list-serverless-billing` (serverless endpoints), `list-endpoint-billing` (Public Endpoints), `list-network-volume-billing`, `list-cluster-billing` |
-
-If a tool named here is missing from the session's tool list, say so and use the nearest read instead of inventing a result.
 
 ## Report template — cost summary
 
