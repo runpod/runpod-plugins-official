@@ -1,0 +1,32 @@
+{
+  "id": "01-ollama-pod",
+  "name": "Ollama server on a pod",
+  "description": "Provisions a GPU pod, installs and starts Ollama, pulls a model onto persistent storage, and returns an HTTPS proxy URL for the Ollama API.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/01-ollama-pod/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Pod workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/pod-workflows.md"
+    },
+    {
+      "name": "On-pod setup",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/on-pod-setup.md"
+    },
+    {
+      "name": "Storage",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/storage.md"
+    },
+    {
+      "name": "Networking",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/networking.md"
+    }
+  ],
+  "tags": ["ollama", "llm", "pod"],
+  "mcp": "partial",
+  "createdAt": "2026-07-07T17:20:15Z",
+  "updatedAt": "2026-10-13T14:51:26Z"
+}

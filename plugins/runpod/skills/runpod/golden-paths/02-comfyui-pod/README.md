@@ -11,7 +11,7 @@ concepts: [pod, template, container-image, network-volume, exposed-port, gpu-typ
 From "run ComfyUI on Runpod and give me the URL", an agent provisions a GPU pod,
 gets ComfyUI running, and returns a proxy URL where the web UI loads — with a
 checkpoint and the default text-to-image workflow usable. This is the same shape
-as `../01-ollama-pod.md`; it follows the pod development loop in
+as `../01-ollama-pod/README.md`; it follows the pod development loop in
 [`../../../runpod-usage/reference/pod-workflows.md`](../../../runpod-usage/reference/pod-workflows.md).
 
 There are two ways to get there, split into their own files below.

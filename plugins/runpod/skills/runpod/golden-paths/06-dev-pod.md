@@ -28,7 +28,7 @@ pattern from golden path [07](07-network-volume-handoff.md).
 The user wants a **box they log into and work on interactively** — an SSH shell, a VS Code /
 Cursor Remote-SSH window, a scratch GPU for experiments — not a served endpoint. Reach for it
 whenever the task is "give me a dev machine" rather than "deploy this model". If instead you
-need to *serve* something over a URL, that's golden path [01](01-ollama-pod.md)/[02](02-comfyui-pod/README.md);
+need to *serve* something over a URL, that's golden path [01](01-ollama-pod/README.md)/[02](02-comfyui-pod/README.md);
 if you're running a *batch* training job, that's [04](04-finetune-pod.md)/[08](08-finetune-to-serverless.md).
 
 ## Prerequisites

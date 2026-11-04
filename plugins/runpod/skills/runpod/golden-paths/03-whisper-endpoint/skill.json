@@ -1,0 +1,43 @@
+{
+  "id": "03-whisper-endpoint",
+  "name": "Whisper endpoint (audio to text)",
+  "description": "Deploys a serverless endpoint that takes an audio URL or base64 audio and returns the transcription, scaling to zero between requests.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/03-whisper-endpoint/README.md",
+  "variants": [
+    {
+      "id": "variant-a-hub",
+      "name": "Runpod Hub worker",
+      "description": "Deploy the ready-made Whisper worker from the Runpod Hub. No handler code, image build or registry auth.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/03-whisper-endpoint/variant-a-hub.md",
+      "default": true
+    },
+    {
+      "id": "variant-b-flash",
+      "name": "From scratch with flash",
+      "description": "Write your own handler and deploy it with flash. Pick this when you want to own the code.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/03-whisper-endpoint/variant-b-flash.md"
+    }
+  ],
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Flash",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/flash/SKILL.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    },
+    {
+      "name": "Gotchas",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/gotchas.md"
+    }
+  ],
+  "tags": ["whisper", "speech-to-text", "serverless"],
+  "mcp": "partial",
+  "createdAt": "2026-07-14T21:20:11Z",
+  "updatedAt": "2026-10-20T19:18:32Z"
+}
