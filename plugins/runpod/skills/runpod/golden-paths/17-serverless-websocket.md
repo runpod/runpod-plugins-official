@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, rest]
 mcp: partial
 concepts: [serverless-endpoint, worker, template, exposed-port, container-image, endpoint-autoscaling]
+status: legacy
+verified: "2026-07-13"
+evals: [runpod/evals/load-balancer-endpoint]
 ---
 
 # Golden path 17 — serverless WebSocket worker (load-balancing endpoint)
+
+> **Status:** legacy (last live run 2026-07-13) — the live run created the endpoint with GraphQL `saveEndpoint`; the preferred v2 route (golden path 14, step 3a) has not been run with a WebSocket worker. **Evals:** [load-balancer-endpoint](../evals/load-balancer-endpoint.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** serve a **bidirectional, persistent WebSocket** from a serverless worker — a
 client opens one `wss://` connection, sends messages, and receives streamed frames back
@@ -12,7 +17,7 @@ over the *same* socket, in real time. The mechanism that makes this possible is 
 **load-balancing endpoint**: traffic is routed straight to a worker's own HTTP server
 (FastAPI/uvicorn), bypassing the job queue, so protocols the queue can't express —
 WebSockets, SSE, long-lived duplex streams — work natively.
-**Status:** ✅ **COVERED — live-verified 2026-07-13** end to end. Built
+**Run record (2026-07-13, GraphQL route, now legacy):** run end to end. Built
 `<your-registry>/gp17-ws:v1` (a `python:3.10-slim` FastAPI worker with `@app.websocket("/ws")`),
 deployed it as an **`LB` (load-balancing) endpoint** via the GraphQL `saveEndpoint`
 mutation, and connected a real Python `websockets` client to
@@ -21,12 +26,12 @@ mutation, and connected a real Python `websockets` client to
 prompt on the *same* connection and getting a second stream back. HTTP `/ping`,
 `/generate`, `/stats` on the same endpoint URL all verified, and endpoint auth
 (`Authorization: Bearer`) confirmed enforced (401 without / with a bad token).
-**Lane(s):** custom FastAPI worker image (`python:3.10-slim` + `fastapi`/`uvicorn`/`websockets`) + runpodctl (template) + **GraphQL `saveEndpoint` with `type: "LB"`** (endpoint) + a WebSocket client (`websockets` / `wscat`). Shares the load-balancing mechanism with golden path [14](14-load-balancing-endpoint.md).
+**Lane(s):** custom FastAPI worker image (`python:3.10-slim` + `fastapi`/`uvicorn`/`websockets`) + runpodctl (template) + **v2 `POST /v2/serverless` / MCP `create-endpoint` with `"type": "LOAD_BALANCER"`** (endpoint; preferred, golden path 14 step 3a), or GraphQL `saveEndpoint` with `type: "LB"` (the 2026-07-13 run) + a WebSocket client (`websockets` / `wscat`). Shares the load-balancing mechanism with golden path [14](14-load-balancing-endpoint.md).
 
 > **Prerequisite reading:** WebSocket serving is a *specialization* of the load-balancing
 > endpoint — understand the substrate first via golden path
 > [14 (load-balancing endpoint)](14-load-balancing-endpoint.md), which documents how an `LB`
-> endpoint is created (`type:"LB"` via GraphQL `saveEndpoint`) and the exposed-port ==
+> endpoint is created (v2 `"type":"LOAD_BALANCER"`, or `type:"LB"` via GraphQL `saveEndpoint`) and the exposed-port ==
 > `PORT` == `PORT_HEALTH` routing contract. This path reuses all of that and adds only the
 > `@app.websocket` route, the `wss://` scheme, and the raised client `open_timeout`.
 
@@ -36,11 +41,9 @@ prompt on the *same* connection and getting a second stream back. HTTP `/ping`,
   companion-CLI credentials).
 - Read golden path [14](14-load-balancing-endpoint.md) first (the LB substrate — see the
   prerequisite-reading note above).
-- `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`. The same
-  key is the Bearer token on every HTTP request and on the WS upgrade.
-- `docker` running and `docker login` to a registry you can push to (`<your-registry>`, e.g. your
-  Docker Hub user) — you build and push the FastAPI worker image below.
+- The same `RUNPOD_API_KEY` is the Bearer token on every HTTP request and on the WS upgrade.
+- Docker, logged in (shared setup) — you build and push the FastAPI worker image below to
+  `<your-registry>` (e.g. your Docker Hub user).
 - `runpodctl` installed + authenticated (creates the template).
 - A **WebSocket client** to verify: Python `websockets` (`pip install websockets`) or
   `wscat` (`npm i -g wscat`).
@@ -296,9 +299,11 @@ and type a JSON line — same token/done frames come back.
 - **WebSocket needs a load-balancing (`LB`) endpoint.** Queue-based endpoints have no
   worker-facing HTTP server and reject custom routes — the gateway answers
   `not allowed for QB API`. There's no `/ws` on `/run`-style endpoints.
-- **REST can't create an LB endpoint.** `POST /v1/endpoints` only makes `QB`. Use GraphQL
-  `saveEndpoint` with `type: "LB"` (needs `gpuIds` + `User-Agent: Mozilla/5.0`), or the
-  Console's **Endpoint Type → Load Balancer**.
+- **REST v1 can't create an LB endpoint; v2 can.** `POST /v1/endpoints` only makes `QB`. Use
+  v2 `POST /v2/serverless` (or MCP `create-endpoint`) with `"type": "LOAD_BALANCER"` (golden
+  path [14, step 3a](14-load-balancing-endpoint.md)). This path's run used GraphQL
+  `saveEndpoint` with `type: "LB"` (needs `gpuIds` + `User-Agent: Mozilla/5.0`); the Console's
+  **Endpoint Type → Load Balancer** also works.
 - **Autoscaling may ignore idle WS connections.** An open socket with no traffic isn't
   reliably counted as active work, so a `workersMin: 0` endpoint can scale to zero
   mid-session or refuse the upgrade with `no workers available`. Keep ≥1 warm worker, or
@@ -330,15 +335,17 @@ so this doc references a real, pullable tag; storage-only, costs nothing to keep
 ## Relation to other paths & skill gaps
 - **[14 — load-balancing endpoint](14-load-balancing-endpoint.md)** is the shared substrate
   and the **prerequisite read** for this path: it stands up the same `LB` endpoint
-  (`type:"LB"` via `saveEndpoint`), the exposed-port == `PORT` == `PORT_HEALTH` routing
+  (v2 `"type":"LOAD_BALANCER"`, or `type:"LB"` via `saveEndpoint`), the exposed-port == `PORT` == `PORT_HEALTH` routing
   contract, and the `https://<ep>.api.runpod.ai/<route>` addressing. This path (WebSocket)
   adds only the `@app.websocket` route, the `wss://` scheme, and the raised `open_timeout`.
 - **[12 — serverless streaming (`/stream`)](12-serverless-streaming.md)** is the
   queue-based cousin: server→client chunks for a *single* `/run` job, with the queue's
   durability. Use `/stream` when the client submits once and only listens; use WebSocket
   (this path) when the client keeps talking on a persistent connection.
-- **Skill gap folded back:** creating an `LB` endpoint headlessly is **GraphQL
-  `saveEndpoint` + `type:"LB"` + `gpuIds`** (REST `POST /v1/endpoints` can't) — worth
+- **Skill gap folded back:** creating an `LB` endpoint headlessly is **v2
+  `POST /v2/serverless` with `"type": "LOAD_BALANCER"`** (golden path 14, step 3a; REST v1
+  `POST /v1/endpoints` can't, and this run used GraphQL `saveEndpoint` + `type:"LB"` +
+  `gpuIds`) — worth
   noting alongside the multi-volume `saveEndpoint` recipe in
   [endpoint-workflows.md](../../runpod-usage/reference/endpoint-workflows.md), and the
   **exposed-port must equal `PORT`** rule is the load-balancing worker's cardinal setup

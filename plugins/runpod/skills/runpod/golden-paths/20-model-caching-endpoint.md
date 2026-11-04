@@ -2,9 +2,14 @@
 lanes: [runpodctl, rest]
 mcp: partial
 concepts: [serverless-endpoint, model-store, worker, container-image, job, log-stream]
+status: live-verified
+verified: "2026-07-15"
+evals: [runpod/evals/consult-golden-path-first, runpodctl/evals/model-cache-size-vs-volume]
 ---
 
 # Golden path 20 — serverless endpoint with a host-cached HF model (`--model-reference`)
+
+> **Status:** live-verified 2026-07-15 — runpodctl v2.7.1, a COMPLETED job off a cache hit. **Evals:** [consult-golden-path-first](../evals/consult-golden-path-first.eval.md) · [model-cache-size-vs-volume](../../runpodctl/evals/model-cache-size-vs-volume.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** deploy a serverless LLM endpoint whose weights are **not baked into the image
 and not on a network volume** — instead attach a HuggingFace model with
@@ -40,8 +45,7 @@ async `/run` + patience. Total spend across all runs ≈ $0.69.
 Full comparison of all four delivery methods: [`reference/model-caching.md`](../../runpodctl/reference/model-caching.md).
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/serverless -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+- A verified `RUNPOD_API_KEY` ([shared prerequisites](README.md#before-you-run-any-path-shared-prerequisites)).
 - **runpodctl ≥ v2.4.0** — `--model-reference` does not exist on older builds. Check
   `runpodctl version`; if behind, install from
   [GitHub releases](https://github.com/runpod/runpodctl/releases) (the Homebrew tap can lag).

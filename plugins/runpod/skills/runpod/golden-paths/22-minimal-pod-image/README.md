@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, ssh]
 mcp: partial
 concepts: [container-image, pod, pod-ssh-access, ssh-key, template, cpu-pod]
+status: live-verified
+verified: "2026-07-16"
+evals: [runpodctl/evals/cpu-pod-create, runpod-usage/evals/image-guidance]
 ---
 
 # Golden path 22 — minimal **pod** image (and don't kill SSH)
+
+> **Status:** live-verified 2026-07-16 — built, pushed, CPU pod, SSH, proxy 200, torn down. **Evals:** [cpu-pod-create](../../../runpodctl/evals/cpu-pod-create.eval.md) · [image-guidance](../../../runpod-usage/evals/image-guidance.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ✅ **Live-verified** (built → pushed → CPU pod launched → **SSH'd in** → HTTP proxy `200` → torn down).
 
@@ -22,11 +27,7 @@ for the concept; this is the runnable proof.
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
 block first. For this path specifically:
 
-- **Runpod auth** — `export RUNPOD_API_KEY=<key>` (from the
-  [console](https://runpod.io/console/user/settings); see
-  [getting-started](../../../runpod-usage/reference/getting-started.md)).
-- **Docker** running **and `docker login`** to a registry you can push to — substitute your
-  namespace for `<namespace>`. See [companion-clis docker](../../../companion-clis/reference/docker.md).
+- **Docker**, logged in (shared block) — substitute your namespace for `<namespace>`. See [companion-clis docker](../../../companion-clis/reference/docker.md).
 - **An SSH key** to register on your account (below). No key yet?
   `ssh-keygen -t ed25519` first (see [getting-started](../../../runpod-usage/reference/getting-started.md)).
 

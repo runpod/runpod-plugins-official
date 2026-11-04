@@ -2,9 +2,14 @@
 lanes: [runpodctl, aws, rest]
 mcp: partial
 concepts: [network-volume, data-center, serverless-endpoint, serverless-handler, worker, template, file-transfer]
+status: legacy
+verified: "2026-07-13"
+evals: [runpod/evals/multi-region-volume-sync]
 ---
 
 # Golden path 19 — three-region same-file endpoint (prove the HA promise with a real served payload)
+
+> **Status:** legacy (last live run 2026-07-13) — the live run attached the three volumes with GraphQL `saveEndpoint`; the v2 one-call create was re-run 2026-10-29 with two volumes, not three. **Evals:** [multi-region-volume-sync](../evals/multi-region-volume-sync.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** take the multi-region HA pattern from golden path
 [10](10-multi-region-ha-serverless.md) and *prove the whole point of it*: **one**
@@ -14,7 +19,7 @@ matter which DC handles it. Path 10 established the mechanism (multi-volume atta
 manual S3 sync) and verified it across **two** DCs; this path scales it to **three**
 and closes the loop with a burst that actually lands on **all three** DCs and returns
 **byte-identical** output every time.
-**Status:** ✅ **COVERED — live-verified 2026-07-13** end to end. Created **three** 10 GB
+**Run record (2026-07-13, GraphQL `saveEndpoint` attach, now legacy):** run end to end. Created **three** 10 GB
 volumes (`gp19-euro` in **EU-RO-1**, `gp19-eucz` in **EU-CZ-1**, `gp19-euris` in
 **EUR-IS-1** — all S3-supported), **S3-synced the identical `gp19-data/` to all three**
 (`aws s3 ls` byte-identical: 23 B marker + 106 B payload on each), deployed **one CPU

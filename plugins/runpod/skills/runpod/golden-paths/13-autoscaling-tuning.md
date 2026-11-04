@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl]
 mcp: partial
 concepts: [serverless-endpoint, endpoint-autoscaling, job, worker, serverless-handler, template, flashboot]
+status: live-verified
+verified: "2026-07-13"
+evals: [runpodctl/evals/serverless-autoscale-by-requests, live:endpoint-scaler]
 ---
 
 # Golden path 13 — autoscaling tuning (scaler types + worker knobs under load)
+
+> **Status:** live-verified 2026-07-13 — four real bursts on runpodctl; the v2 scaler update was re-checked 2026-10-29. **Evals:** [serverless-autoscale-by-requests](../../runpodctl/evals/serverless-autoscale-by-requests.eval.md) · `live:endpoint-scaler` (live CI check). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** understand how serverless scaling *actually* behaves so you can trade cost
 against latency on purpose, not by guessing. Five knobs govern it — **active (min)
@@ -27,10 +32,8 @@ Runpod REST (`/run`, `/health`, `GET /v1/endpoints/<id>`)
 - Shared setup first: [../README.md](README.md#before-you-run-any-path-shared-prerequisites) and
   [getting-started.md](../../runpod-usage/reference/getting-started.md) (auth resolution, SSH,
   companion-CLI credentials).
-- `RUNPOD_API_KEY` resolvable (runpodctl + REST). Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
-- `docker` running and `docker login` to a registry you can push to (`<your-registry>`, e.g. your
-  Docker Hub user) — you build and push the tiny sleep handler below.
+- Docker, logged in (shared setup) — you build and push the tiny sleep handler below to
+  `<your-registry>` (e.g. your Docker Hub user).
 - `runpodctl` installed + authenticated, **v2.3+** for the `--scale-by`/`--scale-threshold` flags.
 
 ## When to use this
@@ -90,7 +93,9 @@ a scaler-specific object instead of a shared `value`, and the idle timeout sits 
 
 `queueDelay` is seconds and accepts fractions (min `0.5`); `requestCount` is an integer
 (min `1`); `idleTimeout` is `1`–`3600` and on a queue-based endpoint scaling on
-`requestCount` it is **rejected on create and update** — not silently ignored.
+`requestCount` it is **rejected on create and update** — not silently ignored. Switching an
+existing queue endpoint's scaler to `REQUEST_COUNT` (without sending `idleTimeout`) is
+accepted, and the read-back then omits `workers.idleTimeout` (live-verified 2026-10-29).
 
 You need the right-hand column when calling **v2 REST**, by hand or through the MCP server;
 runpodctl does not make you write it. The two lanes differ, and the distinction matters:

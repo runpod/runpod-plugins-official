@@ -2,9 +2,14 @@
 lanes: [runpodctl, aws, rest]
 mcp: partial
 concepts: [network-volume, serverless-endpoint, data-center, gpu-type, worker, template, serverless-handler, file-transfer]
+status: live-verified
+verified: "2026-07-10"
+evals: [runpod/evals/multi-region-volume-sync, live:endpoint-timeout]
 ---
 
 # Golden path 10 — high-availability serverless across regions (multi-volume + data sync)
+
+> **Status:** live-verified 2026-07-10 — end to end on runpodctl; the v2 two-volume create in step 4 was re-run 2026-10-29 (create and read-back only). **Evals:** [multi-region-volume-sync](../evals/multi-region-volume-sync.eval.md) · `live:endpoint-timeout` (live CI check). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** stop a serverless endpoint from being hostage to **one** data center's GPU
 supply. A single network volume pins every worker to that volume's DC — when that DC
@@ -31,8 +36,6 @@ verification**.
 - Shared setup first: [../README.md](README.md#before-you-run-any-path-shared-prerequisites) and
   [getting-started.md](../../runpod-usage/reference/getting-started.md) (auth resolution, SSH,
   companion-CLI credentials).
-- `RUNPOD_API_KEY` resolvable (runpodctl + REST). Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
 - `aws` CLI configured with **Runpod S3 API keys** (access key = your Runpod `user_...` id, secret =
   `rps_...`). These are **Console-only** to create (Settings → S3 API Keys) — an agent can't
   self-provision them; escalate if they aren't already in `~/.aws/credentials`/env

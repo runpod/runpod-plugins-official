@@ -2,9 +2,14 @@
 lanes: [docker, runpod-mcp, runpodctl, console]
 mcp: partial
 concepts: [container-image, template, pod, serverless-endpoint, serverless-handler, endpoint-build]
+status: spec-checked
+verified: "2026-10-06"
+evals: [runpod/evals/template-authoring-route, runpod-build-template/evals/project-output]
 ---
 
 # Golden path 26 — author a complete template project
+
+> **Status:** spec-checked 2026-10-06 — local and container checks only (Docker 29.7.2); not run on Runpod. **Evals:** [template-authoring-route](../../evals/template-authoring-route.eval.md) · [project-output](../../../runpod-build-template/evals/project-output.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ## Goal
 

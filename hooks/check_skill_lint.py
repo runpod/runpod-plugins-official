@@ -14,6 +14,10 @@ Checks over plugins/:
    a comma between entries is reported.
 4. Frontmatter uses only the spec's top-level keys, so the skills upload anywhere that
    validates against it (claude.ai rejects unknown keys such as `user-invocable`).
+5. One home per fact: no Markdown file under plugins/runpod/skills copies a run of
+   `min_words` consecutive words from a canonical block listed in
+   hooks/canonical_facts.json (evals/, tests/ and fixtures are exempt). A copy is how a
+   fact drifts: one place gets fixed and the other keeps the stale text.
 
 Refresh the snapshot from a runpod-mcp checkout (no network, no credentials):
     python3 hooks/check_skill_lint.py --refresh ../runpod-mcp
@@ -31,6 +35,7 @@ import subprocess
 import sys
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 try:
     yaml = importlib.import_module("yaml")
@@ -40,6 +45,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT = ROOT / "testdata/runpod-mcp/tools.json"
+CANONICAL = ROOT / "hooks/canonical_facts.json"
 SKILLS = ROOT / "plugins/runpod/skills"
 
 # A backticked token is checked as a tool name when it starts with one of the MCP
@@ -115,6 +121,66 @@ def skill_problems(directory: str, meta: Mapping[str, object]) -> list[str]:
     return problems
 
 
+def words(text: str) -> list[str]:
+    """Lower-cased words with Markdown emphasis, links and code fences stripped."""
+    text = re.sub(r"```.*?```", " ", text, flags=re.S)
+    text = re.sub(r"\]\([^)]*\)", "] ", text)
+    return re.findall(r"[a-z0-9](?:[a-z0-9_.'/+-]*[a-z0-9])?", text.lower())
+
+
+def section(text: str, heading: str) -> str | None:
+    """The body under `heading`, up to the next heading of the same or a higher level."""
+    lines = text.splitlines()
+    level = len(heading) - len(heading.lstrip("#"))
+    for i, line in enumerate(lines):
+        if line.strip() == heading:
+            body = []
+            in_fence = False
+            for nxt in lines[i + 1 :]:
+                if nxt.lstrip().startswith("```"):
+                    in_fence = not in_fence
+                m = re.match(r"^(#+) ", nxt)
+                if m and not in_fence and len(m.group(1)) <= level:
+                    break
+                body.append(nxt)
+            return "\n".join(body)
+    return None
+
+
+def shingles(seq: list[str], n: int) -> set[tuple[str, ...]]:
+    return {tuple(seq[i : i + n]) for i in range(len(seq) - n + 1)}
+
+
+def duplicate_problems(files: Mapping[str, str], config: Mapping[str, object]) -> list[str]:
+    """Report files that copy a run of min_words words from a canonical block."""
+    n, blocks = config["min_words"], config["blocks"]
+    if not isinstance(n, int) or not isinstance(blocks, list):
+        raise TypeError("canonical facts: min_words must be an int and blocks a list")
+    problems = []
+    tokens = {path: words(text) for path, text in files.items()}
+    for block in blocks:
+        home, heading = block["home"], block["heading"]
+        body = section(files.get(home, ""), heading)
+        if body is None:
+            problems.append(
+                f"canonical block {block['id']}: heading {heading!r} not found in {home}"
+            )
+            continue
+        canon = shingles(words(body), n)
+        allowed = {a["path"] for a in block.get("allow", [])}
+        for path, seq in tokens.items():
+            if path == home or path in allowed or re.search(r"(^|/)(evals|tests|fixtures)/", path):
+                continue
+            for i in range(len(seq) - n + 1):
+                if tuple(seq[i : i + n]) in canon:
+                    problems.append(
+                        f"{path}: copies canonical block {block['id']!r} ({home} {heading!r}): "
+                        f'"{" ".join(seq[i : i + n])}"; link to it or summarize in your own words'
+                    )
+                    break
+    return problems
+
+
 def refresh(checkout: Path) -> None:
     """Rewrite the snapshot from a runpod-mcp checkout's tool sources."""
     names: set[str] = set()
@@ -168,6 +234,33 @@ def self_test() -> None:
     assert skill_problems("demo", {**good, "allowed-tools": "Read, Grep"})
     assert skill_problems("demo", {**good, "name": "Demo--x"})
     assert skill_problems("demo", {**good, "user-invocable": True})
+    canon = (
+        "# T\n\n## Rule\n\nPin the floor on every create or a modern image lands on an old host."
+        "\n\n```bash\n# a shell comment, not a heading\n```\n\nStill the rule."
+        "\n\n## Next\n\nother"
+    )
+    config: dict[str, Any] = {
+        "min_words": 6,
+        "blocks": [{"id": "r", "home": "a.md", "heading": "## Rule"}],
+    }
+    copy = {
+        "a.md": canon,
+        "b.md": "As noted: pin the floor on every create or a modern image lands.",
+    }
+    assert len(duplicate_problems(copy, config)) == 1
+    assert (
+        duplicate_problems({"a.md": canon, "b.md": "Set a floor ([why](a.md#rule))."}, config) == []
+    )
+    assert duplicate_problems({"a.md": canon, "x/evals/e.md": copy["b.md"]}, config) == []
+    assert duplicate_problems({"a.md": "# T"}, config)
+    allow = {
+        **config,
+        "blocks": [{**config["blocks"][0], "allow": [{"path": "b.md", "reason": "r"}]}],
+    }
+    assert duplicate_problems(copy, allow) == []
+    rule = section(canon, "## Rule")
+    assert rule is not None and "other" not in rule and "Still the rule." in rule
+    assert words("Pin it explicitly. Then 12.8.") == ["pin", "it", "explicitly", "then", "12.8"]
     print("skill lint self-test OK")
 
 
@@ -188,6 +281,11 @@ def main() -> None:
             problem = stale(name, tools)
             if problem:
                 errors.append(f"{rel}:{number}: {problem}")
+    texts = {
+        str(p.relative_to(SKILLS)): p.read_text(errors="replace")
+        for p in sorted(SKILLS.rglob("*.md"))
+    }
+    errors += duplicate_problems(texts, json.loads(CANONICAL.read_text()))
     for skill in sorted(SKILLS.glob("*/SKILL.md")):
         meta = frontmatter(skill.read_text(errors="replace"))
         if meta is None:

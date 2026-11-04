@@ -61,8 +61,13 @@ let
     (migrate + "/tests")
     (templates + "/tests")
   ];
-  # The .py the tools own: CI hooks + skill scripts + tests.
-  pyRoots = [ hooks ] ++ pyScriptRoots ++ pyTestRoots;
+  # The .py the tools own: CI hooks + repo scripts (live evals) + skill scripts + tests.
+  pyRoots = [
+    hooks
+    scriptsDir
+  ]
+  ++ pyScriptRoots
+  ++ pyTestRoots;
 
   # ---- scoped sources -----------------------------------------------------
   # ruff/mypy/bandit also read their config from pyproject.toml, so it ships too.

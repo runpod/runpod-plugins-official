@@ -1,0 +1,67 @@
+{
+  "_doc": "One home per fact. Each block is the canonical text for a fact the skills repeat; check_skill_lint.py fails any other Markdown file under plugins/runpod/skills that copies a run of `min_words` consecutive words from one of these sections. Elsewhere, state the rule in your own one-line summary and link to the home. A decision rule or safety warning that MCP-only agents need may keep that one-line summary inline in a SKILL.md. A block's `allow` list names files that may keep such an inline copy, each with its reason.",
+  "min_words": 12,
+  "blocks": [
+    {
+      "id": "cuda-floor",
+      "home": "runpod-usage/reference/gpu-selection.md",
+      "heading": "## Step 3: pin the CUDA floor"
+    },
+    {
+      "id": "secure-cloud",
+      "home": "runpod-usage/reference/gpu-selection.md",
+      "heading": "## Step 5: Secure vs Community Cloud"
+    },
+    {
+      "id": "endpoint-timeout",
+      "home": "runpod-usage/reference/gotchas.md",
+      "heading": "## Endpoint `timeout` comes back 0"
+    },
+    {
+      "id": "tool-updates",
+      "home": "runpod-usage/reference/getting-started.md",
+      "heading": "## Update before the first command"
+    },
+    {
+      "id": "credentials",
+      "home": "runpod-usage/reference/getting-started.md",
+      "heading": "## Which credential, when (agents)"
+    },
+    {
+      "id": "deploy-verify",
+      "home": "runpod-usage/reference/development-loop.md",
+      "heading": "## 6. Verify with a real request — \"up\" ≠ \"ready\""
+    },
+    {
+      "id": "deploy-plan",
+      "home": "runpod-usage/reference/development-loop.md",
+      "heading": "## 3. Plan resources"
+    },
+    {
+      "id": "answer-contract",
+      "home": "runpod-mcp/SKILL.md",
+      "heading": "## The answer contract",
+      "allow": [
+        {
+          "path": "lifecycle-crud/SKILL.md",
+          "reason": "create-cluster go rule: an MCP-critical safety rule the lifecycle journey states inline with its cluster-specific fields (exception in the one-home rule)"
+        }
+      ]
+    },
+    {
+      "id": "capability-matrix",
+      "home": "runpod/SKILL.md",
+      "heading": "### runpod-mcp vs runpodctl (the overlap)"
+    },
+    {
+      "id": "golden-path-prerequisites",
+      "home": "runpod/golden-paths/README.md",
+      "heading": "## Before you run any path (shared prerequisites)"
+    },
+    {
+      "id": "cpu-endpoints-rest-v1",
+      "home": "runpodctl/reference/command-reference.md",
+      "heading": "### CPU endpoints and REST v1"
+    }
+  ]
+}

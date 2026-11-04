@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh]
 mcp: partial
 concepts: [pod, template, network-volume, pod-ssh-access, exposed-port]
+status: live-verified
+verified: "2026-07-07"
+evals: [runpod-usage/evals/pod-service-loop]
 ---
 
 # Golden path 02 — ComfyUI — Variant A: from scratch on a PyTorch template
+
+> **Status:** live-verified 2026-07-07 — end to end, 512×512 PNG produced. **Evals:** [pod-service-loop](../../../runpod-usage/evals/pod-service-loop.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Status:** COVERED — live-verified 2026-07-07 (ran end to end, 512×512 PNG
 produced). **Lane:** runpodctl (SSH-exec).

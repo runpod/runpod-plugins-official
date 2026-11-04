@@ -2,9 +2,14 @@
 lanes: [runpodctl, rest]
 mcp: partial
 concepts: [job, serverless-endpoint, serverless-handler, template]
+status: live-verified
+verified: "2026-07-13"
+evals: [runpod/evals/serverless-webhook]
 ---
 
 # Golden path 16 — serverless webhooks (get pushed the result instead of polling)
+
+> **Status:** live-verified 2026-07-13 — end to end on a CPU endpoint. **Evals:** [serverless-webhook](../evals/serverless-webhook.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** from "tell me when the job is done" — submit an async `/run` job with a `webhook`
 callback URL and have Runpod **POST the finished job payload to you**, so you never poll
@@ -32,8 +37,7 @@ result inline. Webhooks require a **publicly reachable** receiver — Runpod's w
 to it from the public internet.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
+- A verified `RUNPOD_API_KEY` ([shared prerequisites](README.md#before-you-run-any-path-shared-prerequisites)).
 - A serverless endpoint (any handler — the `webhook` field is orthogonal to what your
   handler does). Here: a 3-line echo handler on CPU scale-to-zero.
 - A **public HTTPS receiver**. For this walkthrough we use webhook.site's API to spin one
@@ -90,9 +94,9 @@ runpodctl template create --name gp16-echo-tpl --serverless \
 runpodctl serverless create --template-id <template-id> --name gp16-echo-ep \
   --compute-type CPU --workers-min 0 --workers-max 1 --data-center-ids EU-RO-1  # → endpoint id, e.g. <endpoint-id>
 ```
-> Use `runpodctl serverless create --compute-type CPU`, **not** the REST `POST
-> /v1/endpoints` with `"computeType":"CPU"` — that call silently provisions a **GPU**
-> endpoint (verified 2026-07-14: it returns `gpuCount:1` / `cpuFlavorIds:null`).
+> Use `runpodctl serverless create --compute-type CPU` (or REST v2 with a `cpu` block), **not**
+> REST v1 `"computeType":"CPU"`, which silently provisions a **GPU** endpoint
+> ([evidence](../../runpodctl/reference/command-reference.md#cpu-endpoints-and-rest-v1)).
 
 ### 3. Submit the job WITH the webhook, then walk away
 ```bash

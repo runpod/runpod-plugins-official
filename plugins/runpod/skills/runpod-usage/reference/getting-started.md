@@ -8,6 +8,52 @@ Before any lane can act, its credential has to resolve. Everything Runpod-side
 uses **one key**, `RUNPOD_API_KEY`; the companion CLIs use their own. Do the setup
 for the lane you're about to use, then follow the development loop.
 
+## Update before the first command
+
+Old builds keep flags that later releases fixed or removed: runpodctl before v2.12.0
+accepts `pod create --stop-after` / `--terminate-after`, but the backend never enforced
+them, so pods kept billing past the deadline. Update each tool you are about to use, then
+use the same build for the rest of the task:
+
+```bash
+runpodctl update && runpodctl version   # runpodctl
+rp update                               # Runpod SDK + rp CLI (flash lane)
+```
+
+The MCP needs no step: the hosted server is always current, and a local install started
+with `npx @runpod/mcp-server@latest` fetches the latest release.
+
+## Which credential, when (agents)
+
+**MCP OAuth first, a key only when a task needs one.** This matches the onboarding guide
+at https://agents.runpod.io/. With a user present, the hosted MCP's "Sign in with Runpod"
+(OAuth, no key on disk) is the default control plane: most infra tasks (pods, endpoints,
+jobs, volumes, templates) need nothing else. Don't install CLIs or create a key during
+setup "just in case".
+
+- **OAuth authenticates the MCP alone.** When a task reaches a CLI-only step
+  (`send`/`receive`, SSH, `doctor`, model cache/Model Repository, an `rp flash` deploy), get a
+  key **at that point**, in order:
+  1. **`rp login`**: browser approval, then the user pastes the key the console shows; it
+     is saved to `~/.runpod/config.toml` (runpodctl + the Runpod SDK read it). Needs a human
+     and an interactive terminal.
+  2. **`export RUNPOD_API_KEY=…`** (https://console.runpod.io/user/settings): the same
+     key, best for headless agents.
+- **No user in the loop** (CI, scheduled jobs, agent SDK runs)? Nobody can approve OAuth,
+  so use `RUNPOD_API_KEY` from the start and send it to the hosted MCP as
+  `--header "Authorization: Bearer $RUNPOD_API_KEY"`.
+- **File authoring** with runpod-build-template needs no cloud credentials. Check auth
+  only when an operation actually uses the control plane or another authenticated service.
+- **Infra tasks** (pods, endpoints, jobs, volumes) need a working control plane, the
+  Runpod MCP or runpodctl. Don't start and discover mid-task that nothing's set up: check
+  first (`runpodctl user` succeeds ⇒ a key is set and valid; in Claude Code, `/mcp` shows
+  `runpod` **Connected**). If a lane already works, use it; if none does, help the user set up rather than limping on a
+  partial fallback.
+
+Connecting the MCP itself (hosted vs stdio, the `redirect_uri is not allowed` header
+fallback, verifying the connection) is owned by
+[`runpod-mcp`](../../runpod-mcp/SKILL.md#connect).
+
 ## Get the tools
 
 Install only the lane you need; full per-OS matrices + source links live in each

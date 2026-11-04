@@ -102,7 +102,7 @@ rules:
     status: documented
     see: [api-key.bearer-only]
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpod/SKILL.md, note: First run section. }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/getting-started.md, note: The Runpod API key section. }
 
   - id: runpodctl.beyond-crud
     statement: >

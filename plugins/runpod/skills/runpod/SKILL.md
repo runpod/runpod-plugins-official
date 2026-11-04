@@ -1,15 +1,14 @@
 ---
 name: runpod
 description: >-
-  Start here for any Runpod task — running GPU/CPU pods, deploying serverless
-  endpoints, templates, network volumes, building images, or understanding how
-  Runpod works. Routes to the right skill (runpod-mcp and its journey playbooks
-  such as serverless-deploy, pod-deploy, pod-doctor and cost-audit; runpodctl,
-  flash, companion-clis, runpod-usage, runpod-templates, runpod-build-template,
-  runpod-migrate) and indexes two dozen live-verified end-to-end examples (golden
-  paths). Use it when the lane is unclear, and before any multi-step or
-  provisioning task even when the lane is clear, to check for a matching golden
-  path.
+  Start here when the Runpod lane is unclear: picks the skill for a task
+  (runpod-mcp and the journey playbooks it routes to, such as serverless-deploy,
+  pod-deploy, pod-doctor and cost-audit; runpodctl, flash, companion-clis,
+  runpod-usage, runpod-templates, runpod-build-template, runpod-migrate) and
+  indexes two dozen end-to-end worked examples (golden paths). Use it before any
+  multi-step or provisioning task, even when the lane is clear, to check for a
+  matching golden path; for the Runpod MCP tools, runpod-mcp owns
+  the answer contract, connection and tool rules.
 metadata:
   author: runpod
   version: "1.9.0" # x-release-please-version
@@ -19,16 +18,27 @@ license: Apache-2.0
 
 # Runpod (router)
 
-The entrypoint for the Runpod skills. This skill does no work itself — it picks
-the right lane and hands off. For a multi-step or provisioning task, check the
-[worked examples](#worked-examples-golden-paths) first and let the matching one pick
-the lane; otherwise read the matching skill's `SKILL.md` next.
+The entrypoint for the Runpod skills. This skill does no work itself: it picks the lane
+and points at the [golden path](#worked-examples-golden-paths) or journey skill that
+carries the procedure. For a multi-step or provisioning task, check the worked examples
+first and let the matching one pick the lane; otherwise read the matching skill's
+`SKILL.md` next.
+
+**Who owns what** (one home per rule; the others link to it):
+
+| Topic | Owner |
+| --- | --- |
+| Lane choice, MCP-vs-runpodctl matrix, golden-path index | this skill |
+| MCP answer contract, MCP connection and auth, MCP tool-use rules, journey routing | [runpod-mcp](../runpod-mcp/SKILL.md) (load it before the first Runpod MCP tool call) |
+| Credentials for every lane, tool updates, control-plane check | [`getting-started.md`](../runpod-usage/reference/getting-started.md) |
+| Deployment loop (prefer prebuilt, plan, verify, teardown) | [`development-loop.md`](../runpod-usage/reference/development-loop.md) |
+| CUDA floor, Secure vs Community Cloud | [`gpu-selection.md`](../runpod-usage/reference/gpu-selection.md) (steps 3 and 5) |
 
 ## The lanes
 
 | Lane | Use it for |
 | --- | --- |
-| **runpod-mcp** | Manage infra (pods, endpoints, jobs, templates, volumes, registries, catalog, billing) via **structured tool calls** — when the Runpod MCP tools are connected in this session. Routes on to the journey skill for the task (discovery, lifecycle-crud, serverless-deploy, pod-deploy, pod-doctor, endpoint-ops, cost-audit). |
+| **runpod-mcp** | Manage infra (pods, endpoints, jobs, templates, volumes, registries, catalog, billing) via **structured tool calls** — when the Runpod MCP tools are connected in this session. It routes on to the journey skill for the task. |
 | **runpodctl** | Manage the same infra from a **terminal/CI/script**, including Hub browse/deploy, file transfer (`send`/`receive`), SSH keys, `doctor` setup, and model cache. |
 | **flash** | **Write Python** that runs on Runpod serverless with the Runpod SDK — `runpod.App` with `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; also maintains or migrates legacy `runpod-flash` projects. Code-first, not infra management. |
 | **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
@@ -39,14 +49,14 @@ the lane; otherwise read the matching skill's `SKILL.md` next.
 
 ## These skills are a snapshot; the tools are the source of truth
 
-Every lane below wraps something that ships on its own release train and moves faster than
-this repo. So route with these skills, but **take capability and syntax from the tool in front
+Every lane wraps something that ships on its own release train and moves faster than this
+repo. So route with these skills, but **take capability and syntax from the tool in front
 of you**:
 
 | Lane | Ask it directly |
 | --- | --- |
 | runpodctl | `runpodctl --help`, `runpodctl <resource> <action> --help`, `runpodctl version`. For failure shapes, run a command wrong on purpose and read the JSON |
-| runpod-mcp | your client's tool list (`/mcp` in Claude Code) — each tool carries its own parameter descriptions |
+| runpod-mcp | your client's tool list (`/mcp` in Claude Code); rules in [runpod-mcp](../runpod-mcp/SKILL.md#the-server-is-the-source-of-truth) |
 | flash | `rp --help`, `rp flash <command> --help`, `pip show runpod`, and the dev/deploy output |
 | companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
 | runpod-templates | `runpodctl template list --type official`, `template get <id>` (its readme is authoritative) |
@@ -58,55 +68,20 @@ reverify — it has already gone stale twice (runpodctl v2.9.0 added `serverless
 added `pod logs`/`serverless logs`). If a limit still holds, name the version it holds for
 rather than saying "cannot".
 
-## First run — update the tools, then check auth
+## Before the first command
 
-**Update before the first command of every task.** Old builds keep flags that later releases
-fixed or removed. runpodctl before v2.12.0 accepts `pod create --stop-after` /
-`--terminate-after`, but the backend never enforced them, so pods kept billing past the
-deadline. Update each tool you are about to use:
-```bash
-runpodctl update && runpodctl version   # runpodctl
-rp update                               # Runpod SDK + rp CLI (flash lane)
-```
-The MCP needs no step: the hosted server is always current, and a local install started with
-`npx @runpod/mcp-server@latest` fetches the latest release.
-Use the same build for the rest of the task.
+- **Update the CLI you are about to use** (`runpodctl update`, `rp update`; the MCP needs
+  no step). runpodctl before v2.12.0 accepts `--stop-after`/`--terminate-after`, which the
+  backend never enforced, so pods kept billing past the deadline.
+- **Check the control plane before infra work**: `runpodctl user` succeeds, or `/mcp` shows
+  `runpod` **Connected**. If neither works, help the user set up rather than limping on.
+- **MCP OAuth first, a key only when a task needs one**: get `RUNPOD_API_KEY` (`rp login`
+  with a human at an interactive terminal, else `export`) at the first CLI-only step; with no user in
+  the loop, use the key from the start. Companion CLIs use their **own** credentials, never
+  `RUNPOD_API_KEY`.
 
-File authoring with **runpod-build-template** needs no cloud credentials. Check auth only
-when an operation actually uses the control plane or another authenticated service.
-
-Infra tasks (pods, endpoints, jobs, volumes) need a working control plane — the **Runpod MCP**
-or **runpodctl**. Don't start and discover mid-task that nothing's set up: check first, and if
-it isn't, help the user set up rather than limping on a partial fallback.
-
-**Check** (credential resolution order: `RUNPOD_API_KEY` env → `.env` → `~/.runpod/config.toml`):
-```bash
-runpodctl user            # succeeds ⇒ a key is set and valid
-```
-Plus, in Claude Code, `/mcp` should show `runpod` **Connected**.
-
-**Rule: MCP OAuth first, a key only when a task needs one.** This matches the onboarding
-guide at https://agents.runpod.io/. With a user present, the hosted MCP's "Sign in with
-Runpod" (OAuth, no key on disk) is the default control plane: most infra tasks (pods,
-endpoints, jobs, volumes, templates) need nothing else. Don't install CLIs or create a
-key during setup "just in case".
-
-OAuth authenticates **the MCP alone**. When a task reaches a CLI-only step
-(`send`/`receive`, SSH, `doctor`, model cache/Model Repository, CPU endpoints, an `rp flash` deploy), get a key
-**at that point**, in order:
-1. **`rp login`**: browser approval, then the user pastes the key the console shows; it is saved to
-   `~/.runpod/config.toml` (runpodctl + the Runpod SDK read it). Needs a human and an interactive terminal.
-2. **`export RUNPOD_API_KEY=…`** (https://console.runpod.io/user/settings): the same key,
-   best for headless agents.
-
-No user in the loop (CI, scheduled jobs, agent SDK runs)? Nobody can approve OAuth, so use
-`RUNPOD_API_KEY` from the start and send it to the hosted MCP as `--header "Authorization:
-Bearer $RUNPOD_API_KEY"`.
-
-**Then:** if a lane already works, use it. Missing a CLI? `curl -fsSL https://cli.runpod.net | sudo bash`
-(runpodctl) · `pip install "runpod>=2.0.0"` (Runpod SDK + `rp`, flash lane) · `npx @runpod/mcp-server@latest add --client <id>`
-(MCP; `--list` shows the ids). Full setup:
-[`runpod-usage/reference/getting-started.md`](../runpod-usage/reference/getting-started.md).
+Details, install commands and the per-lane key table:
+[`getting-started.md`](../runpod-usage/reference/getting-started.md).
 
 ## How to route
 
@@ -155,8 +130,7 @@ An existing prebuilt does not replace the requested deliverable.
    is the infra lanes below.)
 7. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
-   - Capability only the CLI has — **`send`/`receive`, SSH keys, `doctor`,
-     model cache** → **runpodctl**.
+   - A capability only the CLI has (the runpodctl rows of the matrix below) → **runpodctl**.
    - Otherwise, if the Runpod **MCP tools are connected** in this session
      (`create-pod`, `list-endpoints`, … are available) → **runpod-mcp**.
    - Otherwise (shell-only agent, no MCP) → **runpodctl**.
@@ -178,8 +152,7 @@ Capability matrix (pick the preferred lane per operation):
 | --- | --- | --- |
 | List/get anything; start/stop/restart/delete a pod; simple CRUD on endpoints, templates, volumes, registries; catalog; billing | **runpod-mcp** if connected, else runpodctl | Simple structured ops — MCP is typed and convenient |
 | Create a **simple** pod (one image + one GPU) | **runpod-mcp** if connected, else runpodctl | Both handle it |
-| Create a pod **from a template** or a **CPU** pod | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` and, for CPU, a `cpu` object (`{id, vcpuCount}` from `list-cpu-types`) in place of `gpu` |
-| Create a pod from a template **and** a CPU flavor together | **runpod-mcp** if connected, else runpodctl | Live-verified 2026-10-29: one v2 create with `templateId` + `cpu` took the template's image, args, ports and disk, merged `env` (your keys win), and kept no template link (a CPU pod skips the template's persistent mount and CUDA constraint). runpodctl v3 sends the same v2 create |
+| Create a pod **from a template**, a **CPU** pod, or both together | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` and, for CPU, a `cpu` object in place of `gpu`; template + CPU in one create live-verified 2026-10-29. runpodctl v3 sends the same v2 create, so it is no fallback. Field semantics: [runpod-mcp pod creates](../runpod-mcp/SKILL.md#use-mcp-vs-runpodctl) |
 | Create a pod with a **multi-GPU priority list** | **neither**: one GPU type per create | v2 `create-pod` takes one `gpu.id`, and runpodctl rejects a comma list in `--gpu-id` (`only one gpu id is supported`; checked through v3.0.1). Pick one type from the stock read; on a capacity error, retry with the next |
 | Browse or deploy an existing **Hub** listing | **runpod-mcp** if connected and it exposes the requested operation, else runpodctl | Check the live tool surface; Hub is not a reason by itself to switch to the CLI |
 | **File transfer** (`send`/`receive`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
@@ -191,30 +164,17 @@ moment an op needs a flag/feature MCP doesn't expose.**
 
 ## Deploying a workload (the golden loop)
 
-For any "get <X> running on Runpod" task, follow the **development loop** in
-`runpod-usage/reference/development-loop.md`: decide pod vs serverless → provision → set up
-(only if from-scratch) → verify → deliver → cost-guard + teardown. These rules bind within it:
-
-- **Prefer a prebuilt template / Hub worker over building an image from scratch** —
-  except when the user explicitly requests a custom template project or Dockerfile;
-  official pod templates are indexed in [`runpod-templates`](../runpod-templates/SKILL.md).
-- **Before delivering, verify the workload with a real request from outside the pod/endpoint
-  — a "Running"/"ready" status does not mean it is serving.**
-- **Default to Secure Cloud.** Community Cloud hosts are approved vendors; Secure Cloud
-  hosts are data-center-grade providers and so tend toward more stable behavior. Only
-  deploy Community when the user explicitly asks. (`runpodctl pod create` already
-  defaults to `--cloud-type SECURE`; don't override it.)
-- **Cache vs network volume is a latency call, not a cost call.** Download time is never
-  billed, but on a cache miss Runpod holds the worker start until the model lands — the
-  job sits in the queue and the endpoint looks idle. Latency-sensitive → pre-load a
-  network volume; otherwise the cache is the cheaper default. Cache capacity is per
-  machine, so time both on the user's own endpoint rather than quoting a threshold. See
-  [`runpodctl/reference/model-caching.md`](../runpodctl/reference/model-caching.md).
-- **Pin the CUDA floor on every GPU create** — `--min-cuda-version 12.8` in runpodctl,
-  `gpu.minCudaVersion: "12.8"` in REST v2 and MCP (`13.0` only for a CUDA-13 image). Without it the create accepts any host CUDA version
-  and a modern image can land on a host too old to run it, which reads as a container that
-  dies at startup or silently runs on CPU:
-  [`gpu-selection.md`](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
+For any "get <X> running on Runpod" task, follow
+[`development-loop.md`](../runpod-usage/reference/development-loop.md): decide pod vs
+serverless → provision → set up (only if from-scratch) → verify → deliver → cost-guard +
+teardown. Its binding rules, in one line each: **prefer a prebuilt
+template / Hub worker** unless the user asked for a custom template project; **pin the CUDA
+floor** on every GPU create (`--min-cuda-version 12.8` / `gpu.minCudaVersion: "12.8"`, `13.0` only for a CUDA-13 image; without it an
+image can land on a host too old for it and die at startup or silently run on CPU;
+[why](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor)); **default to
+Secure Cloud**; **cache vs network volume is a latency call** (download time is not billed, but a cache miss
+holds the worker start, so the job queues and the endpoint looks idle); and **verify with a real
+request from outside before delivering** — "Running"/"ready" does not mean serving.
 
 It branches to two sub-loops:
 
@@ -228,11 +188,11 @@ It branches to two sub-loops:
 
 ## Worked examples (golden paths)
 
-This is **step 0 of routing**, not an appendix. Two dozen end-to-end scenarios
-(nearly all **live-verified on a real account**) live in
-[`./golden-paths/README.md`](./golden-paths/README.md), with the real commands and the
-observed output to copy from — plus a Gotchas and a Cost & cleanup section each, which
-is the part that is expensive to rediscover.
+This is **step 0 of routing**, not an appendix. Two dozen end-to-end scenarios live in
+[`./golden-paths/README.md`](./golden-paths/README.md), each with a status header
+(live-verified with a date, spec-checked, or legacy; check it before trusting a path), the
+real commands and observed output, plus a Gotchas and a Cost & cleanup section, which is
+the part that is expensive to rediscover.
 
 **Match the task to a row below and open that path before you plan or call anything.**
 A partial match is still worth opening: the closest path's ordering and gotchas usually
@@ -271,12 +231,3 @@ Example — "deploy `openai/gpt-oss-20b` to a serverless endpoint":
 2. **companion-clis** — `hf download …`, `docker build --platform=linux/amd64 …`, `docker push`.
 3. **runpod-mcp** or **runpodctl** — create the endpoint referencing the image + GPU pool.
 4. Same infra lane — invoke the endpoint / check status to verify.
-
-## Auth
-
-Everything is one key: **`RUNPOD_API_KEY`** (https://console.runpod.io/user/settings).
-Each lane just makes that key resolvable — `runpodctl doctor`, `rp login`, MCP
-stdio env var, or MCP hosted "Sign in with Runpod" (OAuth, no key on disk).
-Companion CLIs use their **own** credentials (HuggingFace token, GitHub auth,
-Docker Hub PAT, Runpod **S3** keys for `aws`) — do not reuse `RUNPOD_API_KEY` for
-those.

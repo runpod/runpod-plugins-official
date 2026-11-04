@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh]
 mcp: partial
 concepts: [pod, template, container-image, network-volume, exposed-port, gpu-type]
+status: live-verified
+verified: "2026-07-07"
+evals: [runpod/evals/route-templates, runpod-usage/evals/pod-service-loop, runpod/evals/prefer-prebuilt]
 ---
 
 # Golden path 02 — ComfyUI server on a pod + access URL
+
+> **Status:** live-verified 2026-07-07 — both variants end to end. **Evals:** [route-templates](../../evals/route-templates.eval.md) · [pod-service-loop](../../../runpod-usage/evals/pod-service-loop.eval.md) · [prefer-prebuilt](../../evals/prefer-prebuilt.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Goal / Status: COVERED — live-verified 2026-07-07 / Kind: pod, server / Lane: runpodctl**
 

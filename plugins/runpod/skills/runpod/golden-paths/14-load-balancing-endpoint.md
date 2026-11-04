@@ -2,20 +2,25 @@
 lanes: [docker, runpodctl, rest]
 mcp: partial
 concepts: [serverless-endpoint, worker, template, container-image, endpoint-autoscaling]
+status: live-verified
+verified: "2026-10-29"
+evals: [flash/evals/lb-multi-route-api, runpod/evals/load-balancer-endpoint, live:lb-endpoint]
 ---
 
 # Golden path 14 — load-balancing serverless endpoint (custom HTTP worker)
+
+> **Status:** live-verified 2026-10-29 — v2 route (step 3a) end to end with a public echo image; the custom worker and the GraphQL route were last run 2026-07-13. **Evals:** [lb-multi-route-api](../../flash/evals/lb-multi-route-api.eval.md) · [load-balancer-endpoint](../evals/load-balancer-endpoint.eval.md) · `live:lb-endpoint` (live CI check). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** deploy a **load-balancing** Serverless endpoint — where your worker runs its own
 HTTP server and Runpod routes requests **directly** to it (custom URL paths, single-hop, no
 queue), as opposed to the queue/handler `/run` model — using a **custom image + headless
 API** (no Console, no flash).
-**Status:** ✅ COVERED — live-verified 2026-07-13. A stdlib-only FastAPI-free HTTP worker
+**Run record (2026-07-13, custom worker on the GraphQL route):** A stdlib-only FastAPI-free HTTP worker
 (`<your-registry>/gp14-lb:v1`) was deployed as an `LB`-type endpoint via GraphQL `saveEndpoint`,
 and `GET /ping`, `POST /echo`, `GET /stats` all returned `200` at
 `https://<ENDPOINT_ID>.api.runpod.ai/<path>` with request state persisting on the worker.
-**Lane(s):** custom Docker image + `runpodctl template create` + **GraphQL `saveEndpoint`
-(`type: "LB"`)** or **v2 REST / Runpod MCP (`LOAD_BALANCER`)** + plain HTTP invocation.
+**Lane(s):** custom Docker image + `runpodctl template create` + **v2 REST / Runpod MCP (`LOAD_BALANCER`, preferred)** or GraphQL `saveEndpoint`
+(`type: "LB"`, the 2026-07-13 run) + plain HTTP invocation.
 (flash covers LB code-first; this is the image/API way.)
 
 ## When to use this
@@ -146,7 +151,7 @@ curl -s -X POST https://api.runpod.io/v2/serverless \
   -d '{"name":"gp14-lb-ep","image":"<your-registry>/gp14-lb:v1","type":"LOAD_BALANCER",
        "gpu":{"pools":["ADA_24"],"count":1},"disk":5,"ports":["5000/http"],
        "env":{"PORT":"5000","PORT_HEALTH":"5000"},
-       "workers":{"min":0,"max":1,"idleTimeout":5},
+       "workers":{"min":0,"max":1,"idleTimeout":5},"timeout":600000,
        "scaling":{"type":"REQUEST_COUNT","requestCount":4}}'
 # → {"id":"<endpoint-id>","type":"LOAD_BALANCER",
 #    "requestUrls":{"base":"https://<endpoint-id>.api.runpod.ai",
@@ -156,7 +161,12 @@ curl -s -X POST https://api.runpod.io/v2/serverless \
 Live-verified 2026-10-29 (inline image, `"cpu":[{"id":"cpu3c","vcpuCount":2}]` in place of
 `gpu`, `REQUEST_COUNT` 1): with no `ports`/`env` given, the reply filled in `"80/http"` and
 `PORT`/`PORT_HEALTH` = `80`, so pass your own port as above. No template appeared in the
-template list.
+template list. A second run the same day (CPU, public `ealen/echo-server` image listening on
+`PORT=80`) sent `"timeout":600000` and read it back unchanged (omit it and v2 stores `0`; see
+[gotchas](../../runpod-usage/reference/gotchas.md#endpoint-timeout-comes-back-0)); given only
+`PORT`, the reply copied it into `PORT_HEALTH` and defaulted `ports` to `["80/http"]`. The first
+`GET /ping` timed out at 20 s on the cold start, then `/ping` and `POST /echo` returned `200`
+at `requestUrls.base` with the Bearer key.
 
 This is image-based (no template needed), so step 2 is optional on this route. `type` is
 **required** on create (the spec lists it alongside `name`/`image`/`gpu`/`scaling`) and

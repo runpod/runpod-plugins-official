@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh]
 mcp: partial
 concepts: [pod, network-volume, pod-ssh-access, template, exposed-port, gpu-type]
+status: live-verified
+verified: "2026-07-07"
+evals: [runpod-usage/evals/pod-service-loop, runpodctl/evals/pod-from-template-with-volume]
 ---
 
 # Golden path 01 — Ollama server on a pod + access URL
+
+> **Status:** live-verified 2026-07-07 — end to end on runpodctl + SSH. **Evals:** [pod-service-loop](../../../runpod-usage/evals/pod-service-loop.eval.md) · [pod-from-template-with-volume](../../../runpodctl/evals/pod-from-template-with-volume.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Goal:** from a plain request ("stand up an Ollama server on Runpod and give me
 the URL"), an agent provisions a GPU pod, installs and starts Ollama, pulls a

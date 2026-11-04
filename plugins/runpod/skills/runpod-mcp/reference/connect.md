@@ -6,7 +6,8 @@ concepts: [api-key]
 
 > **With a user present, connect with OAuth.** "Sign in with Runpod" needs no key on disk and
 > covers MCP work. OAuth authenticates the MCP *only*, so get a `RUNPOD_API_KEY` later, when
-> a task reaches a CLI-only step (see the router skill's "First run").
+> a task reaches a CLI-only step (see
+> [Which credential, when](../../runpod-usage/reference/getting-started.md#which-credential-when-agents)).
 
 **Hosted + OAuth (default)**: the user approves the sign-in in the browser on first connect.
 
@@ -37,7 +38,7 @@ claude mcp add --transport http runpod -s user https://mcp.runpod.io/ \
 **Local (stdio)** — runs the server as a subprocess with your key:
 
 ```bash
-claude mcp add runpod -s user -e RUNPOD_API_KEY=YOUR_KEY -- npx -y @runpod/mcp-server
+claude mcp add runpod -s user -e RUNPOD_API_KEY=YOUR_KEY -- npx -y @runpod/mcp-server@latest
 ```
 
 After connecting, reconnect the client (in Claude Code, `/mcp`) and the tools

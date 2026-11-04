@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, rest]
 mcp: partial
 concepts: [serverless-handler, worker, job, serverless-endpoint, template, endpoint-autoscaling]
+status: live-verified
+verified: "2026-07-13"
+evals: [runpod/evals/concurrent-handler]
 ---
 
 # Golden path 18 — concurrent handler (one worker serving many requests at once)
+
+> **Status:** live-verified 2026-07-13 — end to end on a CPU endpoint. **Evals:** [concurrent-handler](../evals/concurrent-handler.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** from "make each worker do more" — write an **async** handler with a
 `concurrency_modifier` so a **single** worker processes multiple jobs **simultaneously**,
@@ -38,10 +43,7 @@ scale **out** with more workers (golden path 13). Concurrency raises *per-worker
 throughput; autoscaling adds/removes workers — they are complementary knobs.
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable. Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
-- `docker` running + `docker login` (here: Docker Hub user `<your-registry>`).
-- `runpodctl` installed + authenticated.
+- The [shared prerequisites](README.md#before-you-run-any-path-shared-prerequisites): a verified `RUNPOD_API_KEY`, `docker` running + `docker login` (here: Docker Hub user `<your-registry>`), `runpodctl` installed + authenticated.
 
 ## The two things that make it concurrent
 ```
@@ -123,9 +125,9 @@ runpodctl serverless create --template-id <template-id> --name gp18-concurrent-e
   --compute-type CPU --workers-min 0 --workers-max 1 --data-center-ids EU-RO-1
 # → endpoint id, e.g. <endpoint-id>
 ```
-> Use `runpodctl serverless create --compute-type CPU`, **not** the REST `POST
-> /v1/endpoints` with `"computeType":"CPU"` — that call silently provisions a **GPU**
-> endpoint (verified 2026-07-14: it returns `gpuCount:1` / `cpuFlavorIds:null`).
+> Use `runpodctl serverless create --compute-type CPU` (or REST v2 with a `cpu` block), **not**
+> REST v1 `"computeType":"CPU"`, which silently provisions a **GPU** endpoint
+> ([evidence](../../runpodctl/reference/command-reference.md#cpu-endpoints-and-rest-v1)).
 
 Because `CONCURRENCY` is baked into the template env (not per-request), the serial contrast
 in [Verify](#verify-it-works-the-actual-test--observed-output) needs its **own** template

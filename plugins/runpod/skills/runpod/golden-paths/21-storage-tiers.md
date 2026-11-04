@@ -2,9 +2,14 @@
 lanes: [runpod-mcp, rest, runpodctl, console]
 mcp: full
 concepts: [network-volume, network-volume-billing, data-center, pod, serverless-endpoint]
+status: spec-checked
+verified: "2026-07-29"
+evals: [runpod/evals/storage-tier-choice, live:datacenter-volume-tiers]
 ---
 
 # 21 · Network volume storage tiers — standard vs high-performance
+
+> **Status:** spec-checked 2026-07-29 — launch paths checked against runpodctl --help, the REST specs and runpod-mcp source; the DC tier catalog was read live 2026-10-29; no volume was created. **Evals:** [storage-tier-choice](../evals/storage-tier-choice.eval.md) · `live:datacenter-volume-tiers` (live CI check). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** launch a **standard** vs a **high-performance** network volume and attach it to a
 pod / serverless endpoint. (Provisioning only — no perf benchmarking.)
@@ -55,9 +60,15 @@ data center's **default** tier. Without MCP, two ways to get it:
 ```bash
 curl -s -X POST https://v2-rest.runpod.io/v2/network-volumes \
   -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'Content-Type: application/json' \
-  -d '{"name":"hp-vol","dataCenter":"US-KS-2","size":50,"type":"HIGH_PERFORMANCE"}'
+  -d '{"name":"hp-vol","dataCenter":"CA-MTL-1","size":50,"type":"HIGH_PERFORMANCE"}'
 # type ∈ {STANDARD, HIGH_PERFORMANCE}; omit → the data center's default tier.
 ```
+
+Pick the data center from the catalog, not from this example: `list-data-centers` (MCP) or
+`GET /v2/catalog/datacenters` returns each DC's `networkVolumeTypes`, the tiers it supports
+(empty = none). Live-verified 2026-10-29 (catalog read only): of 34 DCs, 16 listed only
+`STANDARD`, 12 none, 5 only `HIGH_PERFORMANCE` (AP-IN-1, CA-MTL-1, CA-MTL-4, EU-FR-1,
+EUR-NO-2) and 1 both (US-CA-2); US-KS-2 listed only `STANDARD`.
 
 **B. Console** — pick a data center marked with the ⚡ icon; a "High-performance storage"
 toggle appears (on by default). Recommend this to the user when no programmatic path is available.

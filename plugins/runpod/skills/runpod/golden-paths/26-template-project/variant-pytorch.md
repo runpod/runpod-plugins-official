@@ -2,9 +2,14 @@
 lanes: [docker]
 mcp: none
 concepts: [container-image, pod, pod-volume-disk]
+status: spec-checked
+verified: "2026-10-06"
+evals: [runpod-build-template/evals/layers-and-storage]
 ---
 
 # Variant — heavy layers and retained editable Pod state
+
+> **Status:** spec-checked 2026-10-06 — local checks only; GPU, image-layer and Runpod checks unverified. **Evals:** [layers-and-storage](../../../runpod-build-template/evals/layers-and-storage.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ## Goal · Status · Lane(s)
 
