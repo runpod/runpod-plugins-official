@@ -18,8 +18,8 @@ then serve the adapter from an endpoint."
 a `runpod-flash` serverless worker read it back at `/runpod-volume/hello.txt` and returned the
 exact contents). Step 3 is ported to the Runpod SDK (`runpod` 2.0.0rc1): on 2026-10-16 an SDK
 app deployed with `rp flash deploy` wrote to a network volume from one endpoint and read the
-exact contents back from another. Run it with `rp flash deploy`, not `rp flash dev`; dev
-sessions on the built-in runtime images fail on volume apps (flash SKILL gotcha 14). The earlier read-back failures were a handler-signature / empty-input bug, not the
+exact contents back from another. On `runpod` 2.1.0 (2026-11-04) the same handoff also passed in
+an `rp flash dev --once` session, with `vol.path` resolving to `/runpod-volume`. The earlier read-back failures were a handler-signature / empty-input bug, not the
 handoff — see [Root cause](#root-cause-why-the-reader-first-timed-out-found-via-mcp-worker-logs).
 **Lane(s):** runpodctl (volume + pod) + flash (serverless reader) + Runpod MCP (`stream-worker-logs`, for diagnosis)
 

@@ -210,6 +210,10 @@ HuggingFace models stay in code (see [reference/patterns.md](reference/patterns.
 17. **Every endpoint gets your account API key.** Deploy and dev put `RUNPOD_API_KEY` in each
     endpoint's template env, whether or not its code calls another resource, so anyone who can
     read the template can read the key.
+18. **Re-running the same app soon after a dev session can fail.** Dev sessions leave their
+    templates behind, and the platform holds them for up to about 90 minutes, so a new
+    `rp flash dev` of the same app fails with "endpoint template names must be unique".
+    Wait, or rename the `runpod.App`.
 
 ## Resources
 

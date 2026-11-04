@@ -55,7 +55,7 @@ The scaffold is a CPU queue function plus a `@runpod.local_entrypoint`, so
 ## CLI
 
 ```bash
-rp --help                                   # top level: flash, login, logs, pod, registry, secret, ssh, update
+rp --help                                   # top level: flash, login, catalog, endpoint, pod, volume, secret, registry, logs, ssh, update
 
 # develop
 rp flash dev main.py                        # temporary endpoints + run the entrypoint, re-run on save, ^C cleans up

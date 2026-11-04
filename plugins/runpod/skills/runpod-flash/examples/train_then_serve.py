@@ -13,7 +13,7 @@ import runpod
 app = runpod.App("train-serve")
 
 
-@app.task(gpu="4090")
+@app.task(gpu=["4090", "L4", "A5000"])  # the Pod gets whichever listed GPU is free
 def train(steps: int = 200) -> dict:
     import torch
 

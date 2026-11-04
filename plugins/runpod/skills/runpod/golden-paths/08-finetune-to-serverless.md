@@ -25,8 +25,8 @@ LoRA adapter from a network volume and generated text (the adapter was an untrai
 a helper function, standing in for the pod training step). `peft` and `accelerate` were plain
 `dependencies` and the worker ran the image's `torch 2.9.1+cu128`. The first cold start
 downloaded the base model in 10.3 s; a later cold start restored 2.2 GB through `VolumeCache`
-and loaded it in 7.2 s. Run it with `rp flash deploy` (flash SKILL gotcha 14 covers dev
-sessions on older runtime images).
+and loaded it in 7.2 s. Volume apps also run in `rp flash dev` sessions (checked on `runpod`
+2.1.0).
 The `runpod-flash` live run used a **minimal peft + transformers `Trainer`** script (below) —
 it reuses the pod template's torch (no dependency fights) and is the fastest small-model
 path; the **axolotl** flow is documented alongside it as the richer option for scaling.
