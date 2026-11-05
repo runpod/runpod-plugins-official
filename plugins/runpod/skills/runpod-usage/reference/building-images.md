@@ -7,7 +7,7 @@ concepts: [container-image, network-volume, container-disk, model-store]
 How to think about building an image for Runpod: pick the right base, layer for speed,
 decide what to **bake in** vs **mount at runtime**, and match the **image contract** to your
 target (pod vs serverless queue vs serverless load-balanced). CLI mechanics (login, tag,
-push) live in [companion-clis docker](../../companion-clis/reference/docker.md) and
+push) live in [runpod-companion-clis docker](../../runpod-companion-clis/reference/docker.md) and
 [docker.md](docker.md); this is the strategy layer.
 
 ## Start from an official Runpod base image
@@ -186,7 +186,7 @@ Queue vs load-balanced request/response shapes and when to pick each are covered
   `python handler.py` loop in [golden path 09](../../runpod/golden-paths/09-custom-serverless-dev-loop/README.md))
   before pushing.
 - **Load-balanced:** run the container and hit the HTTP routes locally.
-- Then push ([companion-clis docker](../../companion-clis/reference/docker.md)) and deploy
+- Then push ([runpod-companion-clis docker](../../runpod-companion-clis/reference/docker.md)) and deploy
   (runpodctl or runpod-mcp).
 
 Run the actual container entrypoint as well as unit checks. For an interactive pod, a

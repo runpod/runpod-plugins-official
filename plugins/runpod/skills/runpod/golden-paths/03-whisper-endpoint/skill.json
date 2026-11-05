@@ -25,7 +25,7 @@
     },
     {
       "name": "Flash",
-      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/flash/SKILL.md"
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-flash/SKILL.md"
     },
     {
       "name": "Endpoint workflows",

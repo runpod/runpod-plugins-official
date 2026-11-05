@@ -49,8 +49,8 @@ CANONICAL = ROOT / "hooks/canonical_facts.json"
 SKILLS = ROOT / "plugins/runpod/skills"
 
 # A backticked token is checked as a tool name when it starts with one of the MCP
-# server's verbs. Hyphenated words outside this set (concept ids, skill names, flags)
-# are never mistaken for tools.
+# server's verbs; other hyphenated words (flags, most concept ids) never match. Verb-shaped
+# concept ids and skill names are exempted through NOT_TOOLS below.
 VERBS = [
     *("cancel", "create", "delete", "deploy", "describe", "endpoint", "get", "list"),
     *("lookup", "pod", "purge", "read", "restart", "retry", "revoke", "run", "runsync"),

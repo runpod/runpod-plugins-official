@@ -45,7 +45,7 @@ results validate this CPU fixture only, not the user's future application.
 
 ## Lane(s)
 
-[runpod-build-template](../../../runpod-build-template/SKILL.md) → companion-clis for
+[runpod-build-template](../../../runpod-build-template/SKILL.md) → runpod-companion-clis for
 the selected build/push operation → infra lanes only for authorized deployment.
 
 ## When to use / which variant?

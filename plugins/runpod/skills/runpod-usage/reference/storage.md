@@ -191,7 +191,7 @@ aws s3 ls \
 ```
 
 Path mapping: `/workspace/my-folder/file.txt` on a pod ==
-`s3://NETWORK_VOLUME_ID/my-folder/file.txt` over S3. (See the `companion-clis`
+`s3://NETWORK_VOLUME_ID/my-folder/file.txt` over S3. (See the `runpod-companion-clis`
 skill for full AWS CLI usage; each volume on the Storage page shows a pre-filled
 `aws s3` command with the right region/endpoint.)
 

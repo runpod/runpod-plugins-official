@@ -5,8 +5,8 @@ description: >-
   local code, or GitHub repository, with a documented Dockerfile and app-specific
   files for Pods or queue/load-balanced Serverless. Use runpod-templates for finding
   or operating existing official templates, runpod-mcp/runpodctl to register an
-  already-built image as a template, flash for its code-first workflow,
-  and companion-clis for standalone image build/push commands.
+  already-built image as a template, runpod-flash for its code-first workflow,
+  and runpod-companion-clis for standalone image build/push commands.
 metadata:
   author: runpod
   version: "1.9.0" # x-release-please-version
@@ -81,7 +81,7 @@ end-to-end tested separately. Mark checks passed, failed, unverified, or not app
 Never describe a mock handler or local stub as validation of the requested app.
 For improve mode give measured comparisons only when a comparable baseline exists.
 
-Delegate build/push mechanics to [companion-clis](../companion-clis/SKILL.md) and
+Delegate build/push mechanics to [runpod-companion-clis](../runpod-companion-clis/SKILL.md) and
 infrastructure work through the [router's capability matrix](../runpod/SKILL.md#runpod-mcp-vs-runpodctl-the-overlap).
 Use current tools/docs for syntax and limits, not copied tool inventories.
 

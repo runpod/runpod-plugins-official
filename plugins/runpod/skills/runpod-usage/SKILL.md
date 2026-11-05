@@ -4,7 +4,7 @@ description: >-
   Explain Runpod architecture and design choices: Pods versus Serverless, GPU/VRAM,
   image construction, storage, networking, and workload development. For creating
   or improving a complete template project use runpod-build-template; execute
-  infrastructure with runpodctl/runpod-mcp and code-first work with flash.
+  infrastructure with runpodctl/runpod-mcp and code-first work with runpod-flash.
 metadata:
   author: runpod
   version: "1.9.0" # x-release-please-version
@@ -16,7 +16,7 @@ license: Apache-2.0
 
 Background knowledge for making the right choice before you act. This skill runs
 nothing — once you know what to do, execute with **runpod-mcp**/**runpodctl**
-(infra), **flash** (your own code), or **companion-clis** (models/images/data).
+(infra), **runpod-flash** (your own code), or **runpod-companion-clis** (models/images/data).
 
 **This skill explains; the golden paths demonstrate.** When the question is really "how do I
 do X" rather than "how does X work", the verified end-to-end example is the faster answer —

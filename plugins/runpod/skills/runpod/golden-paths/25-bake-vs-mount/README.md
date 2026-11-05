@@ -26,7 +26,7 @@ and [golden path 21 (storage tiers)](../21-storage-tiers.md).
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
 block first. For this path specifically:
 
-- **Docker**, logged in (shared block) — substitute your namespace for `<namespace>`. See [companion-clis docker](../../../companion-clis/reference/docker.md).
+- **Docker**, logged in (shared block) — substitute your namespace for `<namespace>`. See [runpod-companion-clis docker](../../../runpod-companion-clis/reference/docker.md).
 - **An SSH key registered** on your account (to exec into the pod) — see
   [golden path 22](../22-minimal-pod-image/README.md#prerequisites).
 

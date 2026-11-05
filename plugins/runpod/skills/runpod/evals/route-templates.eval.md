@@ -16,7 +16,7 @@ which routes onward.
 ## Assertions
 
 - Routes "run ComfyUI on a pod" to `runpod-templates` and its ComfyUI reference /
-  golden path 02 variant B, not to building a custom image via docker/companion-clis.
+  golden path 02 variant B, not to building a custom image via docker/runpod-companion-clis.
 - Distinguishes pod templates from Hub serverless repos: does not answer the task
   with the `worker-comfyui` Hub listing when the user asked for a pod.
 - A "my pod is Running but the URL 502s" task on an official template also routes

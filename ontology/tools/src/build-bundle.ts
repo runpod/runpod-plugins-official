@@ -7,7 +7,7 @@
 //   node src/build-bundle.ts --suggest    list concepts each golden path mentions but does not link
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
@@ -87,6 +87,36 @@ export interface Bundle {
   guides: Guide[];
   concepts: Concept[];
   links: Link[];
+  /** Old guide id -> current guide id, for renamed skills (ontology/guide-aliases.json). */
+  aliases: Record<string, string>;
+}
+
+const ALIASES_PATH = join(REPO_ROOT, "ontology/guide-aliases.json");
+
+/**
+ * Expand each renamed skill (old -> new) into exact aliases for the skill and every
+ * reference doc under it. Errors when an old id is still a live guide id or the new
+ * skill does not exist, so a stale entry fails the build instead of shadowing a guide.
+ */
+export function buildAliases(
+  guides: Guide[],
+  renames: Record<string, string>,
+): { aliases: Record<string, string>; errors: string[] } {
+  const ids = new Set(guides.map((g) => g.id));
+  const aliases: Record<string, string> = {};
+  const errors: string[] = [];
+  for (const [from, to] of Object.entries(renames)) {
+    if (ids.has(from)) errors.push(`guide-aliases: "${from}" is still a guide id; drop the alias or the guide`);
+    if (!ids.has(to)) errors.push(`guide-aliases: "${from}" points at "${to}", which is not a guide id`);
+    for (const id of ids) {
+      if (id === to || id.startsWith(`${to}/`)) {
+        const old = from + id.slice(to.length);
+        if (!ids.has(old)) aliases[old] = id;
+        else if (id !== to) errors.push(`guide-aliases: "${old}" is still a guide id`);
+      }
+    }
+  }
+  return { aliases, errors };
 }
 
 const title = (body: string, fallback: string) => body.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? fallback;
@@ -229,7 +259,7 @@ export function collectGuides(
       links.push({ from: id, to: target, type: kind === "golden-path" ? "uses" : "explains", via: "evidence", rules });
     }
 
-    const skillShell = kind !== "golden-path" && /^(runpodctl|flash|companion-clis)(\/|$)/.test(id);
+    const skillShell = kind !== "golden-path" && /^(runpodctl|runpod-flash|runpod-companion-clis)(\/|$)/.test(id);
     // golden-path/02-comfyui-pod/variant-a -> golden-path/02-comfyui-pod; golden-path/06-dev-pod -> runpod
     const parent =
       kind === "skill"
@@ -316,6 +346,11 @@ export function buildBundle(concepts: Concept[]): { bundle: Bundle; errors: stri
     version: string;
   };
   const { guides, links, errors } = collectGuides(concepts);
+  const renames = existsSync(ALIASES_PATH)
+    ? ((JSON.parse(readFileSync(ALIASES_PATH, "utf8")) as { skills?: Record<string, string> }).skills ?? {})
+    : {};
+  const { aliases, errors: aliasErrors } = buildAliases(guides, renames);
+  errors.push(...aliasErrors);
   return {
     bundle: {
       format: BUNDLE_FORMAT,
@@ -325,6 +360,7 @@ export function buildBundle(concepts: Concept[]): { bundle: Bundle; errors: stri
       guides,
       concepts,
       links,
+      aliases,
     },
     errors,
   };

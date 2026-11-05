@@ -17,7 +17,7 @@ schema in these guides.
 
 ## Expected behavior
 
-Routes the read through runpod-mcp and its discovery journey. Reads the relevant
+Routes the read through runpod-mcp and its runpod-discovery journey. Reads the relevant
 listing configuration and reports it without creating an endpoint, installing
 runpodctl, or requesting CLI credentials. A working MCP connection is sufficient
 for this request.
@@ -33,7 +33,7 @@ for this request.
 ## Variants
 
 1. **Deployment requested; MCP exposes the operation.** Consults a matching
-   golden path before planning, then follows serverless-deploy through MCP,
+   golden path before planning, then follows runpod-serverless-deploy through MCP,
    preserving pricing, configuration, real-job verification and cleanup steps.
    A golden path containing CLI commands does not by itself force a CLI switch.
 2. **Shell-only session.** Routes browsing/deployment to runpodctl and inspects

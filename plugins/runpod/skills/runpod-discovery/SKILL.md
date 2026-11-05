@@ -1,5 +1,5 @@
 ---
-name: discovery
+name: runpod-discovery
 description: 'Answer what is available, what fits and the price against Runpod''s catalogs: GPU and CPU
   types with price, live stock per data center and per product, the CUDA versions that have capacity,
   the Hub worker marketplace, the public template catalog, and the pay-per-use Public Endpoints. Read-only:
@@ -56,11 +56,11 @@ Estimate required VRAM from the model's real parameters and precision, then name
 
 ### Prebuilt workers on the Hub
 
-Browse the Hub for a prebuilt worker matching the task (search by term and category: language, image, audio, video, embedding). Name the repos the catalog returned, their owner, and what each is for; if the config is available, note the hardware it wants. Attribute every repo to the listing; never assert a repo from memory. If nothing matches, say "none found on the Hub" and stop; the deploy path from a found repo is `serverless-deploy`.
+Browse the Hub for a prebuilt worker matching the task (search by term and category: language, image, audio, video, embedding). Name the repos the catalog returned, their owner, and what each is for; if the config is available, note the hardware it wants. Attribute every repo to the listing; never assert a repo from memory. If nothing matches, say "none found on the Hub" and stop; the deploy path from a found repo is `runpod-serverless-deploy`.
 
 ### Ready-made public template
 
-Browse the public template catalog when the user asks what image or template already exists for a workload. `source` picks the slice: `official` (Runpod-curated, the default), `verified` (community, Runpod-verified), `community` (everything else shared publicly). Each entry's `serverless` flag says whether it is a pod or a serverless template; say which slice you searched and which kind you are naming. Name only templates the read returned, with their id, and stop at "none found" rather than inventing one. The catalog returns at most 100 templates and does not paginate, so say the listing is capped rather than implying it is exhaustive. Deploying from one is `pod-deploy` or `serverless-deploy`; the user's own templates are `lifecycle-crud`.
+Browse the public template catalog when the user asks what image or template already exists for a workload. `source` picks the slice: `official` (Runpod-curated, the default), `verified` (community, Runpod-verified), `community` (everything else shared publicly). Each entry's `serverless` flag says whether it is a pod or a serverless template; say which slice you searched and which kind you are naming. Name only templates the read returned, with their id, and stop at "none found" rather than inventing one. The catalog returns at most 100 templates and does not paginate, so say the listing is capped rather than implying it is exhaustive. Deploying from one is `runpod-pod-deploy` or `runpod-serverless-deploy`; the user's own templates are `runpod-lifecycle-crud`.
 
 ### Pay-per-use, no deployment
 
@@ -72,7 +72,7 @@ When the user wants a one-off result ("run this model once on my input") and doe
 - Name only entries the tool returned. No invented GPU classes, regions, prices, Hub repos, or public endpoints.
 - Quote price and stock from the output. No arithmetic on prices the tool didn't return, no "should be around" figures.
 - Report empty results as empty: "none found" is a correct answer, and better than a plausible fabrication.
-- Sizing is a recommendation with its assumption stated, not a deployment. Fitting a model is `serverless-deploy`'s job.
+- Sizing is a recommendation with its assumption stated, not a deployment. Fitting a model is `runpod-serverless-deploy`'s job.
 - Filter to the prompt's real constraint; do not dump the whole catalog when the user asked about one tier or one region.
 - Keep the answer internally consistent: a summary line about stock must agree with the per-data-center table it summarizes; when two reads disagree, name the more recent one instead of contradicting yourself.
 

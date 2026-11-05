@@ -4,12 +4,12 @@ mcp: none
 concepts: [flash, serverless-endpoint, worker, serverless-handler, gpu-type]
 status: live-verified
 verified: "2026-10-16"
-evals: [flash/evals/qb-gpu-function]
+evals: [runpod-flash/evals/qb-gpu-function]
 ---
 
 # Golden path 03 — Whisper — Variant B: from scratch with the Runpod SDK
 
-> **Status:** live-verified 2026-10-16 — end to end on the Runpod SDK (`rp flash dev --once`). **Evals:** [qb-gpu-function](../../../flash/evals/qb-gpu-function.eval.md). Status key: [golden-paths README](../README.md#status-legend).
+> **Status:** live-verified 2026-10-16 — end to end on the Runpod SDK (`rp flash dev --once`). **Evals:** [qb-gpu-function](../../../runpod-flash/evals/qb-gpu-function.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Status:** COVERED — live-verified on the Runpod SDK (`runpod` 2.0.0rc1) 2026-10-16 with
 `rp flash dev main.py --once`: the worker returned the Gettysburg transcript in 70 s from cold.
@@ -19,7 +19,7 @@ own pre/post-processing — or no good Hub worker fits. You write a faster-whisp
 iterate on a real GPU with `rp flash dev`, then `rp flash deploy`. For a heavy prebuilt model
 with a solid Hub worker, prefer [Variant A — Hub](variant-a-hub.md). Shared schema, gotchas,
 and cost notes live in the [folder README](README.md); the flash skill is at
-[../../../flash/SKILL.md](../../../flash/SKILL.md).
+[../../../runpod-flash/SKILL.md](../../../runpod-flash/SKILL.md).
 
 ## Prerequisites
 
@@ -74,7 +74,7 @@ and cost notes live in the [folder README](README.md); the flash skill is at
        print(out)
        assert "four score" in out["text"].lower(), out
    ```
-   Two rules matter here (both in [../../../flash/SKILL.md](../../../flash/SKILL.md)):
+   Two rules matter here (both in [../../../runpod-flash/SKILL.md](../../../runpod-flash/SKILL.md)):
    **native CUDA libraries go in `dependencies` too** — `nvidia-cublas-cu12` +
    `nvidia-cudnn-cu12`, or faster-whisper silently falls back to CPU; and **load the model
    once per worker** with the module-level cache. The whole module ships to the worker, so the

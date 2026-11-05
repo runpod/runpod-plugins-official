@@ -1,5 +1,5 @@
 ---
-name: flash
+name: runpod-flash
 description: >-
   Code-first serverless with the Runpod Python SDK (`runpod` 2.0): define a
   `runpod.App` with `@app.queue` / `@app.api` / `@app.task`, iterate on remote

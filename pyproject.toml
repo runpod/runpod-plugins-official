@@ -29,7 +29,7 @@ line-length = 100
 extend-exclude = [
   "testdata",
   "**/golden-paths/**/template",
-  "plugins/runpod/skills/flash/evals/fixtures",
+  "plugins/runpod/skills/runpod-flash/evals/fixtures",
   "*.md",
 ]
 
@@ -75,7 +75,7 @@ explicit_package_bases = true
 exclude = [
   "^testdata/",
   "/golden-paths/.*/template/",
-  "^plugins/runpod/skills/flash/evals/fixtures/",
+  "^plugins/runpod/skills/runpod-flash/evals/fixtures/",
 ]
 
 [tool.bandit]
@@ -83,7 +83,7 @@ exclude = [
 exclude_dirs = [
   "testdata",
   "plugins/runpod/skills/runpod-templates/tests",
-  "plugins/runpod/skills/flash/evals/fixtures",
+  "plugins/runpod/skills/runpod-flash/evals/fixtures",
   "golden-paths",
 ]
 # Policy (not a per-finding suppression): the gate runs with --severity-level

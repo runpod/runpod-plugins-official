@@ -17,19 +17,19 @@
         "./skills/runpod",
         "./skills/runpod-mcp",
         "./skills/runpodctl",
-        "./skills/flash",
+        "./skills/runpod-flash",
         "./skills/runpod-usage",
         "./skills/runpod-templates",
         "./skills/runpod-build-template",
-        "./skills/companion-clis",
+        "./skills/runpod-companion-clis",
         "./skills/runpod-migrate",
-        "./skills/cost-audit",
-        "./skills/discovery",
-        "./skills/endpoint-ops",
-        "./skills/lifecycle-crud",
-        "./skills/pod-deploy",
-        "./skills/pod-doctor",
-        "./skills/serverless-deploy"
+        "./skills/runpod-cost-audit",
+        "./skills/runpod-discovery",
+        "./skills/runpod-endpoint-ops",
+        "./skills/runpod-lifecycle-crud",
+        "./skills/runpod-pod-deploy",
+        "./skills/runpod-pod-doctor",
+        "./skills/runpod-serverless-deploy"
       ]
     }
   ]

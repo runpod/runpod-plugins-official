@@ -233,7 +233,7 @@ rules:
       - { source: rest-v2-spec, ref: "CreateEndpointRequest (workers, timeout and flashboot defaults)", seen: "2026-09-28" }
       - { source: live-probe, ref: "POST /v2/serverless without timeout read back \"timeout\": 0", seen: "2026-10-29" }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: "Console defaults for idle timeout, execution timeout and FlashBoot." }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: "The Flash SDK's defaults differ from the platform's." }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/api.md, note: "The Flash SDK's defaults differ from the platform's." }
 
   - id: serverless-endpoint.max-zero-stops-workers
     applies_to: ["field:workers.max"]

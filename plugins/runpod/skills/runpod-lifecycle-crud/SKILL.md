@@ -1,5 +1,5 @@
 ---
-name: lifecycle-crud
+name: runpod-lifecycle-crud
 description: 'Create, verify by read-back, and manage the lifecycle of Runpod''s reusable plumbing (templates,
   network and global volumes, container registry credentials, account secrets, the account''s SSH public keys, and
   Instant Clusters), the account''s audit trail and organization members (reads), plus staging large model

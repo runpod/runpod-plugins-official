@@ -30,7 +30,7 @@ across all three DCs** (EU-RO-1 ×4, EU-CZ-1 ×5, EUR-IS-1 ×1), each worker rea
 distinct payload across all 32). Image `<your-registry>/gp19-3region:v2` (`python:3.11-slim`
 + `runpod`). All three volumes + endpoint + templates were deleted afterward.
 **Lane(s):** `runpodctl` (volumes) + `aws`/S3 API (sync, see
-[companion-clis → AWS CLI](../../companion-clis/SKILL.md#aws-cli)) + GraphQL
+[runpod-companion-clis → AWS CLI](../../runpod-companion-clis/SKILL.md#aws-cli)) + GraphQL
 `saveEndpoint` (multi-volume attach — required on runpodctl < v2.4.0; see
 [10](10-multi-region-ha-serverless.md))
 
@@ -67,7 +67,7 @@ proves the disks match by serving the file and comparing the bytes returned from
 - `aws` CLI with a profile holding your Runpod **S3 API keys** (access key = Runpod
   `user_...`, secret = `rps_...`). These are **Console-only** to create (Settings → S3 API
   Keys) — an agent can't self-provision them; see
-  [companion-clis → AWS CLI](../../companion-clis/SKILL.md#aws-cli).
+  [runpod-companion-clis → AWS CLI](../../runpod-companion-clis/SKILL.md#aws-cli).
 - Docker + a registry (here `<your-registry>`). Build `--platform linux/amd64`.
 - Three DCs that all expose the **S3 API** (so sync needs no compute):
   **EU-RO-1, EU-CZ-1, EUR-IS-1** are all supported.

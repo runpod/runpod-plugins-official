@@ -106,6 +106,6 @@ language — the exact lines are in [comfyui-repair/metadata.md](comfyui-repair/
 | The task is actually… | Send it to |
 | --- | --- |
 | Provision a pod for the workflow | [golden path 02](../../runpod/golden-paths/02-comfyui-pod/README.md) (index: [golden paths](../../runpod/golden-paths/README.md)), then runpod-mcp or runpodctl |
-| Model repo and file already known exactly | `companion-clis` |
+| Model repo and file already known exactly | `runpod-companion-clis` |
 | Another template problem (a pod that won't boot, models missing on first boot) | the other reference files in this skill — [comfyui.md](comfyui.md) / [pytorch.md](pytorch.md) |
 | Install or understand RunpodDirect itself | [comfyui-repair/runpoddirect.md](comfyui-repair/runpoddirect.md) |

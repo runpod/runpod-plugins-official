@@ -1,0 +1,14 @@
+{
+  "_doc": "Renamed skills. Each key is an old skill id and its value is the current one. The bundle build expands every entry into an exact old-id -> new-id alias for the skill and each of its reference docs (old/<ref> -> new/<ref>), and writes them to the bundle's `aliases` field. A consumer such as the Runpod MCP server resolves an old id through `aliases` before reporting it unknown. Keep an entry for at least one major release after its rename. A key must not be a current guide id, and its value must be one.",
+  "skills": {
+    "discovery": "runpod-discovery",
+    "lifecycle-crud": "runpod-lifecycle-crud",
+    "serverless-deploy": "runpod-serverless-deploy",
+    "pod-deploy": "runpod-pod-deploy",
+    "pod-doctor": "runpod-pod-doctor",
+    "endpoint-ops": "runpod-endpoint-ops",
+    "cost-audit": "runpod-cost-audit",
+    "flash": "runpod-flash",
+    "companion-clis": "runpod-companion-clis"
+  }
+}

@@ -2,8 +2,8 @@
 name: runpod
 description: >-
   Start here when the Runpod lane is unclear: picks the skill for a task
-  (runpod-mcp and the journey playbooks it routes to, such as serverless-deploy,
-  pod-deploy, pod-doctor and cost-audit; runpodctl, flash, companion-clis,
+  (runpod-mcp and the journey playbooks it routes to, such as runpod-serverless-deploy,
+  runpod-pod-deploy, runpod-pod-doctor and runpod-cost-audit; runpodctl, runpod-flash, runpod-companion-clis,
   runpod-usage, runpod-templates, runpod-build-template, runpod-migrate) and
   indexes two dozen end-to-end worked examples (golden paths). Use it before any
   multi-step or provisioning task, even when the lane is clear, to check for a
@@ -40,8 +40,8 @@ first and let the matching one pick the lane; otherwise read the matching skill'
 | --- | --- |
 | **runpod-mcp** | Manage infra (pods, endpoints, jobs, templates, volumes, registries, catalog, billing) via **structured tool calls** — when the Runpod MCP tools are connected in this session. It routes on to the journey skill for the task. |
 | **runpodctl** | Manage the same infra from a **terminal/CI/script**, including Hub browse/deploy, file transfer (`send`/`receive`), SSH keys, `doctor` setup, and model cache. |
-| **flash** | **Write Python** that runs on Runpod serverless with the Runpod SDK — `runpod.App` with `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; also maintains or migrates legacy `runpod-flash` projects. Code-first, not infra management. |
-| **companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
+| **runpod-flash** | **Write Python** that runs on Runpod serverless with the Runpod SDK — `runpod.App` with `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; also maintains or migrates legacy `runpod-flash` projects. Code-first, not infra management. |
+| **runpod-companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
 | **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
 | **runpod-build-template** | **Create or improve a template project** from a request, local code, or GitHub: documented Dockerfile, app-specific files, and Pod/queue/load-balanced deployment handoff. |
@@ -57,8 +57,8 @@ of you**:
 | --- | --- |
 | runpodctl | `runpodctl --help`, `runpodctl <resource> <action> --help`, `runpodctl version`. For failure shapes, run a command wrong on purpose and read the JSON |
 | runpod-mcp | your client's tool list (`/mcp` in Claude Code); rules in [runpod-mcp](../runpod-mcp/SKILL.md#the-server-is-the-source-of-truth) |
-| flash | `rp --help`, `rp flash <command> --help`, `pip show runpod`, and the dev/deploy output |
-| companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
+| runpod-flash | `rp --help`, `rp flash <command> --help`, `pip show runpod`, and the dev/deploy output |
+| runpod-companion-clis | that CLI's own `--help` (`hf`, `gh`, `docker`, `aws`) |
 | runpod-templates | `runpodctl template list --type official`, `template get <id>` (its readme is authoritative) |
 | REST v2 | the live spec at `https://api.runpod.io/v2/openapi.json` |
 
@@ -121,9 +121,9 @@ An existing prebuilt does not replace the requested deliverable.
 3. **Run a common workload on a pod, or fix a template pod** ("run ComfyUI /
    PyTorch dev box", won't boot, missing models) → **runpod-templates** — check for
    an official prebuilt before planning any install, and let it route repairs.
-4. **Write/iterate/ship your own code on Runpod GPUs using its code-first workflow** → **flash**.
+4. **Write/iterate/ship your own code on Runpod GPUs using its code-first workflow** → **runpod-flash**.
 5. **Produce an artifact** (download a model, build+push an image, create a repo
-   release, sync data to a volume) → **companion-clis**.
+   release, sync data to a volume) → **runpod-companion-clis**.
 6. **Migrate existing code between Runpod API versions** — "move us to REST v2",
    "which Runpod API is this repo on?", "what breaks if we upgrade?" →
    **runpod-migrate**. (Calling the API to *do* something is a different job; that
@@ -228,6 +228,6 @@ one lane, and switch lanes at credential boundaries.
 
 Example — "deploy `openai/gpt-oss-20b` to a serverless endpoint":
 1. **runpod-usage** — serverless vs pod, GPU tier for 20B, bake vs mount vs cache.
-2. **companion-clis** — `hf download …`, `docker build --platform=linux/amd64 …`, `docker push`.
+2. **runpod-companion-clis** — `hf download …`, `docker build --platform=linux/amd64 …`, `docker push`.
 3. **runpod-mcp** or **runpodctl** — create the endpoint referencing the image + GPU pool.
 4. Same infra lane — invoke the endpoint / check status to verify.

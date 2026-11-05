@@ -24,7 +24,7 @@ approval.
 - Does not repair the workflow ad hoc at the router level; the hub owns the
   onward route to its repair guide.
 - Does not treat a bare filename as a verified model identity.
-- Does not route to `companion-clis` merely because Hugging Face may be one search
+- Does not route to `runpod-companion-clis` merely because Hugging Face may be one search
   provider; that lane is for a known repository/file or a non-workflow artifact job.
 - Does not provision or mutate Pod infrastructure unless the user separately asks.
 - Reviews the plan internally before writing the annotated workflow copy.

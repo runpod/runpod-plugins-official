@@ -4,12 +4,12 @@ mcp: partial
 concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool, volume-cache]
 status: live-verified
 verified: "2026-10-17"
-evals: [flash/evals/volume-cache-model-load]
+evals: [runpod-flash/evals/volume-cache-model-load]
 ---
 
 # Golden path 08 — fine-tune → serve (LoRA on a pod → serverless)
 
-> **Status:** live-verified 2026-10-17 — the SDK serve step (`rp flash deploy`) on 2026-10-17, pod training on 2026-07-10. **Evals:** [volume-cache-model-load](../../flash/evals/volume-cache-model-load.eval.md). Status key: [golden-paths README](README.md#status-legend).
+> **Status:** live-verified 2026-10-17 — the SDK serve step (`rp flash deploy`) on 2026-10-17, pod training on 2026-07-10. **Evals:** [volume-cache-model-load](../../runpod-flash/evals/volume-cache-model-load.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** the smallest end-to-end **train-then-serve** loop: LoRA-fine-tune a tiny LLM
 on a **pod** with axolotl, write the adapter to a **network volume**, then load base +
@@ -173,7 +173,7 @@ rejected).
 `vol.path`. The base model is the large part: keep its Hugging Face cache on the worker's own
 disk and wrap the load in `VolumeCache`, so later cold starts copy it from the volume to local
 disk instead of downloading it or reading it over the network mount (flash
-[patterns](../../flash/reference/patterns.md#loading-ml-models)). The first SDK cold start
+[patterns](../../runpod-flash/reference/patterns.md#loading-ml-models)). The first SDK cold start
 downloads the base model from Hugging Face even though training cached it on the volume; that
 download fills the `VolumeCache` mirror, and later cold starts restore from it. `peft` and
 `accelerate` go in `dependencies` like any package; the build leaves their `torch` dependency to
@@ -266,7 +266,7 @@ scale-to-zero (`workers=(0,1)`), ~$0 idle. Keep the volume only while iterating.
 - **Handler contract:** the worker calls `generate(**job_input)` — `input` keys are the
   function's parameter names; invoke with a non-empty `input`.
 - **Load the model once per worker**, not per request: a module-level cache in a queue
-  function, or `@runpod.init` in an `@app.api` class (flash `reference/patterns.md`).
+  function, or `@runpod.init` in an `@app.api` class (runpod-flash `reference/patterns.md`).
 - **PEP 668** on the training pod: `pip install --break-system-packages …` (`on-pod-setup.md`).
 - **Diagnosis:** if the endpoint job times out, pull worker logs before assuming a broken
   worker — it's usually a payload/handler issue. `runpodctl serverless logs <id> --source

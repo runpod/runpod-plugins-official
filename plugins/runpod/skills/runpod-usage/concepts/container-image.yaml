@@ -80,4 +80,4 @@ rules:
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.docker.com/engine/install/linux-postinstall/", seen: "2026-10-14" }
-      - { source: skill, path: plugins/runpod/skills/companion-clis/reference/docker-setup.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-companion-clis/reference/docker-setup.md }

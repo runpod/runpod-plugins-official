@@ -28,7 +28,7 @@ export interface GraphLink {
 /**
  * A guide drawn as a node, shaped like a concept so the page treats both alike.
  * Its id is prefixed with "guide:" because guide and concept ids can clash
- * (the flash skill and the Flash concept are both "flash").
+ * (a skill can share its name with a concept, e.g. a "flash" skill and the Flash concept).
  */
 export interface GuideNode {
   id: string;

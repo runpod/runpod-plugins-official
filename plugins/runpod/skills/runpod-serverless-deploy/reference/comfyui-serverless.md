@@ -26,7 +26,7 @@ You turn a ComfyUI workflow into a working serverless endpoint and prove it with
 ## Phase 3 — deploy, prove with the user's own workflow, hand back
 
 - Create the endpoint scale-to-zero (min workers 0) unless warm capacity was asked for. State the GPU hourly price from the catalog read before creating.
-- Smoke-test with the USER'S workflow as the job input, not a substitute prompt. One job, submitted with `run-endpoint` and held server-side with `get-job-status` and `wait` (a cold first job outlives `runsync`'s hold and its one-minute result window), per serverless-deploy's smoke-test discipline. If the wait outlasts the holds, report the evidenced state. When no workflow was given, skip the job and say so (phase 1).
+- Smoke-test with the USER'S workflow as the job input, not a substitute prompt. One job, submitted with `run-endpoint` and held server-side with `get-job-status` and `wait` (a cold first job outlives `runsync`'s hold and its one-minute result window), per runpod-serverless-deploy's smoke-test discipline. If the wait outlasts the holds, report the evidenced state. When no workflow was given, skip the job and say so (phase 1).
 - Close with everything in one place: the endpoint id, the worker/variant and the hub read it came from, which models are bundled vs provisioned (and how) vs handed to the user to stage (a small table reads well), the job result (the image output reference, or the evidenced blocker), the hourly price, and, when staging was handed to the user, the exact single step they run.
 
 ## Hard rules
@@ -52,4 +52,4 @@ If a tool named here is missing from the session's tool list, say so and use the
 
 ## Contract
 
-This page extends [serverless-deploy](../SKILL.md): its smoke-test, hand-back and teardown rules apply here. The answer contract in [the runpod-mcp skill](../../runpod-mcp/SKILL.md#the-answer-contract) applies to every reply from this journey. If that skill has not been loaded in this conversation, load it now, before the next tool call.
+This page extends [runpod-serverless-deploy](../SKILL.md): its smoke-test, hand-back and teardown rules apply here. The answer contract in [the runpod-mcp skill](../../runpod-mcp/SKILL.md#the-answer-contract) applies to every reply from this journey. If that skill has not been loaded in this conversation, load it now, before the next tool call.

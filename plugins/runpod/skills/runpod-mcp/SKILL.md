@@ -83,7 +83,7 @@ Once connected, read the server. Do not reason about its tools from memory.
    this plugin installed, the journey skills below are the procedure; the server's
    guides are the same text for an agent without the plugin. A skill's
    `reference/<name>.md` link is guide id `<skill>/<name>` (e.g.
-   `serverless-deploy/error-handling`).
+   `runpod-serverless-deploy/error-handling`).
 3. **The wire contract** is the Runpod v2 OpenAPI document at
    `https://api.runpod.io/v2/openapi.json`, for fields beyond the tool surface.
 
@@ -118,21 +118,21 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
   call, so switching to it does not help.
 - **Not this lane:** authoring a template project or Hub listing files
   (→ [runpod-build-template](../runpod-build-template/SKILL.md)); writing/deploying
-  your own Python with Flash (→ flash); downloading models or building/pushing
-  images (→ companion-clis).
+  your own Python with Flash (→ runpod-flash); downloading models or building/pushing
+  images (→ runpod-companion-clis).
 
 ## Route by intent
 
 | The user wants to… | Journey skill |
 | --- | --- |
-| Know what GPUs/workers/endpoints exist, what fits a model, what it costs | **discovery** |
-| Create/inspect/update/delete pods, endpoints, templates, network or global volumes, account secrets, SSH keys, clusters; inventory of the account; who changed what (audit log) or who is in the organization | **lifecycle-crud** |
-| Stand up a serverless endpoint for a model/workload and verify it with a real job | **serverless-deploy** |
-| Host a ComfyUI workflow (workflow.json, custom Civitai models/LoRAs) as an endpoint | **serverless-deploy**, then its [ComfyUI reference](../serverless-deploy/reference/comfyui-serverless.md) |
-| Rent/configure an interactive GPU pod; create a pod then pause/stop it for later | **pod-deploy** |
-| Diagnose a broken/misbehaving pod (0 GPUs, CUDA, crashes, 502s) | **pod-doctor** |
-| Operate an existing endpoint: jobs, scaling, workers, logs | **endpoint-ops** |
-| Understand or reduce spend; billing breakdowns | **cost-audit** |
+| Know what GPUs/workers/endpoints exist, what fits a model, what it costs | **runpod-discovery** |
+| Create/inspect/update/delete pods, endpoints, templates, network or global volumes, account secrets, SSH keys, clusters; inventory of the account; who changed what (audit log) or who is in the organization | **runpod-lifecycle-crud** |
+| Stand up a serverless endpoint for a model/workload and verify it with a real job | **runpod-serverless-deploy** |
+| Host a ComfyUI workflow (workflow.json, custom Civitai models/LoRAs) as an endpoint | **runpod-serverless-deploy**, then its [ComfyUI reference](../runpod-serverless-deploy/reference/comfyui-serverless.md) |
+| Rent/configure an interactive GPU pod; create a pod then pause/stop it for later | **runpod-pod-deploy** |
+| Diagnose a broken/misbehaving pod (0 GPUs, CUDA, crashes, 502s) | **runpod-pod-doctor** |
+| Operate an existing endpoint: jobs, scaling, workers, logs | **runpod-endpoint-ops** |
+| Understand or reduce spend; billing breakdowns | **runpod-cost-audit** |
 | Something the tools may not cover (file transfer, a command inside a Pod) | [Capability boundaries](#capability-boundaries--state-them-never-fake-them) below |
 
 ## Capability boundaries — state them, never fake them

@@ -36,7 +36,7 @@ rules:
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/migrate-from-flash", seen: "2026-10-16" }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/migrate-from-runpod-flash.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/migrate-from-runpod-flash.md }
 
   - id: flash.legacy-fallback
     statement: >
@@ -65,8 +65,8 @@ rules:
     status: documented
     see: [flashboot.flash-sdk-default-on]
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: The flashboot parameter of the decorators. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/SKILL.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/api.md, note: The flashboot parameter of the decorators. }
 
   - id: flash.resource-types
     statement: >
@@ -136,7 +136,7 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/deploy", seen: "2026-10-16" }
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/rp_cli/main.py#L190", seen: "2026-10-22", note: "On an unsupported local interpreter, deploy warns and builds for DEFAULT_PYTHON_VERSION." }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/setup-and-cli.md }
 
   - id: flash.sdk-defaults
     statement: >
@@ -148,7 +148,7 @@ rules:
     see: [serverless-endpoint.defaults-by-layer]
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/configuration/parameters", seen: "2026-10-16" }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/api.md, note: Parameters table. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/api.md, note: Parameters table. }
 
   - id: flash.volume-mounts
     statement: >
@@ -171,7 +171,7 @@ rules:
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/cli", seen: "2026-10-16" }
-      - { source: skill, path: plugins/runpod/skills/flash/reference/setup-and-cli.md }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/setup-and-cli.md }
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/rp_cli/main.py#L718", seen: "2026-10-22", note: "app delete takes --yes/-y; otherwise click.confirm(..., abort=True)." }
 
   - id: flash.resource-name-min-length
@@ -192,7 +192,7 @@ rules:
     status: documented
     evidence:
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/utils/network.py", seen: "2026-10-16", note: RUNPOD_API_KEY is read before the stored credentials. }
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 12. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/SKILL.md, note: Gotcha 12. }
 
   - id: flash.client-limits
     statement: >
@@ -205,7 +205,7 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/sdk/apps/dev-sessions", seen: "2026-10-16", note: remote() and job.wait() impose no execution timeout by default. }
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/v2.0.0rc1/runpod/apps/targets.py", seen: "2026-10-19", note: "DEFAULT_TIMEOUT_SECONDS = 300.0 bounds invoke() and job result waits; _wait_terminal raises TimeoutError at the deadline." }
-      - { source: skill, path: plugins/runpod/skills/flash/SKILL.md, note: Gotcha 7. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/SKILL.md, note: Gotcha 7. }
 
   - id: flash.torch-family-from-gpu-image
     statement: >
@@ -264,7 +264,7 @@ rules:
       `flash deploy` imports the whole module and can hide the mistake.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: Gotcha 1. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/runpod-flash-legacy.md, note: Gotcha 1. }
 
   - id: flash.legacy-defaults
     statement: >
@@ -273,4 +273,4 @@ rules:
       image needs CUDA 12.8; on older hosts that image crash-loops.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/flash/reference/runpod-flash-legacy.md, note: Defaults section. }
+      - { source: skill, path: plugins/runpod/skills/runpod-flash/reference/runpod-flash-legacy.md, note: Defaults section. }

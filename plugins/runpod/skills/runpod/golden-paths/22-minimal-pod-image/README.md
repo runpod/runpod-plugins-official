@@ -27,7 +27,7 @@ for the concept; this is the runnable proof.
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
 block first. For this path specifically:
 
-- **Docker**, logged in (shared block) — substitute your namespace for `<namespace>`. See [companion-clis docker](../../../companion-clis/reference/docker.md).
+- **Docker**, logged in (shared block) — substitute your namespace for `<namespace>`. See [runpod-companion-clis docker](../../../runpod-companion-clis/reference/docker.md).
 - **An SSH key** to register on your account (below). No key yet?
   `ssh-keygen -t ed25519` first (see [getting-started](../../../runpod-usage/reference/getting-started.md)).
 
