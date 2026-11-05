@@ -1,5 +1,5 @@
 ---
-concepts: [network-volume, global-volume, container-disk, pod-volume-disk, model-store, volume-cache]
+concepts: [network-volume, global-volume, container-disk, pod-volume-disk, model-store, volume-cache, pod-deployment]
 ---
 # Where data lives on Runpod
 
@@ -11,8 +11,12 @@ machines, and where your compute runs. There are four layers.
 **Unless the user says otherwise, put anything worth keeping on a network
 volume** — models, datasets, checkpoints, environments, caches. It survives pod
 stop/terminate and serverless scale-to-zero, is reusable across pods and
-endpoints, and means expensive downloads happen once. Create it (and the volume's
-data center) *before* the compute, then place the compute in that same DC.
+endpoints, and means expensive downloads happen once. Read GPU stock per data center
+first, create the volume once in a data center that has the GPU, then place the
+compute in that same DC. If a Pod create is refused for stock, re-read stock:
+when the volume's DC shows stock, retry there once with the same volume; otherwise the
+user chooses between waiting, another GPU type there, the console's Deploy when
+available, and a move to another DC. Never delete the volume and recreate it in the next DC.
 
 Use the faster, non-persistent layers deliberately, not by default: container /
 ephemeral disk for throwaway scratch, and pod volume disk when a single pod's data
@@ -104,7 +108,11 @@ no data-center constraint. It is usage-billed, so it has no size: create it with
   Class B (reads, metadata lookups) $0.0005 per 1,000 requests. It is permanently deleted
   15 days after the account balance reaches $0.
 - Use for: model weights and other read-mostly files shared across data centers; keep
-  write-heavy work (training, checkpoints) on a network volume.
+  write-heavy work (training, checkpoints) on a network volume. For checkpoints a global
+  volume is the fallback when no data center that offers network storage has the GPU in
+  stock, not the default. Without tools that create or attach one, the console path is
+  Storage, create or open the global volume, then **Configure Pod with volume**
+  ([global volumes for Pods](https://docs.runpod.io/storage/globalvolume/globalvolume-pods)).
 
 Source: the REST v2 spec (`GlobalVolume`, `Mounts`, `EndpointMountsInput`,
 `/v2/global-volumes`) and the public docs

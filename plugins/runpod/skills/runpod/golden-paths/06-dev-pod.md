@@ -57,6 +57,7 @@ if you're running a *batch* training job, that's [04](04-finetune-pod.md)/[08](0
 `/workspace` on a dev pod is backed by a network volume so your code/data survives a reset.
 The volume is **pinned to one DC**; the pod must run in that same DC.
 ```bash
+runpodctl datacenter list          # confirm the GPU has stock in EU-RO-1 before the volume pins the pod there
 runpodctl network-volume create --name devbox-demo --size 10 --data-center-id EU-RO-1
 # → id, e.g. gjj71yzmnd, in EU-RO-1
 ```

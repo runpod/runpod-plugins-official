@@ -60,6 +60,7 @@ exact training step and adds a serverless reader on the same volume.
 
 ### 1. Create the volume (holds the adapter + model cache; persists past the pod)
 ```bash
+runpodctl datacenter list          # confirm the GPU has stock in EU-RO-1 before the volume pins the pod there
 runpodctl network-volume create --name ft-train --size 30 --data-center-id EU-RO-1
 # → <vol-id>, pinned to EU-RO-1. The pod MUST run in this DC (volumes are DC-locked).
 ```

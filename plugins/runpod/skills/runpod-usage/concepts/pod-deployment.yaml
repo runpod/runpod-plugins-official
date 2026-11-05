@@ -18,8 +18,8 @@ steps:
       You choose a GPU type and count (or a CPU flavor), a cloud tier, and
       optionally a list of data centers. Attaching a network volume limits the
       pod to the volume's data center.
-    concepts: [pod, gpu-type, cloud-tier, data-center, network-volume]
-    rules: [pod.gpu-xor-cpu, cloud-tier.default-to-secure, pod.network-volume-same-dc]
+    concepts: [pod, gpu-type, cloud-tier, data-center, network-volume, global-volume]
+    rules: [pod.gpu-xor-cpu, cloud-tier.default-to-secure, pod.network-volume-same-dc, pod-deployment.stock-before-volume, global-volume.any-data-center]
 
   - id: place
     title: Runpod places it on a machine
@@ -28,7 +28,7 @@ steps:
       free GPUs of exactly the type you asked for. It does not substitute
       another GPU type. If no machine qualifies, the create call fails.
     concepts: [machine, data-center, gpu-availability, gpu-type]
-    rules: [pod.no-capacity-fallback, machine.largest-machine-caps-gpu-count]
+    rules: [pod.no-capacity-fallback, machine.largest-machine-caps-gpu-count, pod-deployment.deploy-when-available]
 
   - id: run
     title: The pod runs on that machine
@@ -91,3 +91,33 @@ rules:
     see: [pod.network-volume-same-dc]
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/pods/troubleshooting/zero-gpus", seen: "2026-09-28", note: "See \"How do I prevent this?\"." }
+
+  - id: pod-deployment.stock-before-volume
+    statement: >
+      A network volume limits the pod to the volume's data center, so read GPU
+      stock per data center first and create the volume once, in a data center
+      that has the GPU type. After a create refused for stock, read stock again
+      and retry once in the volume's data center if it shows stock; otherwise
+      the next step is the user's choice, never a new volume per attempt.
+      Without a volume, list every data center with stock in `dataCenterIds` and
+      Runpod places the pod in one of them. When no data center that offers
+      network storage has the GPU type, a global volume, which has no data
+      center, is the fallback for checkpoints.
+    status: documented
+    see: [pod.network-volume-same-dc, pod.no-capacity-fallback, gpu-availability.per-type-per-dc-per-product, global-volume.any-data-center, global-volume.eventual-consistency, global-volume.object-backed]
+    evidence:
+      - { source: rest-v2-spec, ref: "CreatePodRequest.dataCenterIds; NetworkMount.volumeId", seen: "2026-10-30" }
+      - { source: public-docs, url: "https://docs.runpod.io/storage/globalvolume/globalvolume-pods", seen: "2026-11-02" }
+      - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: "`dataCenterIds` is enforced: a create is placed only in a listed data center." }
+      - { source: skill, path: plugins/runpod/skills/runpod-usage/reference/storage.md, note: "See \"Global volume (any data center)\": the checkpoint fallback." }
+
+  - id: pod-deployment.deploy-when-available
+    statement: >
+      When the GPU type you pick is out of capacity, the console offers Deploy
+      when available in place of Deploy Pod. It queues the pod and deploys it
+      automatically once that GPU frees up within the time window you choose. If
+      the account lacks the funds at that moment, no pod is deployed.
+    status: documented
+    see: [gpu-availability.per-type-per-dc-per-product]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/get-started", seen: "2026-10-30" }

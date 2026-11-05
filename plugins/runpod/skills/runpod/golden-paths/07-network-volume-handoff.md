@@ -55,6 +55,7 @@ that DC.
 
 ### 1. Create the volume
 ```bash
+runpodctl datacenter list          # confirm the GPU has stock in EU-RO-1 before the volume pins the pod there
 runpodctl network-volume create --name handoff-demo --size 10 --data-center-id EU-RO-1
 # → id, e.g. uov9m8om3w, in EU-RO-1. Pin everything below to this DC.
 ```

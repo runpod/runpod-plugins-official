@@ -45,6 +45,7 @@ For choosing bake-in vs volume in the first place, see
 ### Standard network volume (runpodctl / v1 REST)
 
 ```bash
+runpodctl datacenter list                                                           # pick a DC with stock for the GPU you will attach
 runpodctl network-volume create --name std-vol --size 50 --data-center-id US-KS-2   # → volume id
 ```
 
