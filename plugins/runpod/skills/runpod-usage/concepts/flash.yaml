@@ -257,6 +257,19 @@ rules:
       - { source: live-probe, ref: "rp flash dev main.py < /dev/null & from a script, then kill -TERM and separately kill -INT: both logged 'cleaning up 1 deleted' and left no endpoints", seen: "2026-10-16" }
       - { source: other, url: "https://github.com/runpod/runpod-python/blob/fc4a6c73c3915625d65df63416db835d0b927b8f/runpod/rp_cli/main.py#L498", seen: "2026-10-22", note: rp flash dev handles SIGINT and SIGTERM and ignores further signals during teardown. }
 
+  - id: flash.dev-rerun-template-hold
+    statement: >
+      In `runpod` 2.1.0, a dev session deletes its endpoints on exit but not
+      their templates, and each template name comes from the app and resource
+      names. The platform keeps a deleted endpoint's template for up to about 90
+      minutes, so starting the same app again in that window fails with
+      "endpoint template names must be unique". Wait, or give the `runpod.App` a
+      new name.
+    status: verified
+    see: [flash.dev-session]
+    evidence:
+      - { source: live-probe, ref: "runpod 2.1.0: a second rp flash dev queue_gpu.py --once after a passing one failed with 'endpoint template names must be unique'; GraphQL deleteTemplate on the leftover dev-gpu-sum-gpu_sum-* template returned 'Template is still held by deleted endpoint ..., pending cleanup ... within about 90 minutes of the endpoint delete'; the same app under a new runpod.App name started normally", seen: "2026-11-04" }
+
   - id: flash.legacy-dev-ships-body-only
     statement: >
       In the legacy `runpod-flash` package, `flash dev` ships only the decorated

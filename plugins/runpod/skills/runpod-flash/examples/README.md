@@ -9,17 +9,15 @@ rp flash deploy queue_gpu.py            # persistent endpoints
 rp flash deploy queue_gpu.py --build-only   # offline check: discovery + dependency resolution
 ```
 
-Live checks ran on `runpod` 2.0.0rc1, before the GPU-pinning and build changes in 2.0.0;
-`queue_gpu.py` (float dtype) and `cpu_gpu_pipeline.py` (parallel CPU stage) changed slightly
-since. Re-run them on 2.0.0.
+Live checks ran with `rp flash dev --once` on `runpod` 2.1.0 (2026-11-04) unless noted.
 
-| File | Shows | Live check (`runpod` 2.0.0rc1, `--once`) |
+| File | Shows | Live check |
 |---|---|---|
-| [`queue_gpu.py`](queue_gpu.py) | `@app.queue` on a GPU list with `workers=(0, 5)` | ✅ 2026-10-16 |
-| [`api_model_service.py`](api_model_service.py) | `@app.api` class, model loaded once in `@runpod.init`, `POST /generate` + `GET /health` | ✅ 2026-10-16 |
-| [`cpu_gpu_pipeline.py`](cpu_gpu_pipeline.py) | CPU stage feeding a GPU stage, `.spawn()` fan-out | ✅ 2026-10-16 |
-| [`train_then_serve.py`](train_then_serve.py) | `@app.task` trains on a GPU Pod, a queue endpoint serves the returned weights | ✅ 2026-10-16 |
-| [`call_deployed.py`](call_deployed.py) | `runpod.Queue`, `runpod.Api` and `runpod.Endpoint` from plain Python | ✅ 2026-10-16 (against both apps deployed) |
+| [`queue_gpu.py`](queue_gpu.py) | `@app.queue` on a GPU list with `workers=(0, 5)` | ✅ 2.1.0 |
+| [`api_model_service.py`](api_model_service.py) | `@app.api` class, model loaded once in `@runpod.init`, `POST /generate` + `GET /health` | ✅ 2.1.0 |
+| [`cpu_gpu_pipeline.py`](cpu_gpu_pipeline.py) | CPU stage feeding a GPU stage, `.spawn()` fan-out | ✅ 2.1.0 |
+| [`train_then_serve.py`](train_then_serve.py) | `@app.task` trains on a GPU Pod, a queue endpoint serves the returned weights | ✅ 2.0.0rc1 (2026-10-16); the 2.1.0 run found no Pod stock for any listed GPU |
+| [`call_deployed.py`](call_deployed.py) | `runpod.Queue`, `runpod.Api` and `runpod.Endpoint` from plain Python | ✅ 2.1.0, against `queue_gpu.py` and `api_model_service.py` deployed |
 
 Cost and cleanup: dev sessions delete their endpoints on exit, and task Pods terminate when the
 task returns. Remove deployed apps with `rp flash app delete APP --yes`. For a checkpoint shared

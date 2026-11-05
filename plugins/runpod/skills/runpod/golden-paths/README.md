@@ -81,7 +81,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 04 | [LoRA fine-tune (training run) on a pod](04-finetune-pod.md) | pod / batch job | runpodctl pod + volume | live-verified 2026-07-10 (training phase, via 08) |
 | 05 | [Custom model → serverless endpoint](05-model-to-endpoint-pipeline.md) | cross-lane pipeline | hf → docker → runpodctl | live-verified 2026-07-10 |
 | 06 | [Interactive dev pod (SSH / VS Code)](06-dev-pod.md) | pod / interactive | runpodctl pod + volume | live-verified 2026-07-10 |
-| 07 | [Network-volume handoff (pod → volume → serverless)](07-network-volume-handoff.md) | pod + serverless | runpodctl + Runpod SDK (`rp flash`) | live-verified 2026-10-16 (SDK read step; pod step 2026-07-10) |
+| 07 | [Network-volume handoff (pod → volume → serverless)](07-network-volume-handoff.md) | pod + serverless | runpodctl + Runpod SDK (`rp flash`) | live-verified 2026-10-16 (SDK read step; pod step 2026-07-10; volume write + read-back in `rp flash dev --once` on `runpod` 2.1.0, 2026-11-04) |
 | 08 | [Fine-tune → serve (LoRA on a pod → serverless)](08-finetune-to-serverless.md) | train → serve loop | runpodctl + peft/axolotl + Runpod SDK (`rp flash`) | live-verified 2026-10-17 (SDK serve step; pod training 2026-07-10) |
 | 09 | [Custom serverless dev loop (iterate in a pod → dual-mode image → serverless)](09-custom-serverless-dev-loop/README.md) | custom image / escape hatch | runpodctl + docker (dual-mode `MODE_TO_RUN`) | live-verified 2026-07-10 |
 | 10 | [Multi-region HA serverless (multi-volume + data sync)](10-multi-region-ha-serverless.md) | serverless / availability | runpodctl ≥v2.4.0 (`--network-volume-ids`) + S3 API (aws) | live-verified 2026-07-10 |
