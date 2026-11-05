@@ -91,6 +91,56 @@ test("Docker evidence accepts only its exact public documentation host", () => {
   assert.notEqual(urlProblem("http://docs.docker.com/build/cache/"), null);
 });
 
+test("public Runpod endpoints pass and lookalike hosts fail", () => {
+  for (const url of [
+    "https://api.runpod.ai/v2/abc123/run",
+    "https://abc123.api.runpod.ai/ping",
+    "https://abc123-8888.proxy.runpod.net/",
+    "https://s3api-eu-ro-1.runpod.io/",
+    "https://rest.runpod.io/v1/pods",
+    "https://console.runpod.io/pods",
+    "https://mcp.runpod.io/mcp",
+    "https://cli.runpod.net",
+  ]) {
+    assert.equal(urlProblem(url), null, url);
+  }
+  for (const url of [
+    "https://docs.runpod.io.example.net/pods",
+    "https://abc123.proxy.runpod.net.example.com/",
+    "https://a.b.proxy.runpod.net/",
+    "https://a.b.api.runpod.ai/ping",
+    "https://abc123.api.runpod.ai.example.com/",
+    "https://s3api-eu.runpod.io.example.com/",
+  ]) {
+    assert.notEqual(urlProblem(url), null, url);
+  }
+});
+
+test("a URL in a rule's statement or on_violation must be on a public host", () => {
+  const dir = mkdtempSync(join(tmpdir(), "concepts-"));
+  const lines = [
+    "id: pod",
+    "name: Pod",
+    "kind: resource",
+    "summary: A pod.",
+    "product: pods",
+    "is_a: null",
+    "part_of: null",
+    "rules:",
+    "  - id: pod.links",
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: ${POD_ID} is the shell placeholder under test
+    "    statement: Open `https://<pod-id>-<port>.proxy.runpod.net` or `https://${POD_ID}-8888.proxy.runpod.net`, not https://docs.runpod.io.example.net/pods.",
+    "    on_violation: See http://docs.runpod.io/pods",
+    "    status: documented",
+    "    evidence: [{ source: public-docs, url: https://docs.runpod.io/pods/overview }]",
+  ];
+  writeFileSync(join(dir, "pod.yaml"), `${lines.join("\n")}\n`);
+  assert.deepEqual(validate(dir, noFile, noFile).errors, [
+    'pod: rules[0].statement has a URL that is on docs.runpod.io.example.net, which is not a public source host: "https://docs.runpod.io.example.net/pods"',
+    'pod: rules[0].on_violation has a URL that is not https: "http://docs.runpod.io/pods"',
+  ]);
+});
+
 test("a url must be on a public source host", () => {
   const errors = badErrors();
   assertHasError(

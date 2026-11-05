@@ -43,19 +43,66 @@ function specProperties(spec: Spec, schema: JsonSchema | undefined, seen = new S
   return names;
 }
 
-// Every file is public-facing. These name internal systems, internal source
-// ids or private repositories; the rule has to be restated from a public source.
-const SENSITIVE: [RegExp, string][] = [
-  [/\b(learning|glossary|entity|arch|domain|workflow|failure_mode):/i, "an internal source id"],
+// The public repositories under github.com/runpod, the only ones a file may link
+// to or cite. Extend the list when a new one is cited.
+const PUBLIC_GITHUB_REPOS = new Set([
+  "runpod-plugins-official",
+  "runpodctl",
+  "runpod-python",
+  "runpod-mcp",
+  "docs",
+  "containers",
+  "flash",
+]);
+// The names as pattern alternatives; a dot is the one character a repository
+// name may hold that a pattern reads specially.
+const PUBLIC_REPO_NAMES = [...PUBLIC_GITHUB_REPOS].map((repo) => repo.replaceAll(".", "\\.")).join("|");
+
+// Every file is public-facing. These catch links to repositories that are not
+// public and to internal tools, email addresses and credentials. `pnpm scan`
+// applies them to every file under plugins/, packages/ and ontology/.
+export const SENSITIVE: [RegExp, string][] = [
+  // A public name may end in .git; a longer name that starts with one is not public.
+  [
+    new RegExp(`\\bgithub\\.com[/:]runpod/(?!(${PUBLIC_REPO_NAMES})(\\.git)?(?![\\w-]|\\.\\w))[\\w.-]+`, "i"),
+    "a link to a Runpod repository that is not public",
+  ],
+  // The private repositories named without a link.
+  [/runpod\/(RunPod|host|ai-api|hapi|proxy|rphttp2)\b/, "a private repository"],
+  [/\b(linear\.app|notion\.(so|site)|slack\.com)\b/i, "an internal tool's link"],
+  // Any address except one on a placeholder domain, a URL's user:password part,
+  // a Runpod SSH login, a git login before a repository path (git@hf.co:org/model)
+  // or git@github.com itself, and the contact addresses Runpod publishes. Each
+  // exemption holds for the whole name only, not a longer one that starts with it.
+  // The lookbehind is bounded so a long line stays linear.
+  [
+    /(?<![\w.%+-]|\/\/[^\s/@]{0,256})(?!(team|support|help)@runpod\.io(?![\w-]|\.\w)|git@[\w.-]+[:/]|git@github\.com(?![\w-]|\.\w))[\w.%+-]+@(?!(example\.(com|org|net)|ssh\.runpod\.io)(?![\w-]|\.\w))[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}\b/i,
+    "an email address",
+  ],
+  // Credentials: the Runpod API and S3 key shapes plus common vendor tokens.
+  [/\brpa_[A-Za-z0-9]{16,}\b/, "a Runpod API key"],
+  [/\brps_[A-Za-z0-9]{16,}\b/, "a Runpod S3 API key"],
+  [/\b(?:sk|pk|ghp|gho|phc|phx|xoxb|xoxp)[-_][A-Za-z0-9_-]{16,}\b/, "an API key"],
+  [/\b(?:github_pat_[A-Za-z0-9_]{22,}|gh[usr]_[A-Za-z0-9]{36})\b/, "a GitHub token"],
+  [/\bhf_[A-Za-z0-9]{30,}\b/, "a Hugging Face token"],
+  [/\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/, "an AWS access key id"],
+  [/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/, "a JWT"],
+];
+
+// Internal names and the concept graph's own source vocabulary, checked in
+// concept text only, where the rule has to be restated from a public source. In
+// other files they are ordinary text: `torch.nn.Linear`, a Redis cache, a Slack
+// webhook, a ComfyUI "workflow:" key, or "v1 had" about REST v1.
+const DRAFT_WORDING: [RegExp, string][] = [
   [/\breq:[A-Z]/, "an internal requirement id"],
   [/\b(spec|doc):[a-z]/, "an internal design doc id"],
   [/\b(planetscale|tinybird|snowflake|mysql|redis|kafka)\b/i, "internal infrastructure"],
   [/\bhost[ -]daemon\b|\brphttp2?\b|\bgql-api\b|\bhapi\b|\boutbox\b/i, "an internal service"],
   [/\bcontext[ -]mcp\b|\bdev (graphql )?schema\b/i, "an internal source"],
   [/\bfeature[ -]flag/i, "unreleased behavior behind a flag"],
-  [/runpod\/(RunPod|host|ai-api|hapi|proxy|rphttp2)\b/, "a private repository"],
   [/\b(gold|silver|bronze)\.[a-z_]+|\bfct_[a-z_]+/i, "an internal warehouse table"],
   [/\b(Linear|Notion|Zendesk|Slack)\b/, "an internal tool"],
+  [/\b(learning|glossary|entity|arch|domain|workflow|failure_mode):/i, "an internal source id"],
   [/\binternal (design|doc|docs|requirement|requirements|learning|learnings|source|sources)\b/i, "an internal source"],
   [/\bv[01] (said|says|claimed|claims|marked|recorded|cited|listed|had)\b|\bontology\b/i, "the ontology's own drafts"],
 ];
@@ -83,19 +130,30 @@ function excerpt(text: string, pattern: RegExp): string {
     .trim();
 }
 
-// Hosts a cited URL may point at. Every file ships in a public npm package, so a
-// URL anywhere else (a private repo, an internal tool, localhost) is an error.
-// Extend the list when a new public source is cited.
+// Hosts a URL may point at, in evidence and in a rule's statement or
+// on_violation. Every file ships in a public npm package, so a URL anywhere else
+// (a private repo, an internal tool, localhost) is an error. Extend the list when
+// a new public source or public Runpod endpoint is cited.
 const PUBLIC_HOSTS = new Set([
   "docs.runpod.io",
   "docs.docker.com",
   "api.runpod.io",
+  "api.runpod.ai",
+  "rest.runpod.io",
+  "console.runpod.io",
+  "mcp.runpod.io",
+  "cli.runpod.net",
   "graphql-spec.runpod.io",
   "runpod.io",
   "www.runpod.io",
   "huggingface.co",
 ]);
-const PUBLIC_GITHUB_REPOS = new Set(["runpod-plugins-official", "runpodctl", "runpod-python", "runpod-mcp", "docs"]);
+// Public Runpod endpoints named per endpoint, per pod or per data center.
+const PUBLIC_HOST_PATTERNS = [
+  /^[a-z0-9-]+\.api\.runpod\.ai$/,
+  /^[a-z0-9-]+\.proxy\.runpod\.net$/,
+  /^s3api-[a-z0-9-]+\.runpod\.io$/,
+];
 
 /** Why a URL is not a public source, or null when it is. */
 export function urlProblem(raw: string): string | null {
@@ -111,8 +169,14 @@ export function urlProblem(raw: string): string | null {
     if (owner === "runpod" && repo && PUBLIC_GITHUB_REPOS.has(repo)) return null;
     return "is not a public Runpod GitHub repository";
   }
-  return PUBLIC_HOSTS.has(url.hostname) ? null : `is on ${url.hostname}, which is not a public source host`;
+  const host = url.hostname;
+  if (PUBLIC_HOSTS.has(host) || PUBLIC_HOST_PATTERNS.some((pattern) => pattern.test(host))) return null;
+  return `is on ${host}, which is not a public source host`;
 }
+
+/** A URL inside prose, without trailing punctuation. */
+export const TEXT_URL = /(https?:\/\/[^\s`'"]*[^\s`'".,;:)])/g;
+const RULE_TEXT = /^rules\[\d+\]\.(statement|on_violation)$/;
 
 // Every human-readable string in a concept, with where it sits. URLs are
 // returned apart: a public docs URL may contain words the patterns above look
@@ -170,7 +234,15 @@ export function validate(dir?: string, specPath = SPEC_PATH, repoRoot = REPO_ROO
         if (problem) errors.push(`${where}: ${path} ${problem}: "${text}"`);
         continue;
       }
-      for (const [pattern, why] of SENSITIVE) {
+      // An agent acts on a rule's text, so its URLs are held to the same hosts.
+      // A placeholder such as <pod-id> or ${POD_ID} stands for one name.
+      if (RULE_TEXT.test(path)) {
+        for (const [link] of text.matchAll(TEXT_URL)) {
+          const problem = urlProblem(link.replace(/<[^<>]+>|\$\{[^{}]+\}/g, "x"));
+          if (problem) errors.push(`${where}: ${path} has a URL that ${problem}: "${link}"`);
+        }
+      }
+      for (const [pattern, why] of [...SENSITIVE, ...DRAFT_WORDING]) {
         if (pattern.test(text)) errors.push(`${where}: ${path} mentions ${why}: "${excerpt(text, pattern)}"`);
       }
       for (const pattern of TIME_BOUND) {

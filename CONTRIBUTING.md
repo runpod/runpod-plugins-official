@@ -165,7 +165,7 @@ python3 hooks/check_migrate_scanner.py     # runpod-migrate scanner vs. its corp
 python3 hooks/check_migrate_tables.py      # runpod-migrate path claims vs. the spec
 python3 hooks/check_migrate_class3.py      # runpod-migrate Class-3 table vs. the spec
 # concept graph and guide links (Node 24; also run in CI)
-cd ontology/tools && pnpm install && pnpm test && pnpm validate --strict && pnpm check:guides && cd ../..
+cd ontology/tools && pnpm install && pnpm test && pnpm validate --strict && pnpm check:guides && pnpm scan && cd ../..
 # skill helper unittests (also run in CI)
 python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p "test_*.py"
 ```

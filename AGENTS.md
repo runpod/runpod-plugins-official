@@ -228,8 +228,8 @@ editing the repo. Each is its own checkable rule.
 13. **Concept files** — `skills/runpod-usage/concepts/*.yaml` hold exact facts; the reference
    docs explain them.
    - Follow `.claude/skills/add-concept/SKILL.md` for concepts and `.claude/skills/write-guide/SKILL.md`
-     for skills, reference docs and golden paths, and run `pnpm validate --strict` and
-     `pnpm check:guides` in `ontology/tools/` before committing.
+     for skills, reference docs and golden paths, and run `pnpm validate --strict`,
+     `pnpm check:guides` and `pnpm scan` in `ontology/tools/` before committing.
    - Guides state only facts the concept rules support; a fact a guide needs goes into a rule
      first. Every concept is covered by at least one guide, and `check:guides` fails otherwise.
    - Every file is public-facing: cite only the REST v2 spec, the public docs, a skill file in

@@ -95,6 +95,7 @@ refuses a file with a comment, since it would drop it. Put the context in a
 cd ontology/tools
 pnpm format              # canonical style; CI runs format:check
 pnpm validate --strict   # must report 0 errors and 0 warnings
+pnpm scan                # internal links, email addresses and keys; must report 0 errors
 pnpm test
 pnpm build:graph         # open ../build/graph.html
 ```
