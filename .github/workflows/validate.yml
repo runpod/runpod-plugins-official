@@ -103,6 +103,7 @@ jobs:
   concepts:
     # The concept files under runpod-usage/concepts: schema, cross-file refs,
     # REST v2 snapshot, public-only wording, and that every cited skill file exists.
+    # Then the public-content scan of plugins/, packages/ and ontology/.
     runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:
@@ -123,6 +124,18 @@ jobs:
       - run: pnpm format:check
       - run: pnpm validate --strict
       - run: pnpm check:guides
+      - name: Scan public content; on a pull request, list what the concept rules add
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            git -C ../.. fetch --depth=1 origin "$BASE_SHA"
+            base=$(mktemp -d)
+            git -C ../.. archive "$BASE_SHA" plugins/runpod/skills/runpod-usage/concepts | tar -x -C "$base"
+            pnpm scan --base "$base/plugins/runpod/skills/runpod-usage/concepts"
+          else
+            pnpm scan
+          fi
       - run: pnpm build:sqlite
       - name: Pack @runpod/plugin-knowledge (what release-please publishes)
         working-directory: packages/knowledge

@@ -124,9 +124,17 @@ checked.
 | `live-probe` | A request made against a live account | `ref`, `seen` |
 | `other` | Anything else public, such as a CLI's `--help` output | `ref` or `url` |
 
-A `url` must be https on a public source host: docs.runpod.io, docs.docker.com, api.runpod.io,
-graphql-spec.runpod.io, runpod.io, huggingface.co, or a public `runpod`
-repository on github.com. The list is `PUBLIC_HOSTS` in
+A `url`, and any URL in a rule's `statement` or `on_violation`, must be https on a
+public source host: docs.runpod.io, docs.docker.com, api.runpod.io,
+graphql-spec.runpod.io, runpod.io, www.runpod.io, huggingface.co, one of the
+public repositories `runpod/runpod-plugins-official`, `runpod/runpodctl`,
+`runpod/runpod-python`, `runpod/runpod-mcp`, `runpod/docs`, `runpod/containers`
+and `runpod/flash` on github.com, or a
+Runpod service (console.runpod.io, mcp.runpod.io, cli.runpod.net, api.runpod.ai,
+`<endpoint-id>.api.runpod.ai`, rest.runpod.io, `<pod-id>-<port>.proxy.runpod.net`,
+`s3api-<dc>.runpod.io`). In a statement, a placeholder such as `<pod-id>` or
+`${POD_ID}` stands for one name. The lists are `PUBLIC_HOSTS`,
+`PUBLIC_HOST_PATTERNS` and `PUBLIC_GITHUB_REPOS` in
 `ontology/tools/src/validate.ts`; add a host there when citing a new public
 source.
 
@@ -152,7 +160,9 @@ sources. A live probe settles it.
 - Every `applies_to` names a field, state or action the concept declares.
 - Every REST v2 schema, path and field root exists in the vendored spec.
 - The `is_a` and `part_of` chains have no loops.
-- No file names internal systems, internal source ids, private repositories or internal tools.
-- Every evidence entry has the keys its source requires, and every `url` is on a public source host.
+- No file names internal systems, internal source ids, private repositories or internal tools, or
+  contains an email address or an API key.
+- Every evidence entry has the keys its source requires, and every `url`, and every URL in a rule's
+  statement or `on_violation`, is on a public source host.
 - No file uses time-bound wording.
 - Every `skill` evidence `path`, on rules and on `states`, points at a file that exists in this repo.

@@ -10,6 +10,11 @@ cd ontology/tools
 pnpm install
 pnpm format              # rewrite the concept files in the canonical style (CI: format:check)
 pnpm validate --strict   # schema, cross-file, spec and public-only checks (CI runs this)
+pnpm scan                # internal links, email addresses and keys in any file under plugins/, packages/
+                         # and ontology/
+pnpm scan --base <dir>   # also list the commands, URLs, images and env assignments the rules add
+                         # over the concept files in <dir>; an added image with a namespace
+                         # outside runpod/ fails
 pnpm test
 pnpm build:sqlite        # build/ontology.sqlite
 pnpm build:graph         # build/graph.html, a force-directed graph with a panel per concept
