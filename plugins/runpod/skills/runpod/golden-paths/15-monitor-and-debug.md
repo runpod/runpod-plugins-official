@@ -2,9 +2,14 @@
 lanes: [runpodctl, runpod-mcp, rest]
 mcp: full
 concepts: [serverless-endpoint, worker, job, log-stream, serverless-handler]
+status: live-verified
+verified: "2026-07-13"
+evals: [runpod/evals/route-serverless-observability]
 ---
 
 # Golden path 15 — monitor & debug serverless (is my endpoint healthy, why is a job failing)
+
+> **Status:** live-verified 2026-07-13 — re-verified on runpodctl v2.9.0 2026-08-06, command surface re-checked on v2.10.0 2026-08-19. **Evals:** [route-serverless-observability](../evals/route-serverless-observability.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** the observability toolkit for a running serverless endpoint — answer "are my
 workers healthy?", "why is this job stuck?", and "what did the worker actually do?" using

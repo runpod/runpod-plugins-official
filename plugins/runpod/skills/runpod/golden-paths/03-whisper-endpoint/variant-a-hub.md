@@ -2,9 +2,14 @@
 lanes: [runpodctl]
 mcp: full
 concepts: [hub-repo, serverless-endpoint, worker, job, gpu-pool]
+status: live-verified
+verified: "2026-07-07"
+evals: [runpodctl/evals/hub-deploy-serverless]
 ---
 
 # Golden path 03 — Whisper — Variant A: Runpod Hub worker
+
+> **Status:** live-verified 2026-07-07 — end to end on runpodctl + Hub. **Evals:** [hub-deploy-serverless](../../../runpodctl/evals/hub-deploy-serverless.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Status:** COVERED — live-verified 2026-07-07. **Lane:** runpodctl + Runpod Hub.
 **When to use this variant:** the recommended default — a **heavy, prebuilt, known**

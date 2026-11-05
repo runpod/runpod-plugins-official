@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh]
 mcp: partial
 concepts: [pod, network-volume, pod-ssh-access, ssh-key, exposed-port, template, pod-deployment]
+status: live-verified
+verified: "2026-07-10"
+evals: [runpodctl/evals/pod-ssh-connect, runpodctl/evals/create-and-wait-until-usable]
 ---
 
 # Golden path 06 — interactive dev pod (SSH / VS Code + persistent /workspace)
+
+> **Status:** live-verified 2026-07-10 — end to end incl. stop/start and VS Code Remote-SSH. **Evals:** [pod-ssh-connect](../../runpodctl/evals/pod-ssh-connect.eval.md) · [create-and-wait-until-usable](../../runpodctl/evals/create-and-wait-until-usable.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** from "give me a Runpod dev box I can SSH into / open in VS Code", an agent
 provisions a pod on a PyTorch template with a **network volume at `/workspace`**, returns a

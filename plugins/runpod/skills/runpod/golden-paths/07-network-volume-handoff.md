@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh, flash, runpod-mcp]
 mcp: partial
 concepts: [pod, network-volume, data-center, serverless-endpoint, worker, serverless-handler, flash, log-stream]
+status: live-verified
+verified: "2026-10-16"
+evals: [flash/evals/volume-cache-model-load]
 ---
 
 # Golden path 07 — network-volume handoff (pod → volume → serverless)
+
+> **Status:** live-verified 2026-10-16 — the SDK read step (`rp flash deploy`) on 2026-10-16, the pod write step on 2026-07-10. **Evals:** [volume-cache-model-load](../../flash/evals/volume-cache-model-load.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** produce data on a **pod**, persist it to a **network volume**, and have a
 **serverless endpoint** read that same data — the pattern behind "fine-tune on a pod,

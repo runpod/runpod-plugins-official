@@ -2,9 +2,14 @@
 lanes: [runpodctl]
 mcp: partial
 concepts: [pod, template, container-image, network-volume, exposed-port, container-disk]
+status: live-verified
+verified: "2026-07-07"
+evals: [runpod/evals/route-templates, runpod/evals/prefer-prebuilt]
 ---
 
 # Golden path 02 — ComfyUI — Variant B: prebuilt official image
+
+> **Status:** live-verified 2026-07-07 — end to end on the official template. **Evals:** [route-templates](../../evals/route-templates.eval.md) · [prefer-prebuilt](../../evals/prefer-prebuilt.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Status:** COVERED — live-verified 2026-07-07 on pod `7ydkt5vs4fst25` (RTX 4090,
 $0.69/hr). **Lane:** runpodctl.

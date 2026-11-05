@@ -1,8 +1,9 @@
 name: live-evals
 
-# Free live evals: create, read back and delete a template, an account secret and a
-# registry credential, and read the catalog, against the real REST v2 API. Nothing
-# billable is created. Gated on the RUNPOD_API_KEY repository secret: without it
+# Free live evals: create, read back and delete a template, an account secret, a
+# registry credential and two scale-to-zero endpoints that are never invoked, and read
+# the catalog, against the real REST v2 API. No worker starts, so nothing bills
+# (idle scale-to-zero endpoints cost $0). Gated on the RUNPOD_API_KEY repository secret: without it
 # (forks, or before a maintainer adds a dedicated test-account key) the job is a
 # no-op that passes. Use a key for a dedicated test account, never a personal one.
 #

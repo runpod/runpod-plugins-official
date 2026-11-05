@@ -2,9 +2,14 @@
 lanes: [docker, runpod-mcp, runpodctl, console]
 mcp: partial
 concepts: [container-image, serverless-endpoint, worker, endpoint-build, template]
+status: spec-checked
+verified: "2026-10-06"
+evals: [runpod-build-template/evals/runtime-contracts]
 ---
 
 # Variant — load-balanced HTTP worker
+
+> **Status:** spec-checked 2026-10-06 — local checks only; full Runpod acceptance unverified. **Evals:** [runtime-contracts](../../../runpod-build-template/evals/runtime-contracts.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ## Goal · Status · Lane(s)
 

@@ -2,9 +2,14 @@
 lanes: [runpodctl, flash]
 mcp: partial
 concepts: [hub-repo, flash, serverless-endpoint, worker, job, serverless-handler]
+status: live-verified
+verified: "2026-07-07"
+evals: [runpodctl/evals/hub-deploy-serverless]
 ---
 
 # Golden path 03 — Whisper endpoint (audio → text)
+
+> **Status:** live-verified 2026-07-07 — both variants end to end. **Evals:** [hub-deploy-serverless](../../../runpodctl/evals/hub-deploy-serverless.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Goal / Status: COVERED — live-verified 2026-07-07 / Kind: serverless / Lane: runpodctl+Hub or flash**
 

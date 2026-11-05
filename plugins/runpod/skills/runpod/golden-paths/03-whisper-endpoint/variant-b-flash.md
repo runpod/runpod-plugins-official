@@ -2,9 +2,14 @@
 lanes: [flash]
 mcp: none
 concepts: [flash, serverless-endpoint, worker, serverless-handler, gpu-type]
+status: live-verified
+verified: "2026-10-16"
+evals: [flash/evals/qb-gpu-function]
 ---
 
 # Golden path 03 — Whisper — Variant B: from scratch with the Runpod SDK
+
+> **Status:** live-verified 2026-10-16 — end to end on the Runpod SDK (`rp flash dev --once`). **Evals:** [qb-gpu-function](../../../flash/evals/qb-gpu-function.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Status:** COVERED — live-verified on the Runpod SDK (`runpod` 2.0.0rc1) 2026-10-16 with
 `rp flash dev main.py --once`: the worker returned the Gettysburg transcript in 70 s from cold.

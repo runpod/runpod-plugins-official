@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, ssh]
 mcp: partial
 concepts: [network-volume, container-image, pod, container-disk, template]
+status: live-verified
+verified: "2026-07-16"
+evals: [runpod-usage/evals/image-guidance, runpodctl/evals/model-cache-size-vs-volume]
 ---
 
 # Golden path 25 — bake into the image vs mount a network volume
+
+> **Status:** live-verified 2026-07-16 — built, CPU pod with a network volume, df -T, torn down. **Evals:** [image-guidance](../../../runpod-usage/evals/image-guidance.eval.md) · [model-cache-size-vs-volume](../../../runpodctl/evals/model-cache-size-vs-volume.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ✅ **Live-verified** (built an image with a baked-in file → launched a CPU pod with a standard
 network volume attached → showed the two live on **different filesystems** → torn down).
@@ -21,11 +26,7 @@ and [golden path 21 (storage tiers)](../21-storage-tiers.md).
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
 block first. For this path specifically:
 
-- **Runpod auth** — `export RUNPOD_API_KEY=<key>` (from the
-  [console](https://runpod.io/console/user/settings); see
-  [getting-started](../../../runpod-usage/reference/getting-started.md)).
-- **Docker** running **and `docker login`** to a registry you can push to — substitute your
-  namespace for `<namespace>`. See [companion-clis docker](../../../companion-clis/reference/docker.md).
+- **Docker**, logged in (shared block) — substitute your namespace for `<namespace>`. See [companion-clis docker](../../../companion-clis/reference/docker.md).
 - **An SSH key registered** on your account (to exec into the pod) — see
   [golden path 22](../22-minimal-pod-image/README.md#prerequisites).
 

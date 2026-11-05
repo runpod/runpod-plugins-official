@@ -2,9 +2,14 @@
 lanes: [runpodctl, docker, ssh, rest, runpod-mcp]
 mcp: partial
 concepts: [pod, template, serverless-endpoint, serverless-handler, container-image, worker, network-volume, log-stream, volume-cache]
+status: live-verified
+verified: "2026-07-10"
+evals: []
 ---
 
 # Golden path 09 — custom serverless the hard way (iterate in a pod, then flip to serverless)
+
+> **Status:** live-verified 2026-07-10 — end to end (pod, dual-mode image, serverless). **Evals:** none (GPU pod plus GPU endpoint; no free or cheap check exists). Status key: [golden-paths README](../README.md#status-legend).
 
 **Goal:** ship a **custom** serverless endpoint when the easy routes don't fit — no
 Hub worker exists, and `flash`'s decorator model can't express what you need (custom

@@ -29,11 +29,15 @@ This is the biggest lever for speed and reliability:
 
 - Pod service → look for an **official Runpod template / prebuilt image**
   (`runpodctl template search <app>`) — it auto-starts and skips the install
-  gotchas.
+  gotchas. Official pod templates are indexed in
+  [`runpod-templates`](../../runpod-templates/SKILL.md).
 - Serverless → look for a **Hub worker** (`runpodctl hub search <app>`).
 - Build **from scratch** (install on a pod, or `flash`, or a custom image) only
   when no good prebuilt exists, or you need something **custom or lighter** than
   what's shipped.
+- **Exception:** when the user explicitly requests a custom template project or
+  Dockerfile, that is the deliverable (route to `runpod-build-template`); an existing
+  prebuilt does not replace it.
 
 ## 3. Plan resources
 
@@ -42,6 +46,16 @@ GPU/VRAM and the **CUDA floor** (`gpu-selection.md` — default
 CUDA version and a modern image can land on one too old to run it), storage
 (**default a network volume** — `storage.md`), and the execution lane (`../../runpod/SKILL.md` router:
 runpod-mcp / runpodctl / flash).
+
+- **Default to Secure Cloud.** Only deploy Community Cloud when the user explicitly asks
+  (`runpodctl pod create` already defaults to `--cloud-type SECURE`; don't override it).
+  Why: [`gpu-selection.md`](gpu-selection.md#step-5-secure-vs-community-cloud).
+- **Cache vs network volume is a latency call, not a cost call.** Download time is never
+  billed, but on a cache miss Runpod holds the worker start until the model lands: the
+  job sits in the queue and the endpoint looks idle. Latency-sensitive → pre-load a
+  network volume; otherwise the cache is the cheaper default. Cache capacity is per
+  machine, so time both on the user's own endpoint rather than quoting a threshold. See
+  [`runpodctl/reference/model-caching.md`](../../runpodctl/reference/model-caching.md).
 
 ## 4. Provision & 5. Set up
 

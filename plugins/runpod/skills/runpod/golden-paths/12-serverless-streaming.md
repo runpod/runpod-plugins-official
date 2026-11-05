@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, rest]
 mcp: partial
 concepts: [serverless-handler, serverless-endpoint, template, container-image, job, api-rate-limit]
+status: live-verified
+verified: "2026-07-13"
+evals: [runpod/evals/serverless-streaming]
 ---
 
 # Golden path 12 — serverless streaming (`/stream`)
+
+> **Status:** live-verified 2026-07-13 — end to end on a CPU endpoint. **Evals:** [serverless-streaming](../evals/serverless-streaming.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** get **incremental** output out of a serverless handler — each chunk visible
 as it's produced, not one blob at the end — via the `/stream/<jobId>` endpoint, and
@@ -57,8 +62,7 @@ Runpod also collects every yield into a single list you can fetch the normal way
 on unless the result set is huge (see [Gotchas](#gotchas)).
 
 ## Prerequisites
-- `RUNPOD_API_KEY` exported (verify: `curl -s -o /dev/null -w '%{http_code}' https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`).
-- Docker running; a Docker Hub account. `runpodctl` installed.
+- The [shared prerequisites](README.md#before-you-run-any-path-shared-prerequisites): a verified `RUNPOD_API_KEY`, Docker running and logged in to a registry, `runpodctl` installed.
 
 ## Walkthrough (verified commands)
 
@@ -84,8 +88,8 @@ runpodctl template create --name gp12-stream-tmpl --serverless \
 runpodctl serverless create --template-id <template-id> --name gp12-stream-ep \
   --compute-type CPU --workers-min 0 --workers-max 1 --data-center-ids EU-RO-1  # → endpoint id
 ```
-Use `runpodctl serverless create --compute-type CPU` (not the REST `POST /v1/endpoints`
-with `"computeType":"CPU"` — that path provisioned a **GPU** endpoint in testing).
+Use `runpodctl serverless create --compute-type CPU` (or REST v2 with a `cpu` block), not
+REST v1 `"computeType":"CPU"`, which provisions a **GPU** endpoint ([evidence](../../runpodctl/reference/command-reference.md#cpu-endpoints-and-rest-v1)).
 
 ### 3. Submit a job, then read the stream
 ```bash

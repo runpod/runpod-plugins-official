@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh, flash, runpod-mcp]
 mcp: partial
 concepts: [pod, network-volume, flash, serverless-endpoint, worker, serverless-handler, data-center, gpu-pool, volume-cache]
+status: live-verified
+verified: "2026-10-17"
+evals: [flash/evals/volume-cache-model-load]
 ---
 
 # Golden path 08 — fine-tune → serve (LoRA on a pod → serverless)
+
+> **Status:** live-verified 2026-10-17 — the SDK serve step (`rp flash deploy`) on 2026-10-17, pod training on 2026-07-10. **Evals:** [volume-cache-model-load](../../flash/evals/volume-cache-model-load.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** the smallest end-to-end **train-then-serve** loop: LoRA-fine-tune a tiny LLM
 on a **pod** with axolotl, write the adapter to a **network volume**, then load base +

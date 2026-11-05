@@ -2,9 +2,14 @@
 lanes: [runpodctl, ssh, hf]
 mcp: partial
 concepts: [pod, network-volume, pod-ssh-access, gpu-type, template, data-center, file-transfer]
+status: live-verified
+verified: "2026-07-10"
+evals: []
 ---
 
 # Golden path 04 — LoRA fine-tune (training run) on a pod
+
+> **Status:** live-verified 2026-07-10 — training phase only, run as golden path 08's train phase. **Evals:** none (GPU training run; no free or cheap check exists). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** the standalone **training half** — LoRA-fine-tune a small LLM on a GPU
 **pod**, persist the adapter to a **network volume**, then free the GPU (the volume

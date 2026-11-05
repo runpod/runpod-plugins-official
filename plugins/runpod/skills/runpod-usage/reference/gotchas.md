@@ -105,8 +105,9 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
 - **Symptom:** an endpoint created through REST v2 or MCP `create-endpoint` without
   `timeout` reads back `"timeout": 0`, not the spec's documented 300000 ms default
   (live-verified 2026-10-29).
-- **Cause:** v2 does not fill the default; the server treats 0 as no
-  per-request limit (comment in runpodctl `cmd/serverless/create.go`), so a hung job is not cut off.
+- **Cause:** v2 does not fill the default, and the server treats 0 as no per-request
+  limit (comment in runpodctl `cmd/serverless/create.go`, checked through v3.0.1), so a
+  hung job is not cut off.
 - **Fix:** send `timeout` (milliseconds) on every create, sized to the slowest real
   job; on a Hub deploy, read it back and `PATCH` / `update-endpoint` it if 0.
   runpodctl ≥ 2.14.0: `serverless create --execution-timeout <seconds>`.

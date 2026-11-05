@@ -18,14 +18,10 @@ Use a Pod when:
 
 Not a good fit when traffic is bursty or idle much of the day — you pay for idle time.
 
-Two clouds — **default to Secure Cloud**:
-
-- **Secure Cloud** — T3/T4 data centers run by data-center-grade host providers, high
-  redundancy. Production and sensitive data. Use this unless the user explicitly asks
-  for Community.
-- **Community Cloud** — approved vendors, cheaper. Secure Cloud's data-center-grade
-  providers tend toward more stable behavior, which is why Secure is the default.
-  (Runpod is no longer onboarding new Community Cloud hosts; existing capacity remains.)
+Two clouds — **default to Secure Cloud** (data-center-grade T3/T4 hosts; production and
+sensitive data) and use **Community Cloud** (approved vendors, cheaper, no new hosts being
+onboarded) only when the user explicitly asks. The comparison and the reason for the
+default: [`gpu-selection.md`](gpu-selection.md#step-5-secure-vs-community-cloud).
 
 Limits: no Docker Compose (Runpod runs Docker for you), no UDP (TCP/HTTP only), no Windows.
 

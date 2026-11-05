@@ -113,7 +113,7 @@ Entering `nix develop` prints a banner (`rpp-help` re-prints it). The interprete
 | `check-format`   | `ruff format --check .` |
 | `check-lint`     | `ruff check .` |
 | `check-types`    | `mypy .`, then the skill scripts again with `--python-version 3.10` |
-| `check-security` | `bandit -c pyproject.toml --severity-level medium -r hooks plugins` |
+| `check-security` | `bandit -c pyproject.toml --severity-level medium -r hooks scripts plugins` |
 | `check-shell`    | `shellcheck scripts/*.sh` + `shfmt` |
 | `check-nix`      | `nixfmt --check .` + `deadnix --fail .` + `statix check .` |
 | `check-tests`    | `python3 -B -m unittest discover …` |

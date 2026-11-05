@@ -30,7 +30,7 @@ plugins/runpod/                   THE plugin
   README.md  CHANGELOG.md
   skills/                         the skills: router, lanes, MCP journeys (below)
   golden-paths/                   worked end-to-end reference tasks (no SKILL.md)
-hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_frontmatter / check_skill_json / check_cli_absence_claims / check_skill_lint / check_migrate_scanner / check_migrate_tables / check_migrate_class3
+hooks/                            validate_marketplace / check_versions / check_runpod_branding / check_links / check_frontmatter / check_skill_json / check_cli_absence_claims / check_skill_lint / check_golden_paths / check_migrate_scanner / check_migrate_tables / check_migrate_class3
                                   gen_cli_surface.py regenerates the runpodctl snapshot
 testdata/runpod-migrate/          fixture repos the scanner regression check runs against
 testdata/runpod-migrate/v2-openapi.json   vendored v2 spec snapshot the two spec checks gate against
@@ -92,15 +92,20 @@ rule 11): the `SKILL.md` body stays small and long tables / deep explanations li
 
 - `golden-paths/` holds worked end-to-end reference tasks + a gap analysis each.
   They have **no `SKILL.md`**, so skills.sh never loads them as skills — they are
-  acceptance scenarios/documentation. Each path's live-verification status is
-  authoritative in `golden-paths/README.md`'s Status column (and restated in each
-  file) — read it there.
+  acceptance scenarios/documentation. Each path's status (`live-verified`, `spec-checked`
+  or `legacy`), its date and its evals are authoritative in the path's own frontmatter
+  (`status`, `verified`, `evals`); the `> **Status:**` line under its title and the
+  `golden-paths/README.md` Status column restate it, and `hooks/check_golden_paths.py` fails
+  CI when the three disagree. The legend is in the README's *Status legend*.
 - Each golden-path doc uses one section template: Goal · Status · Lane(s) → When to
   use → Prerequisites → Walkthrough → Verify → Gotchas → Cost & cleanup → skill gaps.
 - Each skill's `evals/*.eval.md` are regression scenarios (Prompt / Expected
   behavior / Assertions). **They are not executed** — no runner exists in this repo and CI
   does not read them. They are specifications to hand-check a model against and to review
-  when behavior changes; treat "an eval covers it" as documentation, not coverage.
+  when behavior changes; treat "an eval covers it" as documentation, not coverage. The one
+  executed check is `scripts/live_free_evals.py` (weekly `live-evals.yml`): a golden path's
+  `live:<id>` eval names one of its `CHECK_IDS`, and only free create/read/delete calls belong
+  there (no worker start, no Pod).
 
 ## Contributor rules
 
@@ -142,11 +147,17 @@ editing the repo. Each is its own checkable rule.
      an agent with only the Runpod MCP tools finish it) and `concepts` (the concept ids it works with).
      `pnpm check:guides` in `ontology/tools/` checks them, and `pnpm build:bundle --suggest` lists
      candidate concepts. A path without this frontmatter fails the check.
+   - Every golden-path doc also declares `status`, `verified` and `evals` and carries the
+     matching `> **Status:**` line (see *Golden paths & evals*). Be honest: `live-verified` only
+     with a dated live run, `spec-checked` when it was only checked against the spec or docs,
+     `legacy` when the last live run used an API that is no longer the recommended one. A new
+     free check goes into `scripts/live_free_evals.py` under its baseline/ledger/delete-by-id
+     protocol; a path with no free or cheap check says why in its `**Evals:** none (...)`.
    - Each skill's `SKILL.md` lists the concepts it covers under `metadata.concepts`, and a
      reference doc lists them in a `concepts:` frontmatter line unless a concept rule already
      cites it. Every skill, reference doc and golden path must link to at least one concept.
-   - The per-path verification status is authoritative in `golden-paths/README.md`'s Status
-     column; do not restate it in AGENTS.md (it drifts).
+   - The per-path status is authoritative in each path's frontmatter; do not restate it in
+     AGENTS.md (it drifts).
 6. **Evals** — add or update an `evals/*.eval.md` when you add or change routing/behavior.
 7. **The runpod-migrate scanner** — `rp_api_inventory.py` has a signal table of
    interacting regexes where a one-line edit breaks a
@@ -195,7 +206,18 @@ editing the repo. Each is its own checkable rule.
    - Use Conventional Commits.
 11. **Skill body size** — put only a decision table plus the 80% patterns in a `SKILL.md` body;
    move long tables and deep explanations into `reference/*.md` linked from the body.
-12. **Concept files** — `skills/runpod-usage/concepts/*.yaml` hold exact facts; the reference
+12. **One home per fact** — each operational fact (the CUDA floor, the endpoint-timeout
+   trap, credentials and updates, the deploy plan and verify rules, Secure vs Community Cloud,
+   the answer contract, the capability matrix, the golden-path prerequisites, CPU endpoints)
+   has one canonical section, listed in `hooks/canonical_facts.json`; elsewhere, link to it.
+   - Ownership: the router (`skills/runpod/SKILL.md`) picks the lane and points at a golden
+     path or journey; `skills/runpod-mcp/SKILL.md` owns the MCP answer contract, connection/auth
+     and tool-use rules. Do not repeat one's content in the other.
+   - Exception: a decision rule or safety warning an MCP-only agent needs stays inline in the
+     `SKILL.md` it loads, as a one-line summary plus the link.
+   - `hooks/check_skill_lint.py` flags a verbatim copy (shared 12-word runs) of a canonical
+     section. If a copy is genuinely needed, add it to that block's `allow` with a reason.
+13. **Concept files** — `skills/runpod-usage/concepts/*.yaml` hold exact facts; the reference
    docs explain them.
    - Follow `.claude/skills/add-concept/SKILL.md` for concepts and `.claude/skills/write-guide/SKILL.md`
      for skills, reference docs and golden paths, and run `pnpm validate --strict` and

@@ -2,9 +2,14 @@
 lanes: [docker, runpod-mcp, runpodctl, console]
 mcp: partial
 concepts: [container-image, pod, cpu-pod, exposed-port, container-disk, registry-credential]
+status: spec-checked
+verified: "2026-10-06"
+evals: [runpod-build-template/evals/runtime-contracts]
 ---
 
 # Variant — application Pod
+
+> **Status:** spec-checked 2026-10-06 — local checks only; not run on Runpod. **Evals:** [runtime-contracts](../../../runpod-build-template/evals/runtime-contracts.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ## Goal · Status · Lane(s)
 

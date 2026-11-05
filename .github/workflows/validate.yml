@@ -67,6 +67,10 @@ jobs:
         run: |
           python3 hooks/check_skill_lint.py --self-test
           python3 hooks/check_skill_lint.py
+      - name: Golden-path status and evals
+        run: |
+          python3 hooks/check_golden_paths.py --self-test
+          python3 hooks/check_golden_paths.py
       - name: Check runpod-migrate scanner against its corpora
         run: python3 hooks/check_migrate_scanner.py
       - name: Check runpod-migrate path tables against the spec snapshot

@@ -44,7 +44,7 @@ A concept is covered by at least one guide. `pnpm check:guides` enforces both li
    |---|---|---|
    | `SKILL.md` | `metadata.concepts` in the frontmatter | `concepts: [pod, network-volume]` |
    | Reference doc | a `concepts:` line in frontmatter at the top | `---`<br>`concepts: [runpod-secret]`<br>`---` |
-   | Golden path | `lanes`, `mcp` and `concepts` in frontmatter | see `plugins/runpod/skills/runpod/golden-paths/README.md` |
+   | Golden path | `lanes`, `mcp`, `concepts`, `status`, `verified` and `evals` in frontmatter, plus the matching `> **Status:**` line under the title | see `plugins/runpod/skills/runpod/golden-paths/README.md` |
 
    List the concepts the guide actually explains or uses, not every word it mentions.
    `pnpm build:bundle --suggest` lists the concepts each golden path names, as candidates.

@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, rest]
 mcp: partial
 concepts: [serverless-handler, template, serverless-endpoint, container-image, worker]
+status: live-verified
+verified: "2026-07-16"
+evals: [runpodctl/evals/image-to-template-to-serverless, runpod-usage/evals/image-guidance]
 ---
 
 # Golden path 23 — minimal serverless **queue** image
+
+> **Status:** live-verified 2026-07-16 — built, pushed, CPU worker, /runsync, torn down. **Evals:** [image-to-template-to-serverless](../../../runpodctl/evals/image-to-template-to-serverless.eval.md) · [image-guidance](../../../runpod-usage/evals/image-guidance.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 ✅ **Live-verified** (built → pushed → deployed on a CPU worker → invoked `/runsync` → torn down).
 
@@ -22,11 +27,9 @@ See [building-images.md](../../../runpod-usage/reference/building-images.md) for
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
 block first. For this path specifically:
 
-- **Runpod auth** — `export RUNPOD_API_KEY=<key>` (from the
-  [console](https://runpod.io/console/user/settings); see
-  [getting-started](../../../runpod-usage/reference/getting-started.md)). Powers `runpodctl` + the invoke below.
-- **Docker** running **and `docker login`** to a registry you can push to (Docker Hub, etc.) —
-  substitute your namespace for `<namespace>` below. See
+- **Runpod auth** (shared block) powers `runpodctl` + the invoke below.
+- **Docker**, logged in to Docker Hub or another registry (shared block) — substitute your
+  namespace for `<namespace>` below. See
   [companion-clis docker](../../../companion-clis/reference/docker.md).
 
 ## The image

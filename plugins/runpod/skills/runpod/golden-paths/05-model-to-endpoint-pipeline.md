@@ -2,9 +2,14 @@
 lanes: [docker, runpodctl, rest, hf]
 mcp: partial
 concepts: [container-image, template, serverless-endpoint, serverless-handler, job, worker]
+status: live-verified
+verified: "2026-07-10"
+evals: [runpodctl/evals/image-to-template-to-serverless]
 ---
 
 # Golden path 05 — custom model → serverless endpoint (hf → docker → runpodctl)
+
+> **Status:** live-verified 2026-07-10 — end to end (CPU image, real job output). **Evals:** [image-to-template-to-serverless](../../runpodctl/evals/image-to-template-to-serverless.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** from "serve this custom model as an endpoint", take a model, bake it into a
 serverless **handler image**, push it, deploy an endpoint from that image, and verify it
@@ -32,12 +37,9 @@ volume** (golden path [07](07-network-volume-handoff.md)) or a cached model, so 
 bloat the image and every cold start (see `reference/gotchas.md` "Model not baked or mounted").
 
 ## Prerequisites
-- `RUNPOD_API_KEY` resolvable (runpodctl + REST). Verify: `curl -s -o /dev/null -w '%{http_code}'
-  https://api.runpod.io/v2/pods -H "Authorization: Bearer $RUNPOD_API_KEY"` → `200`.
-- `docker` running and `docker login` to a registry you can push to (`<your-registry>`,
-  e.g. your Docker Hub user). A **public** image needs no Runpod registry auth; a
+- The [shared prerequisites](README.md#before-you-run-any-path-shared-prerequisites): a verified `RUNPOD_API_KEY` (runpodctl + REST).
+- `docker` running and logged in (shared prerequisites). A **public** image needs no Runpod registry auth; a
   **private** one does (see gotchas).
-- `runpodctl` installed + authenticated.
 - `HF_TOKEN` only if the model is **gated/private** (the SST-2 model is ungated — not needed).
 
 ## The lane handoff (who does what, in order)
