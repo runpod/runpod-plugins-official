@@ -28,7 +28,7 @@ A Pod runs the stock `vllm/vllm-openai` image. The image's entrypoint is `vllm s
 - **`VLLM_API_KEY`.** The proxy URL is public. vLLM reads the key from this env var, so it never appears in `args` or the process list. Generate it locally (`python3 -c 'import secrets; print(secrets.token_hex(24))'`) and never print it in the answer.
 - **`HF_HOME` on the volume disk.** Weights go to `/workspace/hf`, so a stop and start skips the download. Size the volume disk for the weights plus about 25 %. Gated weights need `HF_TOKEN` in `env`.
 - **Container disk.** 30 GB is enough when the weights live on the volume disk. Without a volume disk, size the container disk for the weights plus 20 GB.
-- **Ports.** `8000/http` only. Add `22/tcp` and `startSsh: true` only when the user wants SSH.
+- **Ports.** `8000/http` only. The stock image runs only `vllm serve` and starts no SSH server, so `22/tcp` gives no shell; read the boot with `stream-pod-logs`. A user who needs a shell needs an image that also starts `sshd`.
 - **CUDA floor.** `vllm/vllm-openai:v0.32.0` needs `cuda>=13.0` (`NVIDIA_REQUIRE_CUDA` in the image config; read it for other tags). Read Pod stock at that floor with `get-capacity` (`cudaVersions`) before the create: stock without a CUDA filter can be on hosts the floor excludes.
 - **Multi-GPU.** Set `gpu.count` and `--tensor-parallel-size` to the same value.
 

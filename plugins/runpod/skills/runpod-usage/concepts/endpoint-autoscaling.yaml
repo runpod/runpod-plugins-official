@@ -3,7 +3,7 @@ name: Endpoint autoscaling
 kind: capability
 summary: >
   How an endpoint adds and removes workers. A scaler watches queue delay or
-  in-flight requests and keeps the worker count between `workers.min` and
+  in-flight requests and targets a worker count between `workers.min` and
   `workers.max`.
 product: serverless
 is_a: null
@@ -25,8 +25,9 @@ rules:
       `QUEUE_DELAY` adds workers when jobs wait longer than `scaling.queueDelay`
       seconds (minimum 0.5) and applies only to `QUEUE` endpoints.
       `REQUEST_COUNT` targets `scaling.requestCount` in-flight requests per
-      worker and is required for `LOAD_BALANCER` endpoints. Both stay within
-      `workers.min` and `workers.max`, and the scaler can be switched on update.
+      worker and is required for `LOAD_BALANCER` endpoints. Both target a worker
+      count within `workers.min` and `workers.max`, and the scaler can be
+      switched on update.
     status: documented
     evidence:
       - { source: rest-v2-spec, ref: "EndpointScaling; QueueDelayScaling; RequestCountScaling", seen: "2026-09-28" }

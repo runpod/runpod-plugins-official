@@ -49,7 +49,7 @@ Does the Hub worker's vLLM support the model?
 │         ├── yes → queue endpoint (reference/queue-endpoint.md)
 │         └── no, the user wants a server they keep → Pod (reference/pod.md)
 └── no (new architecture, needs a newer vLLM or a nightly image)
-          ├── model boots in under ~10 min on ≤ 2 GPUs → load-balancing endpoint (reference/lb-endpoint.md)
+          ├── model boots in minutes on ≤ 2 GPUs → load-balancing endpoint (reference/lb-endpoint.md)
           └── very large or slow to boot → Pod first; move to an endpoint after it passes
 ```
 

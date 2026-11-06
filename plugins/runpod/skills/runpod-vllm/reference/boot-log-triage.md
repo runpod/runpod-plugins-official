@@ -38,7 +38,7 @@ Judge a vLLM boot by forward progress, not by the word ERROR. Read the log in sh
 | `401` or `403` downloading weights | gated repo | set `HF_TOKEN`; the user must accept the model license on Hugging Face |
 | `No space left on device` | disk smaller than the weights | raise `disk` (or the volume disk) to the weights plus 20–30 GB |
 | vLLM banner repeats with the same `APIServer` pid | engine init retries in-process after a crash | read the lines just before each banner; the container may never restart |
-| Load-balancing worker restarts about every 10 minutes | health check never passed | see [lb-endpoint.md](lb-endpoint.md#failure-modes) |
+| Load-balancing worker restarts again and again | health check never passed | see [lb-endpoint.md](lb-endpoint.md#failure-modes) |
 | Queue job stays `IN_QUEUE` while a worker shows `RUNNING` | the worker is still booting or crash-looping | read `stream-worker-logs`; the worker status alone does not show a crash loop |
 
 A known crash loop bills for every minute it runs. Stop it first (delete the Pod, or set the endpoint's `workers.max` to 0), then fix and recreate.

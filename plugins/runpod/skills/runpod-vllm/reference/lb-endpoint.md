@@ -18,7 +18,7 @@ A worker counts as ready only when it answers the health check. vLLM listens on 
 
 The generic load-balancer rules (defaults, immutable type, no queue) are in [runpod-serverless-deploy's scenarios](../../runpod-serverless-deploy/reference/scenarios.md#load-balancer-endpoint). The endpoint read returns the exact health URL it polls in `requestUrls.health`.
 
-**Auth.** The gateway checks the Runpod API key on every request. Do not give vLLM an `--api-key` or `VLLM_API_KEY` here: the gateway does not send that key to the worker, so every request would fail inside the worker.
+**Auth.** The gateway checks the Runpod API key on every request (a request without it gets `401`). Do not also give vLLM an `--api-key` or `VLLM_API_KEY`: the client's one `Authorization` header carries the Runpod key, so vLLM would reject every request that the gateway let through.
 
 ## Create
 
@@ -59,8 +59,8 @@ Then run [`scripts/test_endpoint.py`](../scripts/test_endpoint.py) with `--wait-
 
 ## Failure modes
 
-1. **Health check never passes.** Wrong `PORT`, `PORT_HEALTH` or `HEALTH_CHECK_PATH`, or the engine never finishes booting. The worker is restarted after the health window (roughly 10 minutes), so a boot that never fits the window loops forever. Read `stream-worker-logs`: a vLLM log that reaches `Application startup complete` means the health settings are wrong; one that stops earlier is a boot failure.
-2. **Boot longer than the health window.** Large models spend minutes in download and `torch.compile`. In order of effort: add `--enforce-eager` (no compile and no CUDA graphs: faster boot, slower first requests); keep the weights and `VLLM_CACHE_ROOT` on a network volume (`HF_HOME=/runpod-volume/hf`, `VLLM_CACHE_ROOT=/runpod-volume/vllm-cache`) so later boots are warm; or serve from a Pod, which has no health window.
+1. **Health check never passes.** Wrong `PORT`, `PORT_HEALTH` or `HEALTH_CHECK_PATH`, or the engine never finishes booting. A worker that stays unhealthy is replaced, so a boot that never passes the health check loops. Read `stream-worker-logs`: a vLLM log that reaches `Application startup complete` means the health settings are wrong; one that stops earlier is a boot failure.
+2. **Boot too slow for the health check.** Large models spend minutes in download and `torch.compile`. In order of effort: add `--enforce-eager` (no compile and no CUDA graphs: faster boot, slower first requests); keep the weights and `VLLM_CACHE_ROOT` on a network volume (`HF_HOME=/runpod-volume/hf`, `VLLM_CACHE_ROOT=/runpod-volume/vllm-cache`) so later boots are warm; or serve from a Pod, which has no health window.
 3. **More workers than `workers.max`, and transient 502s.** Request-count scaling can start extra workers during a burst of long requests, even past `workers.max`, and they bill until the idle timeout. A request can also reach a worker that is still starting. Clients retry; read `list-endpoint-workers` before you treat a single 5xx as a model failure, and after a test.
 4. **Config change during a test.** An image, `args` or env change cuts a new release and replaces the workers with cold ones. Worker counts, scaling and timeout apply without a restart.
 
