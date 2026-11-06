@@ -66,8 +66,9 @@ rules:
       In runpodctl 3.1.0 and later, `runpodctl network-volume upload` and
       `runpodctl network-volume download` move a file or a folder to or from a
       network volume through its S3-compatible API, with no pod running. They
-      need S3 API keys, not the Runpod API key. A transfer that stops partway
-      exits with the code `transfer_incomplete`, and running the same command
+      need S3 API keys in addition to the Runpod API key, which looks up the
+      volume's data center unless `--data-center-id` is passed. A transfer that
+      stops partway exits with the code `transfer_incomplete`, and running the same command
       again resumes it, skipping files that are already done. A full volume
       exits with `volume_full`: grow the volume, then run the command again.
     status: documented
