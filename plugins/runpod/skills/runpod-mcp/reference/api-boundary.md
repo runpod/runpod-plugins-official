@@ -43,7 +43,7 @@ Two operations that were console-only for a long time are served tools on this s
 | Create/store a secret | `create-secret`, `list-secrets`, `get-secret`, `update-secret`, `delete-secret` |
 | Create an Instant Cluster | `create-cluster`, `list-clusters`, `get-cluster`, `update-cluster`, `delete-cluster`, `list-cluster-pods` |
 | Read Instant Cluster billing | `list-cluster-billing` |
-| Transfer files to/from a Pod/volume | *(no MCP tool — the runpodctl CLI: `send`/`receive`, the volume S3 API, cloud-sync, SSH)* |
+| Transfer files to/from a Pod/volume | *(no MCP tool — the runpodctl CLI: `send`/`receive`, `network-volume upload`/`download`; the volume S3 API, cloud-sync, SSH)* |
 | Run a command inside a Pod | *(no MCP tool — SSH or the console web terminal)* |
 | Ground account facts (reads) | `list-pods`, `get-pod`, `list-network-volumes`, `get-network-volume`, `list-endpoints` |
 

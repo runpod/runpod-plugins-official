@@ -132,7 +132,8 @@ aws s3 cp large-file.zip \
 `aws s3 sync` is fine for modest trees but has weak resume and struggles past ~10,000
 files — painful for large model weights or when replicating the same data to several
 volumes (see golden path [10 — multi-region HA serverless](../../runpod/golden-paths/10-multi-region-ha-serverless.md)).
-For that, the community **Runpod Network Volume Storage Tool** wraps the same S3 API
+runpodctl v3.1.0+ covers this first-party: `runpodctl network-volume upload`/`download`
+resume with the same S3 API keys (see the `runpodctl` skill). Without it, the community **Runpod Network Volume Storage Tool** wraps the same S3 API
 with **resumable multipart uploads** (auto chunk sizing, MD5-verified resume),
 directory sync with excludes, an interactive file browser, a Python SDK, and a REST
 server. It's referenced in the official docs under

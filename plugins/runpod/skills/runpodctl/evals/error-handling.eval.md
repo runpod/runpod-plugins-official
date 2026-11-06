@@ -31,6 +31,10 @@ The agent should:
    means work or a resource outlived the CLI, so re-running the command buys a **second**
    job or a second billed resource. Follow up instead — poll (`serverless status`, `pod get`)
    or clean up via the error object's `id`
+9. Treat `transfer_incomplete` (v3.1.0+, from `network-volume upload`/`download`) as the one
+   code where running the **same command** again is right: the transfer already retried
+   internally, and the rerun resumes it. `volume_full` needs the volume grown first, then
+   the same rerun
 
 ## Assertions
 
@@ -42,6 +46,9 @@ The agent should:
   `unauthorized`
 - Does NOT retry `timeout`, `wait_timeout`, `wait_interrupted` or `job_failed`; treats them
   as "poll or clean up", not as "run it again"
+- If it covers `network-volume upload`/`download`, reruns the same command on
+  `transfer_incomplete` and does NOT treat it as fatal; for `volume_full`, grows the volume
+  (`network-volume update --size`) before the rerun
 - Separates `no_credentials` from `unauthorized` in the auth handling
 - Reads errors from stderr and does NOT expect error JSON on stdout
 - Does NOT claim `status` is always present
