@@ -106,6 +106,17 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/workers/overview", note: Worker types. }
 
+  - id: endpoint-autoscaling.lb-workers-above-max
+    statement: >
+      A load-balanced endpoint with `REQUEST_COUNT` scaling can run more workers
+      than `workers.max` during a burst of long requests, and the extra workers
+      bill until they scale down. Read `list-endpoint-workers` after a burst or
+      a test.
+    status: verified
+    see: [endpoint-autoscaling.extra-workers, endpoint-autoscaling.min-max]
+    evidence:
+      - { source: live-probe, ref: "LOAD_BALANCER endpoint with workers {min 1, max 1}, scaling REQUEST_COUNT requestCount 4, serving vllm/vllm-openai:v0.32.0; during sequential long chat requests GET /v2/endpoints/<id>/workers reported 3 workers (1 RUNNING, 2 INITIALIZING) at endpointVersion 1", seen: "2026-11-06" }
+
   - id: endpoint-autoscaling.idle-endpoint-scale-down
     statement: >
       An endpoint that receives no requests for 3 days has `workers.max` lowered
