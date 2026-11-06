@@ -16,6 +16,8 @@ The Hub listing `runpod-workers/worker-vllm` is a prebuilt queue worker around t
 
 ## Deploy
 
+The settings to send with `deploy-hub-repo` (take the exact parameter names from the live tool schema):
+
 ```text
 deploy-hub-repo
   repo: runpod-workers/worker-vllm

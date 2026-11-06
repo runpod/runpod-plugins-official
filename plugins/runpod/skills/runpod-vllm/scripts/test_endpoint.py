@@ -84,19 +84,23 @@ def main():
     client = OpenAI(base_url=ARGS.base_url, api_key=ARGS.api_key, timeout=ARGS.timeout)
 
     # 0. Wait for the server: covers image pull, weight download, compile.
-    t0 = time.time()
+    t0 = time.monotonic()
+    deadline = t0 + max(ARGS.wait_for_ready, 0)
     while True:
         try:
-            served = [m.id for m in client.models.list().data]
-            record("wait_ready", ARGS.model in served, f"served models: {served}", time.time() - t0)
+            remaining = deadline - time.monotonic()
+            probe = client.with_options(timeout=min(ARGS.timeout, max(remaining, 10.0)), max_retries=0)
+            served = [m.id for m in probe.models.list().data]
+            record("wait_ready", ARGS.model in served, f"served models: {served}", time.monotonic() - t0)
             if ARGS.model not in served:
                 finish()
             break
         except Exception as e:  # noqa: BLE001 - any error means "not ready yet"
-            if ARGS.wait_for_ready <= 0 or time.time() - t0 > ARGS.wait_for_ready:
-                record("wait_ready", False, f"{type(e).__name__}: {e}", time.time() - t0)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                record("wait_ready", False, f"{type(e).__name__}: {e}", time.monotonic() - t0)
                 finish()
-            time.sleep(15)
+            time.sleep(min(15.0, remaining))
 
     # 1. Chat completion. The first request after a boot is often the slowest.
     t0 = time.time()
@@ -173,8 +177,16 @@ def main():
                 max_tokens=ARGS.max_tokens,
             )
             calls = r.choices[0].message.tool_calls or []
-            ok = any(c.function.name == "get_weather" and "reykjavik" in c.function.arguments.lower()
-                     for c in calls)
+
+            def valid(call):
+                try:
+                    args = json.loads(call.function.arguments)
+                except (TypeError, ValueError):
+                    return False
+                city = args.get("city") if isinstance(args, dict) else None
+                return call.function.name == "get_weather" and isinstance(city, str) and "reykjavik" in city.lower()
+
+            ok = any(valid(c) for c in calls)
             record("tool_call", ok, f"{[(c.function.name, c.function.arguments) for c in calls]}",
                    time.time() - t0)
         except Exception as e:  # noqa: BLE001

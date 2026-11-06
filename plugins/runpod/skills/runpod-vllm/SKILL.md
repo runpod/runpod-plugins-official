@@ -19,7 +19,7 @@ Creating a Pod or an endpoint bills. State the hourly price from the catalog rea
 
 ## Tool binding
 
-If a tool named here is missing from the session's tool list, say so and use the nearest read. Never invent a result.
+If a tool named here is missing from the session's tool list, say so and use the nearest read. Never invent a result. Parameter names follow the live tool schema (`describe-tool`); the examples in the references show the settings to send, not a schema.
 
 | Capability | Tool |
 |---|---|
@@ -37,7 +37,7 @@ If a tool named here is missing from the session's tool list, say so and use the
 
 Read these before you choose anything. Do the reads in parallel.
 
-- **The model.** From the Hugging Face model card and `config.json`: parameter count, native dtype, context length, whether it is a reasoning model, whether it supports tool calls, whether an official quantized variant exists (FP8, AWQ, GPTQ). A `*.gguf` repo is not a vLLM model: send it to [runpod-serverless-deploy](../runpod-serverless-deploy/SKILL.md)'s engine table.
+- **The model.** From the Hugging Face model card and `config.json`: parameter count, native dtype, context length, whether it is a reasoning model, whether it supports tool calls, whether an official quantized variant exists (FP8, AWQ, GPTQ). vLLM's GGUF support is limited and version-dependent: for a `*.gguf` repo, prefer the same model's safetensors repo on vLLM, or a GGUF engine from [runpod-serverless-deploy](../runpod-serverless-deploy/SKILL.md)'s engine table.
 - **The vLLM version the model needs.** The model card or the vLLM recipe for the model (`https://github.com/vllm-project/recipes`) names a minimum vLLM version and the serving flags. If neither says, treat the first boot as the test.
 - **The Hub worker.** `list-hub-repos` for `runpod-workers/worker-vllm` gives the listed release, its image and its `allowedCudaVersions`. The release notes on GitHub name the vLLM version it bundles. Read it live every time: the listed release changes, and it can lag the newest GitHub release.
 
@@ -72,7 +72,7 @@ Show the arithmetic in the answer.
 
 ## Step 4: pin the host CUDA floor
 
-Current `vllm/vllm-openai` images and the Hub worker-vllm image are CUDA 13 builds (`NVIDIA_REQUIRE_CUDA=cuda>=13.0`). Set `gpu.minCudaVersion: "13.0"` on every create. The general rule and why: [gpu-selection.md step 3](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
+`vllm/vllm-openai:v0.32.0` and the Hub worker-vllm image built on it are CUDA 13 builds (`NVIDIA_REQUIRE_CUDA=cuda>=13.0`); read that variable in the image config for any other tag. Set `gpu.minCudaVersion` to the image floor on every create. The general rule and why: [gpu-selection.md step 3](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 
 Prefer the open floor (`minCudaVersion`) to an exact list (`allowedCudaVersions`): hosts report the newest CUDA their driver supports, so an exact list ages badly. A Hub release can carry an exact list, and `deploy-hub-repo` copies it to the endpoint. Read the endpoint back after the deploy. If the workers stay at zero or throttled while the stock read shows capacity at a newer CUDA version, widen it with `set-endpoint-gpus` (`allowedCudaVersions:""`, `minCudaVersion:"13.0"`).
 

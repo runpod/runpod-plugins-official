@@ -29,7 +29,7 @@ A Pod runs the stock `vllm/vllm-openai` image. The image's entrypoint is `vllm s
 - **`HF_HOME` on the volume disk.** Weights go to `/workspace/hf`, so a stop and start skips the download. Size the volume disk for the weights plus about 25 %. Gated weights need `HF_TOKEN` in `env`.
 - **Container disk.** 30 GB is enough when the weights live on the volume disk. Without a volume disk, size the container disk for the weights plus 20 GB.
 - **Ports.** `8000/http` only. Add `22/tcp` and `startSsh: true` only when the user wants SSH.
-- **CUDA floor.** Current `vllm/vllm-openai` images need `cuda>=13.0`. Read Pod stock at that floor with `get-capacity` (`cudaVersions`) before the create: stock without a CUDA filter can be on hosts the floor excludes.
+- **CUDA floor.** `vllm/vllm-openai:v0.32.0` needs `cuda>=13.0` (`NVIDIA_REQUIRE_CUDA` in the image config; read it for other tags). Read Pod stock at that floor with `get-capacity` (`cudaVersions`) before the create: stock without a CUDA filter can be on hosts the floor excludes.
 - **Multi-GPU.** Set `gpu.count` and `--tensor-parallel-size` to the same value.
 
 The create returns `cudaVersion`: confirm it meets the floor.

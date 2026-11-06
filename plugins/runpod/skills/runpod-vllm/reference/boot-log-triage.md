@@ -30,7 +30,7 @@ Judge a vLLM boot by forward progress, not by the word ERROR. Read the log in sh
 | Signature | Cause | Fix |
 |---|---|---|
 | `ValueError` or `KeyError` naming an unknown or unsupported architecture | the image's vLLM is older than the model | use a newer `vllm/vllm-openai` tag; on the Hub worker, move to a load-balancing endpoint or a Pod with that tag |
-| Container fails to start, `OCI runtime create failed`, or CUDA driver errors before any vLLM line | host CUDA older than the image | set `gpu.minCudaVersion` to the image floor (13.0 for current vLLM images) and recreate |
+| Container fails to start, `OCI runtime create failed`, or CUDA driver errors before any vLLM line | host CUDA older than the image | set `gpu.minCudaVersion` to the image floor (13.0 for `vllm/vllm-openai:v0.32.0`) and recreate |
 | `NCCL error: unhandled cuda error` at `ncclCommInitRank`, all ranks, before the weight download, on a host whose CUDA meets the floor | NVLink SHARP init fails on the host | add `NCCL_NVLS_ENABLE=0` to the env and recreate; add `NCCL_DEBUG=INFO` only while you diagnose |
 | `torch.OutOfMemoryError` during weight load | the weights do not fit | more GPUs with tensor parallelism, or a quantized checkpoint; lowering `--gpu-memory-utilization` does not help |
 | KV cache error that names the largest `max_model_len` that fits | context too long for the free VRAM | lower `--max-model-len` (or use `--kv-cache-dtype fp8`) |

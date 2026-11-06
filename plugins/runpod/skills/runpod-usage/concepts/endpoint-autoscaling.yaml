@@ -44,11 +44,13 @@ rules:
     statement: >
       `workers.min` 0 lets the endpoint scale to zero, with no compute charge
       once the idle timeout ends. `workers.min` above 0 keeps that many workers
-      running and billing, even with no traffic. `workers.max` is a hard cap: on
-      a `QUEUE` endpoint extra jobs wait in the queue, while a load-balanced
-      endpoint has no queue.
+      running and billing, even with no traffic. `workers.max` caps the workers
+      the scaler targets, but extra workers can still start during a burst
+      (`endpoint-autoscaling.lb-workers-above-max`). Above capacity, jobs on a
+      `QUEUE` endpoint wait in the queue, while a load-balanced endpoint has no
+      queue.
     status: documented
-    see: [serverless-billing.active-workers-bill-idle, serverless-endpoint.lb-no-queue, endpoint-autoscaling.idle-timeout]
+    see: [serverless-billing.active-workers-bill-idle, serverless-endpoint.lb-no-queue, endpoint-autoscaling.idle-timeout, endpoint-autoscaling.lb-workers-above-max]
     evidence:
       - { source: skill, path: plugins/runpod/skills/runpodctl/SKILL.md, note: Decision rules and serverless facts. }
 

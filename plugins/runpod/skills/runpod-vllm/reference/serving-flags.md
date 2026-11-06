@@ -13,7 +13,7 @@ The flags that decide whether a model boots and how it serves. On a Pod or a loa
 | `--tensor-parallel-size N` | `TENSOR_PARALLEL_SIZE` | splits each layer across N GPUs | = GPU count (1, 2, 4 or 8). |
 | `--enable-expert-parallel` | `ENABLE_EXPERT_PARALLEL` | spreads MoE experts across the GPUs | Only for MoE models when the recipe says so. |
 | `--enable-auto-tool-choice --tool-call-parser P` | `ENABLE_AUTO_TOOL_CHOICE`, `TOOL_CALL_PARSER` | OpenAI `tools` support | The parser comes from the model card or the vLLM recipe (`hermes` for Qwen3, `llama3_json` for Llama 3.x, `mistral` for Mistral). |
-| `--reasoning-parser P` | `REASONING_PARSER` | moves the model's thinking into `reasoning_content` | Reasoning models only (`qwen3`, `deepseek_r1`). |
+| `--reasoning-parser P` | `REASONING_PARSER` | moves the model's thinking out of `content` into its own field: `reasoning` in vLLM 0.32.0, `reasoning_content` in older versions | Reasoning models only (`qwen3`, `deepseek_r1`). Clients read both fields. |
 | `--enable-prefix-caching` | `ENABLE_PREFIX_CACHING` | reuses the KV cache for shared prompt prefixes | On for chat and agents. |
 | `--max-num-seqs N` | `MAX_NUM_SEQS` | most sequences per batch | Keep the default. Lower it when a hybrid or state-space model fails with a state-cache size error. |
 | `--enforce-eager` | `ENFORCE_EAGER` | skips `torch.compile` and CUDA graphs | Faster boot, slower serving. Use it to fit a load-balancing health window, not by default. |

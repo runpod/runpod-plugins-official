@@ -1,6 +1,6 @@
 ---
 lanes: [runpod-mcp]
-mcp: full
+mcp: partial
 concepts: [pod, serverless-endpoint, container-image, exposed-port, gpu-availability, worker, hub-repo]
 status: live-verified
 verified: "2026-11-06"
@@ -9,7 +9,7 @@ evals: [runpod-vllm/evals/pod-api-key, runpod-vllm/evals/lb-endpoint-contract, r
 
 # Golden path 27 — serve a model with vLLM: Pod first, then a load-balancing endpoint
 
-> **Status:** live-verified 2026-11-06 — `vllm/vllm-openai:v0.32.0` with `Qwen/Qwen3-8B`, end to end on the Runpod MCP tools; `test_endpoint.py` passed 5/5 on the Pod, the load-balancing endpoint and a Hub worker-vllm queue endpoint. **Evals:** [pod-api-key](../../runpod-vllm/evals/pod-api-key.eval.md) · [lb-endpoint-contract](../../runpod-vllm/evals/lb-endpoint-contract.eval.md) · [pick-the-product](../../runpod-vllm/evals/pick-the-product.eval.md). Status key: [golden-paths README](README.md#status-legend).
+> **Status:** live-verified 2026-11-06 — `vllm/vllm-openai:v0.32.0` with `Qwen/Qwen3-8B`, end to end on the Runpod MCP tools plus a local Python client (`test_endpoint.py`); `test_endpoint.py` passed 5/5 on the Pod, the load-balancing endpoint and a Hub worker-vllm queue endpoint. **Evals:** [pod-api-key](../../runpod-vllm/evals/pod-api-key.eval.md) · [lb-endpoint-contract](../../runpod-vllm/evals/lb-endpoint-contract.eval.md) · [pick-the-product](../../runpod-vllm/evals/pick-the-product.eval.md). Status key: [golden-paths README](README.md#status-legend).
 
 **Goal:** from "serve this model with vLLM", an agent proves the vLLM config on a Pod, moves the same image and arguments to a load-balancing Serverless endpoint, verifies both with a real OpenAI client, and tears down the test resources.
 
