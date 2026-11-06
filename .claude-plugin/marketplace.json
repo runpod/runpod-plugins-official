@@ -29,7 +29,8 @@
         "./skills/runpod-lifecycle-crud",
         "./skills/runpod-pod-deploy",
         "./skills/runpod-pod-doctor",
-        "./skills/runpod-serverless-deploy"
+        "./skills/runpod-serverless-deploy",
+        "./skills/runpod-vllm"
       ]
     }
   ]

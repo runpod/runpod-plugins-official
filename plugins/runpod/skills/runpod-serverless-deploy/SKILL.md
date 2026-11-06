@@ -44,7 +44,7 @@ Read and classify the source you were given: the engine follows the modality and
 
 | Source / modality | Engine family → worker image |
 |---|---|
-| Text-generation LLM, `safetensors` weights | vLLM or SGLang → `runpod/worker-v1-vllm` (or an SGLang worker) |
+| Text-generation LLM, `safetensors` weights | vLLM or SGLang → `runpod/worker-v1-vllm` (or an SGLang worker); for a vLLM deploy follow [runpod-vllm](../runpod-vllm/SKILL.md) |
 | Text-generation LLM, `GGUF` quantized weights | llama.cpp / Ollama → a GGUF-capable worker, **not** vLLM |
 | Image/diffusion `workflow.json` | ComfyUI → `runpod/worker-comfyui` ([reference/comfyui-serverless.md](reference/comfyui-serverless.md)) |
 | Speech-to-text (transcription) | a Whisper-family model → a speech-to-text worker, not an LLM worker |

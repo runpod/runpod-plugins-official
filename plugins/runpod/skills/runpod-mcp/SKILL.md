@@ -129,6 +129,7 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
 | Create/inspect/update/delete pods, endpoints, templates, network or global volumes, account secrets, SSH keys, clusters; inventory of the account; who changed what (audit log) or who is in the organization | **runpod-lifecycle-crud** |
 | Stand up a serverless endpoint for a model/workload and verify it with a real job | **runpod-serverless-deploy** |
 | Host a ComfyUI workflow (workflow.json, custom Civitai models/LoRAs) as an endpoint | **runpod-serverless-deploy**, then its [ComfyUI reference](../runpod-serverless-deploy/reference/comfyui-serverless.md) |
+| Serve an LLM with vLLM (Hub worker-vllm endpoint, load-balancing endpoint on a vLLM image, or a Pod), or fix a vLLM deployment that will not boot | **runpod-vllm** |
 | Rent/configure an interactive GPU pod; create a pod then pause/stop it for later | **runpod-pod-deploy** |
 | Diagnose a broken/misbehaving pod (0 GPUs, CUDA, crashes, 502s) | **runpod-pod-doctor** |
 | Operate an existing endpoint: jobs, scaling, workers, logs | **runpod-endpoint-ops** |
