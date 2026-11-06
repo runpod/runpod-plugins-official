@@ -3,16 +3,16 @@ name: File transfer
 kind: capability
 summary: >
   Ways to move datasets into Runpod and results out: `runpodctl send` and
-  `receive`, SCP or rsync over SSH to a pod, and the S3-compatible API on
-  network volumes.
+  `receive`, `runpodctl network-volume upload` and `download`, SCP or rsync over
+  SSH to a pod, and the S3-compatible API on network volumes.
 product: null
 is_a: null
 part_of: runpod-platform
-aliases: [runpodctl send, runpodctl receive, croc, S3 upload, s3api, cloud sync, datasets in, checkpoints out]
+aliases: [runpodctl send, runpodctl receive, network-volume upload, network-volume download, croc, S3 upload, s3api, cloud sync, datasets in, checkpoints out]
 
 surfaces:
   mcp: []
-  runpodctl: [send, receive]
+  runpodctl: [send, receive, network-volume upload, network-volume download]
   console: Pods (cloud sync), Settings (S3 API keys)
 
 fields: []
@@ -60,3 +60,20 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/storage/s3-api" }
       - { source: skill, path: plugins/runpod/skills/runpod-companion-clis/SKILL.md }
+
+  - id: file-transfer.runpodctl-volume-transfer
+    statement: >
+      In runpodctl 3.1.0 and later, `runpodctl network-volume upload` and
+      `runpodctl network-volume download` move a file or a folder to or from a
+      network volume through its S3-compatible API, with no pod running. They
+      need S3 API keys in addition to the Runpod API key, which looks up the
+      volume's data center unless `--data-center-id` is passed. A transfer that
+      stops partway exits with the code `transfer_incomplete`, and running the
+      same command again resumes it, skipping files that are already done. A
+      full volume exits with `volume_full`: grow the volume, then run the
+      command again.
+    status: documented
+    see: [file-transfer.s3-api-per-data-center]
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpodctl/blob/main/README.md", seen: "2026-11-06", note: network volume files section and the error code table. }
+      - { source: skill, path: plugins/runpod/skills/runpodctl/reference/command-reference.md, note: Network volume upload and download (v3.1.0+). }

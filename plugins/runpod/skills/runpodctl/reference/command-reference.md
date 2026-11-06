@@ -230,7 +230,33 @@ pre-compress the source. **Agent flow (one side sends, the other receives):**
 
 To push local files to a pod: get `ssh info <pod-id>`, start `send` locally (capture the
 code), then `ssh` to the pod and run `receive <code>` there. For large/library-style data, a
-network volume or the S3 API is often simpler than `send`/`receive`.
+network volume is often simpler than `send`/`receive`.
+
+### Network volume upload and download (v3.1.0+)
+
+`network-volume upload <volume-id> <local-path> [remote-path]` and
+`network-volume download <volume-id> <remote-path> [local-path]` move a file or a folder
+through the volume's S3 API, with no pod running. `"/"` downloads the whole volume.
+
+- **Keys:** S3 API keys, separate from the API key: `RUNPOD_S3_ACCESS_KEY` /
+  `RUNPOD_S3_SECRET_KEY`, `--s3-access-key` / `--s3-secret-key`, or `s3AccessKey` /
+  `s3SecretKey` in `~/.runpod/config.toml`. They are created in the console (Settings > S3
+  API Keys); missing keys are `no_credentials`. The API key looks up the volume's data
+  center unless `--data-center-id` is passed; a data center without the
+  [S3 API](https://docs.runpod.io/storage/s3-api) is `usage_error`.
+- **Resume:** on `transfer_incomplete`, run the same command again. Files whose
+  destination has the same size and is not older are skipped. Files over 64 MB upload as
+  multipart, and a rerun reuses every part whose MD5 matches the local bytes. Files over
+  64 MB download in chunks into `<name>.rpdownload` (finished chunks listed in
+  `<name>.rpdownload.json`), and the file appears under its real name only once complete.
+- **`--force`** sends every file, for a same-size edit that kept an older mtime (`cp -p`,
+  `rsync -a`, `tar x`), which the skip rule would pass over.
+- **Retries:** 429, 5xx (including 524) and dropped connections are retried inside the
+  command; `transfer_incomplete` means those ran out. `volume_full`: grow the volume with
+  `network-volume update --size`, then rerun. Parts of an upload that is never rerun stay
+  in the volume's hidden `.s3compat_uploads/` folder and count toward its size.
+- **Prefer it over `send`/`receive`** for anything big that should land on a volume. For
+  other S3 tools against the same API, see `runpod-companion-clis` (`aws`).
 
 ## Hub, templates, volumes, registry, info, utilities
 

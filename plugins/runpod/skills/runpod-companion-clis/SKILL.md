@@ -88,4 +88,4 @@ Access network-volume storage over Runpod's S3-compatible API (bucket name = net
 - Runpod's S3 API, **not AWS**: access key = Runpod **user id** (`user_...`), secret = S3 API key (`rps_...`).
 - **S3 API keys are Console-only.** No `runpodctl`/REST/GraphQL creates them — if they're not already in `~/.aws/credentials`/env and S3 access is needed, **stop and ask the user** to generate them (Settings > S3 API Keys).
 - Every command needs `--region DATACENTER --endpoint-url https://s3api-DATACENTER.runpod.io/` (datacenter = the volume's DC, not an AWS region).
-- For large/many-file transfers with reliable resume, see [reference/aws.md → optional resumable volume transfers](reference/aws.md#optional-resumable-volume-transfers-community-tool).
+- For large/many-file transfers with resume, prefer `runpodctl network-volume upload`/`download` (v3.1.0+, same S3 API keys; see the `runpodctl` skill). On an older runpodctl, see [reference/aws.md → optional resumable volume transfers](reference/aws.md#optional-resumable-volume-transfers-community-tool).

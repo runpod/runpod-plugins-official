@@ -98,12 +98,14 @@ nothing except an unnecessary poll — whereas retrying on the wrong one buys a 
 | `not_found` | the **API** does not have the resource. During a `create --wait` it can also mean one that *was* created has gone, or never became visible — so check for an `id` field before concluding nothing exists |
 | `bad_request` (400) `unauthorized` (401) `forbidden` (403) `conflict` (409) `rate_limited` (429) `server_error` (5xx) `api_error` | derived from the REST status |
 | `graphql_error` | a GraphQL call failed: an `errors` array in a 200 body, **or** a non-2xx response from the GraphQL endpoint (that form also carries `status`) |
-| `no_credentials` | no API key configured at all — set `RUNPOD_API_KEY` or run `runpodctl doctor` |
+| `no_credentials` | no API key configured at all — set `RUNPOD_API_KEY` or run `runpodctl doctor`. For `network-volume upload`/`download`: no S3 API keys (`RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY`), or no API key for the data-center lookup, which runs first unless `--data-center-id` is passed; the message names which |
 | `network_error` | the API could not be reached at all — DNS, connection refused, TLS, timeout |
 | `cli_error` | anything else local: config, environment, and validation the command does itself |
 | `timeout` | **v2.9.0+.** The CLI stopped waiting — two outcomes sharing one code, told apart by the message. If it names a `serverless status` command, the **job is still running server-side**: poll it, never re-invoke (that buys a second job). Otherwise a single API call ran out of time and nothing is running, so a retry is fine |
 | `job_failed` | **v2.9.0+.** A serverless job reached a terminal status other than `COMPLETED` (`FAILED`/`CANCELLED`/`TIMED_OUT`). The request itself succeeded — the job payload, including the worker's own `error`, is still on **stdout** |
 | `wait_timeout` `wait_interrupted` | **v2.9.0+.** A `create --wait` gave up (budget) or was cancelled (ctrl-c / SIGTERM). The resource **was created and still bills**; its id is in the `id` field above |
+| `transfer_incomplete` | **v3.1.0+.** A `network-volume upload`/`download` stopped partway: ctrl-c, a network failure or 429/5xx that outlasted its own retries, or a file that changed mid-transfer. Rerun the **same command**: it skips finished files and continues partial ones. Failures a rerun would hit again keep their own code and don't resume: `not_found` (missing path), `unauthorized`/`forbidden`/`bad_request` (with `status`), `volume_full`, `usage_error` (bad path, data center without the S3 API), `cli_error` (local disk errors, names that would collide on disk) |
+| `volume_full` | **v3.1.0+.** A `network-volume upload` filled the volume (S3 `403 QuotaExceeded`, with `status`). Parts of an unfinished multipart upload count toward its size. Grow it with `network-volume update <volume-id> --size <gb>`, then rerun the same command: it resumes |
 
 Treat this as **the set the CLI generates, not an exhaustive list** — an explicit code
 from the API is passed through lowercased, so a code outside the table can arrive from
@@ -112,8 +114,11 @@ and surfaces `error` verbatim; never fall through to a retry.
 
 ### What to retry
 
-**runpodctl has no internal retry** — it never backs off for you, so whatever your
-wrapper does is all that happens.
+**The API commands have no internal retry** — they never back off for you, so whatever
+your wrapper does is all that happens. The exception is `network-volume upload`/`download`
+(v3.1.0+), which retry throttling, 5xx (including the 524 Runpod's proxy returns) and
+dropped connections themselves, up to 10 attempts, before giving up with
+`transfer_incomplete`.
 
 - **Retry with backoff:** `network_error`, `rate_limited`, `server_error` (and `api_error`
   when `status` is 5xx). A transient `graphql_error` is possible too but indistinguishable
@@ -121,6 +126,9 @@ wrapper does is all that happens.
 - **Never retry:** `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`,
   `no_credentials`, `unauthorized`, `forbidden`, `job_failed` (the job ran and failed —
   re-running is a new job, not a retry).
+- **Rerun the same command:** `transfer_incomplete`. The transfer already retried; the rerun
+  resumes it, skipping finished files and reusing finished parts. `volume_full` is the same
+  after a fix: grow the volume, then rerun.
 - **Never retry the *command*, but do follow up:** `timeout` and
   `wait_timeout`/`wait_interrupted` all mean work or a resource outlived the CLI. Re-running
   the same command creates a **second** job or a **second** billed resource. Poll instead
@@ -141,7 +149,10 @@ Two invariants make that safe to encode:
 
 ### Auth failures are two different codes
 
-`no_credentials` means **no key is configured**. A key that is present but wrong, expired
+`no_credentials` means **no key is configured** (for `network-volume upload`/`download`,
+no S3 API keys, or no API key for the data-center lookup unless `--data-center-id` is
+passed; the message names which. The S3 API rejecting keys that are set is
+`unauthorized`/`forbidden`). A key that is present but wrong, expired
 or revoked is `unauthorized` (401), and one lacking access to the resource is `forbidden`
 (403):
 
@@ -280,6 +291,7 @@ invocation instead of `exec`.
 | `TIMEOUT` | `30s` | per-API-call deadline — **no `RUNPOD_` prefix** (the CLI reads env vars unprefixed, so this one looks nothing like the others). Exceeding it is `code: "timeout"`. Also settable as a top-level `timeout` in `~/.runpod/config.toml` — it must sit **above** any `[section]` header, or it becomes `section.timeout` and is silently ignored. Distinct from `--wait`, which bounds a whole job or readiness wait rather than one call |
 | `RUNPOD_API_URL` | `https://rest.runpod.io/v1` | REST control plane (config key `restApiUrl`) |
 | `RUNPOD_GRAPHQL_URL` | `https://api.runpod.io/graphql` | GraphQL control plane (config key `apiUrl`) |
+| `RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY` | — | S3 API keys for `network-volume upload`/`download` (config keys `s3AccessKey` / `s3SecretKey`). Separate from the API key, which still looks up the volume's data center unless `--data-center-id` is passed |
 | `RUNPOD_INVOKE_URL` | `https://api.runpod.ai/v2` | base for the invoke URLs reported by `serverless create`/`get`/`list`/`update` (config key `invokeUrl`) |
 
 **Invoke is a separate service from the control plane.** Pointing `RUNPOD_API_URL` or

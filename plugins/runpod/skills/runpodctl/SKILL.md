@@ -3,9 +3,10 @@ name: runpodctl
 description: >-
   Runpod CLI for managing GPU/CPU workloads from the terminal — pods, serverless
   endpoints, templates, network volumes, Hub deploys, models, SSH, and file
-  transfer (send/receive). Use for terminal/CI/scripting, SSH setup, `doctor`,
-  or when the Runpod MCP tools are not connected; prefer runpod-mcp for structured
-  tool calls in an MCP-enabled session.
+  transfer (send/receive, network-volume upload/download). Use for
+  terminal/CI/scripting, SSH setup, `doctor`, or when the Runpod MCP tools are
+  not connected; prefer runpod-mcp for structured tool calls in an MCP-enabled
+  session.
 allowed-tools: Bash(runpodctl:*)
 compatibility: Linux, macOS, Windows
 metadata:
@@ -61,7 +62,8 @@ Data is **JSON on stdout** (`--output=yaml` is the only alternative; there is no
 ```
 
 - **Branch on `code`, never on `status` or the message** (GraphQL reports a missing resource as HTTP 200 + null data, so `status` is often absent).
-- **Retry with backoff only on `network_error`, `rate_limited`, `server_error`;** runpodctl never retries internally. `no_credentials` = no key set; `unauthorized`/`forbidden` = a key is set but wrong or lacks access (don't re-prompt). `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`: fix the input. Any other code is fatal: surface `error` verbatim.
+- **Retry with backoff only on `network_error`, `rate_limited`, `server_error`;** the API commands never retry internally. `no_credentials` = no key set (for `network-volume upload`/`download`: no S3 API keys, or no API key for the data-center lookup, which `--data-center-id` skips; the message names which); `unauthorized`/`forbidden` = a key is set but wrong or lacks access (don't re-prompt). `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`: fix the input. Any other code is fatal: surface `error` verbatim.
+- **`network-volume upload`/`download` (v3.1.0+) retry on their own** (429, 5xx, dropped connections). `transfer_incomplete` = it stopped partway: **rerun the same command**, it resumes. `volume_full` = grow the volume (`network-volume update --size`), then rerun.
 - **Gate on the exit code, then parse stderr:** deprecation `warning:`/`note:` lines go to stderr on success too.
 - **Coded errors, the serverless `urls` object and GPU pricing need runpodctl ≥ v2.8.0.** Older binaries emit `{"error":"…"}` with no `code`, so gate on `code` being present, not on `runpodctl version`.
 - **`project` behaves differently per build** (exit 0 with errors on stdout through v3.0.1; exit 1 with a Runpod SDK notice in builds with [runpod/runpodctl#382](https://github.com/runpod/runpodctl/pull/382)). Treat that notice as fatal.
@@ -85,7 +87,7 @@ Full code table, `cli_error` vs `usage_error`, plain-text exceptions, the exact 
 - **Waiting for a resource to be usable: use `--wait`, don't hand-roll a poll loop** (v2.9.0+). `create` returns once the resource is *scheduled*, which is why a "RUNNING" pod often refuses ssh and a fresh endpoint 404s. `pod create --wait` returns when port 22 answers with an ssh banner. `pod create --wait-for running` (v2.15.0+) returns when the container is up, no ssh needed: use it when container-up is all the task needs, or for an image that does not start sshd (most cpu images, since cpu pods get no Runpod-managed ssh), where plain `--wait` would bill through the whole timeout and then fail; a cpu image that starts its own sshd still satisfies plain `--wait`, so keep that when the user needs ssh. `serverless create --wait` returns when `/health` reports a ready or running worker. On timeout or ctrl-c the resource is **kept** and its id is in the error object's `id` field: read it and clean up, don't assume nothing was created (a pod bills by the second; an endpoint with no running worker doesn't, but starts one on the first request).
 - **A service on a pod** (Ollama, ComfyUI, a dev server): declare its `--ports` and `--env` at creation when possible (`runpodctl pod update` can change them on an existing pod), then follow the pod development loop in `runpod-usage` (`reference/pod-workflows.md`): SSH-exec the install, bind to `0.0.0.0`, poll the proxy URL until it answers.
 - **SSH:** connection details from `runpodctl pod get <pod-id>` or `runpodctl ssh info <pod-id>`. runpodctl has **no interactive-shell command**: `ssh info` returns the connection command + key but does not connect, so run `ssh user@host "command"` yourself.
-- Network volumes are location-sensitive: pick the data center from the GPU stock read (`datacenter list`, or `gpu list --include-unavailable`) before creating the volume, and create it once. If `pod create` is then refused for stock, re-read stock: retry once with the same volume when its data center shows stock; otherwise ask the user (wait, another GPU type there, the console's Deploy when available, or a move to another data center, which is the user's call). Never delete the volume to try another data center; on a move, name it in the hand-back (id, data center, storage cost) and delete it only when the user asks. Migrate data with `send` / `receive` or S3-compatible storage.
+- Network volumes are location-sensitive: pick the data center from the GPU stock read (`datacenter list`, or `gpu list --include-unavailable`) before creating the volume, and create it once. If `pod create` is then refused for stock, re-read stock: retry once with the same volume when its data center shows stock; otherwise ask the user (wait, another GPU type there, the console's Deploy when available, or a move to another data center, which is the user's call). Never delete the volume to try another data center; on a move, name it in the hand-back (id, data center, storage cost) and delete it only when the user asks. Move data onto or off a volume with `network-volume upload` / `download` (v3.1.0+, resumable); `send` / `receive` for machine to machine.
 - Clean up paid resources after tests: serverless endpoints, pods, and temporary volumes created for validation.
   - **Cost guard:** remove the pod when the work is done (`runpodctl pod remove <pod-id>`); a stopped pod still bills for disk and any volume. Unattended deadline: [pod-workflows](../runpod-usage/reference/pod-workflows.md#2-provision) (schedule a stop from inside the pod).
   - **`--stop-after` / `--terminate-after` never worked.** Before v2.12.0 `pod create` accepts both, but the backend never enforced them, so the pod keeps running and billing past the deadline; v2.12.0 removed them. If `runpodctl pod create --help` still lists them, run `runpodctl update`. Never offer them as a cost guard.
@@ -193,9 +195,13 @@ runpodctl template delete <template-id>
 runpodctl network-volume list | get <volume-id> | delete <volume-id>
 runpodctl network-volume create --name "x" --size 100 --data-center-id "US-GA-1"
 runpodctl network-volume update <volume-id> --name "new"
+runpodctl network-volume upload <volume-id> <local-path> [remote-path]    # v3.1.0+
+runpodctl network-volume download <volume-id> <remote-path> [local-path]  # "/" = whole volume
 ```
 
 Exact flags: `runpodctl network-volume <action> --help`.
+
+**Upload/download** use the volume's S3 API, so they need **S3 API keys** (`RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY`), separate from the API key, and a [data center with the S3 API](https://docs.runpod.io/storage/s3-api). On `transfer_incomplete`, rerun the same command; resume rules, `--force` and partial files: [command-reference File Transfer](reference/command-reference.md#file-transfer).
 
 > **No storage-tier flag.** `create` provisions the data center's **default** tier; there's no `--type`. For a **High-Performance** volume use the console (a ⚡ data center's toggle), a raw **v2 REST** call (`POST https://v2-rest.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`), or the MCP `create-network-volume` tool's `volumeType` (`STANDARD` | `HIGH_PERFORMANCE`). Tier is immutable after creation. Launch details: golden path [21](../runpod/golden-paths/21-storage-tiers.md).
 

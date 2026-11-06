@@ -39,9 +39,9 @@ first and let the matching one pick the lane; otherwise read the matching skill'
 | Lane | Use it for |
 | --- | --- |
 | **runpod-mcp** | Manage infra (pods, endpoints, jobs, templates, volumes, registries, catalog, billing) via **structured tool calls** — when the Runpod MCP tools are connected in this session. It routes on to the journey skill for the task. |
-| **runpodctl** | Manage the same infra from a **terminal/CI/script**, including Hub browse/deploy, file transfer (`send`/`receive`), SSH keys, `doctor` setup, and model cache. |
+| **runpodctl** | Manage the same infra from a **terminal/CI/script**, including Hub browse/deploy, file transfer (`send`/`receive`, `network-volume upload`/`download`), SSH keys, `doctor` setup, and model cache. |
 | **runpod-flash** | **Write Python** that runs on Runpod serverless with the Runpod SDK — `runpod.App` with `@app.queue`/`@app.api`/`@app.task`, `rp flash dev`, `rp flash deploy`; also maintains or migrates legacy `runpod-flash` projects. Code-first, not infra management. |
-| **runpod-companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), move data to a network volume over S3 (`aws`). |
+| **runpod-companion-clis** | **Prerequisite artifacts**: download a model (`hf`), build/push an image (`docker`), repos/releases (`gh`), other S3 tools against a network volume (`aws`; runpodctl v3.1.0+ `network-volume upload`/`download` is the default for moving files). |
 | **runpod-usage** | **Understand** how Runpod works before acting — pods vs serverless, building a container, storage, GPU selection, gotchas. Knowledge only. |
 | **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
 | **runpod-build-template** | **Create or improve a template project** from a request, local code, or GitHub: documented Dockerfile, app-specific files, and Pod/queue/load-balanced deployment handoff. |
@@ -155,7 +155,7 @@ Capability matrix (pick the preferred lane per operation):
 | Create a pod **from a template**, a **CPU** pod, or both together | **runpod-mcp** if connected, else runpodctl | MCP's create-pod takes `templateId` and, for CPU, a `cpu` object in place of `gpu`; template + CPU in one create live-verified 2026-10-29. runpodctl v3 sends the same v2 create, so it is no fallback. Field semantics: [runpod-mcp pod creates](../runpod-mcp/SKILL.md#use-mcp-vs-runpodctl) |
 | Create a pod with a **multi-GPU priority list** | **neither**: one GPU type per create | v2 `create-pod` takes one `gpu.id`, and runpodctl rejects a comma list in `--gpu-id` (`only one gpu id is supported`; checked through v3.0.1). Pick one type from the stock read; on a capacity error, retry with the next |
 | Browse or deploy an existing **Hub** listing | **runpod-mcp** if connected and it exposes the requested operation, else runpodctl | Check the live tool surface; Hub is not a reason by itself to switch to the CLI |
-| **File transfer** (`send`/`receive`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
+| **File transfer** (`send`/`receive`, `network-volume upload`/`download`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
 | Invoke a serverless job (`run`/`runsync`/status/stream) | **runpod-mcp** if connected, else runpodctl | Both lanes have first-class job commands now (runpodctl `serverless run`/`status`/`health`, v2.9.0+); MCP is typed, and only MCP streams a job's incremental output (`stream-job`) |
 | Read **pod or worker logs** | **either** — runpod-mcp if connected, else runpodctl | Both lanes read them: MCP `stream-pod-logs`/`stream-worker-logs` return parsed frames; runpodctl `pod logs`/`serverless logs` emit json lines and `--follow` (v2.10.0+) |
 
