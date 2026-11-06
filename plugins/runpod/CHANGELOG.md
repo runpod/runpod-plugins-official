@@ -6,6 +6,36 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.0](https://github.com/runpod/runpod-plugins-official/compare/v1.9.0...v2.0.0) (2026-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* guide ids in @runpod/plugin-knowledge change for the nine renamed skills (for example `pod-doctor` -> `runpod-pod-doctor`, `flash/api` -> `runpod-flash/api`). Old ids are listed in the new `aliases` field. The Runpod MCP server hard-codes journey ids and needs its companion change to resolve them.
+
+### Features
+
+* add skill.json to the Ollama and Whisper golden paths ([#114](https://github.com/runpod/runpod-plugins-official/issues/114)) ([200f2e1](https://github.com/runpod/runpod-plugins-official/commit/200f2e1f0f79155c3e6562ea1a7b546ff835a38e))
+* prefix every skill name with runpod-, with guide-id aliases ([#110](https://github.com/runpod/runpod-plugins-official/issues/110)) ([aaefc33](https://github.com/runpod/runpod-plugins-official/commit/aaefc335babdf8b996772b656d6085d261544974))
+
+
+### Bug Fixes
+
+* **pod-deploy:** read GPU stock before creating a network volume and keep it on a stock refusal ([#117](https://github.com/runpod/runpod-plugins-official/issues/117)) ([dbb1981](https://github.com/runpod/runpod-plugins-official/commit/dbb1981a84523cc36673d1badf335a1f8f6bd496))
+* require https for runpodctl installation ([#113](https://github.com/runpod/runpod-plugins-official/issues/113)) ([7ef6a86](https://github.com/runpod/runpod-plugins-official/commit/7ef6a868ea21c409a5f3c73b13154ec5735c60c7))
+
+
+### Documentation
+
+* cover global volumes, audit logs, org reads and describe-tool ([#107](https://github.com/runpod/runpod-plugins-official/issues/107)) ([a3c8aaf](https://github.com/runpod/runpod-plugins-official/commit/a3c8aafc32f85c2df001639ca4f88768f497fe09))
+* fix stale MCP tool names and REST v2 facts ([#104](https://github.com/runpod/runpod-plugins-official/issues/104)) ([dac07c9](https://github.com/runpod/runpod-plugins-official/commit/dac07c996154fd6416e17aa6490f41618b1d475c))
+* **flash:** move the flash lane to the Runpod SDK 2.0 (rp flash) ([#89](https://github.com/runpod/runpod-plugins-official/issues/89)) ([c6d7046](https://github.com/runpod/runpod-plugins-official/commit/c6d7046a100e258845fda2b3e44c66a1a2e0497c))
+* **flash:** re-verify the examples on runpod 2.1.0 and document dev re-run failures ([#116](https://github.com/runpod/runpod-plugins-official/issues/116)) ([372460e](https://github.com/runpod/runpod-plugins-official/commit/372460eee3caabb1fd76b5e8cfaa1d988b0a7c6e))
+* **runpodctl:** network-volume upload/download and transfer_incomplete ([#101](https://github.com/runpod/runpod-plugins-official/issues/101)) ([017ae12](https://github.com/runpod/runpod-plugins-official/commit/017ae12516c3b7d4dc37f84ccc52e8efdc447207))
+* shorten and dedupe the journey playbooks and runpodctl skill ([#106](https://github.com/runpod/runpod-plugins-official/issues/106)) ([1ca11b3](https://github.com/runpod/runpod-plugins-official/commit/1ca11b34eb049ae0f5c0beed8cb8a1835eaab19a))
+* split router/runpod-mcp roles, one home per fact, golden-path status headers ([#109](https://github.com/runpod/runpod-plugins-official/issues/109)) ([90a34f8](https://github.com/runpod/runpod-plugins-official/commit/90a34f8e259d28f59ccb82a4a32b42f6352b1958))
+* tighten serverless-deploy and runpodctl, require explicit endpoint timeout, add free live evals ([#108](https://github.com/runpod/runpod-plugins-official/issues/108)) ([0083898](https://github.com/runpod/runpod-plugins-official/commit/00838981e2a8e7d701330791f818f16a229b6724))
+
 ## [1.9.0](https://github.com/runpod/runpod-plugins-official/compare/v1.8.0...v1.9.0) (2026-11-02)
 
 
