@@ -21,12 +21,16 @@ Write the full plan before you run a step, and show it to the user. Each step ha
 | 5. Verify | missing/wrong key gives 401, one real request completes, the metrics counter matches | 1 min each |
 | 6. Stop | stop the server; delete the Pod only if this conversation created it for a test | — |
 
-## 1. Install into a fresh venv when the torch versions differ
+## 1. Install into a fresh venv unless the base torch fits
 
-Each vLLM release pins one torch version. Read it before you install (`pip download vllm==<version> --no-deps` and the wheel metadata, or the vLLM release notes) and compare it with the base image's torch (`python3 -c 'import torch; print(torch.__version__, torch.version.cuda)'`).
+Each vLLM release pins one torch version. Read it before you install (`pip download vllm==<version> --no-deps` and the wheel metadata, or the vLLM release notes). Then check the base image. This passes only when the system Python has CUDA torch and cuDNN loads (a small convolution on the GPU):
 
-- **They differ** (the usual case): make a fresh venv. A venv that inherits system packages would replace the base image's torch. `python3 -m venv venv` and install only into it.
-- **They match**: `python3 -m venv --system-site-packages venv` reuses the base torch and saves the download. Pin torch with a constraints file so the install cannot replace it. This is the general rule in [on-pod-setup.md](../../runpod-usage/reference/on-pod-setup.md).
+```bash
+python3 -c 'import torch, torch.nn.functional as F; assert torch.cuda.is_available(); F.conv2d(torch.zeros(1,1,8,8,device="cuda"), torch.zeros(1,1,3,3,device="cuda")); print(torch.__version__, torch.version.cuda, torch.backends.cudnn.version())'
+```
+
+- **Default: a fresh venv.** `python3 -m venv venv` with no system packages. pip installs the torch that vLLM pins together with its CUDA and cuDNN wheels, so this works on any image with an NVIDIA driver new enough for that torch build (`nvidia-smi` prints the highest `CUDA Version` the driver supports). Use it when the check fails, when the torch versions differ, or when the image is not an official PyTorch template (`runpod/pytorch`).
+- **Only when the check passes on an official PyTorch template and the versions match:** `python3 -m venv --system-site-packages venv` reuses the base torch and saves the download. Pin torch with a constraints file so the install cannot replace it. On any other image, a venv that inherits system packages can see a torch whose CUDA libraries are missing, and the server then fails with `ImportError: libcudnn.so.9`. This is the general rule in [on-pod-setup.md](../../runpod-usage/reference/on-pod-setup.md).
 
 ```bash
 set -eu
@@ -35,6 +39,8 @@ venv/bin/python -m pip install --no-input --no-cache-dir 'vllm==<version>'
 venv/bin/python -m pip freeze > installed-packages.txt
 venv/bin/python -c 'import torch, vllm; print("vllm", vllm.__version__, "torch", torch.__version__, "cuda", torch.version.cuda)'
 ```
+
+After the install, run the base check again with `venv/bin/python` instead of `python3`.
 
 Put the venv on the container disk, not on a network volume: an install writes many small files. Size the container disk for the venv (about 10 GB) plus the weights.
 

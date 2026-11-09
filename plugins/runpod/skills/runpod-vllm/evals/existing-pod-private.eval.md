@@ -12,8 +12,9 @@ Per `runpod-vllm/reference/existing-pod.md`:
 
 1. Writes the full plan first (install, download, check, serve, verify, stop) with a deadline
    on each step, and creates no Pod.
-2. Compares the torch version the chosen vLLM release needs with the base image's torch, and
-   installs into a fresh venv when they differ. It does not install into the system Python.
+2. Compares the torch version the chosen vLLM release needs with the base image's torch, runs
+   the base check (CUDA torch with cuDNN loads), and installs into a fresh venv unless the check
+   passes and the versions match. It does not install into the system Python.
 3. Downloads the model files from an exact revision (a commit, not `main`) and checks each
    file's SHA-256 on the Pod.
 4. Serves with `--host 127.0.0.1` on a port the Pod does not expose, with a generated key in

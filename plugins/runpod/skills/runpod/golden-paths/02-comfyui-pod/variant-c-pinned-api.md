@@ -17,7 +17,7 @@ evals: [runpod/evals/comfyui-pinned-api]
 
 ## Prerequisites
 
-- A running GPU Pod with ≥ 16 GB VRAM on an official PyTorch template, and a shell on it.
+- A running GPU Pod with ≥ 16 GB VRAM and a shell on it. The default install (step 2a) needs an official PyTorch template (`runpod/pytorch`), whose system Python has CUDA torch with cuDNN. Any other image uses step 2b. A Pod on the official ComfyUI image already has ComfyUI: use [Variant B](variant-b-prebuilt.md) instead of a second install.
 - About 15 GB free on the container disk (dependencies plus a 2.1 GB checkpoint).
 - The [shared prerequisites](../README.md#before-you-run-any-path-shared-prerequisites).
 
@@ -32,7 +32,13 @@ curl -fL -o comfy-source.tar.gz https://codeload.github.com/Comfy-Org/ComfyUI/ta
 echo "<sha256>  comfy-source.tar.gz" | sha256sum -c -
 ```
 
-**2. Install into a venv that reuses the base torch.** ComfyUI runs on the template's torch, so inherit it and pin it with a constraints file. Without the constraints, `pip install -r requirements.txt` can upgrade torch to a build that does not match the host.
+**2. Check the base image, then install.** Run this check before the install. It passes only when the system Python has CUDA torch and cuDNN loads (a small convolution on the GPU):
+
+```bash
+python3 -c 'import torch, torch.nn.functional as F; assert torch.cuda.is_available(); F.conv2d(torch.zeros(1,1,8,8,device="cuda"), torch.zeros(1,1,3,3,device="cuda")); print(torch.__version__, torch.version.cuda, torch.backends.cudnn.version())'
+```
+
+**2a. The check passes (official PyTorch template): reuse the base torch.** Inherit it and pin it with a constraints file. Without the constraints, `pip install -r requirements.txt` can upgrade torch to a build that does not match the host.
 
 ```bash
 set -eu
@@ -43,13 +49,28 @@ comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constrai
 comfy-venv/bin/python -m pip freeze > installed-packages.txt
 ```
 
+**2b. The check fails (any other image): use a fully isolated venv.** `--system-site-packages` on such an image lets pip treat torch as installed while its CUDA libraries are missing, and ComfyUI then fails with `ImportError: libcudnn.so.9`. Install torch with its CUDA wheels into a plain venv instead. Pick the wheel index for a CUDA version at or below the host driver's (`nvidia-smi` prints `CUDA Version`), and pin the three versions together. Allow about 25 minutes: the wheels are several GB.
+
+```bash
+set -eu
+mkdir comfy && tar -xzf comfy-source.tar.gz --strip-components=1 -C comfy
+python3 -m venv comfy-venv
+comfy-venv/bin/python -m pip install --no-input --no-cache-dir \
+  'torch==<version>' 'torchvision==<version>' 'torchaudio==<version>' \
+  --index-url https://download.pytorch.org/whl/cu<cuda>
+comfy-venv/bin/python -m pip freeze | grep -E '^(torch|torchvision|torchaudio)==' > torch-constraints.txt
+comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constraints.txt -r comfy/requirements.txt
+comfy-venv/bin/python -m pip freeze > installed-packages.txt
+```
+
+After either install, run the same check with `comfy-venv/bin/python` before you continue.
+
 **3. Download and check the checkpoint.**
 
 ```bash
 curl -fL -o comfy/models/checkpoints/<file>.safetensors \
   https://huggingface.co/<repo>/resolve/<revision>/<file>.safetensors
 echo "<sha256>  comfy/models/checkpoints/<file>.safetensors" | sha256sum -c -
-comfy-venv/bin/python -c 'import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))'
 ```
 
 **4. Start it on loopback with only core nodes.**
@@ -82,6 +103,7 @@ setsid timeout 900 comfy-venv/bin/python -s comfy/main.py --listen 127.0.0.1 --p
 - **Smoke settings give poor images.** Four sampler steps at 256 × 256 prove the pipeline, not the quality. Use the model's normal steps and resolution for a result the user will judge.
 - **Do not resubmit `/prompt` after an unclear result.** Read `/history` (and `/queue`) first; a second POST makes a second image.
 - **Torch drift.** If the install log shows torch being replaced, stop: the constraints file is missing or wrong.
+- **The base image decides the install.** `--system-site-packages` is safe only when the base check passes. On another image it gives a venv whose torch cannot load cuDNN (`ImportError: libcudnn.so.9`). Use step 2b.
 
 ## Cost & cleanup
 
@@ -98,5 +120,7 @@ Live run on 2026-11-05: an A40 Pod on the PyTorch 2.8 / CUDA 12.8 template, no v
 | Checkpoint | `Comfy-Org/stable-diffusion-v1-5-archive` at `9cfd069101959ca3828bf9c04a4419870832b74f`, `v1-5-pruned-emaonly-fp16.safetensors`, 2,132,696,762 bytes, SHA-256 `e9476a13728cd75d8279f6ec8bad753a66a1957ca375a1464dc63b37db6e3916` |
 | Workflow | `CheckpointLoaderSimple` → two `CLIPTextEncode` → `EmptyLatentImage` 256 × 256 → `KSampler` (seed 41235, 4 steps, cfg 5, euler) → `VAEDecode` → `SaveImage` (prefix `workspace_qa`) |
 | Result | `/history` `success`, output `workspace_qa_00001_.png`, 5.2 s generation; PNG 256 × 256, 112,808 bytes |
+
+A run on 2026-11-09 used the same plan on a Pod with the official ComfyUI image. Step 1 passed, and the `--system-site-packages` install failed with `ImportError: libcudnn.so.9`. Step 2b is the fix for that case, and no live run has verified it yet.
 
 The `/view` call was not part of that run: the PNG was read from `comfy/output/` and hash-checked. These pins prove the procedure. They are not a version recommendation.
