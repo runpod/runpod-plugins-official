@@ -59,7 +59,7 @@ comfy-venv/bin/python -m pip install --no-input --no-cache-dir \
   'torch==<version>' 'torchvision==<version>' 'torchaudio==<version>' \
   --index-url https://download.pytorch.org/whl/cu<cuda>
 comfy-venv/bin/python -m pip freeze | grep -E '^(torch|torchvision|torchaudio)==' > torch-constraints.txt
-comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constraints.txt -r comfy/requirements.txt
+comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constraints.txt -r comfy/requirements.txt 'requests==2.34.2'
 comfy-venv/bin/python -m pip freeze > installed-packages.txt
 ```
 
@@ -104,6 +104,7 @@ setsid timeout 900 comfy-venv/bin/python -s comfy/main.py --listen 127.0.0.1 --p
 - **Do not resubmit `/prompt` after an unclear result.** Read `/history` (and `/queue`) first; a second POST makes a second image.
 - **Torch drift.** If the install log shows torch being replaced, stop: the constraints file is missing or wrong.
 - **The base image decides the install.** `--system-site-packages` is safe only when the base check passes. On another image it gives a venv whose torch cannot load cuDNN (`ImportError: libcudnn.so.9`). Use step 2b.
+- **A plain venv lacks `requests`.** ComfyUI imports it at startup, and the pinned `requirements.txt` does not list it, so on step 2b ComfyUI exits about 15 s after start with `ModuleNotFoundError: No module named 'requests'`. Step 2b installs it. On step 2a the base image supplies it.
 
 ## Cost & cleanup
 
