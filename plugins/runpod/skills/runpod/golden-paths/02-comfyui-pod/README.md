@@ -19,7 +19,7 @@ checkpoint and the default text-to-image workflow usable. This is the same shape
 as `../01-ollama-pod/README.md`; it follows the pod development loop in
 [`../../../runpod-usage/reference/pod-workflows.md`](../../../runpod-usage/reference/pod-workflows.md).
 
-There are two ways to get there, split into their own files below.
+There are two ways to get there, split into their own files below. A third variant (C) serves an agent instead of a person: a private install driven only through the HTTP API.
 
 If the Pod is already running and an imported workflow names models without
 download metadata, route that repair to the
@@ -47,6 +47,7 @@ prebuilt fits (custom nodes, a lighter image, or pinned versions).
 
 - [Variant A — from scratch](variant-a-from-scratch.md) — install ComfyUI yourself on a PyTorch template.
 - [Variant B — prebuilt official image](variant-b-prebuilt.md) — deploy `runpod/comfyui`, which auto-starts.
+- [Variant C — pinned, private, driven by the API](variant-c-pinned-api.md) — install an exact, hash-checked ComfyUI on a Pod you already run, bind it to loopback and generate through `/prompt` → `/history` → `/view`. It has no URL, so the shared acceptance criteria below apply to A and B only.
 
 ## Acceptance criteria (shared)
 

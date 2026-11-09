@@ -1,0 +1,102 @@
+---
+lanes: [ssh]
+mcp: none
+concepts: [pod, exposed-port, container-disk, pod-command-exec]
+status: live-verified
+verified: "2026-11-05"
+evals: [runpod/evals/comfyui-pinned-api]
+---
+
+# Golden path 02 — ComfyUI — Variant C: pinned, private, driven by the API
+
+> **Status:** live-verified 2026-11-05 — setup, start, `/prompt` and `/history` ran on an A40 Pod; the PNG was then read from disk and hash-checked. **Evals:** [comfyui-pinned-api](../../evals/comfyui-pinned-api.eval.md). Status key: [golden-paths README](../README.md#status-legend).
+
+**Goal / Lane:** install an exact ComfyUI version on a GPU Pod the user already runs, keep it private, and generate one image through its HTTP API. **Lane:** a shell on the Pod (SSH or a command executor).
+
+**When to use this variant:** an agent, not a person, drives ComfyUI; the install must be reproducible; and nothing may be published on the proxy. For a UI the user opens in a browser, use [Variant B](variant-b-prebuilt.md) (the default) or [Variant A](variant-a-from-scratch.md).
+
+## Prerequisites
+
+- A running GPU Pod with ≥ 16 GB VRAM on an official PyTorch template, and a shell on it.
+- About 15 GB free on the container disk (dependencies plus a 2.1 GB checkpoint).
+- The [shared prerequisites](../README.md#before-you-run-any-path-shared-prerequisites).
+
+## Walkthrough
+
+Write the whole plan first, with a deadline on each step, and show it to the user.
+
+**1. Pin and hash the inputs.** Pick a ComfyUI commit and a checkpoint revision. Record the SHA-256 of the source archive (`https://codeload.github.com/Comfy-Org/ComfyUI/tar.gz/<commit>`) and of the checkpoint (the LFS SHA-256 on the model's file page at that revision). Verify both on the Pod after the download; a mismatch stops the run.
+
+```bash
+curl -fL -o comfy-source.tar.gz https://codeload.github.com/Comfy-Org/ComfyUI/tar.gz/<commit>
+echo "<sha256>  comfy-source.tar.gz" | sha256sum -c -
+```
+
+**2. Install into a venv that reuses the base torch.** ComfyUI runs on the template's torch, so inherit it and pin it with a constraints file. Without the constraints, `pip install -r requirements.txt` can upgrade torch to a build that does not match the host.
+
+```bash
+set -eu
+mkdir comfy && tar -xzf comfy-source.tar.gz --strip-components=1 -C comfy
+python3 -m venv --system-site-packages comfy-venv
+python3 -m pip freeze | grep -E '^(torch|torchvision|torchaudio)==' > torch-constraints.txt
+comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constraints.txt -r comfy/requirements.txt
+comfy-venv/bin/python -m pip freeze > installed-packages.txt
+```
+
+**3. Download and check the checkpoint.**
+
+```bash
+curl -fL -o comfy/models/checkpoints/<file>.safetensors \
+  https://huggingface.co/<repo>/resolve/<revision>/<file>.safetensors
+echo "<sha256>  comfy/models/checkpoints/<file>.safetensors" | sha256sum -c -
+comfy-venv/bin/python -c 'import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))'
+```
+
+**4. Start it on loopback with only core nodes.**
+
+```bash
+setsid timeout 900 comfy-venv/bin/python -s comfy/main.py --listen 127.0.0.1 --port <port> \
+  --disable-all-custom-nodes --disable-api-nodes --disable-auto-launch \
+  > comfy.log 2>&1 < /dev/null &
+```
+
+- `--listen 127.0.0.1` and a port that the Pod does not expose keep ComfyUI off the public proxy. ComfyUI has no authentication, so this is the only protection.
+- `--disable-all-custom-nodes` and `--disable-api-nodes` run only the nodes in the pinned source.
+- Ready means `GET /system_stats` returns 200. Poll it in short reads.
+
+**5. Run one workflow through the API.** Send an API-format workflow (node ids mapped to `class_type` and `inputs`, as the UI's "Export (API)" writes it), not the UI's graph format.
+
+1. `POST /prompt` with `{"prompt": <workflow>}`. Save the returned `prompt_id`, and check `node_errors` is empty. Send it once. A 200 means the job was queued, not that an image exists.
+2. `GET /history/<prompt_id>` until the entry shows `status.completed: true` and `status_str: "success"`.
+3. Read `outputs.<save-node-id>.images[]` from that entry: `filename`, `subfolder`, `type`. Do not build the filename from the prefix.
+4. `GET /view?filename=<filename>&subfolder=<subfolder>&type=output` returns the PNG. Save it and record its SHA-256 and pixel size.
+
+## Verify it works
+
+- `/system_stats` 200 before the workflow.
+- `/history/<prompt_id>` reports `success` with one output file.
+- The PNG has the requested size and a recorded SHA-256. Look at it before calling it a good result.
+
+## Variant-specific gotchas
+
+- **Smoke settings give poor images.** Four sampler steps at 256 × 256 prove the pipeline, not the quality. Use the model's normal steps and resolution for a result the user will judge.
+- **Do not resubmit `/prompt` after an unclear result.** Read `/history` (and `/queue`) first; a second POST makes a second image.
+- **Torch drift.** If the install log shows torch being replaced, stop: the constraints file is missing or wrong.
+
+## Cost & cleanup
+
+The Pod bills while it exists; stopping ComfyUI does not stop billing. Stop the process group, confirm no listener on the port, and delete the Pod only if this conversation created it for the test. Shared cost notes: [README](README.md#cost--cleanup-shared).
+
+## Tested example
+
+Live run on 2026-11-05: an A40 Pod on the PyTorch 2.8 / CUDA 12.8 template, no volume.
+
+| Item | Value |
+|---|---|
+| ComfyUI | v0.3.67, commit `f2bb3230b796f6a486894fc3b597db2c0b9538c9`, archive SHA-256 `c2a65dc160a398ee8b2fea0a09a68ab4132a0619da62fa81e78eee7fef38539b` |
+| Torch constraints | `torch==2.8.0`, `torchvision==0.23.0`, `torchaudio==2.8.0` |
+| Checkpoint | `Comfy-Org/stable-diffusion-v1-5-archive` at `9cfd069101959ca3828bf9c04a4419870832b74f`, `v1-5-pruned-emaonly-fp16.safetensors`, 2,132,696,762 bytes, SHA-256 `e9476a13728cd75d8279f6ec8bad753a66a1957ca375a1464dc63b37db6e3916` |
+| Workflow | `CheckpointLoaderSimple` → two `CLIPTextEncode` → `EmptyLatentImage` 256 × 256 → `KSampler` (seed 41235, 4 steps, cfg 5, euler) → `VAEDecode` → `SaveImage` (prefix `workspace_qa`) |
+| Result | `/history` `success`, output `workspace_qa_00001_.png`, 5.2 s generation; PNG 256 × 256, 112,808 bytes |
+
+The `/view` call was not part of that run: the PNG was read from `comfy/output/` and hash-checked. These pins prove the procedure. They are not a version recommendation.

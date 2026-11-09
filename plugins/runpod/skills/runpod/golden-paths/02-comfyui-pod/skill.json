@@ -16,6 +16,12 @@
       "description": "Deploy Runpod's official ComfyUI image. Least effort, most reliable.",
       "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/02-comfyui-pod/variant-b-prebuilt.md",
       "default": true
+    },
+    {
+      "id": "variant-c-pinned-api",
+      "name": "Pinned, private, API-driven",
+      "description": "Install an exact, hash-checked ComfyUI on a Pod you already run, bind it to loopback, and generate through the HTTP API.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/02-comfyui-pod/variant-c-pinned-api.md"
     }
   ],
   "supplementalSkills": [
@@ -39,5 +45,5 @@
   "tags": ["comfyui", "image-generation", "pod"],
   "mcp": "partial",
   "createdAt": "2026-07-14T21:20:11Z",
-  "updatedAt": "2026-10-13T14:51:26Z"
+  "updatedAt": "2026-11-09T00:00:00Z"
 }
