@@ -7,7 +7,8 @@ description: 'Bring any source (a HuggingFace repo, a ComfyUI workflow, a Hub re
   through the Runpod MCP tools; code-first Python deploys (the Flash dev loop) are out of scope. Use when
   the user wants a model or worker served on Runpod Serverless, whatever the modality: text generation,
   speech-to-text or text-to-speech, image or video generation, embeddings, document processing, or their
-  own handler image.'
+  own handler image. For an LLM served with vLLM (Hub worker-vllm, a vllm/vllm-openai image, or a vLLM Pod),
+  defer to runpod-vllm.'
 metadata:
   author: runpod
   version: "2.0.0" # x-release-please-version
@@ -44,7 +45,7 @@ Read and classify the source you were given: the engine follows the modality and
 
 | Source / modality | Engine family → worker image |
 |---|---|
-| Text-generation LLM, `safetensors` weights | vLLM or SGLang → `runpod/worker-v1-vllm` (or an SGLang worker) |
+| Text-generation LLM, `safetensors` weights | vLLM or SGLang → `runpod/worker-v1-vllm` (or an SGLang worker); for a vLLM deploy follow [runpod-vllm](../runpod-vllm/SKILL.md) |
 | Text-generation LLM, `GGUF` quantized weights | llama.cpp / Ollama → a GGUF-capable worker, **not** vLLM |
 | Image/diffusion `workflow.json` | ComfyUI → `runpod/worker-comfyui` ([reference/comfyui-serverless.md](reference/comfyui-serverless.md)) |
 | Speech-to-text (transcription) | a Whisper-family model → a speech-to-text worker, not an LLM worker |

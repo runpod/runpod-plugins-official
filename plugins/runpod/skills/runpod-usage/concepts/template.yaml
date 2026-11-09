@@ -77,6 +77,18 @@ rules:
       - { source: rest-v2-spec, ref: "DELETE /v2/templates/{id}", seen: "2026-09-28" }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/rest-v1-to-v2.md }
 
+  - id: template.held-after-endpoint-delete
+    statement: >
+      A Serverless template stays held by an endpoint after that endpoint is
+      deleted, until its last worker is billed. Deleting the template in that
+      window returns 400 "Template is still held by deleted endpoint ...,
+      pending cleanup", for up to about 90 minutes after the endpoint delete.
+      Delete the endpoint first and the template after the hold ends.
+    status: verified
+    see: [template.delete-blocked-in-use]
+    evidence:
+      - { source: live-probe, ref: "deploy-hub-repo of runpod-workers/worker-vllm created an endpoint and a serverless template; after delete-endpoint returned 204, delete-template on that template returned 400 'Template is still held by deleted endpoint <id>, which is pending cleanup. It can be deleted once that endpoint's last worker has been billed, within about 90 minutes of the endpoint delete.'", seen: "2026-11-06" }
+
   - id: template.owner-only-writes
     statement: >
       `GET /v2/templates/{id}` reads your own templates and public catalog

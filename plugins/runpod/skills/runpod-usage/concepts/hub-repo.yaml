@@ -39,6 +39,28 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/hub/publishing-guide", note: "See the `hub.json` reference.", seen: "2026-09-28" }
 
+  - id: hub-repo.deploy-copies-release-config
+    statement: >
+      Deploying a Hub release creates a Serverless template and an endpoint. The
+      endpoint takes the release's `allowedCudaVersions` and env defaults,
+      merged with the env you pass. Read the endpoint back after the deploy to
+      see the CUDA list and env it got.
+    status: verified
+    evidence:
+      - { source: live-probe, ref: "deploy-hub-repo runpod-workers/worker-vllm (listed release v2.30.1, hub.json allowedCudaVersions [\"13.0\"]) with gpuIds AMPERE_24 and 7 env overrides; GET /v2/endpoints/<id> returned gpu.allowedCudaVersions [\"13.0\"], minCudaVersion \"13.0\", pools [AMPERE_24], the release's env defaults merged with the overrides, and a templateId", seen: "2026-11-06" }
+
+  - id: hub-repo.worker-vllm-openai-route
+    statement: >
+      A queue endpoint deployed from the `runpod-workers/worker-vllm` Hub
+      listing serves an OpenAI-compatible API at
+      `https://api.runpod.ai/v2/<endpoint-id>/openai/v1`, authenticated with the
+      Runpod API key. The native queue routes (`/run`, `/runsync`) stay
+      available.
+    status: verified
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/vllm/openai-compatibility", note: OpenAI-compatible base URL for vLLM endpoints. }
+      - { source: live-probe, ref: "worker-vllm v2.30.1 queue endpoint: the OpenAI Python SDK with base_url https://api.runpod.ai/v2/<endpoint-id>/openai/v1 and the Runpod API key listed the model and completed chat, streaming and tool-call requests", seen: "2026-11-06" }
+
   - id: hub-repo.deploy-through-hub
     statement: >
       Deploy a Hub repo with `deploy-hub-repo` or `runpodctl serverless create

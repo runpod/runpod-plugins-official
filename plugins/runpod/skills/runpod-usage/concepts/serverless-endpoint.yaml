@@ -127,6 +127,18 @@ rules:
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/serverless/load-balancing/overview", note: "The comparison table lists backpressure as dropping requests when overloaded, against queue buffering." }
 
+  - id: serverless-endpoint.lb-gateway-auth
+    statement: >
+      Requests to a `LOAD_BALANCER` endpoint at
+      `https://<endpoint-id>.api.runpod.ai` go through a gateway that checks the
+      Runpod API key in the `Authorization` header. A request without it gets
+      `401` and never reaches the worker, so the worker's server needs no key of
+      its own.
+    status: verified
+    see: [serverless-endpoint.lb-worker-ports]
+    evidence:
+      - { source: live-probe, ref: "LOAD_BALANCER endpoint serving vllm/vllm-openai:v0.32.0 with no vLLM API key: GET https://<endpoint-id>.api.runpod.ai/v1/models without Authorization returned 401; with Authorization: Bearer <Runpod API key> it returned 200 and the model list", seen: "2026-11-06" }
+
   - id: serverless-endpoint.pools-not-types
     applies_to: ["field:gpu.pools", "field:gpu.excludedTypes"]
     statement: >

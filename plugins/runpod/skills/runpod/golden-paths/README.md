@@ -104,6 +104,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | | ↳ [Variant — queue worker](26-template-project/variant-queue.md) | | queue handler image | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — load-balanced HTTP worker](26-template-project/variant-load-balanced.md) | | load-balanced image | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — heavy layers and retained editable Pod state](26-template-project/variant-pytorch.md) | | PyTorch base + code layer | spec-checked 2026-10-06 (local checks only) |
+| 27 | [vLLM model: Pod first, then a load-balancing endpoint](27-vllm-pod-to-endpoint.md) | pod + serverless / LB | runpod-mcp (`create-pod` with `args`, `create-endpoint` `LOAD_BALANCER`) + `test_endpoint.py` | live-verified 2026-11-06 |
 
 > **When a path has two variants, prefer the prebuilt/Hub one** (Variant B for
 > ComfyUI, Variant A for Whisper) unless you need custom code or explicitly requested template/Dockerfile authoring — that's the

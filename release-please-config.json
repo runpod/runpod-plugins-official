@@ -39,7 +39,8 @@
         "plugins/runpod/skills/runpod-pod-deploy/SKILL.md",
         "plugins/runpod/skills/runpod-pod-doctor/SKILL.md",
         "plugins/runpod/skills/runpod-serverless-deploy/SKILL.md",
-        "plugins/runpod/skills/runpod-build-template/SKILL.md"
+        "plugins/runpod/skills/runpod-build-template/SKILL.md",
+        "plugins/runpod/skills/runpod-vllm/SKILL.md"
       ]
     }
   }
