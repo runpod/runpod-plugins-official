@@ -74,7 +74,7 @@ Show the arithmetic in the answer.
 
 `vllm/vllm-openai:v0.32.0` and the Hub worker-vllm image built on it are CUDA 13 builds (`NVIDIA_REQUIRE_CUDA=cuda>=13.0`); read that variable in the image config for any other tag. Set `gpu.minCudaVersion` to the image floor on every create. The general rule and why: [gpu-selection.md step 3](../runpod-usage/reference/gpu-selection.md#step-3-pin-the-cuda-floor).
 
-Prefer the open floor (`minCudaVersion`) to an exact list (`allowedCudaVersions`): hosts report the newest CUDA their driver supports, so an exact list ages badly. A Hub release can carry an exact list, and `deploy-hub-repo` copies it to the endpoint. Read the endpoint back after the deploy. If the workers stay at zero or throttled while the stock read shows capacity at a newer CUDA version, widen it with `set-endpoint-gpus` (`allowedCudaVersions:""`, `minCudaVersion:"13.0"`).
+Prefer the open floor (`minCudaVersion`) to an exact list (`allowedCudaVersions`): the CUDA version is a property of each machine's driver and differs between machines of one GPU type, so an exact list matches only the hosts that report exactly those versions. A Hub release can carry an exact list, and `deploy-hub-repo` copies it to the endpoint. Read the endpoint back after the deploy. If the workers stay at zero or throttled while the stock read shows capacity at a newer CUDA version, widen it with `set-endpoint-gpus` (`allowedCudaVersions:""`, `minCudaVersion:"13.0"`).
 
 ## Step 5: set the vLLM flags
 
@@ -99,9 +99,11 @@ The first log lines prove which settings took effect: vLLM prints `non-default a
 
 ```bash
 pip install openai
-python3 scripts/test_endpoint.py --base-url <url>/v1 --api-key <key> --model <served-model-id> \
+python3 scripts/test_endpoint.py --base-url <url>/v1 --api-key-env RUNPOD_API_KEY --model <served-model-id> \
   --wait-for-ready 1800 [--thinking-switch] [--skip-tools] [--vision]
 ```
+
+The key comes from the named environment variable, so it stays out of the process list: `RUNPOD_API_KEY` for an endpoint, `VLLM_API_KEY` for a Pod.
 
 The script waits for `GET /v1/models`, then tests chat, streaming (time to first token), tool calls and, with flags, the Qwen-style thinking switch and an image input. It exits non-zero if any enabled test fails. A model that answers with garbage or repeats itself has the wrong parser or chat template: fix the server before you report anything.
 

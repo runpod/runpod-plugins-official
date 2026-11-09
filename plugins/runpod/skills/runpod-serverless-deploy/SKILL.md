@@ -7,7 +7,8 @@ description: 'Bring any source (a HuggingFace repo, a ComfyUI workflow, a Hub re
   through the Runpod MCP tools; code-first Python deploys (the Flash dev loop) are out of scope. Use when
   the user wants a model or worker served on Runpod Serverless, whatever the modality: text generation,
   speech-to-text or text-to-speech, image or video generation, embeddings, document processing, or their
-  own handler image.'
+  own handler image. For an LLM served with vLLM (Hub worker-vllm, a vllm/vllm-openai image, or a vLLM Pod),
+  defer to runpod-vllm.'
 metadata:
   author: runpod
   version: "2.0.0" # x-release-please-version

@@ -8,8 +8,11 @@ Works against any of the three vLLM setups the runpod-vllm skill deploys:
 
 Usage:
   pip install openai
-  python3 test_endpoint.py --base-url <url>/v1 --api-key "$KEY" --model <served-model-id> \
+  python3 test_endpoint.py --base-url <url>/v1 --api-key-env RUNPOD_API_KEY --model <served-model-id> \
       [--wait-for-ready 1800] [--skip-tools] [--thinking-switch] [--vision] [--json out.json]
+
+The key can come from the environment instead of argv (so it stays out of `ps`):
+  --api-key-env RUNPOD_API_KEY   (or VLLM_API_KEY for a Pod); RUNPOD_API_KEY is the default.
 
 Checks: the server lists the model, a chat completion returns text, a streamed completion
 returns chunks (time to first token), a tool call names the right function, and optionally
@@ -18,10 +21,9 @@ the Qwen-style thinking switch and an image input. Exits 1 if any enabled check 
 
 import argparse
 import json
+import os
 import sys
 import time
-
-from openai import OpenAI
 
 RESULTS = []
 ARGS = None
@@ -38,6 +40,16 @@ IMAGE_URL = (
 def reasoning_of(obj):
     """vLLM names the thinking field `reasoning`; older versions used `reasoning_content`."""
     return getattr(obj, "reasoning", None) or getattr(obj, "reasoning_content", None) or ""
+
+
+def tool_call_ok(name, arguments, want_name="get_weather", want_city="reykjavik"):
+    """True when a tool call names the right function and its arguments are a JSON object with the city."""
+    try:
+        args = json.loads(arguments)
+    except (TypeError, ValueError):
+        return False
+    city = args.get("city") if isinstance(args, dict) else None
+    return name == want_name and isinstance(city, str) and want_city in city.lower()
 
 
 def record(name, passed, detail="", elapsed=None):
@@ -68,7 +80,9 @@ def main():
     global ARGS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--base-url", required=True, help="OpenAI base URL, ending in /v1")
-    ap.add_argument("--api-key", required=True)
+    ap.add_argument("--api-key", help="API key; prefer --api-key-env so the key is not in argv")
+    ap.add_argument("--api-key-env", default="RUNPOD_API_KEY",
+                    help="environment variable to read the key from when --api-key is not given")
     ap.add_argument("--model", required=True, help="served model id (GET /v1/models)")
     ap.add_argument("--wait-for-ready", type=int, default=0,
                     help="seconds to keep polling /models through a cold start (default: fail fast)")
@@ -80,8 +94,13 @@ def main():
     ap.add_argument("--vision", action="store_true", help="also test an image input (multimodal models)")
     ap.add_argument("--json", help="write the summary JSON to this path")
     ARGS = ap.parse_args()
+    api_key = ARGS.api_key or os.environ.get(ARGS.api_key_env)
+    if not api_key:
+        ap.error(f"no API key: pass --api-key or set {ARGS.api_key_env}")
 
-    client = OpenAI(base_url=ARGS.base_url, api_key=ARGS.api_key, timeout=ARGS.timeout)
+    from openai import OpenAI  # imported here so the pure helpers can be tested without the SDK
+
+    client = OpenAI(base_url=ARGS.base_url, api_key=api_key, timeout=ARGS.timeout)
 
     # 0. Wait for the server: covers image pull, weight download, compile.
     t0 = time.monotonic()
@@ -177,16 +196,7 @@ def main():
                 max_tokens=ARGS.max_tokens,
             )
             calls = r.choices[0].message.tool_calls or []
-
-            def valid(call):
-                try:
-                    args = json.loads(call.function.arguments)
-                except (TypeError, ValueError):
-                    return False
-                city = args.get("city") if isinstance(args, dict) else None
-                return call.function.name == "get_weather" and isinstance(city, str) and "reykjavik" in city.lower()
-
-            ok = any(valid(c) for c in calls)
+            ok = any(tool_call_ok(c.function.name, c.function.arguments) for c in calls)
             record("tool_call", ok, f"{[(c.function.name, c.function.arguments) for c in calls]}",
                    time.time() - t0)
         except Exception as e:  # noqa: BLE001

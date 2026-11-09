@@ -100,11 +100,11 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 23 | [Minimal serverless queue image](23-minimal-queue-image/README.md) | image contract / serverless | docker buildx + runpodctl serverless (CPU) + `/runsync` | live-verified 2026-07-16 |
 | 25 | [Bake into image vs mount a network volume](25-bake-vs-mount/README.md) | storage model / image | docker buildx + runpodctl nv + CPU pod (`df -T`: overlay vs MooseFS) | live-verified 2026-07-16 |
 | 26 | [Author a complete template project](26-template-project/README.md) | project authoring / Pod / queue / LB | app files + documented build/deployment handoff | spec-checked 2026-10-06 (local/container checks recorded in path, no live Runpod verification) |
-| 27 | [vLLM model: Pod first, then a load-balancing endpoint](27-vllm-pod-to-endpoint.md) | pod + serverless / LB | runpod-mcp (`create-pod` with `args`, `create-endpoint` `LOAD_BALANCER`) + `test_endpoint.py` | live-verified 2026-11-06 |
 | | ↳ [Variant — application Pod](26-template-project/variant-pod.md) | | Pod image, app port | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — queue worker](26-template-project/variant-queue.md) | | queue handler image | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — load-balanced HTTP worker](26-template-project/variant-load-balanced.md) | | load-balanced image | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — heavy layers and retained editable Pod state](26-template-project/variant-pytorch.md) | | PyTorch base + code layer | spec-checked 2026-10-06 (local checks only) |
+| 27 | [vLLM model: Pod first, then a load-balancing endpoint](27-vllm-pod-to-endpoint.md) | pod + serverless / LB | runpod-mcp (`create-pod` with `args`, `create-endpoint` `LOAD_BALANCER`) + `test_endpoint.py` | live-verified 2026-11-06 |
 
 > **When a path has two variants, prefer the prebuilt/Hub one** (Variant B for
 > ComfyUI, Variant A for Whisper) unless you need custom code or explicitly requested template/Dockerfile authoring — that's the

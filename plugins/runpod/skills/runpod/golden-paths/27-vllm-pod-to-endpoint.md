@@ -53,7 +53,7 @@ When the Hub worker-vllm release already supports the model, the queue endpoint 
 
    ```bash
    python3 test_endpoint.py --base-url https://<pod-id>-8000.proxy.runpod.net/v1 \
-     --api-key "$VLLM_API_KEY" --model Qwen/Qwen3-8B --thinking-switch --wait-for-ready 1500
+     --api-key-env VLLM_API_KEY --model Qwen/Qwen3-8B --thinking-switch --wait-for-ready 1500
    ```
 
    Observed: `chat` 33.3 tok/s, `stream` TTFT 0.28 s, `tool_call` `get_weather({"city": "Reykjavik"})`, `thinking_off` answered `391`.
@@ -81,7 +81,7 @@ When the Hub worker-vllm release already supports the model, the queue endpoint 
 
    ```bash
    python3 test_endpoint.py --base-url https://<endpoint-id>.api.runpod.ai/v1 \
-     --api-key "$RUNPOD_API_KEY" --model Qwen/Qwen3-8B --thinking-switch --wait-for-ready 1500
+     --api-key-env RUNPOD_API_KEY --model Qwen/Qwen3-8B --thinking-switch --wait-for-ready 1500
    ```
 
    Observed: 5/5 passed, `chat` 39.5 tok/s, `stream` TTFT 0.23 s. A request without the key returned `401`.
@@ -95,7 +95,7 @@ When the Hub worker-vllm release already supports the model, the queue endpoint 
 
 - **Pod and Serverless stock are separate reads, and both depend on the CUDA floor.** The Serverless read showed RTX A5000 stock at CUDA 13.2 while Pod creates for the same card failed on capacity.
 - **vLLM 0.32.0 returns the thinking text in `reasoning`, not `reasoning_content`.** A client that reads only `reasoning_content` sees no streamed tokens until the thinking ends (a 22 s apparent TTFT on this model).
-- **The load-balancing endpoint ran 3 workers with `workers.max: 1`.** Request-count scaling started two extra workers on RTX PRO 6000 MIG 1g.24gb slices (also in `AMPERE_24`) during the test. Read `list-endpoint-workers` after a test and delete or scale down promptly.
+- **The load-balancing endpoint listed 3 workers with `workers.max: 1`.** `list-endpoint-workers` showed 1 `RUNNING` and 2 `INITIALIZING` (RTX PRO 6000 MIG 1g.24gb slices, also in `AMPERE_24`) during the test. Read `list-endpoint-workers` after a test and delete the endpoint or scale it down promptly.
 - **A worker-count change does not restart workers.** Changing `workers.idleTimeout` left `endpointVersion` at 1 and no worker stale. An image, `args` or env change cuts a new release.
 - **The Hub queue variant:** the listed worker-vllm release was v2.30.1 while GitHub had v2.30.3, and the deploy copied the release's `allowedCudaVersions: ["13.0"]`. A worker still started (RTX A5000, CA-MTL-1) and the same test passed 5/5 on `https://api.runpod.ai/v2/<id>/openai/v1`.
 
