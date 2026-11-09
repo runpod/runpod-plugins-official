@@ -3,13 +3,13 @@ lanes: [ssh]
 mcp: none
 concepts: [pod, exposed-port, container-disk, pod-command-exec]
 status: live-verified
-verified: "2026-11-05"
+verified: "2026-11-09"
 evals: [runpod/evals/comfyui-pinned-api]
 ---
 
 # Golden path 02 — ComfyUI — Variant C: pinned, private, driven by the API
 
-> **Status:** live-verified 2026-11-05 — setup, start, `/prompt` and `/history` ran on an A40 Pod; the PNG was then read from disk and hash-checked. **Evals:** [comfyui-pinned-api](../../evals/comfyui-pinned-api.eval.md). Status key: [golden-paths README](../README.md#status-legend).
+> **Status:** live-verified 2026-11-09 — step 2b on the official ComfyUI image through `/prompt`, `/history` and `/view` (see Tested example for the reused venv); step 2a on the PyTorch template on 2026-11-05 through `/history`. **Evals:** [comfyui-pinned-api](../../evals/comfyui-pinned-api.eval.md). Status key: [golden-paths README](../README.md#status-legend).
 
 **Goal / Lane:** install an exact ComfyUI version on a GPU Pod the user already runs, keep it private, and generate one image through its HTTP API. **Lane:** a shell on the Pod (SSH or a command executor).
 
@@ -49,19 +49,19 @@ comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constrai
 comfy-venv/bin/python -m pip freeze > installed-packages.txt
 ```
 
-**2b. The check fails (any other image): use a fully isolated venv.** `--system-site-packages` on such an image lets pip treat torch as installed while its CUDA libraries are missing, and ComfyUI then fails with `ImportError: libcudnn.so.9`. Install torch with its CUDA wheels into a plain venv instead. Pick the wheel index for a CUDA version at or below the host driver's (`nvidia-smi` prints `CUDA Version`), and pin the three versions together. Allow about 25 minutes: the wheels are several GB.
+**2b. The check fails (any other image): use a fully isolated venv.** `--system-site-packages` on such an image lets pip treat torch as installed while its CUDA libraries are missing, and ComfyUI then fails with `ImportError: libcudnn.so.9`. Install torch into a plain venv instead. Pin torch, torchvision and torchaudio together in a constraints file; from the default index, the Linux torch wheels bring their CUDA and cuDNN libraries as separate packages. Their CUDA version must be at or below the host driver's (`nvidia-smi` prints `CUDA Version`). Add `requests`: ComfyUI imports it, and its `requirements.txt` does not list it. Allow 25 minutes: the wheels are several GB.
 
 ```bash
 set -eu
 mkdir comfy && tar -xzf comfy-source.tar.gz --strip-components=1 -C comfy
 python3 -m venv comfy-venv
-comfy-venv/bin/python -m pip install --no-input --no-cache-dir \
-  'torch==<version>' 'torchvision==<version>' 'torchaudio==<version>' \
-  --index-url https://download.pytorch.org/whl/cu<cuda>
-comfy-venv/bin/python -m pip freeze | grep -E '^(torch|torchvision|torchaudio)==' > torch-constraints.txt
-comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constraints.txt -r comfy/requirements.txt 'requests==2.34.2'
+printf 'torch==<version>\ntorchvision==<version>\ntorchaudio==<version>\n' > torch-constraints.txt
+comfy-venv/bin/python -m pip install --no-input --no-cache-dir -c torch-constraints.txt -r comfy/requirements.txt
+comfy-venv/bin/python -m pip install --no-input --no-cache-dir 'requests==2.32.3'
 comfy-venv/bin/python -m pip freeze > installed-packages.txt
 ```
+
+For a torch build with a different CUDA version, add `--index-url https://download.pytorch.org/whl/cu<cuda>` to a separate torch install before the requirements. The live runs did not use that option.
 
 After either install, run the same check with `comfy-venv/bin/python` before you continue.
 
@@ -104,7 +104,7 @@ setsid timeout 900 comfy-venv/bin/python -s comfy/main.py --listen 127.0.0.1 --p
 - **Do not resubmit `/prompt` after an unclear result.** Read `/history` (and `/queue`) first; a second POST makes a second image.
 - **Torch drift.** If the install log shows torch being replaced, stop: the constraints file is missing or wrong.
 - **The base image decides the install.** `--system-site-packages` is safe only when the base check passes. On another image it gives a venv whose torch cannot load cuDNN (`ImportError: libcudnn.so.9`). Use step 2b.
-- **A plain venv lacks `requests`.** ComfyUI imports it at startup, and the pinned `requirements.txt` does not list it, so on step 2b ComfyUI exits about 15 s after start with `ModuleNotFoundError: No module named 'requests'`. Step 2b installs it. On step 2a the base image supplies it.
+- **A plain venv lacks `requests`.** ComfyUI imports it at startup, and the pinned `requirements.txt` does not list it, so without it ComfyUI exits about 15 s after start with `ModuleNotFoundError: No module named 'requests'`. Step 2b installs it. On step 2a the base image supplies it.
 
 ## Cost & cleanup
 
@@ -122,6 +122,10 @@ Live run on 2026-11-05: an A40 Pod on the PyTorch 2.8 / CUDA 12.8 template, no v
 | Workflow | `CheckpointLoaderSimple` → two `CLIPTextEncode` → `EmptyLatentImage` 256 × 256 → `KSampler` (seed 41235, 4 steps, cfg 5, euler) → `VAEDecode` → `SaveImage` (prefix `workspace_qa`) |
 | Result | `/history` `success`, output `workspace_qa_00001_.png`, 5.2 s generation; PNG 256 × 256, 112,808 bytes |
 
-A run on 2026-11-09 used the same plan on a Pod with the official ComfyUI image. Step 1 passed, and the `--system-site-packages` install failed with `ImportError: libcudnn.so.9`. Step 2b is the fix for that case, and no live run has verified it yet.
+Step 2b was live-verified on 2026-11-09 on an A40 Pod with the official ComfyUI image (`runpod/comfyui`), on the same pinned source, checkpoint and workflow:
+
+- With the step 2a install, step 1 passed, and the install failed with `ImportError: libcudnn.so.9`.
+- The full step 2b install from scratch (constraints `torch==2.8.0`, `torchvision==0.23.0`, `torchaudio==2.8.0`) passed all setup steps on the third attempt. The service then exited with the missing `requests` error.
+- A fourth attempt with `requests==2.32.3` passed the install. Its checkpoint download then hit the step deadline on a slow network. The passing run reused the venv from the third attempt, with `requests==2.32.3` added. `/system_stats` was ready in about 25 s, and `/prompt`, `/history` and `/view` each returned 200 with a 256 × 256 PNG.
 
 The `/view` call was not part of that run: the PNG was read from `comfy/output/` and hash-checked. These pins prove the procedure. They are not a version recommendation.
