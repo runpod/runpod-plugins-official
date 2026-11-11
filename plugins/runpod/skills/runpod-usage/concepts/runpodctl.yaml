@@ -22,6 +22,43 @@ relations:
   - { type: uses, target: hub-repo, cardinality: "0..n" }
 
 rules:
+  - id: runpodctl.serverless-v2-routing
+    statement: >
+      In builds containing runpod/runpodctl#400, all REST control-plane calls
+      use `RUNPOD_API_URL`, then the `restApiUrl` config setting, defaulting to
+      `https://api.runpod.io/v2`. Configure this base URL with the `/v2` path
+      when targeting another environment. GraphQL and invocation URLs use their
+      own overrides.
+    status: documented
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpodctl/pull/400", seen: "2026-11-11", note: Build-scoped endpoint routing and environment variables. }
+
+  - id: runpodctl.serverless-partial-scaling
+    statement: >
+      In builds containing runpod/runpodctl#400, `serverless update` sends only
+      supplied worker settings, including zero worker limits. Setting only
+      `--scale-by` preserves the threshold, and setting only `--scale-threshold`
+      preserves the strategy through a v2 read. Switching a fractional queue
+      delay to request-count scaling requires a positive integer
+      `--scale-threshold`.
+    status: documented
+    see: [endpoint-autoscaling.scalers]
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpodctl/pull/400", seen: "2026-11-11", note: Endpoint update mapping and regression tests. }
+
+  - id: runpodctl.serverless-idle-timeout-output
+    statement: >
+      In builds containing runpod/runpodctl#400, `serverless get`, `list` and
+      `update` report `idleTimeout: null` in JSON and YAML when v2 omits the
+      value, including queue-based endpoints using request-count scaling. Treat
+      this as not applicable, not zero or a failed lookup, and do not fetch a
+      value from REST v1. Sending `--idle-timeout` for that combination returns
+      the API validation error.
+    status: documented
+    see: [endpoint-autoscaling.idle-timeout]
+    evidence:
+      - { source: other, url: "https://github.com/runpod/runpodctl/pull/400", seen: "2026-11-11", note: Nullable output and live endpoint update validation. }
+
   - id: runpodctl.https-install
     statement: >
       Fetch the install script with `curl -fsSL https://cli.runpod.net` and pipe

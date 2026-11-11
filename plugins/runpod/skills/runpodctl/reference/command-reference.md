@@ -1,5 +1,5 @@
 ---
-concepts: [runpodctl, registry-credential]
+concepts: [runpodctl, registry-credential, endpoint-autoscaling]
 ---
 
 # runpodctl — behavior reference
@@ -92,14 +92,36 @@ Same flags and semantics as `pod logs` above, plus:
 
 ### Endpoint update and zero values
 
-`serverless update` sends **zero values** as of **v2.10.0** (`--workers-min 0`,
-`--idle-timeout 0`, `--workers-max 0`, `--scaler-value 0`). On **v2.9.0 and earlier those were
-silently dropped** from the request, so resetting a dev endpoint back to scale-to-zero looked
-like it applied and the endpoint kept billing. On an older binary verify with `serverless get
-<id>`, or `PATCH https://api.runpod.io/v2/serverless/<id>` with an explicit `{"workers":{"min":0}}`.
+**Build scope:** the v2 update and nullable idle-timeout behavior below requires a
+build containing [runpod/runpodctl#400](https://github.com/runpod/runpodctl/pull/400).
+Check `runpodctl version` and verify the commit for custom builds. A released version
+number alone does not establish that this PR is included.
 
-`serverless update` has **no `--gpu-id` flag** — change an existing endpoint's GPU pool with
-that same `PATCH` and `{"gpu":{"pools":[...]}}`.
+`serverless update` applies only supplied worker settings. Zero worker limits are
+valid: `runpodctl serverless update <id> --workers-min 0` permits scale-to-zero,
+and `--workers-max 0` caps the endpoint at zero workers. Zero worker-limit updates
+require **v2.10.0+**. Verify the result with `serverless get <id>`.
+
+`--scale-threshold 4` alone keeps the endpoint's scaling strategy, while
+`--scale-by requests` alone carries its current threshold into request-count scaling.
+The CLI reads v2 to preserve the setting you omitted. A fractional delay such as
+`0.5` cannot be a request count, so choose a positive integer explicitly:
+
+```bash
+runpodctl serverless update <id> --scale-by requests --scale-threshold 4
+```
+
+On a queue-based endpoint using request-count scaling, `serverless get`, `list` and
+`update` print `idleTimeout: null` in JSON and YAML. It means **not applicable**, not
+zero or a failed lookup. Do not backfill it from REST v1. For that combination,
+`--idle-timeout` returns an API validation error. Where applicable, its range is
+1 to 3600 seconds.
+
+Set the REST destination using
+[`RUNPOD_API_URL`](output-and-errors.md#environment-variables).
+
+To change an existing endpoint's GPU pool, send
+`PATCH https://api.runpod.io/v2/serverless/<id>` with `{"gpu":{"pools":[...]}}`.
 
 **Multi-DC** (`--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>`) needs
 **runpodctl ≥ v2.4.0**; data does not sync between volumes automatically — golden path
@@ -108,9 +130,6 @@ that same `PATCH` and `{"gpu":{"pools":[...]}}`.
 `serverless update --model-reference` includes the server-resolved `modelReferences` in
 JSON/YAML output; `--clear-models` returns `modelReferences: []`. Other updates do not fetch
 model references; use `serverless model-status <id>` to inspect them.
-
-⚠️ `serverless get --include-workers` returns raw v1 worker records **including
-`RUNPOD_AI_API_KEY`/`RUNPOD_ENDPOINT_SECRET` in `env`** — don't paste its output into a ticket.
 
 ### CPU endpoints and REST v1
 
@@ -277,3 +296,8 @@ runpodctl completion              # auto-detect shell and install completion
 
 Which of these to reach for, and the traps that are not flags (Hub worker selection, CPU
 endpoints, template-vs-image, cost guards) are in the [SKILL.md](../SKILL.md) decision rules.
+
+## Exact rules
+
+See [runpodctl](../../runpod-usage/concepts/runpodctl.yaml) and
+[endpoint autoscaling](../../runpod-usage/concepts/endpoint-autoscaling.yaml).
