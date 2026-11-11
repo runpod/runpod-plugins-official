@@ -117,8 +117,8 @@ zero or a failed lookup. Do not backfill it from REST v1. For that combination,
 `--idle-timeout` returns an API validation error. Where applicable, its range is
 1 to 3600 seconds.
 
-Set the v2 destination using the independent
-[`RUNPOD_REST_V2_URL` override](output-and-errors.md#environment-variables).
+Set the REST destination using
+[`RUNPOD_API_URL`](output-and-errors.md#environment-variables).
 
 To change an existing endpoint's GPU pool, send
 `PATCH https://api.runpod.io/v2/serverless/<id>` with `{"gpu":{"pools":[...]}}`.

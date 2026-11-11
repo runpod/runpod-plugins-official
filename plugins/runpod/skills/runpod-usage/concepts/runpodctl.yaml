@@ -24,11 +24,11 @@ relations:
 rules:
   - id: runpodctl.serverless-v2-routing
     statement: >
-      In builds containing runpod/runpodctl#400, endpoint name, worker and
-      scaling updates, plus endpoint reads, use `RUNPOD_REST_V2_URL`, defaulting
-      to `https://api.runpod.io/v2`. `RUNPOD_API_URL` controls a separate legacy
-      REST base, so configure the v2 variable explicitly when targeting another
-      environment. GraphQL and invocation URLs use their own overrides.
+      In builds containing runpod/runpodctl#400, all REST control-plane calls
+      use `RUNPOD_API_URL`, then the `restApiUrl` config setting, defaulting to
+      `https://api.runpod.io/v2`. Configure this base URL with the `/v2` path
+      when targeting another environment. GraphQL and invocation URLs use their
+      own overrides.
     status: documented
     evidence:
       - { source: other, url: "https://github.com/runpod/runpodctl/pull/400", seen: "2026-11-11", note: Build-scoped endpoint routing and environment variables. }
