@@ -207,6 +207,7 @@ tables above when nothing here is close.
 | Run a server (Ollama/ComfyUI) on a pod at a URL | [01](./golden-paths/01-ollama-pod/README.md), [02](./golden-paths/02-comfyui-pod/README.md) |
 | Deploy a serverless model endpoint (Hub / flash / custom image) | [03](./golden-paths/03-whisper-endpoint/README.md), [05](./golden-paths/05-model-to-endpoint-pipeline.md) |
 | Serve an LLM with vLLM (Pod, load-balancing or Hub queue endpoint) | [27 — vLLM Pod → endpoint](./golden-paths/27-vllm-pod-to-endpoint.md); procedure in [runpod-vllm](../runpod-vllm/SKILL.md) |
+| Install vLLM or ComfyUI privately on a Pod you already run (pinned, loopback, API-driven) | vLLM: [runpod-vllm existing-pod](../runpod-vllm/reference/existing-pod.md); ComfyUI: [02 Variant C](./golden-paths/02-comfyui-pod/variant-c-pinned-api.md) |
 | Serve a HuggingFace model without baking it in or a volume (host-cached) | [20 — model caching (`--model-reference`)](./golden-paths/20-model-caching-endpoint.md) |
 | Call a ready hosted model (no deploy) | [11 — Public Endpoints](./golden-paths/11-public-endpoints.md) |
 | Fine-tune, then serve the result | [04](./golden-paths/04-finetune-pod.md), [08](./golden-paths/08-finetune-to-serverless.md) |

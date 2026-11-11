@@ -58,6 +58,7 @@ Does the Hub worker's vLLM support the model?
 | Queue endpoint (Hub worker-vllm) | `https://api.runpod.ai/v2/<endpoint-id>/openai/v1` | Runpod API key | the Hub vLLM supports the model; scale-to-zero; no image to manage |
 | Load-balancing endpoint (`vllm/vllm-openai:<tag>`) | `https://<endpoint-id>.api.runpod.ai/v1` | Runpod API key at the gateway | the model needs a vLLM version the Hub worker does not have; direct HTTP, no queue |
 | Pod (`vllm/vllm-openai:<tag>`) | `https://<pod-id>-8000.proxy.runpod.net/v1` | vLLM's own API key (`VLLM_API_KEY`) | a long-running server, debugging a boot, or a model too large or slow for the endpoint health window |
+| Pod the user already runs (pip install, loopback) | `http://127.0.0.1:<port>/v1`, from a shell on the Pod | vLLM's own API key (`VLLM_API_KEY`) | the user names an existing Pod (for example a PyTorch template) and wants vLLM on it, private, with no new Pod |
 
 For a new or very large model, prove the config on a Pod first: a Pod has no health watchdog, so a long first boot (download plus compile) is fine and the logs stay readable. Then move the same image and arguments to an endpoint.
 
@@ -89,7 +90,7 @@ The flags and what each one costs are in [reference/serving-flags.md](reference/
 
 ## Step 6: deploy and watch the boot
 
-Follow exactly one reference: [queue-endpoint.md](reference/queue-endpoint.md), [lb-endpoint.md](reference/lb-endpoint.md) or [pod.md](reference/pod.md).
+Follow exactly one reference: [queue-endpoint.md](reference/queue-endpoint.md), [lb-endpoint.md](reference/lb-endpoint.md), [pod.md](reference/pod.md) or, for a Pod the user already runs, [existing-pod.md](reference/existing-pod.md) (its verify step replaces Step 7: the server is not reachable from outside the Pod).
 
 Watch the boot in short reads, never one long blind wait. Each read checks three things: the resource still exists, its status, and the log tail. Judge progress by forward movement (download, shard load, compile, CUDA graph capture, `Application startup complete`), not by the word ERROR: a healthy vLLM boot prints warnings. The failure signatures and their fixes are in [reference/boot-log-triage.md](reference/boot-log-triage.md). On a known crash loop, stop the spend first (delete the Pod, or set the endpoint's `workers.max` to 0), then diagnose.
 
