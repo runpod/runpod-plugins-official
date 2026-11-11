@@ -117,7 +117,12 @@ def problems_for(
     return out
 
 
+FENCED_BLOCK = re.compile(r"^(```|~~~).*?^\1[^\n]*$", re.M | re.S)
+
+
 def when_to_use_problems(rel: str, text: str) -> list[str]:
+    # A heading inside a fenced code block is example text, not the doc's own section.
+    text = FENCED_BLOCK.sub("", text)
     if not ENTRY.match(rel) or WHEN_TO_USE.search(text):
         return []
     alt = WHEN_TO_USE_EQUIVALENT.get(rel)
@@ -170,6 +175,7 @@ def self_test() -> None:
     assert when_to_use_problems("05-x.md", "# GP\n\n## When to use\nx\n") == []
     assert when_to_use_problems("05-x/README.md", "# GP\n\n## When to use this\n") == []
     assert when_to_use_problems("05-x/variant-a.md", "# GP\n") == []
+    assert when_to_use_problems("05-x.md", "# GP\n\n```md\n## When to use\n```\n")
     assert (
         when_to_use_problems("02-comfyui-pod/README.md", "## Which variant should I use?\n") == []
     )
