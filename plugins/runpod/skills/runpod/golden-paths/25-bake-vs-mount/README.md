@@ -21,6 +21,12 @@ convention. It's the runnable companion to
 [building-images.md → Bake in vs mount at runtime](../../../runpod-usage/reference/building-images.md)
 and [golden path 21 (storage tiers)](../21-storage-tiers.md).
 
+## When to use
+You must decide where a file lives: baked into the image (local disk) or on a mounted
+network volume. This path shows the two on different filesystems inside one pod. If you
+already chose a network volume and must pick its tier (standard or high-performance), use
+[21](../21-storage-tiers.md).
+
 ## Prerequisites
 
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
