@@ -11,7 +11,7 @@ description: >-
   the answer contract, connection and tool rules.
 metadata:
   author: runpod
-  version: "2.0.0" # x-release-please-version
+  version: "2.1.0" # x-release-please-version
   concepts: [runpod-platform, pod, serverless-endpoint, template, network-volume, hub-repo]
 license: Apache-2.0
 ---

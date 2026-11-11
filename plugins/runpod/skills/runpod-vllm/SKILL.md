@@ -6,7 +6,7 @@ description: Serve a Hugging Face model with vLLM on Runpod (Hub worker-vllm que
   runpod-serverless-deploy for non-vLLM engines and runpod-endpoint-ops for an endpoint that already works.
 metadata:
   author: runpod
-  version: "2.0.0" # x-release-please-version
+  version: "2.1.0" # x-release-please-version
   concepts: [serverless-endpoint, pod, hub-repo, worker, gpu-type, gpu-pool, gpu-availability, container-image, exposed-port, endpoint-release, log-stream, network-volume]
 license: Apache-2.0
 ---

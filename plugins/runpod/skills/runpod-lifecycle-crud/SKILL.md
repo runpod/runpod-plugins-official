@@ -10,7 +10,7 @@ description: 'Create, verify by read-back, and manage the lifecycle of Runpod''s
   to decide.'
 metadata:
   author: runpod
-  version: "2.0.0" # x-release-please-version
+  version: "2.1.0" # x-release-please-version
   concepts: [template, network-volume, global-volume, audit-log, organization, registry-credential, runpod-secret, ssh-key, instant-cluster, data-center, gpu-availability]
 license: Apache-2.0
 ---
