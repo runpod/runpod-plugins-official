@@ -77,7 +77,7 @@ Full code table, `cli_error` vs `usage_error`, plain-text exceptions, the exact 
 - **Serverless** for request/response inference APIs and scalable workers; **pods** for interactive work, notebooks, training, debugging, or long-lived sessions. **CPU pods** for preprocessing, file movement, lightweight scripts, and non-CUDA work; **GPU pods** when CUDA, model inference, training, or GPU memory is required.
 - **"Active worker" = minimum workers, not maximum:** `--workers-min 1` (one worker always warm → no cold start; ideal for development/iteration), **not** `--workers-max 1` (that only caps the ceiling).
 - ⚠️ **A min-1 worker bills continuously, even while idle** (it defeats scale-to-zero). After dev you **must** set `--workers-min 0` (or delete the endpoint), or it quietly runs up cost.
-  - **Needs runpodctl ≥ v2.10.0.** Earlier binaries **silently dropped** `--workers-min 0` and `--idle-timeout 0` from the update request (`omitempty` ate the zero): the reset looked applied and the endpoint kept billing. Check `runpodctl version`; on an older binary confirm with `serverless get <id>` and fall back to `PATCH https://api.runpod.io/v2/serverless/<id>` with an explicit `{"workers":{"min":0}}`.
+  - **Needs runpodctl ≥ v2.10.0.** Confirm the worker minimum with `serverless get <id>`. [Endpoint update and zero values](reference/command-reference.md#endpoint-update-and-zero-values) covers the version gate, v2 routing, partial scaling updates and inapplicable idle timeouts.
 - **Set the execution timeout on every endpoint create.** A v2 create without `timeout` comes back `"timeout": 0` (live-verified 2026-10-29; [why it matters](../runpod-usage/reference/gotchas.md#endpoint-timeout-comes-back-0)). runpodctl ≥ 2.14.0 has `serverless create --execution-timeout <seconds>` (as of 2.14.0 `serverless update` does not; check `--help`); read the timeout back with `serverless get`, and fix a 0 with `PATCH https://api.runpod.io/v2/serverless/<id>` `{"timeout":<ms>}`.
 - `serverless update` has **no `--gpu-id` flag**. To change an endpoint's GPU pools, `PATCH https://api.runpod.io/v2/serverless/<id>` with `{"gpu":{"pools":["ADA_24"]}}` (pool ids, from the `pool` field of `GET /v2/catalog/gpus`). Sending `pools` without `excludedTypes` clears any exclusions.
 - **CPU serverless endpoints:** `runpodctl serverless create --compute-type CPU` (on REST v2, send `cpu` instead of `gpu`). **Never** send `"computeType":"CPU"` to REST v1 `POST https://rest.runpod.io/v1/endpoints`: it silently provisions a **GPU** endpoint ([evidence](reference/command-reference.md#cpu-endpoints-and-rest-v1)).
@@ -142,6 +142,10 @@ runpodctl serverless create --hub-id <id> --gpu-id "NVIDIA GeForce RTX 4090" \
 runpodctl serverless update <endpoint-id> --workers-max 5
 runpodctl serverless create --template-id <id> --workers-min 1 --wait          # block until a worker is ready (v2.9.0+)
 ```
+
+For builds containing [runpod/runpodctl#400](https://github.com/runpod/runpodctl/pull/400),
+read [endpoint update semantics](reference/command-reference.md#endpoint-update-and-zero-values)
+before changing scaling or interpreting a null idle timeout.
 
 **Invoke URLs come back with the endpoint:** `create`/`get`/`list`/`update` include a `urls` object (`run`, `runsync`, `health`), so read them instead of assembling the URL. They're built from `RUNPOD_INVOKE_URL` (default `https://api.runpod.ai/v2`), which `RUNPOD_API_URL`/`RUNPOD_GRAPHQL_URL` do **not** move: [reference/output-and-errors.md](reference/output-and-errors.md#serverless-invoke-urls).
 

@@ -289,14 +289,20 @@ invocation instead of `exec`.
 | --- | --- | --- |
 | `RUNPOD_API_KEY` | — | API key. Also settable via `runpodctl doctor` or `~/.runpod/config.toml` (`apikey`) |
 | `TIMEOUT` | `30s` | per-API-call deadline — **no `RUNPOD_` prefix** (the CLI reads env vars unprefixed, so this one looks nothing like the others). Exceeding it is `code: "timeout"`. Also settable as a top-level `timeout` in `~/.runpod/config.toml` — it must sit **above** any `[section]` header, or it becomes `section.timeout` and is silently ignored. Distinct from `--wait`, which bounds a whole job or readiness wait rather than one call |
-| `RUNPOD_API_URL` | `https://rest.runpod.io/v1` | REST control plane (config key `restApiUrl`) |
+| `RUNPOD_API_URL` | `https://rest.runpod.io/v1` | legacy REST base (config key `restApiUrl`), separate from the v2 override |
+| `RUNPOD_REST_V2_URL` | `https://api.runpod.io/v2` | v2 control plane (config key `restV2ApiUrl`). Endpoint name, worker and scaling updates, plus endpoint reads, use it in builds containing [runpod/runpodctl#400](https://github.com/runpod/runpodctl/pull/400) |
 | `RUNPOD_GRAPHQL_URL` | `https://api.runpod.io/graphql` | GraphQL control plane (config key `apiUrl`) |
 | `RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY` | — | S3 API keys for `network-volume upload`/`download` (config keys `s3AccessKey` / `s3SecretKey`). Separate from the API key, which still looks up the volume's data center unless `--data-center-id` is passed |
 | `RUNPOD_INVOKE_URL` | `https://api.runpod.ai/v2` | base for the invoke URLs reported by `serverless create`/`get`/`list`/`update` (config key `invokeUrl`) |
 
-**Invoke is a separate service from the control plane.** Pointing `RUNPOD_API_URL` or
-`RUNPOD_GRAPHQL_URL` at a non-prod host does *not* move the invoke URLs — override
-`RUNPOD_INVOKE_URL` explicitly when you need that, or the emitted URLs target prod.
+For a build containing #400, set `RUNPOD_REST_V2_URL` explicitly when targeting a
+different environment. Setting `RUNPOD_API_URL` alone leaves those operations
+pointed at the v2 default. Verify custom build commits before relying on that
+routing.
+
+**Invoke is a separate service from the control plane.** The REST and GraphQL
+overrides do not select the invocation host. Set `RUNPOD_INVOKE_URL` explicitly
+when you need a different invocation destination.
 
 ## Serverless invoke URLs
 
