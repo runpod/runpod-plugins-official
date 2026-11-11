@@ -6,6 +6,14 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.1.0](https://github.com/runpod/runpod-plugins-official/compare/v2.0.0...v2.1.0) (2026-11-11)
+
+
+### Features
+
+* **runpod-vllm:** add vLLM serving skill and golden path 27 ([#119](https://github.com/runpod/runpod-plugins-official/issues/119)) ([5a83c49](https://github.com/runpod/runpod-plugins-official/commit/5a83c49e1094c3fef9ce755230b64c62e6cc7173))
+* **runpod-vllm:** pinned vLLM and ComfyUI recipes for a Pod you already run ([#121](https://github.com/runpod/runpod-plugins-official/issues/121)) ([ef98c97](https://github.com/runpod/runpod-plugins-official/commit/ef98c978c61849fca4afe61f529a4478011b11cc))
+
 ## [2.0.0](https://github.com/runpod/runpod-plugins-official/compare/v1.9.0...v2.0.0) (2026-11-06)
 
 
