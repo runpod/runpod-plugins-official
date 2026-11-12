@@ -37,7 +37,8 @@ Your serverless endpoint must keep scaling when one data center is short of GPUs
 workers read data from a network volume. This is the canonical multi-region reference: the
 multi-volume attach, the sync methods, and the rule that you keep every volume identical.
 Use [19](19-three-region-same-file.md) after this one when you want an end-to-end proof
-across three data centers with a served payload.
+across three data centers with a served payload (19 is legacy: keep its proof, but use this
+path's attach step, not 19's GraphQL `saveEndpoint`).
 
 ## Prerequisites
 - Shared setup first: [../README.md](README.md#before-you-run-any-path-shared-prerequisites) and
