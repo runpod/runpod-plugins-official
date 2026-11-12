@@ -33,6 +33,12 @@ path; the **axolotl** flow is documented alongside it as the richer option for s
 Composes the verified network-volume handoff (golden path [07](07-network-volume-handoff.md)).
 **Lane(s):** runpodctl (pod + volume) + flash (serverless) + Runpod MCP (`stream-worker-logs`, for diagnosis)
 
+## When to use
+You want a trained adapter **and** a serverless endpoint that serves it, in one run. If you
+only need the training artifact, use [04](04-finetune-pod.md) (training half only). If your
+payload is not a model adapter, use [07](07-network-volume-handoff.md), the general pod →
+volume → serverless handoff that this path builds on.
+
 ## The loop in one picture
 ```
 [pod: axolotl train]  --writes-->  /workspace/outputs/lora-out   (network volume)

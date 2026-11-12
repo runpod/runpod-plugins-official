@@ -5,7 +5,7 @@ description: >-
   (runpod-mcp and the journey playbooks it routes to, such as runpod-serverless-deploy,
   runpod-pod-deploy, runpod-pod-doctor and runpod-cost-audit; runpodctl, runpod-flash, runpod-companion-clis,
   runpod-usage, runpod-templates, runpod-build-template, runpod-migrate) and
-  indexes two dozen end-to-end worked examples (golden paths). Use it before any
+  indexes the end-to-end worked examples (golden paths). Use it before any
   multi-step or provisioning task, even when the lane is clear, to check for a
   matching golden path; for the Runpod MCP tools, runpod-mcp owns
   the answer contract, connection and tool rules.
@@ -191,7 +191,7 @@ It branches to two sub-loops:
 
 ## Worked examples (golden paths)
 
-This is **step 0 of routing**, not an appendix. Two dozen end-to-end scenarios live in
+This is **step 0 of routing**, not an appendix. The end-to-end scenarios live in
 [`./golden-paths/README.md`](./golden-paths/README.md), each with a status header
 (live-verified with a date, spec-checked, or legacy; check it before trusting a path), the
 real commands and observed output, plus a Gotchas and a Cost & cleanup section, which is

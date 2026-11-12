@@ -13,6 +13,10 @@ index README and the files a path ships as a project template) must have:
   "live-verified DATE", "spec-checked DATE" or "legacy (last live run DATE)".
 - a row in golden-paths/README.md whose Status cell starts with the same label.
 
+Each entry doc (NN-name.md, or NN-name/README.md for a multi-variant path) must also
+have a `## When to use` heading, the README template's "should I be here" section.
+WHEN_TO_USE_EQUIVALENT lists the entry docs whose differently named heading does that job.
+
 Run from the repo root: python3 hooks/check_golden_paths.py [--self-test]
 """
 
@@ -31,6 +35,14 @@ LIVE = ROOT / "scripts/live_free_evals.py"
 STATUSES = ("live-verified", "spec-checked", "legacy")
 # Files a path ships as its deliverable (a project template), not golden-path docs.
 EXCLUDE = re.compile(r"^26-template-project/template/")
+# Entry docs: the file a path's README row links to (variant files are not entry docs).
+ENTRY = re.compile(r"^\d{2}-[^/]+\.md$|^\d{2}-[^/]+/README\.md$")
+WHEN_TO_USE = re.compile(r"^## When to use\b", re.M)
+# Entry docs whose own heading answers "when to use" (see the README template).
+WHEN_TO_USE_EQUIVALENT = {
+    "02-comfyui-pod/README.md": "## Which variant should I use?",
+    "03-whisper-endpoint/README.md": "## Lane choice (why serverless, and why Hub is the default)",
+}
 
 
 def frontmatter(text: str) -> dict[str, str]:
@@ -105,6 +117,20 @@ def problems_for(
     return out
 
 
+FENCED_BLOCK = re.compile(r"^(```|~~~).*?^\1[^\n]*$", re.M | re.S)
+
+
+def when_to_use_problems(rel: str, text: str) -> list[str]:
+    # A heading inside a fenced code block is example text, not the doc's own section.
+    text = FENCED_BLOCK.sub("", text)
+    if not ENTRY.match(rel) or WHEN_TO_USE.search(text):
+        return []
+    alt = WHEN_TO_USE_EQUIVALENT.get(rel)
+    if alt and re.search("^" + re.escape(alt) + "$", text, re.M):
+        return []
+    return [f"{rel}: no '## When to use' section (the golden-paths README template requires one)"]
+
+
 def self_test() -> None:
     good = (
         "---\nlanes: [rest]\nmcp: full\nconcepts: [pod]\nstatus: live-verified\n"
@@ -144,6 +170,16 @@ def self_test() -> None:
     assert problems_for(
         "01.md", good.replace(" **Evals:** x.", " **Evals:** none (x)."), readme, {"catalog"}, ok
     )
+    assert when_to_use_problems("01.md", "# GP\n") == []  # not an NN-name entry doc
+    assert when_to_use_problems("05-x.md", "# GP\n\n## Prerequisites\n")
+    assert when_to_use_problems("05-x.md", "# GP\n\n## When to use\nx\n") == []
+    assert when_to_use_problems("05-x/README.md", "# GP\n\n## When to use this\n") == []
+    assert when_to_use_problems("05-x/variant-a.md", "# GP\n") == []
+    assert when_to_use_problems("05-x.md", "# GP\n\n```md\n## When to use\n```\n")
+    assert (
+        when_to_use_problems("02-comfyui-pod/README.md", "## Which variant should I use?\n") == []
+    )
+    assert when_to_use_problems("02-comfyui-pod/README.md", "## Variants\n")
     print("golden-path status self-test OK")
 
 
@@ -163,7 +199,9 @@ def main() -> None:
         if rel == "README.md" or EXCLUDE.match(rel):
             continue
         n += 1
-        errors += problems_for(rel, md.read_text(), readme, ids, exists)
+        text = md.read_text()
+        errors += problems_for(rel, text, readme, ids, exists)
+        errors += when_to_use_problems(rel, text)
     if errors:
         print(f"golden-path status FAILED: {len(errors)} problem(s)")
         for e in errors:

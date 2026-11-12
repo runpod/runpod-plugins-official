@@ -22,6 +22,12 @@ works). Pods have **no handler** — the container just runs a long-lived proces
 See [building-images.md → Don't clobber the base image's startup](../../../runpod-usage/reference/building-images.md)
 for the concept; this is the runnable proof.
 
+## When to use
+You build your own image for a **pod**: a long-lived process (your `CMD`) with no handler,
+reached over SSH or an exposed port. If the image is for a queue-based serverless endpoint,
+use [23](../23-minimal-queue-image/README.md). For a load-balanced endpoint, use
+[14](../14-load-balancing-endpoint.md).
+
 ## Prerequisites
 
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)

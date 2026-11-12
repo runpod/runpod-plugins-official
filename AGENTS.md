@@ -99,6 +99,8 @@ rule 11): the `SKILL.md` body stays small and long tables / deep explanations li
   CI when the three disagree. The legend is in the README's *Status legend*.
 - Each golden-path doc uses one section template: Goal · Status · Lane(s) → When to
   use → Prerequisites → Walkthrough → Verify → Gotchas → Cost & cleanup → skill gaps.
+  `hooks/check_golden_paths.py` also fails CI when an entry doc has no `## When to use`
+  section; 02 and 03 keep their equivalent headings through its allow-list.
 - Each skill's `evals/*.eval.md` are regression scenarios (Prompt / Expected
   behavior / Assertions). **They are not executed** — no runner exists in this repo and CI
   does not read them. They are specifications to hand-check a model against and to review
