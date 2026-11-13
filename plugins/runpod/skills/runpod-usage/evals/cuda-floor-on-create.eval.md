@@ -22,8 +22,9 @@ Per `runpod-usage/reference/gpu-selection.md` ("Step 3: pin the CUDA floor") and
 4. **Sets the floor in whichever lane it uses** — `--min-cuda-version` on
    `runpodctl pod create`, or `gpu.minCudaVersion` on a v2 `POST /v2/pods` or the MCP
    `create-pod` tool.
-5. **Cost guard + SSH** as usual — `--terminate-after`, and the SSH key registered
-   before creation.
+5. **Cost guard + SSH** as usual — `runpodctl pod remove <pod-id>` when done (an
+   in-pod `runpodctl pod stop` for an unattended deadline, never `--terminate-after`),
+   and the SSH key registered before creation.
 
 ## Assertions
 
