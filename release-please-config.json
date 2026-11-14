@@ -27,6 +27,7 @@
         "plugins/runpod/skills/runpod/SKILL.md",
         "plugins/runpod/skills/runpod-mcp/SKILL.md",
         "plugins/runpod/skills/runpod-migrate/SKILL.md",
+        "plugins/runpod/skills/runpod-cloud-migrate/SKILL.md",
         "plugins/runpod/skills/runpodctl/SKILL.md",
         "plugins/runpod/skills/runpod-flash/SKILL.md",
         "plugins/runpod/skills/runpod-companion-clis/SKILL.md",

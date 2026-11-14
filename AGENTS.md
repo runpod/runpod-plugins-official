@@ -64,6 +64,9 @@ skills/runpod-templates/  official prebuilt pod templates + ComfyUI model-repair
   scripts/                the ComfyUI repair helpers (CI-gated unittests)
 skills/runpod-migrate/    migrate a codebase from GraphQL / REST v1 to REST v2
   scripts/                the API-version inventory scanner
+skills/runpod-cloud-migrate/  move a workload from another cloud or GPU platform to Runpod
+  reference/*.md          one playbook per source platform
+  scripts/                the platform-usage inventory scanner (CI-gated unittests)
 skills/runpod-build-template/  create/improve complete template projects (Pod / queue / LB)
 ```
 
