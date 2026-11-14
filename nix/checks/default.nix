@@ -48,6 +48,7 @@ let
   # ---- first-party roots --------------------------------------------------
   hooks = src + "/hooks";
   migrate = src + "/plugins/runpod/skills/runpod-migrate";
+  cloudMigrate = src + "/plugins/runpod/skills/runpod-cloud-migrate";
   templates = src + "/plugins/runpod/skills/runpod-templates";
   scriptsDir = src + "/scripts";
 
@@ -55,10 +56,12 @@ let
   # the two travel together (they are the unittest source set).
   pyScriptRoots = [
     (migrate + "/scripts")
+    (cloudMigrate + "/scripts")
     (templates + "/scripts")
   ];
   pyTestRoots = [
     (migrate + "/tests")
+    (cloudMigrate + "/tests")
     (templates + "/tests")
   ];
   # The .py the tools own: CI hooks + repo scripts (live evals) + skill scripts + tests.
@@ -142,7 +145,7 @@ let
     mypy = {
       runtimeInputs = [ versions.mypy ];
       src = pySrc;
-      text = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
+      text = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-cloud-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
     };
     # bandit reads exclude_dirs and the `--severity-level medium` policy from
     # pyproject.toml — a documented policy, not a per-finding suppression.

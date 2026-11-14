@@ -1,7 +1,8 @@
-"""Tests for scan_cloud_usage.py. Standard library only, Python 3.9+.
+r"""Tests for scan_cloud_usage.py. Standard library only, Python 3.9+.
 
 Run from the repo root:
-    python3 -B -m unittest discover -s plugins/runpod/skills/runpod-cloud-migrate/tests -p "test_*.py"
+    python3 -B -m unittest discover \
+        -s plugins/runpod/skills/runpod-cloud-migrate/tests -p "test_*.py"
 """
 
 from __future__ import annotations
@@ -9,33 +10,34 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
-import os
 import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import Any
 
 SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "scan_cloud_usage.py"
 REFERENCE = SCRIPT.parent.parent / "reference"
 spec = importlib.util.spec_from_file_location("scan_cloud_usage", SCRIPT)
+if spec is None or spec.loader is None:
+    raise ImportError(f"cannot load {SCRIPT}")
 scanner = importlib.util.module_from_spec(spec)
 sys.modules["scan_cloud_usage"] = scanner
 spec.loader.exec_module(scanner)
 
 
 def write(root: str, rel: str, text: str) -> None:
-    path = os.path.join(root, rel)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(text)
+    path = Path(root) / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
 
 
-def platforms(hits) -> set:
+def platforms(hits: list[Any]) -> set[str]:
     return {h.platform for h in hits}
 
 
-def kinds(hits, platform: str) -> set:
+def kinds(hits: list[Any], platform: str) -> set[str]:
     return {h.kind for h in hits if h.platform == platform}
 
 
@@ -47,15 +49,19 @@ class ScanTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
-    def scan(self, **files: str):
+    def scan(self, **files: str) -> list[Any]:
         for rel, text in files.items():
             write(self.root, rel.replace("__", "/"), text)
-        return scanner.scan(self.root)
+        hits: list[Any] = scanner.scan(self.root)
+        return hits
 
     def test_one_signal_per_platform(self) -> None:
         cases = {
             "vast-ai": ("run.sh", "vastai create instance 123 --image img --disk 20\n"),
-            "lambda": ("launch.py", 'URL = "https://cloud.lambda.ai/api/v1/instance-operations/launch"\n'),
+            "lambda": (
+                "launch.py",
+                'URL = "https://cloud.lambda.ai/api/v1/instance-operations/launch"\n',
+            ),
             "coreweave": ("main.tf", 'resource "coreweave_cks_cluster" "c" {}\n'),
             "paperspace": ("ci.yml", "run: gradient deployments create --name x\n"),
             "modal": ("app.py", "import modal\napp = modal.App('x')\n"),
@@ -64,7 +70,10 @@ class ScanTests(unittest.TestCase):
             "together-ai": ("llm.py", "from together import Together\nclient = Together()\n"),
             "fireworks-ai": ("llm.ts", 'const url = "https://api.fireworks.ai/inference/v1";\n'),
             "fal": ("img.py", "import fal_client\nfal_client.subscribe('fal-ai/flux/dev')\n"),
-            "hugging-face": ("call.py", 'URL = "https://abc.us-east-1.aws.endpoints.huggingface.cloud/v1/"\n'),
+            "hugging-face": (
+                "call.py",
+                'URL = "https://abc.us-east-1.aws.endpoints.huggingface.cloud/v1/"\n',
+            ),
             "aws": ("infer.py", 'rt = boto3.client("sagemaker-runtime")\n'),
             "google-cloud": ("infer.py", "from google.cloud import aiplatform\n"),
             "azure": ("infer.py", "from azure.ai.ml import MLClient\n"),
@@ -75,7 +84,9 @@ class ScanTests(unittest.TestCase):
                 self.assertIn(slug, platforms(scanner.scan(root)))
 
     def test_every_playbook_platform_has_a_case_above(self) -> None:
-        with_reference = {p.slug for p in scanner.PLATFORMS if p.reference and p.slug != "kubernetes"}
+        with_reference = {
+            p.slug for p in scanner.PLATFORMS if p.reference and p.slug != "kubernetes"
+        }
         self.assertEqual(len(with_reference), 14)
 
     def test_gpu_instance_types_and_iac(self) -> None:
@@ -85,7 +96,8 @@ class ScanTests(unittest.TestCase):
                     'resource "aws_instance" "g" { instance_type = "g5.2xlarge" }\n'
                     'resource "aws_sagemaker_endpoint" "e" {}\n'
                     'resource "google_compute_instance" "v" { machine_type = "a2-highgpu-1g" }\n'
-                    'resource "azurerm_linux_virtual_machine" "v" { size = "Standard_NC24ads_A100_v4" }\n'
+                    'resource "azurerm_linux_virtual_machine" "v" '
+                    '{ size = "Standard_NC24ads_A100_v4" }\n'
                 )
             }
         )
@@ -93,7 +105,14 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(kinds(hits, "aws"), {"config", "iac"})
 
     def test_cpu_instance_types_are_not_gpu_signals(self) -> None:
-        hits = self.scan(**{"main.tf": 'instance_type = "m5.large"\nsize = "Standard_D4s_v5"\nmachine_type = "n2-standard-4"\n'})
+        hits = self.scan(
+            **{
+                "main.tf": (
+                    'instance_type = "m5.large"\nsize = "Standard_D4s_v5"\n'
+                    'machine_type = "n2-standard-4"\n'
+                )
+            }
+        )
         self.assertEqual(hits, [])
 
     def test_kubernetes_gpu_request(self) -> None:
@@ -109,7 +128,7 @@ class ScanTests(unittest.TestCase):
                 "src__ok.py": "import modal\n",
             }
         )
-        self.assertEqual({h.path for h in hits}, {os.path.join("src", "ok.py")})
+        self.assertEqual({h.path for h in hits}, {str(Path("src") / "ok.py")})
 
     def test_words_that_only_look_like_a_platform(self) -> None:
         hits = self.scan(
@@ -144,8 +163,7 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(kinds(hits, "fal"), {"credential"})
 
     def test_binary_and_oversized_files_are_skipped(self) -> None:
-        with open(os.path.join(self.root, "blob.py"), "wb") as fh:
-            fh.write(b"\x00\x01import modal\n")
+        (Path(self.root) / "blob.py").write_bytes(b"\x00\x01import modal\n")
         write(self.root, "big.py", "import modal\n" + "x = 1\n" * 200_000)
         self.assertEqual(scanner.scan(self.root), [])
 
@@ -166,7 +184,7 @@ class ScanTests(unittest.TestCase):
         with redirect_stdout(out):
             self.assertEqual(scanner.main([self.root]), 0)
         self.assertIn("| Modal | 1 | 1 | sdk (1) | reference/modal.md |", out.getvalue())
-        self.assertEqual(scanner.main([os.path.join(self.root, "missing")]), 2)
+        self.assertEqual(scanner.main([str(Path(self.root) / "missing")]), 2)
 
     def test_empty_repo_says_to_ask(self) -> None:
         out = io.StringIO()
@@ -178,11 +196,17 @@ class ScanTests(unittest.TestCase):
         for platform in scanner.PLATFORMS:
             if platform.reference:
                 with self.subTest(platform=platform.slug):
-                    self.assertTrue((SCRIPT.parent.parent / platform.reference).is_file(), platform.reference)
+                    self.assertTrue(
+                        (SCRIPT.parent.parent / platform.reference).is_file(), platform.reference
+                    )
 
     def test_every_reference_file_has_a_platform(self) -> None:
         listed = {Path(p.reference).name for p in scanner.PLATFORMS if p.reference}
-        on_disk = {p.name for p in REFERENCE.glob("*.md")} - {"runpod-targets.md", "data-transfer.md", "terraform.md"}
+        on_disk = {p.name for p in REFERENCE.glob("*.md")} - {
+            "runpod-targets.md",
+            "data-transfer.md",
+            "terraform.md",
+        }
         self.assertEqual(on_disk - listed, set())
 
 
