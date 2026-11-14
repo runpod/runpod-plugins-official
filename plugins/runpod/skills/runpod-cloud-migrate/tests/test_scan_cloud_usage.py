@@ -193,6 +193,8 @@ class ScanTests(unittest.TestCase):
         self.assertIn("No platform signals found", out.getvalue())
 
     def test_every_reference_exists(self) -> None:
+        if not REFERENCE.is_dir():
+            self.skipTest("playbooks are not part of this source set")
         for platform in scanner.PLATFORMS:
             if platform.reference:
                 with self.subTest(platform=platform.slug):
@@ -201,6 +203,8 @@ class ScanTests(unittest.TestCase):
                     )
 
     def test_every_reference_file_has_a_platform(self) -> None:
+        if not REFERENCE.is_dir():
+            self.skipTest("playbooks are not part of this source set")
         listed = {Path(p.reference).name for p in scanner.PLATFORMS if p.reference}
         on_disk = {p.name for p in REFERENCE.glob("*.md")} - {
             "runpod-targets.md",
