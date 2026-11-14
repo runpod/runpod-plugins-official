@@ -53,7 +53,7 @@ checked 2026-11-14.
 | Truss `chat_completions` / `/v1` methods | Load-balancing endpoint or vLLM worker | |
 | `docker_server` | Load-balancing endpoint | Paths pass through unchanged; health path is `/ping` or `HEALTH_CHECK_PATH` |
 | vLLM server | vLLM worker (Hub) | OpenAI route `https://api.runpod.ai/v2/ENDPOINT_ID/openai/v1` |
-| Model APIs | Public Endpoint | OpenAI-compatible text endpoints: `gpt-oss-120b`, `qwen3-32b-awq` |
+| Model APIs | Public Endpoint | OpenAI-compatible text endpoints such as `qwen3-32b-awq`; confirm against the live catalog |
 | Chains | Endpoints + CPU orchestrator | You write the calls between steps |
 | Training Jobs | Pod, `@app.task` | Multi-node: Instant Cluster |
 | Deployment / environment / promotion | Endpoint release / one endpoint per environment / image update | SDK apps: `rp flash deploy --env NAME` |
@@ -247,7 +247,7 @@ See [storage](../../runpod-usage/reference/storage.md) and
 | Streamed `/predict` body | `GET .../stream/JOB_ID` |
 | `.../environments/production/sync/PATH` | `https://ENDPOINT_ID.api.runpod.ai/PATH` |
 | OpenAI base `.../sync/v1` | `https://api.runpod.ai/v2/ENDPOINT_ID/openai/v1` (vLLM worker) |
-| OpenAI base `https://inference.baseten.co/v1` | `https://api.runpod.ai/v2/gpt-oss-120b/openai/v1` or `.../qwen3-32b-awq/openai/v1` |
+| OpenAI base `https://inference.baseten.co/v1` | `https://api.runpod.ai/v2/qwen3-32b-awq/openai/v1` (or another Public Endpoint the live catalog lists) |
 | `Authorization: Api-Key KEY` (legacy) or `Bearer KEY` | `Authorization: Bearer RUNPOD_API_KEY` |
 | Webhook body `{request_id, data, errors, ...}` + `X-BASETEN-SIGNATURE` | Webhook body = job object; return `200`; up to 2 retries |
 | `GET /v1/models`, `PATCH .../autoscaling_settings`, `POST .../promote`, `DELETE /v1/models/ID` | `GET /v2/serverless`, `PATCH /v2/serverless/ID` (`workers`, `scaling`, `image`), `DELETE /v2/serverless/ID` |

@@ -253,7 +253,7 @@ Rules that change code:
 | Modal | Runpod | Command |
 |---|---|---|
 | Secret key | Secret | `rp secret add NAME` (prompts for the value), or `POST /v2/account/secrets`. The user enters values. See [secrets](../../runpod-usage/reference/secrets.md). |
-| Volume used as Hugging Face cache | `runpod.Model("owner/name")` or `--model-reference` | No copy |
+| Volume used as Hugging Face cache | `runpod.Model("owner/name")` or `--model-reference` | No copy. A custom handler image also needs `HF_HUB_CACHE=/runpod-volume/huggingface-cache/hub` in the template env, or it downloads the weights again |
 | Volume with data | Network volume | `modal volume get VOL / ./export`, then `runpodctl network-volume create --name N --size GB --data-center-id DC`, then `runpodctl network-volume upload VOLUME_ID ./export /` |
 | Large Volume | Network volume, copied from a Pod | CPU Pod with the volume attached, `pip install modal`, `modal volume get VOL / /workspace/` |
 | CloudBucketMount | Bucket access in code, or one-time copy | `aws s3 sync` / `rclone` from a Pod to `/workspace` |

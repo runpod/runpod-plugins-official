@@ -81,7 +81,6 @@ Model map (Together string to Public Endpoint slug; same family, verify version 
 | --- | --- | --- |
 | `moonshotai/Kimi-K3` | `moonshot-kimi` | `kimi-k3` |
 | `moonshotai/Kimi-K3.1-Pro` | `moonshot-kimi` | `kimi-k3.1-pro` |
-| `openai/gpt-oss-120b` | `gpt-oss-120b` | read `client.models.list()` |
 | `Qwen/Qwen3...` chat | `qwen3-32b-awq` (different Qwen3 model) | `Qwen/Qwen3-32B-AWQ` |
 | `ByteDance-Seed/Seedream-4.0` | `seedream-v4-t2i`, `seedream-v4-edit` | native API |
 | `Qwen/Qwen-Image` | `qwen-image-t2i` | native API |
@@ -119,7 +118,7 @@ choosing (`runpodctl gpu list`, MCP `get-capacity`).
 | Config GPU count, Jig `gpu_count` | `--gpu-count` (`gpu.count`); vLLM sets tensor parallelism from visible GPUs |
 | `--min-replicas`, `minReplicas`, `min_replicas` | `--workers-min` (`workers.min`) |
 | `--max-replicas`, `maxReplicas`, `max_replicas` | `--workers-max` (`workers.max`) |
-| `--scaling-metric`, `--scaling-target` | `--scale-by delay\|requests` + `--scale-threshold` on create; `--scaler-type QUEUE_DELAY\|REQUEST_COUNT` + `--scaler-value` on update (`scaling`) |
+| `--scaling-metric`, `--scaling-target` | `--scale-by delay\|requests` + `--scale-threshold` on create and update (`scaling`); older builds name the update flags `--scaler-type` and `--scaler-value`, so check `runpodctl serverless update --help` |
 | `--scale-down-window` | `--idle-timeout` seconds (`workers.idleTimeout`); REST v2 rejects it on a queue endpoint that scales on request count |
 | `--inactive-timeout` minutes | Drop it; `workers.min: 0` scales to zero and restarts on the next request |
 | `--max-concurrent-requests-per-replica` | env `MAX_CONCURRENCY` on the vLLM worker |
@@ -151,7 +150,7 @@ runpodctl serverless create --hub-id HUB_ID --name qwen3-8b --gpu-id AMPERE_24 \
 ```
 
 Always pass `--gpu-id`. `--model-reference` requires a GPU endpoint and one cached model
-per endpoint. Gated or private model: add `HF_TOKEN`. When the Hub release's vLLM version
+per endpoint. Gated or private model: add `--env HF_TOKEN='{{ RUNPOD_SECRET_hf_token }}'` (a Runpod secret, never the raw token). When the Hub release's vLLM version
 is older than the model needs, use a load balancing endpoint with `vllm/vllm-openai`
 (golden path [27](../../runpod/golden-paths/27-vllm-pod-to-endpoint.md)).
 
@@ -211,7 +210,7 @@ or map by returned request ID.
 
 Images and video: Together `client.images.generate(...)` returns `data[0].url`; a Runpod
 Public Endpoint takes `{"input": {...}}` on `/runsync` and returns a URL under `output`
-(`image_url` on most image models, `result` on Qwen Image, `video_url`, `audio_url`), which
+(`result` on most image and video models, `image_url` on the Flux models, `audio_url` on Chatterbox Turbo), which
 expires after 7 days. Input and output field names are per model: read the model page.
 
 ## Data
@@ -248,7 +247,7 @@ not publicly documented, so prefer Hugging Face or a network volume here. Detail
 | `tg endpoints rm` | `runpodctl serverless delete` |
 | `tg endpoints events`, analytics | `GET /v2/serverless/ENDPOINT_ID/metrics/requests`, `/metrics/workers`, `/metrics/cold-starts`; `runpodctl serverless logs` |
 | `tg models configs`, instance types | `runpodctl gpu list`, `GET /v2/catalog/gpus` |
-| `tg clusters create`, `list`, `delete` | `POST`, `GET`, `DELETE /v2/clusters`; Terraform `runpod_cluster` |
+| `tg clusters create`, `list`, `delete` | `POST`, `GET /v2/clusters`, `DELETE /v2/clusters/CLUSTER_ID`; Terraform `runpod_cluster` |
 | `tg clusters storage create` | `runpodctl network-volume create` |
 | `GET /v1/billing/usage` | `GET /v2/billing`, `/v2/billing/serverless` |
 
@@ -256,12 +255,13 @@ Feature parity on the OpenAI route:
 
 | Feature | vLLM endpoint | Public Endpoints |
 | --- | --- | --- |
-| Chat, completions, models | Documented | Chat documented for Qwen3 32B AWQ, Kimi, GPT-OSS 120B, Cogito 671B |
+| Chat, completions, models | Documented | Chat documented for Qwen3 32B AWQ and Kimi |
 | Streaming | Documented | Documented |
-| Tools | Per model, needs parser env vars | Documented for GPT-OSS 120B; check the model |
-| `response_format` | Not listed in worker docs; test | See model page |
+| Tools | Per model, needs parser env vars | Not on the model pages; check the model |
+| `response_format` | Not listed in worker docs; vLLM handles it (`STRUCTURED_OUTPUTS_CONFIG` sets the backend); test | See model page |
 | Vision, logprobs | Per model; test | Check the model |
-| Embeddings, rerank, Responses API, Messages API | Not among documented routes | None listed |
+| Embeddings, rerank | Not among documented routes | None listed |
+| Responses API, Messages API | Listed in the worker-vllm README (`/openai/v1/responses`, `/openai/v1/messages`), not in the Runpod docs; test | None listed |
 
 ## Gaps: stop and ask the user
 
@@ -279,7 +279,7 @@ Feature parity on the OpenAI route:
 | Queue job `priority` | Separate endpoint per priority tier (`lowPriority` in a job's `policy` only keeps the job from triggering scaling) |
 | Code sandbox | Pod per session, deleted after use |
 | Geo-restricted inference (`us-api.together.ai`) | Set `dataCenterIds`; confirm compliance needs with the user |
-| Responses API or Anthropic Messages API clients | Rewrite to chat completions |
+| Responses API or Anthropic Messages API clients | (a) Test the worker's `/openai/v1/responses` or `/openai/v1/messages` route (worker-vllm README); (b) rewrite to chat completions |
 
 ## Verify
 

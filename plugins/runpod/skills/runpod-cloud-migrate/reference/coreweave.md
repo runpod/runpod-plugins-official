@@ -60,7 +60,7 @@ Sources: CoreWeave docs, checked 2026-11-14:
 | Kubernetes Secret | Runpod secret, `{{ RUNPOD_SECRET_name }}` | `POST /v2/account/secrets`. |
 | ConfigMap | `env`, or files on a volume | |
 | Availability Zone (`US-EAST-04A`) | Data center ID (`US-KS-2`) | |
-| Reserved, On-Demand, Spot plans | On-demand, per-second | Reserved or committed capacity: Runpod sales. |
+| Flex Reservations, Reserved Instances, Spot Instances, On-Demand plans | On-demand, per-second | Reserved or committed capacity: Runpod sales. |
 
 GPU map (instance type to Runpod GPU type ID, Serverless pool):
 
@@ -214,9 +214,11 @@ runpod.serverless.start({"handler": handler})
 
 ```bash
 runpodctl template create --name embedder-worker --serverless \
-  --image registry.example.com/acme/embedder-worker:2.1.0 --container-disk-in-gb 20
+  --image registry.example.com/acme/embedder-worker:2.1.0 \
+  --registry-auth-id REGISTRY_AUTH_ID --container-disk-in-gb 20
 runpodctl serverless create --name embedder --template-id TEMPLATE_ID \
-  --gpu-id ADA_48_PRO --workers-min 0 --workers-max 8 --execution-timeout 3600
+  --gpu-id ADA_48_PRO --workers-min 0 --workers-max 8 \
+  --network-volume-id NETWORK_VOLUME_ID --execution-timeout 3600
 curl -s -X POST https://api.runpod.ai/v2/ENDPOINT_ID/run \
   -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
   -d '{"input":{"input":"/runpod-volume/shards/0001.jsonl","output":"/runpod-volume/embeddings/0001.parquet"}}'
@@ -346,7 +348,7 @@ Run only after explicit user approval, and after the user confirms the data copy
 reserved-capacity contract terms. Show the commands first.
 
 ```bash
-kubectl delete -f MANIFESTS_DIR/                  # workloads, Services, HPAs
+kubectl delete -f MANIFESTS_DIR/                  # workloads, Services, HPAs; exclude PVC manifests until the copy is verified
 kubectl delete pvc PVC_NAME -n NAMESPACE          # after the copy is verified
 kubectl delete nodepool NODE_POOL_NAME            # nodes are removed without waiting for workloads
 cwic inference deployment delete DEPLOYMENT_ID    # deployments before gateways

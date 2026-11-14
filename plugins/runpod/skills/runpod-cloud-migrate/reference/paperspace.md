@@ -34,6 +34,7 @@ Facts that shape the plan:
 | `gpu-(h100\|h200\|l40s\|4000ada\|6000ada\|mi300\|mi325\|mi350\|mi355\|b300)x[18]-` | GPU Droplet or DOKS GPU size slug | GPU type ID or pool |
 | `gpu-h100x1-base`, `gpu-h100x8-base`, `gpu-amd-base` | AI/ML-ready Droplet image | `runpod/pytorch` image |
 | `digitalocean_droplet` with a `gpu-` size | Terraform GPU Droplet | `runpod_pod` |
+| `paperspace_machine`, `paperspace_script`, `paperspace_network` | Terraform with the community `Paperspace/paperspace` provider | `runpod_pod`, image or start command, global networking |
 | `digitalocean_volume`, `digitalocean_volume_attachment` | Terraform block storage | `runpod_network_volume` |
 | `digitalocean_spaces_bucket`, `digitaloceanspaces.com` | Spaces object storage | Network volume S3 API, global volume, or keep |
 | `digitalocean_kubernetes_node_pool` with a `gpu-` size, `doks.digitalocean.com/` | DOKS GPU node pool | Serverless, Pod, or Instant Cluster |
@@ -47,7 +48,7 @@ Facts that shape the plan:
 Scan command:
 
 ```bash
-grep -rnE "pspace |gradient (deployments|workflows|notebooks|datasets)|api\.paperspace\.com|paperspacegradient\.com|PAPERSPACE_API_KEY|\.gradient/workflows|doctl |api\.digitalocean\.com|digitaloceanspaces\.com|inference\.do-ai\.run|do-infra\.ai|DIGITALOCEAN_(ACCESS_)?TOKEN|MODEL_ACCESS_KEY|from pydo|digitalocean_(droplet|volume|spaces_bucket|kubernetes)" .
+grep -rnE "pspace |gradient (deployments|workflows|notebooks|datasets)|api\.paperspace\.com|paperspacegradient\.com|PAPERSPACE_API_KEY|\.gradient/workflows|doctl |api\.digitalocean\.com|digitaloceanspaces\.com|inference\.do-ai\.run|do-infra\.ai|DIGITALOCEAN_(ACCESS_)?TOKEN|MODEL_ACCESS_KEY|from pydo|digitalocean_(droplet|volume|spaces_bucket|kubernetes)|paperspace_(machine|script|network|autoscaling_group)" .
 ```
 
 Live inventory (read-only, when the CLIs are authenticated):
@@ -312,10 +313,10 @@ Run these only after the user explicitly approves each resource. Confirm data is
 ```bash
 # Paperspace: powering off stops compute billing; storage, IPs, snapshots, templates still bill
 pspace deployment delete DEPLOYMENT_ID
-pspace machine stop MACHINE_ID
-pspace machine delete MACHINE_ID          # the machine must be off first
-pspace shared-drive delete SHARED_DRIVE_ID
 pspace snapshot delete SNAPSHOT_ID        # check `pspace snapshot delete --help` for arguments
+pspace machine stop MACHINE_ID
+pspace machine delete MACHINE_ID          # the machine must be off first; this also deletes its snapshots
+pspace shared-drive delete SHARED_DRIVE_ID
 pspace template delete TEMPLATE_ID
 pspace public-ip release PUBLIC_IP        # check `pspace public-ip release --help`
 ```
@@ -332,4 +333,4 @@ curl -X DELETE -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
   https://api.digitalocean.com/v2/dedicated-inferences/DEDICATED_INFERENCE_ID
 ```
 
-Droplet backups remain until their retention period ends. Spaces buckets and model access keys are removed in the DigitalOcean Control Panel. Afterward, remind the user to revoke the Paperspace API keys and DigitalOcean tokens used for the migration, and to delete any transfer Pods on Runpod.
+Droplet backups remain until their retention period ends. Spaces buckets and model access keys are removed in the DigitalOcean Control Panel. Afterward, remind the user to revoke the Paperspace API keys and DigitalOcean tokens used for the migration, and to delete any transfer Pods on Runpod. At a zero balance Runpod stops Pods that have a network volume and terminates Pods that don't, so keep data that matters on a network volume.

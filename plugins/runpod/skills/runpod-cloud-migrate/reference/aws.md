@@ -24,7 +24,7 @@ Runpod command syntax: [runpodctl skill](../../runpodctl/SKILL.md). Storage and 
 | `boto3.client("bedrock-runtime"` with `.converse(` or `.invoke_model(` | Bedrock inference | Public Endpoint or Serverless vLLM endpoint |
 | `bedrock-runtime.` with `/openai/v1` | Bedrock OpenAI-compatible calls | Base URL, key, and model swap |
 | `aws ec2 run-instances` or `--user-data` | EC2 launch script | Pod with a custom image |
-| `instance_type` matching `(g4dn\|g5\|g5g\|g6\|g6e\|g7\|g7e\|p3dn\|p4d\|p4de\|p5\|p5e\|p5en\|p6)` | GPU instance in IaC | `runpod_pod` or Serverless endpoint |
+| `instance_type` matching `(g4dn\|g5\|g5g\|g6\|gr6\|g6e\|g7\|g7e\|p3\|p4d\|p4de\|p5\|p5e\|p5en\|p6)` | GPU instance in IaC | `runpod_pod` or Serverless endpoint |
 | `ml\.(g\|p)[0-9]` | SageMaker GPU instance type | `gpu_pools` on a Serverless endpoint |
 | `resource "aws_sagemaker_endpoint"` or `aws_sagemaker_model` | SageMaker in Terraform | `runpod_template` and `runpod_serverless_endpoint` |
 | `resource "aws_appautoscaling_` with `sagemaker` | Endpoint autoscaling | `workers_min`, `workers_max`, `scaling_type` |
@@ -254,6 +254,7 @@ aws sagemaker delete-endpoint --endpoint-name ENDPOINT_NAME
 aws sagemaker delete-endpoint-config --endpoint-config-name CONFIG_NAME
 aws sagemaker delete-model --model-name MODEL_NAME
 aws sagemaker stop-notebook-instance --notebook-instance-name NAME
+aws sagemaker wait notebook-instance-stopped --notebook-instance-name NAME
 aws sagemaker delete-notebook-instance --notebook-instance-name NAME
 aws bedrock delete-provisioned-model-throughput --provisioned-model-id ARN
 

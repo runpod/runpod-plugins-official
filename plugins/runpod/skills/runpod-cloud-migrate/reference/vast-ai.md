@@ -236,7 +236,7 @@ SDK details: [runpod-flash/SKILL.md](../../runpod-flash/SKILL.md). Handler patte
 | Vast source | Route to Runpod |
 | --- | --- |
 | Object storage (S3, R2, GCS) pulled at boot | Keep as is, or pull once inside a Pod onto a network volume: `aws s3 sync`, `rclone copy`, `hf download` |
-| Running instance disk | On the instance: `runpodctl send PATH`; on the Pod: `runpodctl receive CODE`. Or `rsync -avzP -e "ssh -p PORT" SRC root@POD_IP:/workspace/` (Pod needs `22/tcp`) |
+| Running instance disk | On the instance: `runpodctl send PATH`; on the Pod: `runpodctl receive CODE`. Or `rsync -avzP -e "ssh -p PORT" SRC root@POD_IP:/workspace/` (Pod needs `22/tcp`, and the instance needs a private key the Pod accepts: use `ssh -A` agent forwarding) |
 | Stopped instance disk | `vastai copy C.ID:/path local:./path` or `vastai cloud copy` to a bucket first |
 | Local volume | `vastai copy V.ID:/data/ C.ID:/workspace/data/` first (volume to local path is unsupported on Vast) |
 | Local machine | `runpodctl network-volume upload VOLUME_ID LOCAL [REMOTE]` (runpodctl v3.1.0+; check `runpodctl network-volume --help`; S3 API keys in `RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY`, data center with the S3 API) |
@@ -278,7 +278,7 @@ Command details: [runpodctl/SKILL.md](../../runpodctl/SKILL.md). Ports and proxy
 | Interruptible bids (`--bid_price`) | REST v2, `runpodctl` and the MCP server create on-demand Pods | (a) on-demand Pod with checkpoints to `/workspace`, (b) Serverless queue endpoint that scales to zero, (c) `@app.task`. Costs differ: show the catalog price and get approval |
 | Reserved instances (`prepay`) | No self-serve prepay; savings plans are closed to new purchases | (a) on-demand, (b) user contacts Runpod sales. Check Vast refund terms before destroying a reserved instance |
 | Host filters (`reliability`, `inet_down`, `static_ip`, `machine_id`, price cap in the query) | Runpod places by GPU type, cloud tier and data center | Map to Secure Cloud, `dataCenterIds`, `minCudaVersion`; cap cost from the catalog `price` |
-| VM instances, Docker Compose, systemd | Pods are single containers | (a) one Pod per service with global networking, (b) one image running several processes |
+| VM instances, Docker Compose, systemd | Pods are single containers | (a) one Pod per service with global networking (NVIDIA GPU Pods only), (b) one image running several processes |
 | ARM (`cpu_arch=arm64`) | Images must be `linux/amd64` | Rebuild for amd64 |
 | Data kept on the instance disk outside `/workspace` | A Pod stop clears the container disk | Move paths under `/workspace` or a network volume |
 | Machine-local volume shared by co-located instances | Network volume is per data center | (a) network volume + pin the data center, (b) global volume for read-heavy data |
@@ -302,6 +302,8 @@ Command details: [runpodctl/SKILL.md](../../runpodctl/SKILL.md). Ports and proxy
 Only after explicit user approval, and only for resources the user names or the migration replaced. Stopped instances and volumes keep billing for storage, so destroying is the only way to stop charges, and it deletes data.
 
 ```bash
+vastai show deployments --raw
+vastai delete deployment DEPLOYMENT_ID       # Deployments (beta), if any
 vastai show endpoints --raw && vastai show workergroups --raw
 vastai delete workergroup WORKERGROUP_ID     # does not destroy its worker instances
 vastai delete endpoint ENDPOINT_ID

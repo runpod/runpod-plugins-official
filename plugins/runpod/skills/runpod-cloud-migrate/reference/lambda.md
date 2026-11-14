@@ -72,7 +72,7 @@ AWS Lambda signals (`aws lambda`, `lambda_handler`, `AWS::Lambda::Function`,
 | Managed or unmanaged Slurm on 1CC | Instant Cluster type `SLURM` | Needs an official Runpod PyTorch image |
 | Managed Kubernetes on 1CC | Cluster types `SLURM`, `RAY`, `TRAINING`, `APPLICATION` | Gap: see below |
 | Self-hosted inference on an instance | Pod, Serverless load-balancing endpoint, or Serverless vLLM | Serverless scales to zero |
-| Per-minute billing, weekly invoice | Per-second billing, prepaid credits | Pods stop at a \$0 balance |
+| Per-minute billing, weekly invoice | Per-second billing, prepaid credits | At a \$0 balance, Pods with a network volume stop and Pods without one are terminated |
 | Regions (`us-east-1`, `us-west-2`, ...) | Data centers (`US-KS-2`, `EU-RO-1`, ...) | `runpodctl datacenter list` |
 | Workspaces, IAM roles, SSO | Teams, Organizations (roles, groups) | |
 | Private Cloud | Runpod sales | |
@@ -223,6 +223,7 @@ The base image's `/start.sh` starts sshd and, when `JUPYTER_PASSWORD` is set, Ju
 | --- | --- |
 | Filesystem mounted on a running instance (any region) | From the instance: `rsync -avP --inplace -e "ssh -p POD_SSH_PORT" /lambda/nfs/NAME/ root@POD_IP:/workspace/` with `ssh -A` agent forwarding; install rsync on the Pod first |
 | Filesystem in an S3 Adapter region, created March 2025 or later | From the Pod: `S3_ENDPOINT_URL=https://files.REGION.lambda.com s5cmd cp "s3://BUCKET/*" /workspace/` with Lambda S3 adapter keys |
+| Data on the instance root volume (for example `/home/ubuntu`), which is destroyed on terminate | Same rsync from the instance, with the root-volume directory as the source |
 | Filesystem not mounted, no S3 Adapter | Launch an instance with the filesystem attached (attach happens only at launch), then rsync |
 | Data also in external object storage | `rclone copy` or Cloud Sync from the Pod |
 | Hub-hosted model weights | Download again on the Pod with `HF_HOME=/workspace/huggingface` |
@@ -255,7 +256,7 @@ in `{"error": {"code": ...}}`; REST v2 returns the resource at the top level.
 | `GET /ssh-keys` | `GET /v2/account/ssh-keys` | `ssh list-keys` |
 | `POST /ssh-keys`, `DELETE /ssh-keys/{id}` | `PUT /v2/account/ssh-keys` (full replacement) | `ssh add-key`, `ssh remove-key` |
 | `GET/POST /filesystems`, `DELETE /filesystems/{id}` | `GET/POST /v2/network-volumes`, `DELETE /v2/network-volumes/{id}` | `network-volume list/create/delete` |
-| `PUT /firewall-rules`, `/firewall-rulesets` | `ports` on Pod create or `PATCH` | `--ports` |
+| `PUT /firewall-rules`; `POST`, `PATCH`, `DELETE` on `/firewall-rulesets` | `ports` on Pod create or `PATCH` | `--ports` |
 | 1CC reservation (console) | `POST /v2/clusters` | |
 
 Status: `booting` → `PROVISIONING`/`STARTING`; `active` → `RUNNING`; `unhealthy` →
@@ -277,7 +278,7 @@ change when a Pod is recreated; put them behind config or DNS. See
 | Firewall rule with a source CIDR other than `0.0.0.0/0` | (a) add authentication in the service; (b) keep the port unexposed and use global networking or an SSH tunnel; (c) put the user's own gateway in front |
 | UDP firewall rule in use | (a) switch the protocol to TCP; (b) keep that service off Runpod |
 | GH200 (ARM) instance or arm64 image | Rebuild for `linux/amd64` and retest; confirm with the user that every dependency has an x86-64 build |
-| More than one filesystem mounted on an instance | (a) merge into one network volume with subdirectories; (b) one network volume plus one global volume; (c) REST v2 `mounts.network` with up to 4 network volumes in the Pod's data center (`runpodctl pod create` attaches one) |
+| More than one filesystem mounted on an instance | (a) merge into one network volume with subdirectories; (b) one network volume plus one global volume (console or REST v2 `mounts.global`); (c) REST v2 `mounts.network` with up to 4 network volumes in the Pod's data center (`runpodctl pod create` attaches one) |
 | Filesystem larger than 4 TB | (a) split across volumes or move cold data to object storage; (b) contact Runpod support for a larger volume |
 | Workload depends on `systemd`, kernel modules, or a specific driver | (a) start script as main process; (b) pick hosts by `--min-cuda-version`; (c) leave that workload on a VM |
 | 1CC with more than 8 nodes, or Managed Kubernetes | (a) fit within an Instant Cluster (2 to 8 nodes); (b) contact Runpod sales for larger clusters; (c) port Kubernetes workloads to Slurm, Ray, Pods, or Serverless |

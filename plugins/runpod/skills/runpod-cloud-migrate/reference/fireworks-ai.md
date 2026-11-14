@@ -48,7 +48,7 @@ Sources: Fireworks docs, checked 2026-11-14: [index](https://docs.fireworks.ai/l
 | Secrets | Runpod secrets, `{{ RUNPOD_SECRET_name }}` | [secrets.md](../../runpod-usage/reference/secrets.md). |
 | Reserved capacity | Active workers | Runpod gives no capacity guarantee. |
 
-Public Endpoint text models with an OpenAI route in the Runpod docs: `qwen3-32b-awq` (model `Qwen/Qwen3-32B-AWQ`), `moonshot-kimi` (models `kimi-k2.6`, `kimi-k2.7-code`, `kimi-k3`, `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`), `gpt-oss-120b`, `cogito-671b-v2-1-fp8-dynamic`. `granite-4-0-h-small` documents the native route. Confirm each against the live catalog and `GET .../openai/v1/models` before mapping a call site to it. Walkthrough: [golden path 11](../../runpod/golden-paths/11-public-endpoints.md).
+Public Endpoint text models with an OpenAI route in the Runpod docs: `qwen3-32b-awq` (model `Qwen/Qwen3-32B-AWQ`), `moonshot-kimi` (models `kimi-k2.6`, `kimi-k2.7-code`, `kimi-k3`, `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`). `granite-4-0-h-small` documents the native route. The docs also keep pages for `gpt-oss-120b` and `cogito-671b-v2-1-fp8-dynamic`, which are not in the model reference: map to them only if the live catalog lists them. Confirm each against the live catalog and `GET .../openai/v1/models` before mapping a call site to it. Walkthrough: [golden path 11](../../runpod/golden-paths/11-public-endpoints.md).
 
 ## Field map
 
@@ -65,7 +65,7 @@ Public Endpoint text models with an OpenAI route in the Runpod docs: `qwen3-32b-
 | `--max-context-length` | `--env MAX_MODEL_LEN=` | `env.MAX_MODEL_LEN` |
 | `--precision` | Choose a repo at that quantization | same |
 | `--enable-addons` | `--env ENABLE_LORA=true`, `--env LORA_MODULES=...` | `env` |
-| `--draft-model`, `--draft-token-count` | `--env SPECULATIVE_MODEL=`, `--env NUM_SPECULATIVE_TOKENS=` | `env` |
+| `--draft-model`, `--draft-token-count` | `--env SPECULATIVE_CONFIG='{"model": "ORG/DRAFT", "num_speculative_tokens": N}'` (the current worker ignores `SPECULATIVE_MODEL` and `NUM_SPECULATIVE_TOKENS`) | `env` |
 | `--display-name` | `--name` | `name` |
 | `--wait` | Poll `GET https://api.runpod.ai/v2/ENDPOINT_ID/health` | same |
 | (decided by Fireworks) tool calling | `--env ENABLE_AUTO_TOOL_CHOICE=true`, `--env TOOL_CALL_PARSER=PARSER` | `env` |
@@ -179,9 +179,9 @@ Deployment states `CREATING`, `READY`, `UPDATING`, `FAILED` correspond to worker
 | Model is absent from Public Endpoints | (a) Own vLLM endpoint, billed per second of worker time. (b) Keep that model on Fireworks. |
 | Which Hugging Face repo matches the Fireworks model (checkpoint, quantization) | User confirms the repo. Outputs can differ at another precision. |
 | Embeddings or reranking call sites | (a) Embedding server on a load-balancing endpoint or a custom queue worker. (b) Keep on Fireworks. The worker-vllm docs list the chat, completions and models routes. |
-| Responses API with stored state or server-run MCP tools | (a) Rewrite to chat completions with client-side state. (b) Keep on Fireworks. |
-| Anthropic-compatible Messages API clients | (a) Switch the client to the OpenAI format. (b) Add a translation gateway. (c) Keep on Fireworks. |
-| `response_format` JSON schema or grammar mode | Runpod docs leave this unspecified for the vLLM worker. Test the user's schemas on the endpoint before cutover. |
+| Responses API with stored state or server-run MCP tools | (a) Rewrite to chat completions with client-side state. (b) Test the worker's `/openai/v1/responses` route (worker-vllm README; stored state and MCP tools are not documented). (c) Keep on Fireworks. |
+| Anthropic-compatible Messages API clients | (a) Test the worker's `/openai/v1/messages` route (worker-vllm README, not in the Runpod docs). (b) Switch the client to the OpenAI format. (c) Keep on Fireworks. |
+| `response_format` JSON schema or grammar mode | Runpod docs leave this unspecified for the vLLM worker. vLLM handles the request (`STRUCTURED_OUTPUTS_CONFIG` sets the backend). Test the user's schemas on the endpoint before cutover. |
 | Priority, Fast, Ultra-fast, Spot tiers | Active workers or a larger GPU for latency. Ask for the latency target. |
 | Per-token to per-second billing | Ask for request volume and traffic shape, then propose idle timeout and active workers with an hourly bound. |
 | Reserved capacity or capacity guarantee | Active workers plus a sales conversation. Never promise capacity. |

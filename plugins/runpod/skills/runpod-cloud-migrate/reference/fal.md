@@ -226,7 +226,9 @@ class MyApp:
 ```
 
 Custom image handler (after). Module-level load runs once per worker; `rp_upload` reads
-`BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY`:
+`BUCKET_ENDPOINT_URL`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` and returns a presigned
+URL valid for 7 days. A custom handler has to load a cached model (`--model-reference`) from
+`/runpod-volume/huggingface-cache/hub`, hence `cache_dir`:
 
 ```python
 import runpod, torch
@@ -234,7 +236,8 @@ from diffusers import StableDiffusionXLPipeline
 from runpod.serverless.utils import rp_upload
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
-    "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16).to("cuda")
+    "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16,
+    cache_dir="/runpod-volume/huggingface-cache/hub").to("cuda")
 
 def handler(job):
     prompt = job["input"].get("prompt")
@@ -319,7 +322,7 @@ Facts that change client behavior:
 | `@fal.realtime` clients (`fal.realtime.connect`, msgpack) | Rewrite client and server to a plain WebSocket protocol on a load-balancing endpoint; keep realtime on fal |
 | `app_auth = "public"` or `"shared"` | User's backend proxies with its API key; publish to the Hub for others to deploy |
 | `/data` shared across all apps and regions | One network volume per data center; a global volume (beta, GPU compute); cached models for HF weights |
-| `concurrency_buffer`, automatic retry of runner failures | Raise `workers` min; call `/retry/JOB_ID` from the client |
+| `concurrency_buffer`, automatic retry of runner failures (up to 10 on fal) | Raise `workers` min; queue-based endpoints retry on failure with no documented count, so call `/retry/JOB_ID` from the client for jobs that still end `FAILED` or `TIMED_OUT` |
 | 90-day request history | Persist results from the webhook receiver |
 | fal Compute `8xH100-SXM` or multi-node sectors | Multi-GPU Pod or Instant Cluster, subject to live stock; never state it is available without checking |
 | Data center choice | Volume location constrains GPU stock; confirm with the user before creating volumes |

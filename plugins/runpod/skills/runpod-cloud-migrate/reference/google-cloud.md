@@ -235,7 +235,7 @@ Queue job statuses: `IN_QUEUE`, `IN_PROGRESS`, `COMPLETED`, `FAILED`, `CANCELLED
 
 | Gap | Options to offer |
 | --- | --- |
-| VPC, firewall rules, Private Service Connect, private endpoints | (a) Public HTTPS with API key auth; (b) global networking between Pods (`POD_ID.runpod.internal`); (c) user-managed VPN or proxy; (d) keep the workload on Google Cloud |
+| VPC, firewall rules, Private Service Connect, private endpoints | (a) Public HTTPS with API key auth; (b) global networking between Pods (`POD_ID.runpod.internal`; enabled at deploy, NVIDIA GPU Pods, supported data centers only); (c) user-managed VPN or proxy; (d) keep the workload on Google Cloud |
 | Attached service account, Workload Identity, metadata server | (a) Least-privilege service account key in a Runpod secret; (b) signed URLs for single objects; (c) keep the caller on Google Cloud |
 | CMEK | (a) Encrypted volume disk with a Runpod-managed key; (b) encrypt at the application layer; (c) keep the data on Google Cloud |
 | Spot VMs in the cost model | (a) On-demand Pods with checkpointing; (b) Serverless scale to zero; (c) ask sales about pricing |

@@ -24,7 +24,7 @@ Sources: Replicate docs ([HTTP API](https://replicate.com/docs/reference/http), 
 | `webhook-signature`, `validateWebhook`, `/v1/webhooks/default/secret` | Signed webhook receiver | Own verification (see Gaps) |
 | `cog.yaml` | Cog model definition | `Dockerfile`, or `@app.queue` arguments |
 | `from cog import`, `BasePredictor`, `BaseRunner` | Cog predictor | `handler.py`, or an `@app.queue` function |
-| `cog (push\|build\|predict\|login\|serve)`, `r8\.im/` | Cog CLI in scripts or CI | `docker build` + `docker push`, or `rp flash deploy` |
+| `cog (push\|build\|predict\|run\|login\|serve)`, `r8\.im/` | Cog CLI in scripts or CI (`cog run -i` replaces the deprecated `cog predict -i` in current Cog) | `docker build` + `docker push`, or `rp flash deploy` |
 | `Prefer: wait`, `Cancel-After` | Sync mode or deadline headers | `/runsync?wait=`, `policy.executionTimeout` |
 
 ## Product map
@@ -211,7 +211,7 @@ A network volume is pinned to one data center, and an endpoint that mounts it ru
 | `replicate.stream(...)` | `for chunk in endpoint.run({...}).stream()` |
 | `FileOutput.read()` / `.url` | Read the URL or base64 field your endpoint returns |
 | `ModelError` | Job `status` `FAILED` with `error` |
-| `POST/GET/PATCH/DELETE /v1/deployments` | `POST/GET/PATCH/DELETE https://api.runpod.io/v2/serverless`, `runpodctl serverless create/list/get/update/delete` |
+| `POST/GET/PATCH/DELETE /v1/deployments` | `POST`/`GET https://api.runpod.io/v2/serverless`, `PATCH`/`DELETE https://api.runpod.io/v2/serverless/ENDPOINT_ID`, `runpodctl serverless create/list/get/update/delete` |
 | `GET /v1/hardware` | `GET /v2/catalog/gpus`, `runpodctl gpu list` |
 
 Status map:
