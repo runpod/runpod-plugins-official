@@ -159,7 +159,7 @@ let
       src = testSrc;
       text = ''
         export PYTHONDONTWRITEBYTECODE=1
-        for skill in runpod-templates runpod-migrate; do
+        for skill in runpod-templates runpod-migrate runpod-cloud-migrate; do
           python3 -B -m unittest discover \
             -s "plugins/runpod/skills/$skill/tests" -p "test_*.py"
         done
