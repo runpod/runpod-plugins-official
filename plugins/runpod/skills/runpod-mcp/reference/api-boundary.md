@@ -1,5 +1,5 @@
 ---
-concepts: [file-transfer, pod-ssh-access, pod-command-exec, runpodctl, network-volume, runpod-secret, instant-cluster]
+concepts: [file-transfer, pod-ssh-access, pod-command-exec, runpodctl, network-volume, runpod-secret, instant-cluster, batch-job]
 ---
 
 # API boundary
@@ -20,6 +20,7 @@ The honest answer *is* the deliverable here. Do not invent a file-transfer call,
 
 - **File transfer — covered by other tooling, not a gap.** The MCP/management-API tool set has no file-transfer tool (no MCP call moves bytes to or from a Pod or volume), but this is *not* a product gap: the runpodctl CLI and the companion S3 tooling cover it directly. Point the user there rather than calling it impossible: `runpodctl send` / `runpodctl receive` for ad-hoc file moves, the S3-compatible API on network volumes (`aws s3` against the volume's S3 endpoint, in the data centers that offer it) for bulk dataset/checkpoint sync, the console cloud-sync integration, or `scp`/`rsync` over the Pod's direct SSH (`ssh.direct`). In an MCP-only session, say the transfer runs through the runpodctl CLI or the volume S3 API: a real working path, though not an MCP tool. If checkpoints must survive the Pod, stage them on a network volume (confirm it exists with a read first) so the data outlives the compute.
 - **Running a command inside a Pod — not an MCP tool either.** The management API has no command-exec route, so the path is SSH to the Pod (created with `startSsh: true` and a key registered on the account; connect with the Pod's `ssh` block) or the console's web terminal. Say so and hand over the command; never claim to have run it.
+- **Batch jobs — HTTPS to the endpoint.** A batch (create, append, finalize, progress, results, cancel) goes to the endpoint's `/batch` routes on `api.runpod.ai` with the same API key as `/run`; procedure and limits in [batch jobs](../../runpod-usage/reference/batch-jobs.md). When the served list has no batch tool, the MCP tools still drive the endpoint around it: `create-endpoint` for a `QUEUE` endpoint (a batch runs on its GPU type) or `get-endpoint` to confirm an existing one is `QUEUE`, then `runsync-endpoint`, or `run-endpoint` with `get-job-status`, to check one request's output before a batch of thousands. In a session without a shell, hand the user the `curl` calls; never report a batch as submitted, finalized or finished without its response.
 
 ## Served now — route, don't refuse
 
@@ -45,9 +46,10 @@ Two operations that were console-only for a long time are served tools on this s
 | Read Instant Cluster billing | `list-cluster-billing` |
 | Transfer files to/from a Pod/volume | *(no MCP tool — the runpodctl CLI: `send`/`receive`, `network-volume upload`/`download`; the volume S3 API, cloud-sync, SSH)* |
 | Run a command inside a Pod | *(no MCP tool — SSH or the console web terminal)* |
+| Run a batch of requests on an endpoint | *(no batch tool unless the live tool list shows one — otherwise the endpoint's `/batch` routes over HTTPS)*; the endpoint and a test request: `create-endpoint`, `get-endpoint`, `runsync-endpoint`, `run-endpoint`, `get-job-status` |
 | Ground account facts (reads) | `list-pods`, `get-pod`, `list-network-volumes`, `get-network-volume`, `list-endpoints` |
 
-File transfer and in-Pod command execution are the gaps: no MCP tool moves bytes or runs a command, but runpodctl, the volume S3 API and SSH cover them. Hand off there rather than calling it impossible. Confirm against the session's tool list before calling anything a gap.
+File transfer, in-Pod command execution and batch jobs are the gaps: no MCP tool moves bytes, runs a command or submits a batch, but runpodctl, the volume S3 API, SSH and the endpoint's `/batch` routes cover them. Hand off there rather than calling it impossible. Confirm against the session's tool list before calling anything a gap.
 
 ## Contract
 

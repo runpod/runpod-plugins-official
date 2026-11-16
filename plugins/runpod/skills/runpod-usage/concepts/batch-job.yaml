@@ -1,0 +1,182 @@
+id: batch-job
+name: Batch job
+kind: resource
+summary: >
+  A named set of requests submitted to a queue-based endpoint as one unit. It
+  runs asynchronously on batch workers separate from the endpoint's `/run`
+  traffic, and its results are read back per request.
+product: serverless
+is_a: null
+part_of: serverless-endpoint
+aliases: [batch, batch jobs, batch inference, bulk requests]
+
+surfaces:
+  console: Serverless > Bulk Requests
+
+fields:
+  - { name: id, type: string, set: read, note: returned by the create }
+  - { name: endpointId, type: string, ref: serverless-endpoint, set: read }
+  - { name: name, type: string, set: update, note: "display name, set with `PUT`" }
+  - { name: status, type: enum, values: [DRAFT, FINALIZED, COMPLETED, FAILED, CANCELLED], set: read }
+  - { name: requestTotal, type: integer, set: read }
+  - { name: requestInProgress, type: integer, set: read }
+  - { name: requestCompleted, type: integer, set: read }
+  - { name: requestFailed, type: integer, set: read }
+  - { name: failureCode, type: enum, values: [REQUEST_FAILURE_LIMIT, ALL_BATCH_WORKERS_UNHEALTHY], set: read, note: present on a FAILED batch }
+  - { name: failedAt, type: integer, unit: ms, set: read, note: Unix timestamp }
+  - { name: createdAt, type: integer, unit: ms, set: read, note: Unix timestamp }
+
+states:
+  field: status
+  values:
+    DRAFT: Requests can still be added or removed; nothing runs.
+    FINALIZED: Requests are locked and batch workers process them.
+    COMPLETED: Every request finished; some may have failed.
+    FAILED: The batch itself stopped before finishing its requests.
+    CANCELLED: Cancelled; queued requests did not run.
+  transitions:
+    - { action: finalize, from: [DRAFT], to: FINALIZED }
+    - { action: cancel, from: [FINALIZED], to: CANCELLED }
+  evidence:
+    - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Batch lifecycle., seen: "2026-11-13" }
+
+relations:
+  - { type: runs_on, target: worker, cardinality: "0..n" }
+  - { type: billed_by, target: serverless-billing, cardinality: "1" }
+
+rules:
+  - id: batch-job.queue-endpoints-only
+    statement: >
+      Batch jobs run on queue-based endpoints only; a load-balancing endpoint
+      has no batch routes.
+    status: documented
+    see: [serverless-endpoint.type-fixed]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Requirements., seen: "2026-11-13" }
+
+  - id: batch-job.offline-workers
+    statement: >
+      A batch runs on dedicated batch workers, so it never takes capacity from
+      the endpoint's `/run` traffic, but its latency is measured in hours.
+      Runpod schedules batch workers by queue urgency and off-peak capacity and
+      attempts each batch within 24 hours, without a guaranteed start time. Keep
+      `/run` or `/runsync` for any request a user is waiting on.
+    status: documented
+    see: [job.run-vs-runsync]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: "\"When to use batch jobs instead of /run\" and \"Known limitations\".", seen: "2026-11-13" }
+
+  - id: batch-job.create-and-append
+    applies_to: ["state:DRAFT"]
+    statement: >
+      `POST https://api.runpod.ai/v2/<endpoint-id>/batch` takes a top-level JSON
+      array of `/run`-shaped requests, or `[]`, and returns the batch `id` in
+      `DRAFT`. While it is a draft, `POST .../batch/<batch-id>/requests` with
+      `{"requests": [...]}` appends up to 10 MiB per call, and a `DELETE` on
+      `.../requests/<request-id>` removes one request. `GET .../batch` lists the
+      endpoint's batches, newest first, and `PUT .../batch/<batch-id>` sets
+      attributes such as the name.
+    status: documented
+    see: [job.input-envelope, job.api-host]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: "API walkthrough, steps 1 and 2, and the API reference table.", seen: "2026-11-13" }
+
+  - id: batch-job.finalize-to-run
+    applies_to: ["action:finalize", "state:DRAFT"]
+    statement: >
+      A batch does not run until it is finalized. `POST
+      .../batch/<batch-id>/finalize` locks its requests and moves it to
+      `FINALIZED`; a `DRAFT` batch never runs.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: "Batch lifecycle and API walkthrough, step 3.", seen: "2026-11-13" }
+
+  - id: batch-job.done-is-status
+    applies_to: ["field:status", "field:requestFailed"]
+    statement: >
+      A batch reports `FINALIZED` while its requests run and turns `COMPLETED`
+      when `requestCompleted` plus `requestFailed` equals `requestTotal`. Read
+      `status` to tell whether it is done, and read `requestFailed` on a
+      `COMPLETED` batch, since it can include failed requests.
+    status: documented
+    see: [job.status-vocabulary]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: "API walkthrough, step 4.", seen: "2026-11-13" }
+
+  - id: batch-job.results-paginated
+    statement: >
+      `GET .../batch/<batch-id>/requests` lists each request with its `status`
+      and its `output` or `error`, plus `delayTime` and `executionTime` in
+      milliseconds. Page with `offset` and `limit` while `hasMore` is true.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: "API walkthrough, step 5.", seen: "2026-11-13" }
+
+  - id: batch-job.failure-limit
+    applies_to: ["field:failureCode", "state:FAILED"]
+    statement: >
+      A batch fails with `REQUEST_FAILURE_LIMIT` once its failed requests reach
+      10 or 2% of its requests (rounded up), whichever is greater, and its
+      remaining requests do not run. `ALL_BATCH_WORKERS_UNHEALTHY` means no
+      batch worker could start, and the response lists `failedWorkerIds`.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Error handling., seen: "2026-11-13" }
+
+  - id: batch-job.returned-errors-complete
+    statement: >
+      A handler that returns an error in its output instead of raising marks the
+      request `COMPLETED`, and such requests do not count toward the failure
+      limit. Check each request's `output` for errors.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Error handling., seen: "2026-11-13" }
+
+  - id: batch-job.limits
+    statement: >
+      An endpoint holds at most 10 active batches, a batch at most 5,000
+      requests, and an endpoint runs at most 50,000 batch requests a day.
+      Support or sales can raise the daily limit up to 3,000,000.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Limits., seen: "2026-11-13" }
+
+  - id: batch-job.endpoint-gpu
+    statement: >
+      A batch runs on the GPU type configured on its endpoint, with no choice
+      per batch or per request, and its requests run in no particular order.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Known limitations., seen: "2026-11-13" }
+
+  - id: batch-job.cancel
+    applies_to: ["action:cancel"]
+    statement: >
+      `POST .../batch/<batch-id>/cancel` cancels queued requests at once and
+      does not bill them; in-progress requests finish and are billed, and the
+      batch turns `CANCELLED` when they end. A batch cancelled before any
+      request starts is `CANCELLED` at once and bills nothing.
+    status: documented
+    see: [job.cancel]
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Cancellation., seen: "2026-11-13" }
+
+  - id: batch-job.billing
+    statement: >
+      Batch requests bill for the compute time each one uses, at a discounted
+      rate with separate tiers for consumer and enterprise GPUs. No cost
+      estimate is shown before finalizing, so run a small test batch and
+      extrapolate.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Billing and Known limitations., seen: "2026-11-13" }
+
+  - id: batch-job.terminal-notifications
+    statement: >
+      When a batch reaches `COMPLETED`, `FAILED` or `CANCELLED`, Runpod sends
+      one console Inbox notification and, for an account with a webhook
+      subscription for batch events, one webhook event. Progress is read by
+      polling the batch.
+    status: documented
+    evidence:
+      - { source: public-docs, url: "https://docs.runpod.io/serverless/batch-jobs", note: Notifications., seen: "2026-11-13" }
