@@ -46,7 +46,7 @@ Two operations that were console-only for a long time are served tools on this s
 | Read Instant Cluster billing | `list-cluster-billing` |
 | Transfer files to/from a Pod/volume | *(no MCP tool — the runpodctl CLI: `send`/`receive`, `network-volume upload`/`download`; the volume S3 API, cloud-sync, SSH)* |
 | Run a command inside a Pod | *(no MCP tool — SSH or the console web terminal)* |
-| Run a batch of requests on an endpoint | *(no batch tool — the endpoint's `/batch` routes over HTTPS)*; the endpoint and a test request: `create-endpoint`, `get-endpoint`, `runsync-endpoint`, `run-endpoint`, `get-job-status` |
+| Run a batch of requests on an endpoint | *(no batch tool unless the live tool list shows one — otherwise the endpoint's `/batch` routes over HTTPS)*; the endpoint and a test request: `create-endpoint`, `get-endpoint`, `runsync-endpoint`, `run-endpoint`, `get-job-status` |
 | Ground account facts (reads) | `list-pods`, `get-pod`, `list-network-volumes`, `get-network-volume`, `list-endpoints` |
 
 File transfer, in-Pod command execution and batch jobs are the gaps: no MCP tool moves bytes, runs a command or submits a batch, but runpodctl, the volume S3 API, SSH and the endpoint's `/batch` routes cover them. Hand off there rather than calling it impossible. Confirm against the session's tool list before calling anything a gap.

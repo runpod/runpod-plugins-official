@@ -246,7 +246,7 @@ Encrypted/incremental/compressed: don't pre-tar. **Key gotchas:** capture the **
 ## URLs
 
 - **Pod:** `https://<pod-id>-<port>.proxy.runpod.net` for an exposed port (e.g. `https://abc123xyz-8888.proxy.runpod.net`).
-- **Serverless:** prefer `runpodctl serverless run|status|health` (same api, with auth, validation and bounded polling handled) and the `urls` object the endpoint commands return. Use raw urls only for what the commands don't cover: streaming, the OpenAI-compatible route, a batch of requests ([batch jobs](../runpod-usage/reference/batch-jobs.md)), or a copy-paste `curl` for a user. Only `status/<job-id>` and the `batch` routes have to be built by hand.
+- **Serverless:** prefer `runpodctl serverless run|status|health` (same api, with auth, validation and bounded polling handled) and the `urls` object the endpoint commands return. Use raw urls only for what the commands don't cover: streaming, the OpenAI-compatible route, a batch of requests ([batch jobs](../runpod-usage/reference/batch-jobs.md)), or a copy-paste `curl` for a user. Only `status/<job-id>` has to be built by hand, and so do the `batch` routes unless `runpodctl --help` shows a batch command.
 
 ```
 https://api.runpod.ai/v2/<endpoint-id>/run        # Async request
