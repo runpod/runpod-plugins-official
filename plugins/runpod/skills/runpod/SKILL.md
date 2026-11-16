@@ -157,6 +157,7 @@ Capability matrix (pick the preferred lane per operation):
 | Browse or deploy an existing **Hub** listing | **runpod-mcp** if connected and it exposes the requested operation, else runpodctl | Check the live tool surface; Hub is not a reason by itself to switch to the CLI |
 | **File transfer** (`send`/`receive`, `network-volume upload`/`download`), **SSH** keys/info, **`doctor`** setup, **model** cache | **runpodctl** | MCP has no tool for these |
 | Invoke a serverless job (`run`/`runsync`/status/stream) | **runpod-mcp** if connected, else runpodctl | Both lanes have first-class job commands now (runpodctl `serverless run`/`status`/`health`, v2.9.0+); MCP is typed, and only MCP streams a job's incremental output (`stream-job`) |
+| Run a **batch** of requests on a queue endpoint (create, finalize, progress, results) | **HTTPS** to the endpoint's `/batch` routes, unless the live tool list or `runpodctl --help` shows a batch command | The routes sit next to `/run` on `api.runpod.ai` and take the same API key; the endpoint itself is managed in the lanes above. Procedure and limits: [batch jobs](../runpod-usage/reference/batch-jobs.md) |
 | Read **pod or worker logs** | **either** — runpod-mcp if connected, else runpodctl | Both lanes read them: MCP `stream-pod-logs`/`stream-worker-logs` return parsed frames; runpodctl `pod logs`/`serverless logs` emit json lines and `--follow` (v2.10.0+) |
 
 Rule of thumb: **default to MCP for the easy stuff, hand off to runpodctl the

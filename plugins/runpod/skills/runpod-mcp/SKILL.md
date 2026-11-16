@@ -134,7 +134,7 @@ For concepts (pods vs serverless, GPU selection, storage), read `../runpod-usage
 | Diagnose a broken/misbehaving pod (0 GPUs, CUDA, crashes, 502s) | **runpod-pod-doctor** |
 | Operate an existing endpoint: jobs, scaling, workers, logs | **runpod-endpoint-ops** |
 | Understand or reduce spend; billing breakdowns | **runpod-cost-audit** |
-| Something the tools may not cover (file transfer, a command inside a Pod) | [Capability boundaries](#capability-boundaries--state-them-never-fake-them) below |
+| Something the tools may not cover (file transfer, a command inside a Pod, a batch of requests on an endpoint) | [Capability boundaries](#capability-boundaries--state-them-never-fake-them) below |
 
 ## Capability boundaries — state them, never fake them
 
@@ -144,8 +144,9 @@ to volumes, or interactive terminals. When a task needs one of those, say
 that it is not available through these tools and name the lane that does it:
 `runpodctl` for file transfer (`send`/`receive`), SSH key setup, `doctor` setup,
 model cache and model uploads; SSH or the console web terminal for commands inside
-a Pod; the Flash SDK for code-first Serverless deploys; the console for Pod
-migration. Never improvise a fake capability or silently drop that part of the task.
+a Pod; the endpoint's `/batch` routes over HTTPS for a batch of requests; the Flash
+SDK for code-first Serverless deploys; the console for Pod migration. Never
+improvise a fake capability or silently drop that part of the task.
 
 Check the served tool list before calling anything a gap: account secrets and
 Instant Clusters were console-only once and are served tools now. The workaround
