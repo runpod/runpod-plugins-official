@@ -2,7 +2,7 @@
 
 ## Prompt
 
-My custom runpodctl build includes runpod/runpodctl#400. I want all REST calls,
+I'm on runpodctl v3.1.1. I want all REST calls,
 including endpoint updates and logs, to reach my test API. Which setting should
 I use? Give me commands to set ep-abc123's minimum workers to zero and change
 only its scaling threshold to 4. Its queue-based sibling ep-requests uses
@@ -11,7 +11,7 @@ set its idle timeout to zero?
 
 ## Expected behavior
 
-The agent checks the build scope and reads the environment-variable and endpoint
+The agent checks the version floor and reads the environment-variable and endpoint
 update references. It directs the user to set RUNPOD_API_URL to the intended
 REST base including /v2, explains its precedence over the restApiUrl config
 setting, and leaves invocation and GraphQL hosts to their own overrides.
@@ -24,7 +24,7 @@ lookup nor an idle-timeout write is appropriate.
 
 ## Assertions
 
-- Scopes the behavior to builds containing #400 without inventing a release floor.
+- Scopes the behavior to runpodctl v3.1.1 or later.
 - Names `RUNPOD_API_URL` as the single REST control-plane override.
 - Includes `/v2` in the base URL and covers endpoint updates and log streams.
 - Explains that the environment variable takes precedence over `restApiUrl`.

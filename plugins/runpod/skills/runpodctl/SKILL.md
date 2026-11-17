@@ -143,7 +143,7 @@ runpodctl serverless update <endpoint-id> --workers-max 5
 runpodctl serverless create --template-id <id> --workers-min 1 --wait          # block until a worker is ready (v2.9.0+)
 ```
 
-For builds containing [runpod/runpodctl#400](https://github.com/runpod/runpodctl/pull/400),
+On runpodctl v3.1.1 or later,
 read [endpoint update semantics](reference/command-reference.md#endpoint-update-and-zero-values)
 before changing scaling or interpreting a null idle timeout.
 

@@ -92,10 +92,8 @@ Same flags and semantics as `pod logs` above, plus:
 
 ### Endpoint update and zero values
 
-**Build scope:** the v2 update and nullable idle-timeout behavior below requires a
-build containing [runpod/runpodctl#400](https://github.com/runpod/runpodctl/pull/400).
-Check `runpodctl version` and verify the commit for custom builds. A released version
-number alone does not establish that this PR is included.
+**Version:** the v2 update and nullable idle-timeout behavior below requires
+**runpodctl v3.1.1+**. Check `runpodctl version`.
 
 `serverless update` applies only supplied worker settings. Zero worker limits are
 valid: `runpodctl serverless update <id> --workers-min 0` permits scale-to-zero,

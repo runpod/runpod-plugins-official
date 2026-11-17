@@ -100,10 +100,11 @@ accepted, and the read-back then omits `workers.idleTimeout` (live-verified 2026
 You need the right-hand column when calling **v2 REST**, by hand or through the MCP server;
 runpodctl does not make you write it. The two lanes differ, and the distinction matters:
 
-- **runpodctl** writes scaler settings without v2 REST: in runpodctl v3.0.1,
-  `serverless create` goes through GraphQL `saveEndpoint` and `serverless update` through
-  v1 REST, both of which take the flat `scalerType`/`scalerValue`/`idleTimeout` natively
-  (its endpoint reads and delete use v2). Note `--scale-threshold` is an integer
+- **runpodctl** maps its flags for you: `serverless create` goes through GraphQL
+  `saveEndpoint`, which takes the flat `scalerType`/`scalerValue`/`idleTimeout` natively.
+  From v3.1.1, `serverless update` sends the nested v2 body to
+  `PATCH /v2/serverless/<id>`, so v2's `idleTimeout` rule applies to it. Endpoint reads and
+  delete also use v2. Note `--scale-threshold` is an integer
   with a floor of 1, so runpodctl **cannot express a fractional `queueDelay`** like `0.5`;
   use v2 REST or the Console for that.
 - **The Runpod MCP server** passes the v2 body through: `create-endpoint` and

@@ -294,10 +294,7 @@ curl -s https://v2-rest.runpod.io/v2/serverless/<endpoint-id>/workers -H "Author
  "id":"z3jr9rv2k3tt2y","image":"justinrunpod/vo:v1","isStale":false,
  "startedAt":"2026-08-05T21:42:31.705Z","status":"RUNNING","version":2}
 ```
-`runpodctl serverless get <id> --include-workers` also lists workers, but it goes through the
-v1 control plane and returns the raw worker records — far more fields, including the endpoint's
-`RUNPOD_AI_API_KEY`/`RUNPOD_ENDPOINT_SECRET` in `env`. Prefer the v2 list (or the MCP tool)
-when you just need ids and states, and don't paste `--include-workers` output into a ticket.
+`runpodctl serverless get <id> --include-workers` lists the same v2 worker records.
 
 ### Route C — Runpod MCP `stream-worker-logs`
 The hosted Runpod MCP (`https://mcp.runpod.io/`) wraps the exact same endpoint as a tool:
@@ -426,6 +423,3 @@ cites a real, pullable tag; it costs nothing.
   `version: 1` endpoints too. Both the Runpod MCP (`list-endpoint-workers` +
   `stream-worker-logs`) and `runpodctl serverless logs` (v2.10.0+) wrap it — the CLI does the
   worker resolution for you, so `--worker` is optional.
-- **`serverless get --include-workers` echoes endpoint secrets** — it returns raw v1 worker
-  records including `RUNPOD_AI_API_KEY`/`RUNPOD_ENDPOINT_SECRET` in `env`. Use the v2 worker
-  list when you only need ids and states.
