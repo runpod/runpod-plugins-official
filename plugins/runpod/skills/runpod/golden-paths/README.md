@@ -99,6 +99,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 21 | [Network volume storage tiers (standard vs high-performance)](21-storage-tiers.md) | storage / provisioning | runpodctl (standard) + REST v2 / console (high-perf) | spec-checked 2026-07-29 (launch only) |
 | 22 | [Minimal pod image (+ don't kill SSH)](22-minimal-pod-image/README.md) | image contract / pod | docker buildx + runpodctl pod (CPU) + SSH | live-verified 2026-07-16 |
 | 23 | [Minimal serverless queue image](23-minimal-queue-image/README.md) | image contract / serverless | docker buildx + runpodctl serverless (CPU) + `/runsync` | live-verified 2026-07-16 |
+| 24 | *Retired:* the minimal load-balanced image is covered by [path 14](14-load-balancing-endpoint.md), which live-verifies the same image contract | — | — | — |
 | 25 | [Bake into image vs mount a network volume](25-bake-vs-mount/README.md) | storage model / image | docker buildx + runpodctl nv + CPU pod (`df -T`: overlay vs MooseFS) | live-verified 2026-07-16 |
 | 26 | [Author a complete template project](26-template-project/README.md) | project authoring / Pod / queue / LB | app files + documented build/deployment handoff | spec-checked 2026-10-06 (local/container checks recorded in path, no live Runpod verification) |
 | | ↳ [Variant — application Pod](26-template-project/variant-pod.md) | | Pod image, app port | spec-checked 2026-10-06 (local checks only) |

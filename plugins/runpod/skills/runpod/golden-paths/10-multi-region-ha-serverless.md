@@ -32,6 +32,14 @@ volume). This path's live proof is the **S3-API sync + multi-volume attach + mul
 verification**.
 **Lane(s):** runpodctl ≥ v2.4.0 (volumes + `serverless create --network-volume-ids`) + `aws`/S3 API (sync, see [runpod-companion-clis](../../runpod-companion-clis/SKILL.md#aws-cli)) + GraphQL `saveEndpoint` (fallback for old CLI / REST-only; Console also works) + optionally a CPU/GPU pod (in-DC population, per [07](07-network-volume-handoff.md))
 
+## When to use
+Your serverless endpoint must keep scaling when one data center is short of GPUs, and its
+workers read data from a network volume. This is the canonical multi-region reference: the
+multi-volume attach, the sync methods, and the rule that you keep every volume identical.
+Use [19](19-three-region-same-file.md) after this one when you want an end-to-end proof
+across three data centers with a served payload (19 is legacy: keep its proof, but use this
+path's attach step, not 19's GraphQL `saveEndpoint`).
+
 ## Prerequisites
 - Shared setup first: [../README.md](README.md#before-you-run-any-path-shared-prerequisites) and
   [getting-started.md](../../runpod-usage/reference/getting-started.md) (auth resolution, SSH,
