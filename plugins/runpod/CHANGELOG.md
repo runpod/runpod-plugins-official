@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.1.1](https://github.com/runpod/runpod-plugins-official/compare/v2.1.0...v2.1.1) (2026-11-16)
+
+
+### Documentation
+
+* cover batch jobs on queue endpoints ([#130](https://github.com/runpod/runpod-plugins-official/issues/130)) ([fc19002](https://github.com/runpod/runpod-plugins-official/commit/fc19002b5efb3301d3bee5e393844b814c09760e))
+
 ## [2.1.0](https://github.com/runpod/runpod-plugins-official/compare/v2.0.0...v2.1.0) (2026-11-11)
 
 
