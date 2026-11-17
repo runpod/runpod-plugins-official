@@ -219,6 +219,7 @@ tables above when nothing here is close.
 | Build a minimal image for a target (pod vs serverless queue) | [22 (pod)](./golden-paths/22-minimal-pod-image/README.md), [23 (queue)](./golden-paths/23-minimal-queue-image/README.md); concepts in [building-images](../runpod-usage/reference/building-images.md) |
 | Decide what to bake into the image vs mount on a network volume | [25 — bake vs mount](./golden-paths/25-bake-vs-mount/README.md) |
 | Pick a network-volume **storage tier** (standard vs high-performance) | [21 — storage tiers](./golden-paths/21-storage-tiers.md) |
+| Share model files with compute in **any data center** (global volume) | [28 — global volume](./golden-paths/28-global-volume.md) |
 | **High availability / multi-region** serverless (multi-volume + data sync) | [10](./golden-paths/10-multi-region-ha-serverless.md), [19 (3-region)](./golden-paths/19-three-region-same-file.md) |
 | Stream output incrementally (`/stream`) | [12](./golden-paths/12-serverless-streaming.md) |
 | Tune autoscaling / raise per-worker throughput | [13 (autoscaling)](./golden-paths/13-autoscaling-tuning.md), [18 (concurrency)](./golden-paths/18-concurrent-handler.md) |
