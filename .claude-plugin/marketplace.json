@@ -23,6 +23,7 @@
         "./skills/runpod-build-template",
         "./skills/runpod-companion-clis",
         "./skills/runpod-migrate",
+        "./skills/runpod-cloud-migrate",
         "./skills/runpod-cost-audit",
         "./skills/runpod-discovery",
         "./skills/runpod-endpoint-ops",

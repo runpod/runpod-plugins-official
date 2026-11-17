@@ -4,7 +4,7 @@ description: >-
   Start here when the Runpod lane is unclear: picks the skill for a task
   (runpod-mcp and the journey playbooks it routes to, such as runpod-serverless-deploy,
   runpod-pod-deploy, runpod-pod-doctor and runpod-cost-audit; runpodctl, runpod-flash, runpod-companion-clis,
-  runpod-usage, runpod-templates, runpod-build-template, runpod-migrate) and
+  runpod-usage, runpod-templates, runpod-build-template, runpod-migrate, runpod-cloud-migrate) and
   indexes two dozen end-to-end worked examples (golden paths). Use it before any
   multi-step or provisioning task, even when the lane is clear, to check for a
   matching golden path; for the Runpod MCP tools, runpod-mcp owns
@@ -46,6 +46,7 @@ first and let the matching one pick the lane; otherwise read the matching skill'
 | **runpod-templates** | **Official prebuilt pod templates** (ComfyUI, PyTorch, …): is there one for this workload, and what does its image ship — ports, paths, autostart, readiness, what's missing on first boot. Reference + routing hub; deploy via runpod-mcp/runpodctl. |
 | **runpod-build-template** | **Create or improve a template project** from a request, local code, or GitHub: documented Dockerfile, app-specific files, and Pod/queue/load-balanced deployment handoff. |
 | **runpod-migrate** | **Move existing code** off the GraphQL API or REST v1 onto REST v2 — inventory which parts use which version, rewrite call sites, flag breaking changes. Edits the user's code; does not manage infra. |
+| **runpod-cloud-migrate** | **Move a workload to Runpod from another platform** (Vast.ai, Lambda, CoreWeave, Paperspace, Modal, Replicate, Baseten, Together AI, Fireworks AI, fal, Hugging Face, AWS, Google Cloud, Azure): inventory what the project uses, map it with the platform playbook, plan, port, verify. It hands execution to the lanes above. |
 
 ## These skills are a snapshot; the tools are the source of truth
 
@@ -128,7 +129,11 @@ An existing prebuilt does not replace the requested deliverable.
    "which Runpod API is this repo on?", "what breaks if we upgrade?" →
    **runpod-migrate**. (Calling the API to *do* something is a different job; that
    is the infra lanes below.)
-7. **Manage infrastructure** (create/list/update/delete pods, endpoints,
+7. **Move to Runpod from another cloud or GPU platform**, or size up what a move would
+   take ("migrate us off Modal", "port this SageMaker endpoint", "can this Kubernetes
+   deployment run on Runpod?") → **runpod-cloud-migrate**. It inventories and plans, then
+   comes back here for the lane that creates each resource.
+8. **Manage infrastructure** (create/list/update/delete pods, endpoints,
    templates, volumes; list GPUs/data centers; run a serverless job; billing):
    - A capability only the CLI has (the runpodctl rows of the matrix below) → **runpodctl**.
    - Otherwise, if the Runpod **MCP tools are connected** in this session

@@ -18,7 +18,7 @@
 {
   check-format = "ruff format --check .";
   check-lint = "ruff check .";
-  check-types = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
+  check-types = "mypy . && mypy --python-version 3.10 plugins/runpod/skills/runpod-migrate/scripts plugins/runpod/skills/runpod-cloud-migrate/scripts plugins/runpod/skills/runpod-templates/scripts";
   check-security = "bandit -c pyproject.toml --severity-level medium -r hooks scripts plugins";
   check-shell = "shellcheck scripts/*.sh && shfmt --diff --indent 2 --case-indent scripts";
   check-js = "biome ci --error-on-warnings .";
@@ -28,5 +28,5 @@
   # and this matches the sandboxed gate's file-walk. `-exec … {} +` is portable
   # (BSD + GNU find) and needs no `xargs -r`. deadnix/statix still accept `.`.
   check-nix = "find . -name '*.nix' -not -path './.git/*' -exec nixfmt --check {} + && deadnix --fail . && statix check .";
-  check-tests = "python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p 'test_*.py' && python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p 'test_*.py'";
+  check-tests = "python3 -B -m unittest discover -s plugins/runpod/skills/runpod-templates/tests -p 'test_*.py' && python3 -B -m unittest discover -s plugins/runpod/skills/runpod-migrate/tests -p 'test_*.py' && python3 -B -m unittest discover -s plugins/runpod/skills/runpod-cloud-migrate/tests -p 'test_*.py'";
 }

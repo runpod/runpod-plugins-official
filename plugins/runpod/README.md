@@ -23,10 +23,13 @@ lane below. If you already know the lane, go straight to it.
 | [`runpod-templates`](skills/runpod-templates/SKILL.md) | **Official pod templates** — what each image ships, ports/paths, readiness/runtime gotchas, version pinning; ComfyUI, PyTorch, Ubuntu. |
 | [`runpod-build-template`](skills/runpod-build-template/SKILL.md) | **Create or improve a complete template project** — documented Dockerfile, app-specific files and a precise deployment handoff. |
 | [`runpod-migrate`](skills/runpod-migrate/SKILL.md) | **Migrate code** from the GraphQL API or REST v1 to REST v2 — inventory, rewrite, flag breaking changes. |
+| [`runpod-cloud-migrate`](skills/runpod-cloud-migrate/SKILL.md) | **Move to Runpod from another cloud or GPU platform**: inventory what the project uses, map it with a per-platform playbook, plan, port, verify. |
 | [`runpod-discovery`](skills/runpod-discovery/SKILL.md), [`runpod-lifecycle-crud`](skills/runpod-lifecycle-crud/SKILL.md), [`runpod-serverless-deploy`](skills/runpod-serverless-deploy/SKILL.md), [`runpod-vllm`](skills/runpod-vllm/SKILL.md), [`runpod-pod-deploy`](skills/runpod-pod-deploy/SKILL.md), [`runpod-pod-doctor`](skills/runpod-pod-doctor/SKILL.md), [`runpod-endpoint-ops`](skills/runpod-endpoint-ops/SKILL.md), [`runpod-cost-audit`](skills/runpod-cost-audit/SKILL.md) | **MCP journeys** — the step-by-step playbooks `runpod-mcp` routes to for work done with the MCP tools. |
 
 The migration flow also has a slash command: **`/runpod:migrate [scope] [path]`**
 runs the `runpod-migrate` workflow directly, e.g. `/runpod:migrate rest src/`.
+Moving from another platform has one too: **`/runpod:migrate-cloud [platform] [path]`**
+runs the `runpod-cloud-migrate` workflow, e.g. `/runpod:migrate-cloud modal`.
 
 **runpod-mcp vs runpodctl:** both drive the same Runpod API for the same infra
 CRUD. Prefer `runpod-mcp` when its tools are connected in your session; use
@@ -162,6 +165,7 @@ skills/
   runpod-templates/  official pod templates + repair guide + scripts
   runpod-build-template/  authoring + target/build-route references + evals
   runpod-migrate/    GraphQL / REST v1 -> REST v2 migration + inventory scanner
+  runpod-cloud-migrate/  other cloud or GPU platform -> Runpod: per-platform playbooks + usage scanner
 .mcp.json            hosted Runpod MCP server config
 ```
 
