@@ -6,7 +6,6 @@ concepts: [pod, serverless-endpoint, serverless-handler, network-volume, global-
 Scope: Vast.ai instances (on-demand, interruptible, reserved), templates, local volumes, Cloud Sync, Serverless (endpoint, workergroup, PyWorker), Deployments (beta), and automation written against the `vastai` CLI, the `vastai` Python package and the Vast REST API. Targets: Runpod Pods, Serverless queue and load-balancing endpoints, Runpod SDK apps, network volumes, global volumes, `runpodctl` and REST v2 (`https://api.runpod.io/v2`).
 
 Sources: Vast.ai docs, checked 2026-11-14:
-[runpod-to-vast](https://docs.vast.ai/examples/migrations/runpod-to-vast),
 [docker-environment](https://docs.vast.ai/guides/instances/docker-environment),
 [networking](https://docs.vast.ai/guides/instances/connect/networking),
 [launch modes](https://docs.vast.ai/guides/instances/connect/overview),
@@ -22,8 +21,6 @@ Sources: Vast.ai docs, checked 2026-11-14:
 [endpoint parameters](https://docs.vast.ai/guides/serverless/serverless-parameters),
 [OpenAI proxy](https://docs.vast.ai/guides/serverless/openai-compatible-api),
 [deployments](https://docs.vast.ai/guides/serverless/deployments/index).
-
-Customer-facing version of this file: `https://docs.runpod.io/migrate/vast-ai`.
 
 ## Detect
 
@@ -62,7 +59,7 @@ Inventory commands (read-only): `vastai show instances --raw`, `vastai show volu
 | Instance | Pod | Create takes a GPU type ID, not an offer ID. No host choice. |
 | Offer search | `runpodctl gpu list`, `runpodctl datacenter list`, `GET /v2/catalog/gpus?include=AVAILABILITY&product=POD` | Stock is per GPU type and data center. Read, then create, then fall back on `400`. |
 | On-demand instance | On-demand Pod | |
-| Interruptible instance | On-demand Pod, Serverless queue endpoint, or `@app.task` | REST v2 and `runpodctl` create on-demand Pods. |
+| Interruptible instance | On-demand Pod, Serverless queue endpoint, or `@app.task` | Spot Pods aren't available as a migration target right now, so this isn't a 1:1 move. |
 | Reserved instance | On-demand Pod | Committed capacity goes through Runpod sales. |
 | `datacenter=true` / verified hosts | `cloud: SECURE` (default) / `COMMUNITY` | |
 | Launch modes (entrypoint, SSH, Jupyter) | One Pod type with `startSsh`, `startJupyter` | The image entrypoint keeps running. |
@@ -275,7 +272,7 @@ Command details: [runpodctl/SKILL.md](../../runpodctl/SKILL.md). Ports and proxy
 | Vast feature in use | Why it needs a decision | Options |
 | --- | --- | --- |
 | UDP ports (`/udp`, `VAST_UDP_PORT_X`) | Pods do not route UDP | (a) move the protocol to TCP, (b) keep the UDP-facing component off Runpod and connect over TCP, (c) leave this workload on Vast |
-| Interruptible bids (`--bid_price`) | REST v2, `runpodctl` and the MCP server create on-demand Pods | (a) on-demand Pod with checkpoints to `/workspace`, (b) Serverless queue endpoint that scales to zero, (c) `@app.task`. Costs differ: show the catalog price and get approval |
+| Interruptible bids (`--bid_price`) | Spot Pods aren't available as a migration target right now, so this isn't a 1:1 move | (a) on-demand Pod with checkpoints to `/workspace`, (b) Serverless queue endpoint that scales to zero, (c) `@app.task`. Costs differ: show the catalog price and get approval |
 | Reserved instances (`prepay`) | No self-serve prepay; savings plans are closed to new purchases | (a) on-demand, (b) user contacts Runpod sales. Check Vast refund terms before destroying a reserved instance |
 | Host filters (`reliability`, `inet_down`, `static_ip`, `machine_id`, price cap in the query) | Runpod places by GPU type, cloud tier and data center | Map to Secure Cloud, `dataCenterIds`, `minCudaVersion`; cap cost from the catalog `price` |
 | VM instances, Docker Compose, systemd | Pods are single containers | (a) one Pod per service with global networking (NVIDIA GPU Pods only), (b) one image running several processes |

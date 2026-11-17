@@ -182,7 +182,9 @@ confirms the new one under real traffic. Then return to step 4 for the next work
 
 Finish with: what moved, where each thing lives on Runpod (IDs and URLs), what still runs
 on the source platform, the open gaps, what is billing on Runpod now, and how to roll
-back. The playbook's "Shut down" section lists the commands that stop billing on the
+back. Each platform also has a step-by-step guide for people at
+`https://docs.runpod.io/migrate/<playbook file name without .md>`: link it in the report.
+The playbook's "Shut down" section lists the commands that stop billing on the
 source platform, including the resources people forget. Offer them. Run one only after the
 user approves that specific resource.
 

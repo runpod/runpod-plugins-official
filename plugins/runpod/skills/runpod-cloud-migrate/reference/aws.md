@@ -103,7 +103,7 @@ GPU map (EC2 family: GPU, then Runpod GPU type ID, then Serverless pool):
 | Endpoint kind (real-time vs async) | `type`: `LOAD_BALANCER` or `QUEUE` | set through REST v2, Terraform, or console | `endpoint_type` |
 | `ModelDataUrl` | image content, `mounts.network`, cached model | `--network-volume-id`, `--model-reference` | `network_volumes` |
 | `ExecutionRoleArn`, instance profile | secrets in `env` | `--env` | `env` |
-| ECR image | ECR delegation; leave `registry` unset | leave `--registry-auth-id` unset | `runpod_registry_delegation` |
+| ECR image | ECR delegation; leave `registry` unset (on Serverless, confirm the pull first: see Data) | leave `--registry-auth-id` unset | `runpod_registry_delegation` |
 | NVIDIA driver / CUDA from AMI | `gpu.minCudaVersion` | `--min-cuda-version` | `min_cuda_version` |
 
 `runpodctl serverless create` creates queue endpoints. Create load balancing endpoints with `POST /v2/serverless` (`"type": "LOAD_BALANCER"`, scaler `REQUEST_COUNT`), the MCP `create-endpoint` tool, or Terraform. A queue endpoint that scales on `REQUEST_COUNT` takes no `workers.idleTimeout`. Check `runpodctl serverless create --help` and `runpodctl pod create --help` for exact flags.
@@ -187,7 +187,7 @@ Terraform: add provider `runpod/runpod` `~> 2.0` next to `hashicorp/aws` in the 
 - Mount paths: `/workspace` on Pods, `/runpod-volume` on Serverless workers.
 - AWS bills data transfer out of S3 to the internet. Tell the user to budget the one-time copy and any ongoing run-time reads. Runpod has no ingress or egress fees.
 - Runpod S3-compatible API: endpoint `https://s3api-DC.runpod.io/`, Region = data center ID, bucket = volume ID, separate S3 API keys. Presigned URLs, versioning, ACLs, bucket policies, and object tagging are outside its supported set.
-- ECR delegation: (1) `aws ecr set-repository-policy` granting `ecr:GetAuthorizationToken`, `ecr:BatchCheckLayerAvailability`, `ecr:GetDownloadUrlForLayer`, `ecr:BatchGetImage` to `arn:aws:iam::550005742258:role/prod-us-east-1-deployment-role` and `arn:aws:iam::550005742258:role/prod-us-west-2-deployment-role` via an `aws:PrincipalArn` condition; (2) `POST /v2/registries/delegations` with `{"resource": "arn:aws:ecr:REGION:ACCOUNT:repository/NAME"}`; (3) deploy with the ECR image URI and no `registry` value. An ECR login token lasts 12 hours, so it is unsuitable as a stored registry credential.
+- ECR delegation: (1) `aws ecr set-repository-policy` granting `ecr:GetAuthorizationToken`, `ecr:BatchCheckLayerAvailability`, `ecr:GetDownloadUrlForLayer`, `ecr:BatchGetImage` to `arn:aws:iam::550005742258:role/prod-us-east-1-deployment-role` and `arn:aws:iam::550005742258:role/prod-us-west-2-deployment-role` via an `aws:PrincipalArn` condition; (2) `POST /v2/registries/delegations` with `{"resource": "arn:aws:ecr:REGION:ACCOUNT:repository/NAME"}`; (3) deploy with the ECR image URI and no `registry` value. An ECR login token lasts 12 hours, so it is unsuitable as a stored registry credential. The delegation is documented for Pods. Runpod sources disagree on whether a Serverless endpoint pulls through it, so for a SageMaker endpoint moving to Serverless, deploy one worker from the ECR image and confirm it pulls before planning around it; if it fails, push the image to a registry with a stored credential (Docker Hub, GHCR).
 
 ## Client and API call map
 
@@ -219,7 +219,7 @@ Status map: EC2 `pending` = Pod `PROVISIONING`/`STARTING`; `running` = `RUNNING`
 | KMS customer-managed keys or data that must stay encrypted under AWS control | (a) keep data in S3 and read at run time; (b) client-side encryption; (c) keep on AWS |
 | Multi-model endpoint, multiple production variants, shadow traffic | (a) one endpoint per model; (b) router inside one load balancing worker; (c) keep on AWS |
 | Bedrock model with no open weights, or Guardrails, Knowledge Bases, Agents | (a) keep on Bedrock; (b) pick an open-weight replacement and re-evaluate quality |
-| Spot or Capacity Block based cost model | (a) on-demand Pods (`runpodctl`, REST v2, and Terraform create on-demand Pods); (b) Serverless with scale to zero; (c) contact Runpod sales for committed capacity |
+| Spot or Capacity Block based cost model | Spot Pods aren't available as a migration target right now, so this isn't a 1:1 move. (a) on-demand Pods; (b) Serverless with scale to zero; (c) contact Runpod sales for committed capacity |
 | Requests longer than the load balancing limit, or bursts that must never drop | use a queue endpoint |
 | Arm images (`g5g`, `p6e-gb200`) | rebuild for `linux/amd64` and retest |
 | EKS-specific features (operators, service mesh, node groups) | (a) Serverless endpoints per service; (b) SkyPilot or dstack onto Pods; (c) keep on EKS |

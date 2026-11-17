@@ -175,14 +175,18 @@ import runpod
 app = runpod.App("sentiment")
 model = runpod.Model("distilbert/distilbert-base-uncased-finetuned-sst-2-english")
 
+_CLASSIFIER = None
+
 @app.queue(gpu="4090", workers=(0, 3), dependencies=["transformers"], model=model)
 def classify(inputs: str, parameters: dict | None = None):
-    from transformers import pipeline
-    classifier = pipeline("text-classification", model=str(model.path), device=0)
-    return classifier(inputs, **(parameters or {}))
+    global _CLASSIFIER
+    if _CLASSIFIER is None:  # once per deployed worker
+        from transformers import pipeline
+        _CLASSIFIER = pipeline("text-classification", model=str(model.path), device=0)
+    return _CLASSIFIER(inputs, **(parameters or {}))
 ```
 
-Gated model: add `env={"HF_TOKEN": runpod.Secret("hf_token")}`. Develop with `rp flash dev main.py`, deploy with `rp flash deploy`. To load once per worker, use an `@app.api` class with `@runpod.init`. See [api](../../runpod-flash/reference/api.md).
+Gated model: add `env={"HF_TOKEN": runpod.Secret("hf_token")}`. Develop with `rp flash dev main.py`, deploy with `rp flash deploy`. The module global loads the pipeline once per worker; an `@app.api` class does the same with `@runpod.init`. See [api](../../runpod-flash/reference/api.md).
 
 Custom container to a load balancing endpoint (no code change needed when the server reads its port from the environment):
 

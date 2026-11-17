@@ -572,8 +572,8 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "sdk",
                 (
-                    r"""['"]@ai-sdk/togetherai['"]|\blangchain_together\b|"
-                    r"\bllama_index\.llms\.together\b"""
+                    r"""['"]@ai-sdk/togetherai['"]|\blangchain_together\b|"""
+                    r"""\bllama_index\.llms\.together\b"""
                 ),
                 ANY,
                 "Together integration package",
@@ -618,8 +618,8 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "sdk",
                 (
-                    r"""['"]@ai-sdk/fireworks['"]|\blangchain_fireworks\b|"
-                    r"\bllama_index\.llms\.fireworks\b|['"]@fireworks-ai/[\w-]+['"]"""
+                    r"""['"]@ai-sdk/fireworks['"]|\blangchain_fireworks\b|"""
+                    r"""\bllama_index\.llms\.fireworks\b|['"]@fireworks-ai/[\w-]+['"]"""
                 ),
                 ANY,
                 "Fireworks integration package",
@@ -649,8 +649,8 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "sdk",
                 (
-                    r"""['"]@fal-ai/(?:client|serverless-client|server-proxy)[\w/-]*['"]|"
-                    r"['"]@ai-sdk/fal['"]"""
+                    r"""['"]@fal-ai/(?:client|serverless-client|server-proxy)[\w/-]*['"]|"""
+                    r"""['"]@ai-sdk/fal['"]"""
                 ),
                 ANY,
                 "fal JavaScript client",
@@ -757,8 +757,8 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "sdk",
                 (
-                    r"""\.client\(\s*['"](?:sagemaker|sagemaker-runtime|bedrock|bedrock-runtime|"
-                    r"bedrock-agent-runtime|batch)['"]"""
+                    r"""\.client\(\s*['"](?:sagemaker|sagemaker-runtime|bedrock|bedrock-runtime|"""
+                    r"""bedrock-agent-runtime|batch)['"]"""
                 ),
                 PY,
                 "boto3 client for SageMaker, Bedrock or Batch",
@@ -766,8 +766,8 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "sdk",
                 (
-                    r"""['"]@aws-sdk/client-(?:sagemaker|sagemaker-runtime|bedrock|bedrock-runtime|"
-                    r"batch)['"]"""
+                    r"""['"]@aws-sdk/client-(?:sagemaker|sagemaker-runtime|bedrock|bedrock-runtime|"""
+                    r"""batch)['"]"""
                 ),
                 ANY,
                 "AWS SDK for JavaScript client",
@@ -809,7 +809,7 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "config",
                 (
-                    r"\b(?:ml\.)?(?:p[2-6][a-z]{0,3}|g[3-6][a-z]{0,3}|gr6)\.(?:\d{0,2}x?large|"
+                    r"\b(?:ml\.)?(?:p[2-6][a-z]{0,3}(?:-[a-z]{1,2}\d{3})?|g[3-7][a-z]{0,3}|gr6)\.(?:\d{0,2}x?large|"
                     r"metal(?:-\d+xl)?)\b"
                 ),
                 ANY,
@@ -876,8 +876,8 @@ PLATFORMS: tuple[Platform, ...] = (
             sig(
                 "sdk",
                 (
-                    r"""['"]@google-cloud/(?:aiplatform|vertexai|run|batch)['"]|"
-                    r"['"]@ai-sdk/google-vertex['"]|\blangchain_google_vertexai\b"""
+                    r"""['"]@google-cloud/(?:aiplatform|vertexai|run|batch)['"]|"""
+                    r"""['"]@ai-sdk/google-vertex['"]|\blangchain_google_vertexai\b"""
                 ),
                 ANY,
                 "Google Cloud AI client package",

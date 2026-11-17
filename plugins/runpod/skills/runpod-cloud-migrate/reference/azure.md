@@ -266,7 +266,7 @@ chat completions.
 | ACR is private-endpoint only | (a) enable public access with a pull-only token, (b) mirror the image to another registry |
 | Blue/green percentage split or mirror traffic | (a) rolling release on one endpoint, (b) two endpoints and a client or gateway split |
 | Requests longer than the load-balancing 5.5 min limit, or must not drop | Use a queue endpoint |
-| Spot VMs with eviction handling | (a) on-demand Pod, (b) Serverless. REST v2 and `runpodctl` create on-demand Pods |
+| Spot VMs with eviction handling | Spot Pods aren't available as a migration target right now, so this isn't a 1:1 move. (a) on-demand Pod, (b) Serverless |
 | Windows, NV/NG VDI, Data Science VM on Windows | Stays on Azure |
 | AKS workloads | (a) per-workload Pods or Serverless, (b) SkyPilot or dstack |
 | Multi-node InfiniBand or Slurm jobs | Instant Cluster. Confirm stock with the user before planning dates |

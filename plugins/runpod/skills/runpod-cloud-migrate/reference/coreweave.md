@@ -7,7 +7,7 @@ Scope: move workloads from CoreWeave Kubernetes Service (CKS), SUNK (Slurm on Ku
 AI Object Storage, Distributed File Storage and CoreWeave Inference to Runpod Pods, Serverless
 endpoints, Instant Clusters and network volumes. Runpod has no Kubernetes API: every
 Kubernetes object is translated into a Runpod resource created through REST v2, `runpodctl`,
-the Runpod SDK or Terraform. The customer-facing guide is `migrate/coreweave` in the docs.
+the Runpod SDK or Terraform.
 
 Sources: CoreWeave docs, checked 2026-11-14:
 [CKS](https://docs.coreweave.com/products/cks), [Node Pool reference](https://docs.coreweave.com/products/cks/reference/node-pool),
@@ -177,8 +177,8 @@ curl -s -X POST https://api.runpod.io/v2/serverless \
 
 Read the invoke URL from `requestUrls.base` in the response. Set `ports`, `PORT` and
 `PORT_HEALTH` to the same port. The health path returns `200` when ready and `204` while
-initializing. Limits: 5.5 min processing per request, 30 MB payload, requests are dropped when
-all workers are busy. See
+initializing. Limits: 5.5 min processing per request, 30 MB payload, and a request waits up to
+2 minutes for a worker, then fails (no queue). See
 [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
 
 ### Same Deployment to a Pod
@@ -237,11 +237,14 @@ return. Call it with `.remote(...)` from a `@runpod.local_entrypoint` and run
 curl -s -X POST https://api.runpod.io/v2/clusters \
   -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
   -d '{"name":"slurm-train","type":"SLURM",
-       "image":"runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04",
+       "templateId":"9yo900pjtt",
        "compute":{"gpuTypeId":"NVIDIA H100 80GB HBM3","gpuCountPerPod":8,"podCount":4},
        "mounts":{"network":[{"volumeId":"NETWORK_VOLUME_ID","path":"/workspace"}]},"startSsh":true}'
 ```
 
+Template `9yo900pjtt` is the official PyTorch 2.8.0 cluster image, which starts Slurm; other
+images may not. See [pytorch templates](../../runpod-templates/reference/pytorch.md). Bring the
+cluster up with the smallest shape that proves the job runs before requesting the full size.
 `sbatch`, `squeue` and `sinfo` run on the controller node. Slurm config lives in
 `/etc/slurm/slurm.conf` and `/etc/slurm/gres.conf`. Check Instant Cluster stock for the GPU
 type before proposing dates; clusters above 8 nodes go through Runpod sales.

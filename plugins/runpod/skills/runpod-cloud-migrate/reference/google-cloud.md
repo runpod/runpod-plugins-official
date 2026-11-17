@@ -238,7 +238,7 @@ Queue job statuses: `IN_QUEUE`, `IN_PROGRESS`, `COMPLETED`, `FAILED`, `CANCELLED
 | VPC, firewall rules, Private Service Connect, private endpoints | (a) Public HTTPS with API key auth; (b) global networking between Pods (`POD_ID.runpod.internal`; enabled at deploy, NVIDIA GPU Pods, supported data centers only); (c) user-managed VPN or proxy; (d) keep the workload on Google Cloud |
 | Attached service account, Workload Identity, metadata server | (a) Least-privilege service account key in a Runpod secret; (b) signed URLs for single objects; (c) keep the caller on Google Cloud |
 | CMEK | (a) Encrypted volume disk with a Runpod-managed key; (b) encrypt at the application layer; (c) keep the data on Google Cloud |
-| Spot VMs in the cost model | (a) On-demand Pods with checkpointing; (b) Serverless scale to zero; (c) ask sales about pricing |
+| Spot VMs in the cost model | Spot Pods aren't available as a migration target right now, so this isn't a 1:1 move. (a) On-demand Pods with checkpointing; (b) Serverless scale to zero; (c) ask sales about pricing |
 | Reservations, flex-start, guaranteed capacity | (a) Queued Pod create (`queue` on `POST /v2/pods`); (b) several GPU pools on an endpoint; (c) contact sales. Never promise availability |
 | Traffic split across model versions | (a) Two endpoints with client-side or gateway split; (b) rolling release on one endpoint |
 | Requests over 5.5 minutes or 30 MB on load balancing | (a) Queue endpoint with `/run`; (b) pass object references through Cloud Storage or a volume |

@@ -19,8 +19,7 @@ Sources: fal docs, checked 2026-11-14:
 [persistent storage](https://fal.ai/docs/documentation/development/use-persistent-storage),
 [secrets](https://fal.ai/docs/documentation/development/manage-secrets-securely),
 [runner env vars](https://fal.ai/docs/documentation/development/environment-variables),
-[Compute](https://fal.ai/docs/documentation/compute),
-[fal's Runpod-to-fal guide](https://fal.ai/docs/documentation/development/migrate-from-runpod).
+[Compute](https://fal.ai/docs/documentation/compute).
 
 ## Detect
 

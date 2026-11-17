@@ -83,6 +83,49 @@ class ScanTests(unittest.TestCase):
                 write(root, name, text)
                 self.assertIn(slug, platforms(scanner.scan(root)))
 
+    def test_multi_line_patterns_keep_every_alternative(self) -> None:
+        cases = {
+            "together-ai": [
+                'import { togetherai } from "@ai-sdk/togetherai";\n',
+                "from langchain_together import ChatTogether\n",
+                "from llama_index.llms.together import TogetherLLM\n",
+            ],
+            "fireworks-ai": [
+                'import { fireworks } from "@ai-sdk/fireworks";\n',
+                "from langchain_fireworks import ChatFireworks\n",
+                "from llama_index.llms.fireworks import Fireworks\n",
+                "import x from '@fireworks-ai/sdk';\n",
+            ],
+            "fal": [
+                'import { fal } from "@fal-ai/client";\n',
+                'import { fal } from "@ai-sdk/fal";\n',
+            ],
+            "aws": [
+                'c = boto3.client("bedrock-runtime")\n',
+                'c = boto3.client("bedrock-agent-runtime")\n',
+                "c = session.client('batch')\n",
+                'import { SageMakerClient } from "@aws-sdk/client-sagemaker";\n',
+                'import { BatchClient } from "@aws-sdk/client-batch";\n',
+            ],
+            "google-cloud": [
+                'import { v1 } from "@google-cloud/aiplatform";\n',
+                'import { vertex } from "@ai-sdk/google-vertex";\n',
+                "from langchain_google_vertexai import ChatVertexAI\n",
+            ],
+        }
+        for slug, lines in cases.items():
+            for text in lines:
+                name = "a.ts" if text.startswith("import ") and "from " in text else "a.py"
+                with self.subTest(platform=slug, text=text), tempfile.TemporaryDirectory() as root:
+                    write(root, name, text)
+                    self.assertIn(slug, platforms(scanner.scan(root)))
+
+    def test_newer_aws_gpu_instance_types(self) -> None:
+        for itype in ("g7.2xlarge", "g7e.12xlarge", "p6-b200.48xlarge", "ml.p6e-gb200.36xlarge"):
+            with self.subTest(itype=itype), tempfile.TemporaryDirectory() as root:
+                write(root, "main.tf", f'instance_type = "{itype}"\n')
+                self.assertIn("aws", platforms(scanner.scan(root)))
+
     def test_every_playbook_platform_has_a_case_above(self) -> None:
         with_reference = {
             p.slug for p in scanner.PLATFORMS if p.reference and p.slug != "kubernetes"
@@ -206,11 +249,7 @@ class ScanTests(unittest.TestCase):
         if not REFERENCE.is_dir():
             self.skipTest("playbooks are not part of this source set")
         listed = {Path(p.reference).name for p in scanner.PLATFORMS if p.reference}
-        on_disk = {p.name for p in REFERENCE.glob("*.md")} - {
-            "runpod-targets.md",
-            "data-transfer.md",
-            "terraform.md",
-        }
+        on_disk = {p.name for p in REFERENCE.glob("*.md")}
         self.assertEqual(on_disk - listed, set())
 
 

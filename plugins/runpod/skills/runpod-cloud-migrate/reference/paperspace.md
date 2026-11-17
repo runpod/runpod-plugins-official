@@ -287,7 +287,7 @@ Load-balancing creation needs REST v2, Terraform (`endpoint_type = "LOAD_BALANCE
 | Commercial third-party models, Inference Router, Agent Platform, Knowledge Bases | Keep on DigitalOcean; call the model provider directly; replace with an open model on vLLM. |
 | Model not hosted as a Public Endpoint | Serverless vLLM with the Hugging Face model; choose the GPU pool by model size. |
 | AMD GPU Droplets (ROCm stack) | Runpod AMD GPU type with a ROCm image if stock exists; rebuild on a CUDA image for NVIDIA GPUs. |
-| Spot or contract GPU Droplets, Bare Metal GPUs | On-demand Pods; Instant Clusters for multi-node; ask the user to contact Runpod sales for committed capacity. |
+| Spot or contract GPU Droplets, Bare Metal GPUs | Spot Pods aren't available as a migration target right now, so this isn't a 1:1 move. On-demand Pods; Instant Clusters for multi-node; ask the user to contact Runpod sales for committed capacity. |
 | 8-GPU plans | `--gpu-count 8` if stock allows; fewer larger GPUs; an Instant Cluster. |
 | Static public IP that clients allowlist | Proxy URL or assigned IP and port (read from `runpodctl pod get`); ask how clients should reach the service. |
 | VM snapshots used as backups | Docker image for the environment plus a network volume for data. |

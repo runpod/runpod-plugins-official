@@ -162,12 +162,16 @@ sudo docker run --gpus all --ipc=host -p 8000:8000 \
 
 ```bash
 # After
-runpodctl pod create --name llama-server --image "vllm/vllm-openai:latest" \
-  --gpu-id "NVIDIA A100 80GB PCIe" --volume-in-gb 100 --ports "8000/http" \
-  --env '{"HUGGING_FACE_HUB_TOKEN":"YOUR_HF_TOKEN","HF_HOME":"/workspace/huggingface"}' \
-  --docker-args "--model meta-llama/Meta-Llama-3.1-8B-Instruct --api-key YOUR_SERVER_KEY"
-# URL: https://POD_ID-8000.proxy.runpod.net (public; keep --api-key)
+runpodctl pod create --name llama-server --image "vllm/vllm-openai:v0.32.0" \
+  --gpu-id "NVIDIA A100 80GB PCIe" --min-cuda-version 13.0 --volume-in-gb 100 --ports "8000/http" \
+  --env '{"HF_TOKEN":"{{ RUNPOD_SECRET_hf_token }}","VLLM_API_KEY":"{{ RUNPOD_SECRET_vllm_api_key }}","HF_HOME":"/workspace/huggingface"}' \
+  --docker-args "meta-llama/Meta-Llama-3.1-8B-Instruct"
+# URL: https://POD_ID-8000.proxy.runpod.net (public; clients send the VLLM_API_KEY value as the bearer token)
 ```
+
+Create the `hf_token` and `vllm_api_key` secrets first; never put either value in `--env` or
+`--docker-args`, where it shows in the Pod config and the process list. Image tag, CUDA floor
+and boot checks: [vLLM on a Pod](../../runpod-vllm/reference/pod.md).
 
 Flag map: `--gpus all` → `--gpu-id` + `--gpu-count`; `-p P:P` → `--ports "P/http"` or
 `"P/tcp"`; `-e` → `--env` JSON; `-v host:container` → network volume or volume disk at

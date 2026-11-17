@@ -183,8 +183,8 @@ Other contracts:
 | `request.headers["x-baseten-request-id"]` | `job["id"]` |
 
 SDK alternative (no Dockerfile). `@runpod.init` is the documented once-per-worker hook on
-`@app.api` classes and mirrors `load()`; for `@app.queue`, verify in `rp flash dev` that
-module-level state survives between calls. Details: [runpod-flash](../../runpod-flash/SKILL.md).
+`@app.api` classes and mirrors `load()`; for `@app.queue`, cache in a module global, which
+loads once per deployed worker. Details: [patterns](../../runpod-flash/reference/patterns.md).
 
 ```python
 import runpod
