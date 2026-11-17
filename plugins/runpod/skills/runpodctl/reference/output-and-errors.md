@@ -121,7 +121,8 @@ dropped connections themselves, up to 10 attempts, before giving up with
 `transfer_incomplete`.
 
 - **Retry with backoff:** `network_error`, `rate_limited`, `server_error` (and `api_error`
-  when `status` is 5xx). A transient `graphql_error` is possible too but indistinguishable
+  when `status` is 5xx). Exception: a `network_error` that names `rest.runpod.io` is a
+  [REST v1 call](#rest-v1-urls), which a retry cannot fix. A transient `graphql_error` is possible too but indistinguishable
   from a permanent one, so cap those attempts tightly.
 - **Never retry:** `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`,
   `no_credentials`, `unauthorized`, `forbidden`, `job_failed` (the job ran and failed —
@@ -289,14 +290,34 @@ invocation instead of `exec`.
 | --- | --- | --- |
 | `RUNPOD_API_KEY` | — | API key. Also settable via `runpodctl doctor` or `~/.runpod/config.toml` (`apikey`) |
 | `TIMEOUT` | `30s` | per-API-call deadline — **no `RUNPOD_` prefix** (the CLI reads env vars unprefixed, so this one looks nothing like the others). Exceeding it is `code: "timeout"`. Also settable as a top-level `timeout` in `~/.runpod/config.toml` — it must sit **above** any `[section]` header, or it becomes `section.timeout` and is silently ignored. Distinct from `--wait`, which bounds a whole job or readiness wait rather than one call |
-| `RUNPOD_API_URL` | `https://rest.runpod.io/v1` | REST control plane (config key `restApiUrl`) |
+| `RUNPOD_API_URL` | `https://api.runpod.io/v2` | REST control plane (config key `restApiUrl`), v3.1.1+. Covers resource reads and writes, catalogs, billing and log streams |
 | `RUNPOD_GRAPHQL_URL` | `https://api.runpod.io/graphql` | GraphQL control plane (config key `apiUrl`) |
 | `RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY` | — | S3 API keys for `network-volume upload`/`download` (config keys `s3AccessKey` / `s3SecretKey`). Separate from the API key, which still looks up the volume's data center unless `--data-center-id` is passed |
 | `RUNPOD_INVOKE_URL` | `https://api.runpod.ai/v2` | base for the invoke URLs reported by `serverless create`/`get`/`list`/`update` (config key `invokeUrl`) |
 
-**Invoke is a separate service from the control plane.** Pointing `RUNPOD_API_URL` or
-`RUNPOD_GRAPHQL_URL` at a non-prod host does *not* move the invoke URLs — override
-`RUNPOD_INVOKE_URL` explicitly when you need that, or the emitted URLs target prod.
+Set `RUNPOD_API_URL` to the intended REST base, including `/v2`, when targeting a
+different environment. It takes precedence over `restApiUrl` in the config file.
+
+### REST v1 URLs
+
+REST v1 is deprecated and `rest.runpod.io` no longer resolves. A command that still
+calls it fails with `network_error`, and `runpodctl doctor` does not detect it:
+
+```json
+{"error":"request failed: Get \"https://rest.runpod.io/v1/serverless\": dial tcp: lookup rest.runpod.io: no such host","code":"network_error"}
+```
+
+Do not retry. The error has two causes, so check both:
+
+1. **runpodctl older than v3.1.1.** Older builds default to REST v1 for some commands.
+   Upgrade, then confirm with `runpodctl version`.
+2. **A v1 URL in the settings.** If `RUNPOD_API_URL` or `restApiUrl` holds
+   `https://rest.runpod.io/v1`, unset `RUNPOD_API_URL` and delete `restApiUrl` from
+   `~/.runpod/config.toml`, or set either one to `https://api.runpod.io/v2`.
+
+**Invoke is a separate service from the control plane.** The REST and GraphQL
+overrides do not select the invocation host. Set `RUNPOD_INVOKE_URL` explicitly
+when you need a different invocation destination.
 
 ## Serverless invoke URLs
 

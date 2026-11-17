@@ -65,15 +65,15 @@ rules:
   - id: endpoint-autoscaling.idle-timeout
     statement: >
       `workers.idleTimeout` (1 to 3600 seconds) is how long a worker stays up
-      after its last request, and that time is billed. It is rejected on a
-      `QUEUE` endpoint that scales on `REQUEST_COUNT`. A short timeout makes
-      batch or evaluation workloads cold-start between requests, so raise it for
-      them.
-    on_violation: 422
+      after its last request, and that time is billed. It is not applicable to a
+      `QUEUE` endpoint that scales on `REQUEST_COUNT`, so v2 omits it from
+      responses and rejects it on create or update. For applicable endpoints, a
+      short timeout makes batch or evaluation workloads cold-start between
+      requests, so raise it for them.
     status: documented
     see: [serverless-endpoint.defaults-by-layer]
     evidence:
-      - { source: rest-v2-spec, ref: EndpointWorkers.idleTimeout, seen: "2026-09-28" }
+      - { source: rest-v2-spec, ref: EndpointWorkers.idleTimeout, seen: "2026-11-11" }
       - { source: skill, path: plugins/runpod/skills/runpod-migrate/reference/breaking-changes.md, note: "Explains when `idleTimeout` is rejected." }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/endpoint-configurations", note: Idle timeout is billed. }
 
