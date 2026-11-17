@@ -28,10 +28,15 @@ rules:
       then the `restApiUrl` config setting, defaulting to
       `https://api.runpod.io/v2`. Configure this base URL with the `/v2` path
       when targeting another environment. GraphQL and invocation URLs use their
-      own overrides.
+      own overrides. REST v1 is deprecated and its host no longer resolves: a
+      runpodctl older than v3.1.1, or a `https://rest.runpod.io/v1` value left
+      in either setting, fails with `network_error`. Upgrade and replace or
+      unset the v1 value instead of retrying.
     status: documented
     evidence:
       - { source: other, url: "https://github.com/runpod/runpodctl/releases/tag/v3.1.1", seen: "2026-11-17", note: "Shipped runpod/runpodctl#400: REST routing and environment variables." }
+      - { source: live-probe, ref: "runpodctl v3.1.1 with RUNPOD_API_URL=https://rest.runpod.io/v1: serverless list returned code network_error, lookup rest.runpod.io: no such host; doctor did not flag it", seen: "2026-11-17" }
+      - { source: live-probe, ref: "runpodctl v2.14.0 with default settings: serverless list, serverless update and pod list returned network_error for rest.runpod.io/v1; v3.0.1 and v3.1.0 source still PATCH /endpoints and read /endpoints on v1", seen: "2026-11-17" }
 
   - id: runpodctl.serverless-partial-scaling
     statement: >

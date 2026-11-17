@@ -24,9 +24,11 @@ Manage GPU pods, serverless endpoints, templates, volumes, and models. For serve
 
 `curl -fsSL https://cli.runpod.net | sudo bash` (Linux/macOS, and Windows via WSL) or `brew install runpod/runpodctl/runpodctl`. Manual binaries and the Windows and conda steps: the [runpodctl README](https://github.com/runpod/runpodctl#install), beside the `install.sh` they describe. API key: https://console.runpod.io/user/settings
 
-> Old builds silently lack newer flags/behaviors (e.g. `--model-reference` doesn't exist before
-> v2.4.0) and produce confusing downstream errors, and the Homebrew tap can lag well behind.
-> Before any work: **update to the latest build** (`runpodctl version`, then `runpodctl update`,
+> **Minimum: runpodctl v3.1.1.** REST v1 is deprecated and its host no longer resolves; every
+> older build still calls it for some commands (v3.0.x–v3.1.0: `serverless update`, and
+> `serverless get`/`list` on request-count endpoints; v2.x: most REST commands), which fail
+> with `network_error`. Old builds also lack newer flags. With Homebrew, run `brew update`
+> first so the local tap sees the latest release. Before any work: **update to the latest build** (`runpodctl version`, then `runpodctl update`,
 > or reinstall from the [latest release](https://github.com/runpod/runpodctl/releases)); **pin one
 > recent version for the whole task**; **never switch between an old and a new binary mid-task**
 > (a known failure); **verify once** with `runpodctl version` before you continue.
@@ -62,7 +64,7 @@ Data is **JSON on stdout** (`--output=yaml` is the only alternative; there is no
 ```
 
 - **Branch on `code`, never on `status` or the message** (GraphQL reports a missing resource as HTTP 200 + null data, so `status` is often absent).
-- **Retry with backoff only on `network_error`, `rate_limited`, `server_error`;** the API commands never retry internally. `no_credentials` = no key set (for `network-volume upload`/`download`: no S3 API keys, or no API key for the data-center lookup, which `--data-center-id` skips; the message names which); `unauthorized`/`forbidden` = a key is set but wrong or lacks access (don't re-prompt). `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`: fix the input. Any other code is fatal: surface `error` verbatim.
+- **Retry with backoff only on `network_error`, `rate_limited`, `server_error`;** the API commands never retry internally. A `network_error` that names `rest.runpod.io` is not transient: REST v1 is deprecated, so upgrade to runpodctl v3.1.1+ and unset any v1 `RUNPOD_API_URL`/`restApiUrl` ([fix](reference/output-and-errors.md#rest-v1-urls)). `no_credentials` = no key set (for `network-volume upload`/`download`: no S3 API keys, or no API key for the data-center lookup, which `--data-center-id` skips; the message names which); `unauthorized`/`forbidden` = a key is set but wrong or lacks access (don't re-prompt). `usage_error`, `cli_error`, `bad_request`, `not_found`, `conflict`: fix the input. Any other code is fatal: surface `error` verbatim.
 - **`network-volume upload`/`download` (v3.1.0+) retry on their own** (429, 5xx, dropped connections). `transfer_incomplete` = it stopped partway: **rerun the same command**, it resumes. `volume_full` = grow the volume (`network-volume update --size`), then rerun.
 - **Gate on the exit code, then parse stderr:** deprecation `warning:`/`note:` lines go to stderr on success too.
 - **Coded errors, the serverless `urls` object and GPU pricing need runpodctl ≥ v2.8.0.** Older binaries emit `{"error":"…"}` with no `code`, so gate on `code` being present, not on `runpodctl version`.
@@ -77,7 +79,7 @@ Full code table, `cli_error` vs `usage_error`, plain-text exceptions, the exact 
 - **Serverless** for request/response inference APIs and scalable workers; **pods** for interactive work, notebooks, training, debugging, or long-lived sessions. **CPU pods** for preprocessing, file movement, lightweight scripts, and non-CUDA work; **GPU pods** when CUDA, model inference, training, or GPU memory is required.
 - **"Active worker" = minimum workers, not maximum:** `--workers-min 1` (one worker always warm → no cold start; ideal for development/iteration), **not** `--workers-max 1` (that only caps the ceiling).
 - ⚠️ **A min-1 worker bills continuously, even while idle** (it defeats scale-to-zero). After dev you **must** set `--workers-min 0` (or delete the endpoint), or it quietly runs up cost.
-  - **Needs runpodctl ≥ v2.10.0.** Confirm the worker minimum with `serverless get <id>`. [Endpoint update and zero values](reference/command-reference.md#endpoint-update-and-zero-values) covers the version gate, v2 routing, partial scaling updates and inapplicable idle timeouts.
+  - **Needs runpodctl ≥ v3.1.1.** Confirm the worker minimum with `serverless get <id>`. [Endpoint update and zero values](reference/command-reference.md#endpoint-update-and-zero-values) covers v2 routing, partial scaling updates and inapplicable idle timeouts.
 - **Set the execution timeout on every endpoint create.** A v2 create without `timeout` comes back `"timeout": 0` (live-verified 2026-10-29; [why it matters](../runpod-usage/reference/gotchas.md#endpoint-timeout-comes-back-0)). runpodctl ≥ 2.14.0 has `serverless create --execution-timeout <seconds>` (as of 2.14.0 `serverless update` does not; check `--help`); read the timeout back with `serverless get`, and fix a 0 with `PATCH https://api.runpod.io/v2/serverless/<id>` `{"timeout":<ms>}`.
 - `serverless update` has **no `--gpu-id` flag**. To change an endpoint's GPU pools, `PATCH https://api.runpod.io/v2/serverless/<id>` with `{"gpu":{"pools":["ADA_24"]}}` (pool ids, from the `pool` field of `GET /v2/catalog/gpus`). Sending `pools` without `excludedTypes` clears any exclusions.
 - **CPU serverless endpoints:** `runpodctl serverless create --compute-type CPU` (on REST v2, send `cpu` instead of `gpu`). **Never** send `"computeType":"CPU"` to REST v1 `POST https://rest.runpod.io/v1/endpoints`: it silently provisions a **GPU** endpoint ([evidence](reference/command-reference.md#cpu-endpoints-and-rest-v1)).
@@ -182,7 +184,7 @@ Payload rules, the stdout/stderr split, exit codes and why `/runsync` is never u
 
 **Model cache (`--model-reference`, GPU only, runpodctl v2.4.0+):** attach a Hugging Face model by full URL with a ref (`…:main`); Runpod caches it host-side in the standard HF cache dir (`/runpod-volume/huggingface-cache/hub/`), so the worker loads it directly: no bake, no volume. Works with `--template-id` and `--hub-id`. Example, the one-cached-model limit, and how it compares to baking / network volume / the Model Repository: **[reference/model-caching.md](reference/model-caching.md)**. Worked end-to-end: golden path [20 — model-caching endpoint](../runpod/golden-paths/20-model-caching-endpoint.md).
 
-**Multi-region / HA:** `--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>` (one volume per DC; **runpodctl ≥ v2.4.0**, and the Homebrew tap can lag). Data does **not** sync between volumes: golden path [10](../runpod/golden-paths/10-multi-region-ha-serverless.md). Model-reference output on `update` and the `--clear-models` shape: [reference/command-reference.md](reference/command-reference.md#endpoint-update-and-zero-values).
+**Multi-region / HA:** `--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>` (one volume per DC; **runpodctl ≥ v2.4.0**). Data does **not** sync between volumes: golden path [10](../runpod/golden-paths/10-multi-region-ha-serverless.md). Model-reference output on `update` and the `--clear-models` shape: [reference/command-reference.md](reference/command-reference.md#endpoint-update-and-zero-values).
 
 ### Templates (alias: tpl)
 

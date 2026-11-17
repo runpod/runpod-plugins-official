@@ -97,8 +97,8 @@ Same flags and semantics as `pod logs` above, plus:
 
 `serverless update` applies only supplied worker settings. Zero worker limits are
 valid: `runpodctl serverless update <id> --workers-min 0` permits scale-to-zero,
-and `--workers-max 0` caps the endpoint at zero workers. Zero worker-limit updates
-require **v2.10.0+**. Verify the result with `serverless get <id>`.
+and `--workers-max 0` caps the endpoint at zero workers. Verify the result with
+`serverless get <id>`.
 
 `--scale-threshold 4` alone keeps the endpoint's scaling strategy, while
 `--scale-by requests` alone carries its current threshold into request-count scaling.
