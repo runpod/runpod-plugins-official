@@ -66,7 +66,7 @@ older host for an old image (a torch 2.1 / `cu118` build, say).
   `12.11` is above `12.2`. This is what you want almost always.
 - **`allowedCudaVersions`** — an exact-match array. Anything not listed is excluded, so a
   version no machine currently reports yields a **capacity error rather than a fallback**.
-  Reach for it only when you need to exclude a newer version too (the ComfyUI 12.8
+  Reach for it only when you need to exclude a newer version too (the official ComfyUI
   template does exactly this — see `skills/runpod-templates/reference/comfyui.md`).
 - The two are **mutually exclusive** when `allowedCudaVersions` is non-empty (`400` if
   both are sent). An explicit `[]` states "no constraint" and may accompany a floor.

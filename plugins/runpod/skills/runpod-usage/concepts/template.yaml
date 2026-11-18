@@ -176,6 +176,19 @@ rules:
       - { source: rest-v2-spec, ref: "CreateTemplateRequest.startSsh; CreateTemplateRequest.startJupyter", seen: "2026-09-28" }
       - { source: live-probe, ref: "POST /v2/pods with startSsh and startJupyter on runpod/base:1.0.2-ubuntu2204; both variables injected and the registered keys reached authorized_keys", seen: "2026-09-28" }
 
+  - id: template.comfyui-passwords
+    applies_to: ["field:env"]
+    statement: >
+      The official ComfyUI template starts ComfyUI on port `8188` and FileBrowser
+      on port `8080` only when `COMFYUI_PASSWORD` and `FILEBROWSER_PASSWORD` are
+      set to 12 or more characters, and requests to `8188` without the password
+      get `401`. The template's `env` holds guessable placeholder values, so set
+      both in the create body's `env` with generated values.
+    status: documented
+    evidence:
+      - { source: live-probe, ref: "POST pod from template 0o2l6v3iyp (runpod/comfyui:2.4.1-comfyuiv0.44.0-cuda13.2) with both passwords in env; GET /system_stats returned 401 without auth and with the template placeholder, 200 with Bearer <COMFYUI_PASSWORD>; FileBrowser /api/login returned 200 with FILEBROWSER_PASSWORD and 403 with the placeholder", seen: "2026-11-18" }
+      - { source: skill, path: plugins/runpod/skills/runpod-templates/reference/comfyui.md }
+
   - id: template.cuda-ignored-on-cpu
     applies_to: ["field:allowedCudaVersions"]
     statement: >

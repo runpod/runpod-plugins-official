@@ -32,10 +32,10 @@ the 2026-07-07 live verification, so feature-detect the live image and its route
 | | Variant A — from scratch | Variant B — prebuilt official image |
 | --- | --- | --- |
 | **What you deploy** | Official PyTorch template; you `git clone` + install ComfyUI | Runpod's official prebuilt ComfyUI image (auto-starts) |
-| **Steps** | create → SSH install → detached start → poll | create → poll (no SSH/install/run step) |
+| **Steps** | create → SSH install → detached start → poll | create with generated passwords → poll with the password (no SSH/install/run step) |
 | **First-boot wait** | ~30–60s of proxy 502s after you start it | ~4 min of proxy 502s (copies ComfyUI to the volume on first boot) |
-| **Control** | Full — pick versions, custom nodes, a lighter footprint | What ships (ComfyUI 0.26.2, torch 2.10.0+cu128, ComfyUI-Manager, FileBrowser, JupyterLab) |
-| **Gotchas you must handle** | PEP 668 `--break-system-packages`, `setsid` detach, bind `0.0.0.0` | Larger image (150 GB container disk); only the checkpoint needs SSH |
+| **Control** | Full — pick versions, custom nodes, a lighter footprint | What ships (ComfyUI 0.44.0, torch 2.13.0+cu132 on the CUDA 13.2 tag, ComfyUI-Manager, FileBrowser, JupyterLab) |
+| **Gotchas you must handle** | PEP 668 `--break-system-packages`, `setsid` detach, bind `0.0.0.0` | Set `COMFYUI_PASSWORD` + `FILEBROWSER_PASSWORD` at create; larger image (150 GB container disk); only the checkpoint needs SSH |
 | **Pick when** | You need something custom/lighter, or specific versions/nodes | You just want ComfyUI up reliably with the least effort — **default** |
 
 **Default recommendation: Variant B (prefer prebuilt).** Per the development loop,
@@ -57,13 +57,16 @@ Both variants must satisfy the same delivery bar:
 2. GPU pod, GPU with **≥16 GB VRAM** (RTX 4090 is ideal), **port `8188/http`
    exposed at creation**, SSH enabled, on a **network volume**, and removed
    when done.
-3. ComfyUI running, **bound to `0.0.0.0`** on port `8188`.
+3. ComfyUI served on port `8188`: Variant A binds it to `0.0.0.0`; Variant B serves it
+   through the image's auth proxy, with `COMFYUI_PASSWORD` and `FILEBROWSER_PASSWORD`
+   set at create to generated 12+ character values (never the template placeholders).
 4. Agent **polls the proxy URL until the UI answers** (expect proxy 502s during
    boot — see per-variant timings); it **escalates on any manual step** rather
    than spinning or faking progress.
 5. **Secondary:** an ungated checkpoint is available so the default graph works;
    ideally a generation is confirmed via the API.
-6. Returns `https://<pod-id>-8188.proxy.runpod.net`.
+6. Returns `https://<pod-id>-8188.proxy.runpod.net` (Variant B: plus the password and how
+   to sign in).
 
 ## Cross-cutting gotchas (shared)
 
@@ -82,14 +85,16 @@ These bite both variants (details and the fix per variant are in each file):
   502s — that's normal, keep polling. See the loop's
   [verify step](../../../runpod-usage/reference/development-loop.md#6-verify-with-a-real-request--up--ready).
 - **Bind `0.0.0.0`.** localhost/`127.0.0.1` → the proxy can't reach it → 502.
-  Variant B already passes `--listen 0.0.0.0`; Variant A must set it.
+  Variant A must set it. Variant B's image handles the bind behind its auth proxy.
 - **Network-volume DC lock.** A network volume is pinned to one data center, so
   the pod must be created in that **same DC** — which narrows GPU availability.
   Confirm your GPU exists in the volume's DC first
   ([`../../../runpod-usage/reference/storage.md`](../../../runpod-usage/reference/storage.md),
   [`gotchas.md`](../../../runpod-usage/reference/gotchas.md)).
-- **Ports at creation; URL is public + unauth.** Ports can't be added to a
-  running pod without a reset, and the proxy URL is reachable by anyone who has it
+- **Ports at creation; URL is public.** Ports can't be added to a
+  running pod without a reset, and the proxy URL is reachable by anyone who has it.
+  Variant A's ComfyUI has no login; Variant B's image requires `COMFYUI_PASSWORD` on
+  every request and answers `401` without it
   ([`../../../runpod-usage/reference/networking.md`](../../../runpod-usage/reference/networking.md)).
 
 ## Cost & cleanup (shared)

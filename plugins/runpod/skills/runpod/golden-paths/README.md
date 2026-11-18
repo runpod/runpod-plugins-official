@@ -74,7 +74,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 01 | [Ollama server on a pod + URL](01-ollama-pod/README.md) | pod / server | runpodctl pod + SSH | live-verified 2026-07-07 |
 | 02 | [ComfyUI server on a pod + URL](02-comfyui-pod/README.md) | pod / server | — | live-verified 2026-07-07 |
 | | ↳ [Variant A — from scratch](02-comfyui-pod/variant-a-from-scratch.md) | | PyTorch template + install | live-verified 2026-07-07 |
-| | ↳ [Variant B — prebuilt official image](02-comfyui-pod/variant-b-prebuilt.md) | | official template (auto-starts) | live-verified 2026-07-07 (faster) |
+| | ↳ [Variant B — prebuilt official image](02-comfyui-pod/variant-b-prebuilt.md) | | official template (auto-starts) | live-verified 2026-11-18 (faster) |
 | | ↳ [Variant C — pinned, private, driven by the API](02-comfyui-pod/variant-c-pinned-api.md) | | existing Pod + pinned install, loopback | live-verified 2026-11-09 |
 | 03 | [Whisper endpoint (audio → text)](03-whisper-endpoint/README.md) | serverless | — | live-verified 2026-07-07 |
 | | ↳ [Variant A — Runpod Hub worker](03-whisper-endpoint/variant-a-hub.md) | | runpodctl + Hub (recommended) | live-verified 2026-07-07 |

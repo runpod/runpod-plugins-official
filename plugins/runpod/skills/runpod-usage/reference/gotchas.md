@@ -36,8 +36,8 @@ symptom → cause → fix. See `docker.md` and `storage.md` for the full mechani
   different host. Default the floor to `12.8`; use `13.0` only for a CUDA-13 image.
   Full rule, the `allowedCudaVersions` variant, and how to check which versions have
   capacity: [`gpu-selection.md`](gpu-selection.md#step-3-pin-the-cuda-floor).
-- **Related trap:** picking the wrong CUDA-line *variant* of a template (the ComfyUI
-  12.8 image does not support Blackwell / CUDA 13) — see
+- **Related trap:** picking a template's CUDA-line *variant* without matching the host
+  (a `-cuda13.2` ComfyUI image starts only on a 13.2+ driver) — see
   `../../runpod-templates/reference/comfyui.md`.
 
 ## Using the `latest` tag
