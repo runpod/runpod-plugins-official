@@ -269,9 +269,9 @@ rules:
       create` has no flag for it: `--stop-after` and `--terminate-after` were
       never enforced, and runpodctl v2.12.0 removed them. To bound a pod's
       runtime, run `runpodctl pod stop $RUNPOD_POD_ID` from inside it, detached
-      so it survives the session ending, for example
-      `nohup sh -c 'sleep 2h; runpodctl pod stop $RUNPOD_POD_ID' >/dev/null 2>&1 &`.
-      A stopped pod still bills for its disk and any volume.
+      so it survives the session ending, for example `nohup sh -c 'sleep 2h;
+      runpodctl pod stop $RUNPOD_POD_ID' >/dev/null 2>&1 &`. A stopped pod still
+      bills for its disk and any volume.
     status: documented
     evidence:
       - { source: public-docs, url: "https://docs.runpod.io/pods/manage-pods", note: "Stop a Pod section, scheduled stop example." }
