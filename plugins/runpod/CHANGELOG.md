@@ -6,6 +6,19 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.2.0](https://github.com/runpod/runpod-plugins-official/compare/v2.1.1...v2.2.0) (2026-11-17)
+
+
+### Features
+
+* **runpod-cloud-migrate:** migrate to Runpod from 14 other platforms ([#127](https://github.com/runpod/runpod-plugins-official/issues/127)) ([44ab4dc](https://github.com/runpod/runpod-plugins-official/commit/44ab4dc6834ce37ee60f5cf10a3afe3b289c5f38))
+
+
+### Documentation
+
+* **runpod:** add golden path 28 for global volumes ([#129](https://github.com/runpod/runpod-plugins-official/issues/129)) ([536c091](https://github.com/runpod/runpod-plugins-official/commit/536c09167a32f3b263ad9fc67c9b77bd00801439))
+* **runpodctl:** guide endpoint updates on the v2 control plane ([#124](https://github.com/runpod/runpod-plugins-official/issues/124)) ([6289562](https://github.com/runpod/runpod-plugins-official/commit/6289562997f2b8ae95e59642c901405c8fedf728))
+
 ## [2.1.1](https://github.com/runpod/runpod-plugins-official/compare/v2.1.0...v2.1.1) (2026-11-16)
 
 
