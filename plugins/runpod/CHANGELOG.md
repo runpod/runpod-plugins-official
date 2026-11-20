@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.2.1](https://github.com/runpod/runpod-plugins-official/compare/v2.2.0...v2.2.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **concepts:** stop pointing pod.scheduled-stop at removed runpodctl flags ([#128](https://github.com/runpod/runpod-plugins-official/issues/128)) ([5726d93](https://github.com/runpod/runpod-plugins-official/commit/5726d9331d3b6432410c424604b361630ee26f5a))
+
 ## [2.2.0](https://github.com/runpod/runpod-plugins-official/compare/v2.1.1...v2.2.0) (2026-11-17)
 
 
