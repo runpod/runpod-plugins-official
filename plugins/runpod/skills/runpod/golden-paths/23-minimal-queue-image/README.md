@@ -22,6 +22,12 @@ with **no** handler.
 See [building-images.md](../../../runpod-usage/reference/building-images.md) for the concepts
 (base image, layering, image contract per target).
 
+## When to use
+You build your own image for a **queue-based serverless endpoint**: Runpod hands each job to
+your `handler(event)`. If the image is for a pod (long-lived process, SSH, no handler), use
+[22](../22-minimal-pod-image/README.md). If your worker serves HTTP itself, use
+[14](../14-load-balancing-endpoint.md).
+
 ## Prerequisites
 
 See the shared [Before you run any path](../README.md#before-you-run-any-path-shared-prerequisites)
