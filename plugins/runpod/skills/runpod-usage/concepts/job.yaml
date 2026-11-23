@@ -53,7 +53,7 @@ rules:
       `COMPLETED`, `FAILED`, `CANCELLED` or `TIMED_OUT`.
     status: documented
     evidence:
-      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming.md, note: Observed jobs report IN_PROGRESS. }
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/12-serverless-streaming/README.md, note: Observed jobs report IN_PROGRESS. }
       - { source: public-docs, url: "https://docs.runpod.io/serverless/endpoints/job-states", seen: "2026-10-06", note: Lists exactly these six states. }
 
   - id: job.run-vs-runsync

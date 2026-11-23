@@ -1,0 +1,28 @@
+{
+  "id": "17-serverless-websocket",
+  "name": "WebSocket worker on serverless",
+  "description": "Serves a persistent, two-way WebSocket from a load-balancing serverless worker, streaming frames back over the same connection.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/17-serverless-websocket/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    }
+  ],
+  "tags": ["serverless", "websocket", "load-balancing"],
+  "mcp": "partial",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

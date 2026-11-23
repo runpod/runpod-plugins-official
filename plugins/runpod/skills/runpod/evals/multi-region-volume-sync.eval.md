@@ -7,7 +7,7 @@ data center runs out of capacity. Make it serve from more regions.
 
 ## Expected behavior
 
-Follows [golden path 10](../golden-paths/10-multi-region-ha-serverless.md) (19 for three
+Follows [golden path 10](../golden-paths/10-multi-region-ha-serverless/README.md) (19 for three
 regions): one network volume per data center, attached to the same endpoint (v2
 `mounts.network`, at most one per data center, or `runpodctl serverless create
 --network-volume-ids` on v2.4.0+). States the catch up front: the volumes do **not** sync,

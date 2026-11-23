@@ -212,7 +212,7 @@ class TextGenerator:
 `readiness_endpoint` to env `HEALTH_CHECK_PATH`; secrets from `/secrets/NAME` to env vars.
 Health codes: `200` healthy, `204` initializing. Limits: 5.5 min processing per request,
 30 MB payload. Walkthrough:
-[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md). vLLM:
+[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md). vLLM:
 [runpod-vllm](../../runpod-vllm/SKILL.md).
 
 Chain to endpoints: each `ChainletBase` becomes an endpoint; the `@chains.mark_entrypoint`
@@ -262,8 +262,8 @@ predict defaults to 1200 s. Use `/run` for long jobs and cold starts. Payload li
 `/run`, 20 MB `/runsync`. Runtime env: `BT_MODEL_ID` to `RUNPOD_ENDPOINT_ID`; replica identity
 to `RUNPOD_POD_ID`; `PORT=8080` (reserved on Baseten) to `PORT` and `PORT_HEALTH` set by you.
 Patterns: [endpoint-workflows](../../runpod-usage/reference/endpoint-workflows.md),
-[webhooks](../../runpod/golden-paths/16-serverless-webhooks.md),
-[streaming](../../runpod/golden-paths/12-serverless-streaming.md).
+[webhooks](../../runpod/golden-paths/16-serverless-webhooks/README.md),
+[streaming](../../runpod/golden-paths/12-serverless-streaming/README.md).
 
 A new image tag goes on the endpoint itself (`PATCH /v2/serverless/ID` with `image`), which
 creates a release. An endpoint created through REST v2 with `templateId` resolves the template

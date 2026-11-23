@@ -20,7 +20,7 @@ Opening a golden path for this is wrong: it burns a file read on a one-liner.
 planning or calling anything, matches the task against the golden-paths index in
 `runpod/SKILL.md` and finds the row *"Serve a HuggingFace model without baking it in or
 a volume (host-cached)"* → opens
-[golden path 20](../golden-paths/20-model-caching-endpoint.md) and follows it, including
+[golden path 20](../golden-paths/20-model-caching-endpoint/README.md) and follows it, including
 its `--model-reference` syntax, its GPU-only constraint, and its cost/cleanup section.
 It does **not** re-derive a plan from the lane tables, and does not go straight to
 `create-endpoint`/`serverless create` and improvise the model wiring.

@@ -1,0 +1,20 @@
+{
+  "id": "16-serverless-webhooks",
+  "name": "Serverless webhooks",
+  "description": "Submits an async job with a webhook URL so Runpod posts the finished result to you instead of you polling for it.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/16-serverless-webhooks/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Command reference",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/reference/command-reference.md"
+    }
+  ],
+  "tags": ["serverless", "webhooks"],
+  "mcp": "partial",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

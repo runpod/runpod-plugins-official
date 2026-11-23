@@ -13,8 +13,8 @@ index README and the files a path ships as a project template) must have:
   "live-verified DATE", "spec-checked DATE" or "legacy (last live run DATE)".
 - a row in golden-paths/README.md whose Status cell starts with the same label.
 
-Each entry doc (NN-name.md, or NN-name/README.md for a multi-variant path) must also
-have a `## When to use` heading, the README template's "should I be here" section.
+Each entry doc (NN-name/README.md) must also have a `## When to use` heading, the
+README template's "should I be here" section.
 WHEN_TO_USE_EQUIVALENT lists the entry docs whose differently named heading does that job.
 
 Run from the repo root: python3 hooks/check_golden_paths.py [--self-test]

@@ -1,0 +1,32 @@
+{
+  "id": "10-multi-region-ha-serverless",
+  "name": "Multi-region serverless with synced volumes",
+  "description": "Attaches network volumes from several data centers to one serverless endpoint and keeps their data in sync, so workers can scale wherever GPUs are free.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/10-multi-region-ha-serverless/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    },
+    {
+      "name": "AWS",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/reference/aws.md"
+    }
+  ],
+  "tags": ["serverless", "high-availability", "multi-region", "network-volume"],
+  "mcp": "partial",
+  "createdAt": "2026-07-10T21:12:57Z",
+  "updatedAt": "2026-11-23T17:17:38Z"
+}

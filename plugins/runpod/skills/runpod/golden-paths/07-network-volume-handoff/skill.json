@@ -1,0 +1,32 @@
+{
+  "id": "07-network-volume-handoff",
+  "name": "Network volume handoff from pod to serverless",
+  "description": "Writes data on a pod to a network volume, then reads the same data from a serverless endpoint attached to that volume.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/07-network-volume-handoff/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Flash",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-flash/SKILL.md"
+    },
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "Storage",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/storage.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    }
+  ],
+  "tags": ["network-volume", "pod", "serverless"],
+  "mcp": "partial",
+  "createdAt": "2026-07-08T18:48:22Z",
+  "updatedAt": "2026-11-05T18:30:36Z"
+}

@@ -1,0 +1,28 @@
+{
+  "id": "23-minimal-queue-image",
+  "name": "Minimal serverless queue image",
+  "description": "Builds the smallest queue-based serverless worker, a Python handler wrapped in runpod.serverless.start, deploys it and calls it with /runsync.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/23-minimal-queue-image/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Building images",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/building-images.md"
+    },
+    {
+      "name": "Docker",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/reference/docker.md"
+    }
+  ],
+  "tags": ["docker", "custom-image", "serverless"],
+  "mcp": "partial",
+  "createdAt": "2026-07-16T18:38:54Z",
+  "updatedAt": "2026-11-23T17:17:38Z"
+}

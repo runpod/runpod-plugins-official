@@ -5,6 +5,8 @@ The backend mirrors each `golden-paths/<folder>/skill.json` into its database tw
 day and skips any file it rejects, so a bad file silently keeps the Hub on the last good
 copy. This check fails the build on what the sync would reject:
 
+- a golden path is a loose `NN-name.md` file, or a folder without a `skill.json`;
+
 - the file does not match `golden-paths/skill.schema.json`;
 - `id` is not the folder name (the backend keys rows on it);
 - more than one variant is marked `default` (JSON Schema cannot express this);
@@ -77,6 +79,17 @@ def problems(data: object, folder: str, check: Validator) -> list[str]:
     return found
 
 
+def layout_problems(names: list[str], has_skill_json: set[str]) -> list[str]:
+    """Every NN-name entry in golden-paths/ must be a folder that carries a skill.json."""
+    found = []
+    for name in names:
+        if name.endswith(".md"):
+            found.append(f"{name}: move it to {name[:-3]}/README.md and add a skill.json")
+        elif name not in has_skill_json:
+            found.append(f"{name}/: no skill.json")
+    return found
+
+
 def self_test() -> None:
     check = validator()
     folder = "02-comfyui-pod"
@@ -111,6 +124,10 @@ def self_test() -> None:
     fails({"name": "a" * 192}, "is too long")
     fails({"skill": base + "MISSING.md"}, "does not exist")
     fails({"variants": [variant, {**variant, "id": "variant-a"}]}, "only one may be default")
+
+    assert layout_problems(["01-a", "02-b"], {"01-a", "02-b"}) == []
+    assert any("no skill.json" in p for p in layout_problems(["01-a"], set()))
+    assert any("README.md" in p for p in layout_problems(["01-a.md"], set()))
     print("skill.json self-test OK")
 
 
@@ -121,7 +138,11 @@ def main() -> None:
 
     check = validator()
     files = sorted(GOLDEN_PATHS.glob("*/skill.json"))
-    failed = False
+    entries = sorted(p.name for p in GOLDEN_PATHS.glob("[0-9][0-9]-*"))
+    layout = layout_problems(entries, {p.parent.name for p in files})
+    for problem in layout:
+        print(f"{GOLDEN_PATHS.relative_to(ROOT)}/{problem}")
+    failed = bool(layout)
     for path in files:
         rel = path.relative_to(ROOT)
         try:

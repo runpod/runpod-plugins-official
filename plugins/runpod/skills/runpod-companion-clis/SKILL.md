@@ -37,7 +37,7 @@ These CLIs are usually one step inside a larger job. For the whole job the verif
 in [runpod/golden-paths/README.md](../runpod/golden-paths/README.md) — baking vs mounting a
 model ([25](../runpod/golden-paths/25-bake-vs-mount/README.md)), building a minimal image
 ([22](../runpod/golden-paths/22-minimal-pod-image/README.md)), or moving data to a network
-volume ([07](../runpod/golden-paths/07-network-volume-handoff.md)).
+volume ([07](../runpod/golden-paths/07-network-volume-handoff/README.md)).
 
 These are third-party CLIs on their own release trains, so **`<cli> --help` is authoritative
 for flags and subcommands** — the references here cover the Runpod-specific usage and the

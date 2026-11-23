@@ -7,7 +7,7 @@ server when each job finishes?
 
 ## Expected behavior
 
-Follows [golden path 16](../golden-paths/16-serverless-webhooks.md): pass `webhook` as a
+Follows [golden path 16](../golden-paths/16-serverless-webhooks/README.md): pass `webhook` as a
 top-level sibling of `input` in the `/run` body (inside `input` it only reaches the
 handler). The receiver must be public HTTPS and return `2xx`; a non-2xx or timeout is
 retried up to 2 more times, so the receiver dedupes on the job `id`. The delivered body is

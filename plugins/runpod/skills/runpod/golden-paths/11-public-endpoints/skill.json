@@ -1,0 +1,20 @@
+{
+  "id": "11-public-endpoints",
+  "name": "Call a Runpod Public Endpoint",
+  "description": "Calls a hosted, pre-deployed model with only an API key. No image, endpoint or workers to manage, and nothing to clean up.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/11-public-endpoints/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    },
+    {
+      "name": "Development loop",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/development-loop.md"
+    }
+  ],
+  "tags": ["public-endpoints", "serverless", "inference"],
+  "mcp": "full",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

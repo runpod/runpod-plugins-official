@@ -36,7 +36,7 @@ Sources: Replicate docs ([HTTP API](https://replicate.com/docs/reference/http), 
 | Private model, deployment | Serverless queue-based endpoint | `min_instances` and `max_instances` map to active and max workers. |
 | Cog image on `r8.im` | Worker image in your registry, or cog-worker wrapper | cog-worker keeps a FastAPI layer in the request path and can add a delay. |
 | Cog model without a Dockerfile | `runpod.App` + `@app.queue`, deployed with `rp flash deploy` | See [runpod-flash](../../runpod-flash/SKILL.md). |
-| Training into a destination model | Pod or `@app.task` writing to a network volume, then an endpoint on the same volume | Golden paths [04](../../runpod/golden-paths/04-finetune-pod.md) and [08](../../runpod/golden-paths/08-finetune-to-serverless.md). |
+| Training into a destination model | Pod or `@app.task` writing to a network volume, then an endpoint on the same volume | Golden paths [04](../../runpod/golden-paths/04-finetune-pod/README.md) and [08](../../runpod/golden-paths/08-finetune-to-serverless/README.md). |
 | Hardware SKU | GPU pool | See the GPU map below. |
 | Output files on `replicate.delivery` (1 hour) | Own S3-compatible bucket via `rp_upload`, or base64 | Public Endpoint output URLs last 7 days. |
 | `cog.Secret` input | Endpoint env var set to `{{ RUNPOD_SECRET_name }}` | See [secrets](../../runpod-usage/reference/secrets.md). |
@@ -176,7 +176,7 @@ Rules:
 - `rp_upload.upload_image(job_id, path)` reads `BUCKET_ENDPOINT_URL` (must include the bucket name), `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` from the worker environment.
 - Payload limits: 10 MB on `/run`, 20 MB on `/runsync`. Use base64 for small files only.
 - A `Path` input arrives as a string (URL). Download it in the handler.
-- `Iterator[str]` + `yield` becomes a generator handler. Add `"return_aggregate_stream": True` to `runpod.serverless.start` to expose the collected output on `/status` and `/runsync`. See golden path [12](../../runpod/golden-paths/12-serverless-streaming.md).
+- `Iterator[str]` + `yield` becomes a generator handler. Add `"return_aggregate_stream": True` to `runpod.serverless.start` to expose the collected output on `/status` and `/runsync`. See golden path [12](../../runpod/golden-paths/12-serverless-streaming/README.md).
 - With `@app.queue`, the worker calls the function with `input` keys as keyword arguments. Keys must match parameter names, and `input` must be non-empty.
 - Images are `linux/amd64`: `docker build --platform linux/amd64`. Use a version tag or digest, not `:latest`.
 - Local test: `python handler.py --test_input '{"input": {"prompt": "hi"}}'`.
@@ -225,7 +225,7 @@ Status map:
 | `canceled` (user) | `CANCELLED` |
 | `canceled` (deadline), `aborted` | `TIMED_OUT` |
 
-Result retention on Runpod: 30 minutes after an async job completes, 1 minute after a sync job. Replicate keeps API prediction data for 1 hour. Webhooks: golden path [16](../../runpod/golden-paths/16-serverless-webhooks.md). Public Endpoint calls: golden path [11](../../runpod/golden-paths/11-public-endpoints.md).
+Result retention on Runpod: 30 minutes after an async job completes, 1 minute after a sync job. Replicate keeps API prediction data for 1 hour. Webhooks: golden path [16](../../runpod/golden-paths/16-serverless-webhooks/README.md). Public Endpoint calls: golden path [11](../../runpod/golden-paths/11-public-endpoints/README.md).
 
 ## Gaps: stop and ask the user
 

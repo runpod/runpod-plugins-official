@@ -26,7 +26,7 @@ for the concept; this is the runnable proof.
 You build your own image for a **pod**: a long-lived process (your `CMD`) with no handler,
 reached over SSH or an exposed port. If the image is for a queue-based serverless endpoint,
 use [23](../23-minimal-queue-image/README.md). For a load-balanced endpoint, use
-[14](../14-load-balancing-endpoint.md).
+[14](../14-load-balancing-endpoint/README.md).
 
 ## Prerequisites
 

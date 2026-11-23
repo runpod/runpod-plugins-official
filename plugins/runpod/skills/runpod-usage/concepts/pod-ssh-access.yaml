@@ -52,7 +52,7 @@ rules:
     evidence:
       - { source: rest-v2-spec, ref: PodSsh, seen: "2026-09-28" }
       - { source: public-docs, url: "https://docs.runpod.io/pods/configuration/use-ssh" }
-      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/06-dev-pod.md }
+      - { source: skill, path: plugins/runpod/skills/runpod/golden-paths/06-dev-pod/README.md }
 
   - id: pod-ssh-access.web-terminal-is-session-based
     statement: >

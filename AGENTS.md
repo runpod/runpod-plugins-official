@@ -151,9 +151,11 @@ editing the repo. Each is its own checkable rule.
      Note that **nothing executes `evals/*.eval.md`** — there is no runner in this repo, so
      they are review scenarios and hand-check fixtures, not a gate. Do not describe them as
      enforcing anything.
-   - Single approach → one file `NN-name.md`. Multiple variants → a folder
-     `NN-name/` with a `README.md` (goal, "which variant?", shared schema/gotchas/cost)
-     plus one `variant-*.md` per approach.
+   - Every path is a folder `NN-name/` with a `README.md` and a `skill.json` (see
+     `golden-paths/skill.schema.json`; `hooks/check_skill_json.py` fails a path without one).
+     Single approach → the walkthrough lives in the `README.md`. Multiple variants → the
+     `README.md` holds the goal, "which variant?" and shared schema/gotchas/cost, plus one
+     `variant-*.md` per approach.
    - Every golden-path doc follows the section template listed under *Golden paths & evals*.
    - Every golden-path doc starts with frontmatter declaring `lanes` (from `runpod-mcp`, `runpodctl`,
      `flash`, `ssh`, `docker`, `hf`, `aws`, `rest`, `console`), `mcp` (`full`, `partial` or `none`: can

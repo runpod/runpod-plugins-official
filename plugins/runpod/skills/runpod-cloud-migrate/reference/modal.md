@@ -236,7 +236,7 @@ Load models at module level so they load once per worker.
 
 Load-balancing path: keep the FastAPI/Flask app, add `GET /ping` returning `200` (or `204`
 while loading), listen on `0.0.0.0:$PORT`, set `PORT` and `PORT_HEALTH` to the same value.
-Worked example: [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
+Worked example: [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md).
 
 Rules that change code:
 

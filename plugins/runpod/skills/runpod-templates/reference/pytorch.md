@@ -8,8 +8,8 @@ The general-purpose GPU base: torch + CUDA + SSH + (optional) JupyterLab. This i
 template to deploy for a dev box, a fine-tune, or as the base under anything you install
 yourself — golden path 02 variant A builds ComfyUI on it, path 04 fine-tunes on it.
 
-**Deploy walkthroughs:** [golden path 06 — dev pod](../../runpod/golden-paths/06-dev-pod.md),
-[04 — fine-tune](../../runpod/golden-paths/04-finetune-pod.md). Building your own image
+**Deploy walkthroughs:** [golden path 06 — dev pod](../../runpod/golden-paths/06-dev-pod/README.md),
+[04 — fine-tune](../../runpod/golden-paths/04-finetune-pod/README.md). Building your own image
 `FROM runpod/pytorch:<tag>` →
 [`runpod-usage/reference/building-images.md`](../../runpod-usage/reference/building-images.md).
 

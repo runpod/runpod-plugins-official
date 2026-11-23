@@ -1,0 +1,24 @@
+{
+  "id": "14-load-balancing-endpoint",
+  "name": "Load-balancing serverless endpoint",
+  "description": "Deploys a custom HTTP worker on a load-balancing endpoint, so requests go straight to the worker's own server on custom paths.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/14-load-balancing-endpoint/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Gotchas",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/gotchas.md"
+    }
+  ],
+  "tags": ["serverless", "load-balancing", "http", "custom-image"],
+  "mcp": "partial",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

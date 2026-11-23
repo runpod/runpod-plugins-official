@@ -1,0 +1,32 @@
+{
+  "id": "22-minimal-pod-image",
+  "name": "Minimal pod image that keeps SSH working",
+  "description": "Builds a minimal SSH-enabled pod image from a plain base, starts the SSH service the image promises, and checks SSH and the HTTP proxy on a live pod.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/22-minimal-pod-image/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Building images",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/building-images.md"
+    },
+    {
+      "name": "Docker",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/reference/docker.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    }
+  ],
+  "tags": ["docker", "custom-image", "pod", "ssh"],
+  "mcp": "partial",
+  "createdAt": "2026-07-16T18:38:54Z",
+  "updatedAt": "2026-11-23T17:17:38Z"
+}

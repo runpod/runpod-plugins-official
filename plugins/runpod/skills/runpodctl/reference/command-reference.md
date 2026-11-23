@@ -123,7 +123,7 @@ To change an existing endpoint's GPU pool, send
 
 **Multi-DC** (`--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>`) needs
 **runpodctl ≥ v2.4.0**; data does not sync between volumes automatically — golden path
-[10](../../runpod/golden-paths/10-multi-region-ha-serverless.md).
+[10](../../runpod/golden-paths/10-multi-region-ha-serverless/README.md).
 
 `serverless update --model-reference` includes the server-resolved `modelReferences` in
 JSON/YAML output; `--clear-models` returns `modelReferences: []`. Other updates do not fetch

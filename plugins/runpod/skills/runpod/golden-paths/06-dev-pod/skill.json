@@ -1,0 +1,20 @@
+{
+  "id": "06-dev-pod",
+  "name": "Interactive dev pod over SSH",
+  "description": "Provisions a PyTorch pod with a network volume at /workspace and returns an SSH connection and config block for VS Code or Cursor Remote-SSH.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/06-dev-pod/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    }
+  ],
+  "tags": ["pod", "ssh", "development", "network-volume"],
+  "mcp": "partial",
+  "createdAt": "2026-07-07T21:06:57Z",
+  "updatedAt": "2026-11-05T18:30:36Z"
+}

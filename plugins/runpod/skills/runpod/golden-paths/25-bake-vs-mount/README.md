@@ -19,13 +19,13 @@ The single most important storage decision when building for Runpod: **what ride
 for many small files).** This path proves the distinction is real and physical, not a
 convention. It's the runnable companion to
 [building-images.md → Bake in vs mount at runtime](../../../runpod-usage/reference/building-images.md)
-and [golden path 21 (storage tiers)](../21-storage-tiers.md).
+and [golden path 21 (storage tiers)](../21-storage-tiers/README.md).
 
 ## When to use
 You must decide where a file lives: baked into the image (local disk) or on a mounted
 network volume. This path shows the two on different filesystems inside one pod. If you
 already chose a network volume and must pick its tier (standard or high-performance), use
-[21](../21-storage-tiers.md).
+[21](../21-storage-tiers/README.md).
 
 ## Prerequisites
 
@@ -83,7 +83,7 @@ runpodctl pod create --compute-type cpu --image <namespace>/rp-gp25-bake:v1 \
 ```
 
 For a **high-performance** volume, provision it via the Console / v2 REST (per
-[GP21](../21-storage-tiers.md)) and attach with the same `--network-volume-id` — the mount
+[GP21](../21-storage-tiers/README.md)) and attach with the same `--network-volume-id` — the mount
 mechanics below are identical; only the underlying tier differs.
 
 ## Inspect the two side by side
@@ -140,4 +140,4 @@ runpodctl network-volume delete <vol-id>   # the volume bills while it exists �
   at runtime lives there, not in the image.
 - Rule of thumb confirmed: bake packages/many-small-static-files (local, fast); mount
   large/persistent artifacts (weights, datasets). Tier choice (standard vs high-performance)
-  is orthogonal — see [GP21](../21-storage-tiers.md).
+  is orthogonal — see [GP21](../21-storage-tiers/README.md).

@@ -179,7 +179,7 @@ Read the invoke URL from `requestUrls.base` in the response. Set `ports`, `PORT`
 `PORT_HEALTH` to the same port. The health path returns `200` when ready and `204` while
 initializing. Limits: 5.5 min processing per request, 30 MB payload, and a request waits up to
 2 minutes for a worker, then fails (no queue). See
-[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
+[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md).
 
 ### Same Deployment to a Pod
 

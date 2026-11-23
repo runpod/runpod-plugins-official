@@ -182,9 +182,9 @@ Payload rules, the stdout/stderr split, exit codes and why `/runsync` is never u
 
 **CPU serverless endpoints** (rule in Decision Rules): `runpodctl serverless create --compute-type CPU` (optionally `--instance-id`, e.g. `cpu3g-4-16`). The 2026-07-14 evidence against REST v1, and why the invoke API is unaffected: [reference/command-reference.md](reference/command-reference.md#cpu-endpoints-and-rest-v1).
 
-**Model cache (`--model-reference`, GPU only, runpodctl v2.4.0+):** attach a Hugging Face model by full URL with a ref (`…:main`); Runpod caches it host-side in the standard HF cache dir (`/runpod-volume/huggingface-cache/hub/`), so the worker loads it directly: no bake, no volume. Works with `--template-id` and `--hub-id`. Example, the one-cached-model limit, and how it compares to baking / network volume / the Model Repository: **[reference/model-caching.md](reference/model-caching.md)**. Worked end-to-end: golden path [20 — model-caching endpoint](../runpod/golden-paths/20-model-caching-endpoint.md).
+**Model cache (`--model-reference`, GPU only, runpodctl v2.4.0+):** attach a Hugging Face model by full URL with a ref (`…:main`); Runpod caches it host-side in the standard HF cache dir (`/runpod-volume/huggingface-cache/hub/`), so the worker loads it directly: no bake, no volume. Works with `--template-id` and `--hub-id`. Example, the one-cached-model limit, and how it compares to baking / network volume / the Model Repository: **[reference/model-caching.md](reference/model-caching.md)**. Worked end-to-end: golden path [20 — model-caching endpoint](../runpod/golden-paths/20-model-caching-endpoint/README.md).
 
-**Multi-region / HA:** `--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>` (one volume per DC; **runpodctl ≥ v2.4.0**). Data does **not** sync between volumes: golden path [10](../runpod/golden-paths/10-multi-region-ha-serverless.md). Model-reference output on `update` and the `--clear-models` shape: [reference/command-reference.md](reference/command-reference.md#endpoint-update-and-zero-values).
+**Multi-region / HA:** `--network-volume-ids <v1>,<v2> --data-center-ids <dc1>,<dc2>` (one volume per DC; **runpodctl ≥ v2.4.0**). Data does **not** sync between volumes: golden path [10](../runpod/golden-paths/10-multi-region-ha-serverless/README.md). Model-reference output on `update` and the `--clear-models` shape: [reference/command-reference.md](reference/command-reference.md#endpoint-update-and-zero-values).
 
 ### Templates (alias: tpl)
 
@@ -209,7 +209,7 @@ Exact flags: `runpodctl network-volume <action> --help`.
 
 **Upload/download** use the volume's S3 API, so they need **S3 API keys** (`RUNPOD_S3_ACCESS_KEY` / `RUNPOD_S3_SECRET_KEY`), separate from the API key, and a [data center with the S3 API](https://docs.runpod.io/storage/s3-api). On `transfer_incomplete`, rerun the same command; resume rules, `--force` and partial files: [command-reference File Transfer](reference/command-reference.md#file-transfer).
 
-> **No storage-tier flag.** `create` provisions the data center's **default** tier; there's no `--type`. For a **High-Performance** volume use the console (a ⚡ data center's toggle), a raw **v2 REST** call (`POST https://v2-rest.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`), or the MCP `create-network-volume` tool's `volumeType` (`STANDARD` | `HIGH_PERFORMANCE`). Tier is immutable after creation. Launch details: golden path [21](../runpod/golden-paths/21-storage-tiers.md).
+> **No storage-tier flag.** `create` provisions the data center's **default** tier; there's no `--type`. For a **High-Performance** volume use the console (a ⚡ data center's toggle), a raw **v2 REST** call (`POST https://v2-rest.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`), or the MCP `create-network-volume` tool's `volumeType` (`STANDARD` | `HIGH_PERFORMANCE`). Tier is immutable after creation. Launch details: golden path [21](../runpod/golden-paths/21-storage-tiers/README.md).
 
 ### Models (Model Repository)
 

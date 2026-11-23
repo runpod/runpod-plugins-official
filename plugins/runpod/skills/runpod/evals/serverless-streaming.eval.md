@@ -7,7 +7,7 @@ words as they arrive. What do I change and how do I read them?
 
 ## Expected behavior
 
-Follows [golden path 12](../golden-paths/12-serverless-streaming.md): the handler must
+Follows [golden path 12](../golden-paths/12-serverless-streaming/README.md): the handler must
 `yield` (a generator), not `return`; the client submits with `/run`, then polls
 `/stream/<job-id>`, draining the chunks buffered since the last call until `status` is
 `COMPLETED` or `FAILED`, with a bounded loop and a sleep. Explains that without

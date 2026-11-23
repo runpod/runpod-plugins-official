@@ -8,7 +8,7 @@ in one place and any data center can use them.
 
 ## Expected behavior
 
-Follows [golden path 28](../golden-paths/28-global-volume.md): states that a global volume
+Follows [golden path 28](../golden-paths/28-global-volume/README.md): states that a global volume
 bills for stored data plus per-request fees before creating it, creates it with only a `name`
 (`create-global-volume` or `POST /v2/global-volumes`) and keeps the returned id. Writes the
 files from a short-lived Pod that mounts the volume under `mounts.global` with an explicit

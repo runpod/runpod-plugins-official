@@ -4,7 +4,7 @@ The serverless specialization of the development loop (`development-loop.md`) â€
 a **queue-based request/response API that scales to zero** (transcription, inference).
 Unlike a pod there's no SSH, no exposed ports, no proxy: you deploy a worker and invoke it
 over the Runpod job API. For direct HTTP applications, use the separate
-[load-balancing contract in GP14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
+[load-balancing contract in GP14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md).
 Proven on the Whisper golden path (both variants).
 
 ## 1. Pick the source (in order of preference)

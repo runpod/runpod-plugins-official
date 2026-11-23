@@ -1,0 +1,24 @@
+{
+  "id": "05-model-to-endpoint-pipeline",
+  "name": "Custom model to a serverless endpoint",
+  "description": "Bakes a Hugging Face model into a handler image, pushes it, deploys a serverless endpoint from it, and verifies it with a real request.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/05-model-to-endpoint-pipeline/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    }
+  ],
+  "tags": ["serverless", "docker", "huggingface", "custom-image"],
+  "mcp": "partial",
+  "createdAt": "2026-07-07T21:06:57Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

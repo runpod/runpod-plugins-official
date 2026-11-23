@@ -68,7 +68,7 @@ about what yours will do.
 Two constraints push large models toward a volume: cache capacity varies by host, so a
 large model's residency is a coin flip rather than a guarantee; and a network volume is
 **pinned to one data center**, so multi-region means one pre-loaded volume per DC
-(golden path [10](../../runpod/golden-paths/10-multi-region-ha-serverless.md)).
+(golden path [10](../../runpod/golden-paths/10-multi-region-ha-serverless/README.md)).
 
 To measure it, watch the worker logs on a cold start in a fresh region (`runpodctl
 serverless logs <endpoint-id>`, or the MCP `stream-worker-logs`). Weight-download time in

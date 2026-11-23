@@ -11,7 +11,7 @@ their run records are the real ones, and every test resource was torn down after
 path's status and date are in the [table](#table-of-contents) and in the header of the path
 itself ([legend](#status-legend)): 04's training phase was verified as the train phase of
 golden path 08, and 21 documents **provisioning (launch) only** (spec-checked 2026-07-29). The
-load-balanced image contract is covered by [path 14](14-load-balancing-endpoint.md).
+load-balanced image contract is covered by [path 14](14-load-balancing-endpoint/README.md).
 
 ## Before you run any path (shared prerequisites)
 
@@ -43,9 +43,11 @@ Every path assumes this baseline — set it up once, then follow the path:
 
 ## Layout
 
-- A path with **one approach** is a single file: `NN-name.md`.
-- A path with **multiple approaches** is a folder: `NN-name/` with a `README.md`
-  (goal, "which variant?", shared schema/gotchas/cost) plus one file per variant.
+Every path is a folder, `NN-name/`, holding a `README.md` and a `skill.json`.
+
+- A path with **one approach** keeps the whole walkthrough in its `README.md`.
+- A path with **multiple approaches** has a `README.md` (goal, "which variant?", shared
+  schema/gotchas/cost) plus one `variant-*.md` per approach.
 
 Each doc starts with frontmatter that says which tools it drives, whether an agent with only
 the Runpod MCP tools can finish it, and which concepts (`../../runpod-usage/concepts/`) it
@@ -59,9 +61,10 @@ concepts: [pod, network-volume, pod-ssh-access]
 ---
 ```
 
-A folder path can also carry a `skill.json`, which the Runpod backend syncs into the Hub. It
-follows [`skill.schema.json`](skill.schema.json); `hooks/check_skill_json.py` checks it in CI,
-including that `id` is the folder name and every URL points at a file in this repo.
+The `skill.json` is what the Runpod backend syncs into the Hub. It follows
+[`skill.schema.json`](skill.schema.json); `hooks/check_skill_json.py` checks it in CI, including
+that every path has one, that `id` is the folder name and that every URL points at a file in
+this repo.
 
 Each doc follows the same template: **Goal · Status · Lane(s) → When to use →
 Prerequisites → Walkthrough (real commands) → Verify it works (the actual test +
@@ -79,35 +82,35 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 | 03 | [Whisper endpoint (audio → text)](03-whisper-endpoint/README.md) | serverless | — | live-verified 2026-07-07 |
 | | ↳ [Variant A — Runpod Hub worker](03-whisper-endpoint/variant-a-hub.md) | | runpodctl + Hub (recommended) | live-verified 2026-07-07 |
 | | ↳ [Variant B — from scratch with the Runpod SDK](03-whisper-endpoint/variant-b-flash.md) | | Runpod SDK `@app.queue` (`rp flash`) | live-verified 2026-10-16 |
-| 04 | [LoRA fine-tune (training run) on a pod](04-finetune-pod.md) | pod / batch job | runpodctl pod + volume | live-verified 2026-07-10 (training phase, via 08) |
-| 05 | [Custom model → serverless endpoint](05-model-to-endpoint-pipeline.md) | cross-lane pipeline | hf → docker → runpodctl | live-verified 2026-07-10 |
-| 06 | [Interactive dev pod (SSH / VS Code)](06-dev-pod.md) | pod / interactive | runpodctl pod + volume | live-verified 2026-07-10 |
-| 07 | [Network-volume handoff (pod → volume → serverless)](07-network-volume-handoff.md) | pod + serverless | runpodctl + Runpod SDK (`rp flash`) | live-verified 2026-10-16 (SDK read step; pod step 2026-07-10; volume write + read-back in `rp flash dev --once` on `runpod` 2.1.0, 2026-11-04) |
-| 08 | [Fine-tune → serve (LoRA on a pod → serverless)](08-finetune-to-serverless.md) | train → serve loop | runpodctl + peft/axolotl + Runpod SDK (`rp flash`) | live-verified 2026-10-17 (SDK serve step; pod training 2026-07-10) |
+| 04 | [LoRA fine-tune (training run) on a pod](04-finetune-pod/README.md) | pod / batch job | runpodctl pod + volume | live-verified 2026-07-10 (training phase, via 08) |
+| 05 | [Custom model → serverless endpoint](05-model-to-endpoint-pipeline/README.md) | cross-lane pipeline | hf → docker → runpodctl | live-verified 2026-07-10 |
+| 06 | [Interactive dev pod (SSH / VS Code)](06-dev-pod/README.md) | pod / interactive | runpodctl pod + volume | live-verified 2026-07-10 |
+| 07 | [Network-volume handoff (pod → volume → serverless)](07-network-volume-handoff/README.md) | pod + serverless | runpodctl + Runpod SDK (`rp flash`) | live-verified 2026-10-16 (SDK read step; pod step 2026-07-10; volume write + read-back in `rp flash dev --once` on `runpod` 2.1.0, 2026-11-04) |
+| 08 | [Fine-tune → serve (LoRA on a pod → serverless)](08-finetune-to-serverless/README.md) | train → serve loop | runpodctl + peft/axolotl + Runpod SDK (`rp flash`) | live-verified 2026-10-17 (SDK serve step; pod training 2026-07-10) |
 | 09 | [Custom serverless dev loop (iterate in a pod → dual-mode image → serverless)](09-custom-serverless-dev-loop/README.md) | custom image / escape hatch | runpodctl + docker (dual-mode `MODE_TO_RUN`) | live-verified 2026-07-10 |
-| 10 | [Multi-region HA serverless (multi-volume + data sync)](10-multi-region-ha-serverless.md) | serverless / availability | runpodctl ≥v2.4.0 (`--network-volume-ids`) + S3 API (aws) | live-verified 2026-07-10 |
-| 11 | [Public Endpoints (call a ready hosted model)](11-public-endpoints.md) | serverless / hosted | Runpod Public Endpoint API (native + OpenAI-compatible) | live-verified 2026-07-13 |
-| 12 | [Serverless streaming (`/stream`)](12-serverless-streaming.md) | serverless | generator handler + `/stream` | live-verified 2026-07-13 |
-| 13 | [Autoscaling tuning](13-autoscaling-tuning.md) | serverless / scaling | runpodctl + scaler config (queue-delay / request-count) | live-verified 2026-07-13 |
-| 14 | [Load-balancing endpoint (non-flash)](14-load-balancing-endpoint.md) | serverless / LB | v2 `"type":"LOAD_BALANCER"` (or GraphQL `saveEndpoint type:"LB"`) + HTTP-server worker | live-verified 2026-10-29 (v2 route; GraphQL run 2026-07-13) |
-| 15 | [Monitor & debug / observability](15-monitor-and-debug.md) | serverless / ops | `runpodctl serverless health`/`status`/`logs` (or `/health` + `/status` + v2 REST / MCP worker logs) + config-change events | live-verified 2026-07-13 |
-| 16 | [Serverless webhooks](16-serverless-webhooks.md) | serverless | `webhook` field on `/run` (push vs poll) | live-verified 2026-07-13 |
-| 17 | [Serverless WebSocket worker](17-serverless-websocket.md) | serverless / LB | `worker-lb-websocket` + `wss://<ep>.api.runpod.ai/ws` | legacy (last live run 2026-07-13) |
-| 18 | [Concurrent handler (per-worker concurrency)](18-concurrent-handler.md) | serverless / throughput | async `concurrency_modifier` | live-verified 2026-07-13 |
-| 19 | [3-region same-file endpoint](19-three-region-same-file.md) | serverless / availability | 3 volumes + S3 sync + GraphQL multi-volume attach | legacy (last live run 2026-07-13) |
-| 20 | [Host-cached HF model endpoint (`--model-reference`)](20-model-caching-endpoint.md) | serverless / model delivery | runpodctl ≥v2.4.0 (`--model-reference`) + vLLM worker | live-verified 2026-07-15 |
-| 21 | [Network volume storage tiers (standard vs high-performance)](21-storage-tiers.md) | storage / provisioning | runpodctl (standard) + REST v2 / console (high-perf) | spec-checked 2026-07-29 (launch only) |
+| 10 | [Multi-region HA serverless (multi-volume + data sync)](10-multi-region-ha-serverless/README.md) | serverless / availability | runpodctl ≥v2.4.0 (`--network-volume-ids`) + S3 API (aws) | live-verified 2026-07-10 |
+| 11 | [Public Endpoints (call a ready hosted model)](11-public-endpoints/README.md) | serverless / hosted | Runpod Public Endpoint API (native + OpenAI-compatible) | live-verified 2026-07-13 |
+| 12 | [Serverless streaming (`/stream`)](12-serverless-streaming/README.md) | serverless | generator handler + `/stream` | live-verified 2026-07-13 |
+| 13 | [Autoscaling tuning](13-autoscaling-tuning/README.md) | serverless / scaling | runpodctl + scaler config (queue-delay / request-count) | live-verified 2026-07-13 |
+| 14 | [Load-balancing endpoint (non-flash)](14-load-balancing-endpoint/README.md) | serverless / LB | v2 `"type":"LOAD_BALANCER"` (or GraphQL `saveEndpoint type:"LB"`) + HTTP-server worker | live-verified 2026-10-29 (v2 route; GraphQL run 2026-07-13) |
+| 15 | [Monitor & debug / observability](15-monitor-and-debug/README.md) | serverless / ops | `runpodctl serverless health`/`status`/`logs` (or `/health` + `/status` + v2 REST / MCP worker logs) + config-change events | live-verified 2026-07-13 |
+| 16 | [Serverless webhooks](16-serverless-webhooks/README.md) | serverless | `webhook` field on `/run` (push vs poll) | live-verified 2026-07-13 |
+| 17 | [Serverless WebSocket worker](17-serverless-websocket/README.md) | serverless / LB | `worker-lb-websocket` + `wss://<ep>.api.runpod.ai/ws` | legacy (last live run 2026-07-13) |
+| 18 | [Concurrent handler (per-worker concurrency)](18-concurrent-handler/README.md) | serverless / throughput | async `concurrency_modifier` | live-verified 2026-07-13 |
+| 19 | [3-region same-file endpoint](19-three-region-same-file/README.md) | serverless / availability | 3 volumes + S3 sync + GraphQL multi-volume attach | legacy (last live run 2026-07-13) |
+| 20 | [Host-cached HF model endpoint (`--model-reference`)](20-model-caching-endpoint/README.md) | serverless / model delivery | runpodctl ≥v2.4.0 (`--model-reference`) + vLLM worker | live-verified 2026-07-15 |
+| 21 | [Network volume storage tiers (standard vs high-performance)](21-storage-tiers/README.md) | storage / provisioning | runpodctl (standard) + REST v2 / console (high-perf) | spec-checked 2026-07-29 (launch only) |
 | 22 | [Minimal pod image (+ don't kill SSH)](22-minimal-pod-image/README.md) | image contract / pod | docker buildx + runpodctl pod (CPU) + SSH | live-verified 2026-07-16 |
 | 23 | [Minimal serverless queue image](23-minimal-queue-image/README.md) | image contract / serverless | docker buildx + runpodctl serverless (CPU) + `/runsync` | live-verified 2026-07-16 |
-| 24 | *Retired:* the minimal load-balanced image is covered by [path 14](14-load-balancing-endpoint.md), which live-verifies the same image contract | — | — | — |
+| 24 | *Retired:* the minimal load-balanced image is covered by [path 14](14-load-balancing-endpoint/README.md), which live-verifies the same image contract | — | — | — |
 | 25 | [Bake into image vs mount a network volume](25-bake-vs-mount/README.md) | storage model / image | docker buildx + runpodctl nv + CPU pod (`df -T`: overlay vs MooseFS) | live-verified 2026-07-16 |
 | 26 | [Author a complete template project](26-template-project/README.md) | project authoring / Pod / queue / LB | app files + documented build/deployment handoff | spec-checked 2026-10-06 (local/container checks recorded in path, no live Runpod verification) |
 | | ↳ [Variant — application Pod](26-template-project/variant-pod.md) | | Pod image, app port | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — queue worker](26-template-project/variant-queue.md) | | queue handler image | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — load-balanced HTTP worker](26-template-project/variant-load-balanced.md) | | load-balanced image | spec-checked 2026-10-06 (local checks only) |
 | | ↳ [Variant — heavy layers and retained editable Pod state](26-template-project/variant-pytorch.md) | | PyTorch base + code layer | spec-checked 2026-10-06 (local checks only) |
-| 27 | [vLLM model: Pod first, then a load-balancing endpoint](27-vllm-pod-to-endpoint.md) | pod + serverless / LB | runpod-mcp (`create-pod` with `args`, `create-endpoint` `LOAD_BALANCER`) + `test_endpoint.py` | live-verified 2026-11-06 |
-| 28 | [Global volume: model files for compute in any data center](28-global-volume.md) | storage / pod + serverless | runpod-mcp or REST v2 (`create-global-volume`, `mounts.global`) + a CPU Pod over SSH to write the files | spec-checked 2026-11-13 |
+| 27 | [vLLM model: Pod first, then a load-balancing endpoint](27-vllm-pod-to-endpoint/README.md) | pod + serverless / LB | runpod-mcp (`create-pod` with `args`, `create-endpoint` `LOAD_BALANCER`) + `test_endpoint.py` | live-verified 2026-11-06 |
+| 28 | [Global volume: model files for compute in any data center](28-global-volume/README.md) | storage / pod + serverless | runpod-mcp or REST v2 (`create-global-volume`, `mounts.global`) + a CPU Pod over SSH to write the files | spec-checked 2026-11-13 |
 
 > **When a path has two variants, prefer the prebuilt/Hub one** (Variant B for
 > ComfyUI, Variant A for Whisper) unless you need custom code or explicitly requested template/Dockerfile authoring — that's the
@@ -117,7 +120,7 @@ observed output) → Gotchas we hit → Cost & cleanup → Skill gaps folded bac
 > per-worker throughput, autoscaling adds/removes workers. 14 (load-balancing) + 17
 > (WebSocket) share the `type:"LB"` substrate. 10 + 19 are the 2-region and 3-region
 > multi-volume HA cases. **22 (pod) + 23 (queue) are the minimal-image-per-contract pair**
-> ([14](14-load-balancing-endpoint.md) is the load-balanced counterpart) — same "build a tiny
+> ([14](14-load-balancing-endpoint/README.md) is the load-balanced counterpart) — same "build a tiny
 > image" task, one per contract — and double as evals for
 > [building-images.md](../../runpod-usage/reference/building-images.md).
 

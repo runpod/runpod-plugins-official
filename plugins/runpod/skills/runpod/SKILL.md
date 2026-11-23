@@ -211,26 +211,26 @@ tables above when nothing here is close.
 | Want to… | Golden path |
 | --- | --- |
 | Run a server (Ollama/ComfyUI) on a pod at a URL | [01](./golden-paths/01-ollama-pod/README.md), [02](./golden-paths/02-comfyui-pod/README.md) |
-| Deploy a serverless model endpoint (Hub / flash / custom image) | [03](./golden-paths/03-whisper-endpoint/README.md), [05](./golden-paths/05-model-to-endpoint-pipeline.md) |
-| Serve an LLM with vLLM (Pod, load-balancing or Hub queue endpoint) | [27 — vLLM Pod → endpoint](./golden-paths/27-vllm-pod-to-endpoint.md); procedure in [runpod-vllm](../runpod-vllm/SKILL.md) |
+| Deploy a serverless model endpoint (Hub / flash / custom image) | [03](./golden-paths/03-whisper-endpoint/README.md), [05](./golden-paths/05-model-to-endpoint-pipeline/README.md) |
+| Serve an LLM with vLLM (Pod, load-balancing or Hub queue endpoint) | [27 — vLLM Pod → endpoint](./golden-paths/27-vllm-pod-to-endpoint/README.md); procedure in [runpod-vllm](../runpod-vllm/SKILL.md) |
 | Install vLLM or ComfyUI privately on a Pod you already run (pinned, loopback, API-driven) | vLLM: [runpod-vllm existing-pod](../runpod-vllm/reference/existing-pod.md); ComfyUI: [02 Variant C](./golden-paths/02-comfyui-pod/variant-c-pinned-api.md) |
-| Serve a HuggingFace model without baking it in or a volume (host-cached) | [20 — model caching (`--model-reference`)](./golden-paths/20-model-caching-endpoint.md) |
-| Call a ready hosted model (no deploy) | [11 — Public Endpoints](./golden-paths/11-public-endpoints.md) |
-| Fine-tune, then serve the result | [04](./golden-paths/04-finetune-pod.md), [08](./golden-paths/08-finetune-to-serverless.md) |
-| Interactive dev box (SSH / VS Code) | [06](./golden-paths/06-dev-pod.md) |
-| Move data pod → volume → serverless | [07](./golden-paths/07-network-volume-handoff.md) |
+| Serve a HuggingFace model without baking it in or a volume (host-cached) | [20 — model caching (`--model-reference`)](./golden-paths/20-model-caching-endpoint/README.md) |
+| Call a ready hosted model (no deploy) | [11 — Public Endpoints](./golden-paths/11-public-endpoints/README.md) |
+| Fine-tune, then serve the result | [04](./golden-paths/04-finetune-pod/README.md), [08](./golden-paths/08-finetune-to-serverless/README.md) |
+| Interactive dev box (SSH / VS Code) | [06](./golden-paths/06-dev-pod/README.md) |
+| Move data pod → volume → serverless | [07](./golden-paths/07-network-volume-handoff/README.md) |
 | **Custom serverless when flash isn't enough** (dual-mode image dev loop) | [09](./golden-paths/09-custom-serverless-dev-loop/README.md) |
 | Create or improve a complete template project from code, a repo or an app request | [26 — project authoring](./golden-paths/26-template-project/README.md) |
 | Build a minimal image for a target (pod vs serverless queue) | [22 (pod)](./golden-paths/22-minimal-pod-image/README.md), [23 (queue)](./golden-paths/23-minimal-queue-image/README.md); concepts in [building-images](../runpod-usage/reference/building-images.md) |
 | Decide what to bake into the image vs mount on a network volume | [25 — bake vs mount](./golden-paths/25-bake-vs-mount/README.md) |
-| Pick a network-volume **storage tier** (standard vs high-performance) | [21 — storage tiers](./golden-paths/21-storage-tiers.md) |
-| Share model files with compute in **any data center** (global volume) | [28 — global volume](./golden-paths/28-global-volume.md) |
-| **High availability / multi-region** serverless (multi-volume + data sync) | [10](./golden-paths/10-multi-region-ha-serverless.md), [19 (3-region)](./golden-paths/19-three-region-same-file.md) |
-| Stream output incrementally (`/stream`) | [12](./golden-paths/12-serverless-streaming.md) |
-| Tune autoscaling / raise per-worker throughput | [13 (autoscaling)](./golden-paths/13-autoscaling-tuning.md), [18 (concurrency)](./golden-paths/18-concurrent-handler.md) |
-| Load-balancing / HTTP-server or WebSocket worker | [14 (LB)](./golden-paths/14-load-balancing-endpoint.md), [17 (WebSocket)](./golden-paths/17-serverless-websocket.md) |
-| Get notified on job completion (push, not poll) | [16 — webhooks](./golden-paths/16-serverless-webhooks.md) |
-| Check health / debug a failing endpoint | [15 — monitor & debug](./golden-paths/15-monitor-and-debug.md) |
+| Pick a network-volume **storage tier** (standard vs high-performance) | [21 — storage tiers](./golden-paths/21-storage-tiers/README.md) |
+| Share model files with compute in **any data center** (global volume) | [28 — global volume](./golden-paths/28-global-volume/README.md) |
+| **High availability / multi-region** serverless (multi-volume + data sync) | [10](./golden-paths/10-multi-region-ha-serverless/README.md), [19 (3-region)](./golden-paths/19-three-region-same-file/README.md) |
+| Stream output incrementally (`/stream`) | [12](./golden-paths/12-serverless-streaming/README.md) |
+| Tune autoscaling / raise per-worker throughput | [13 (autoscaling)](./golden-paths/13-autoscaling-tuning/README.md), [18 (concurrency)](./golden-paths/18-concurrent-handler/README.md) |
+| Load-balancing / HTTP-server or WebSocket worker | [14 (LB)](./golden-paths/14-load-balancing-endpoint/README.md), [17 (WebSocket)](./golden-paths/17-serverless-websocket/README.md) |
+| Get notified on job completion (push, not poll) | [16 — webhooks](./golden-paths/16-serverless-webhooks/README.md) |
+| Check health / debug a failing endpoint | [15 — monitor & debug](./golden-paths/15-monitor-and-debug/README.md) |
 
 ## Multi-lane tasks
 
