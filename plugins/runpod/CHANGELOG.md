@@ -6,6 +6,13 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.2.2](https://github.com/runpod/runpod-plugins-official/compare/v2.2.1...v2.2.2) (2026-11-23)
+
+
+### Documentation
+
+* **runpod:** When to use on every golden path, drop stale counts, note retired 24 ([#125](https://github.com/runpod/runpod-plugins-official/issues/125)) ([6a0e2da](https://github.com/runpod/runpod-plugins-official/commit/6a0e2da56016e93d7d6ed09f59c10e41c5b434a9))
+
 ## [2.2.1](https://github.com/runpod/runpod-plugins-official/compare/v2.2.0...v2.2.1) (2026-11-20)
 
 
