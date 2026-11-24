@@ -1,13 +1,15 @@
 ---
 name: runpod-lifecycle-crud
-description: 'Create, verify by read-back, and manage the lifecycle of Runpod''s reusable plumbing (templates,
-  network and global volumes, container registry credentials, account secrets, the account''s SSH public keys, and
-  Instant Clusters), the account''s audit trail and organization members (reads), plus staging large model
-  files on a volume and diagnosing a private-image pull failure.
-  Use when the user wants one of those resources created, changed, inspected or removed through the Runpod
-  MCP tools, or asks where a volume should live so a GPU can mount it. Also use for an account cleanup
-  request: only what this conversation created may be removed; everything else is reported for the user
-  to decide.'
+description: >-
+  Create, verify by read-back, and manage the lifecycle of Runpod's reusable plumbing
+  (templates, network and global volumes, container registry credentials, account secrets,
+  the account's SSH public keys, and Instant Clusters), the account's audit trail and
+  organization members (reads), plus staging large model files on a volume and diagnosing
+  a private-image pull failure. Use when the user wants one of those resources created,
+  changed, inspected or removed through the Runpod MCP tools, or asks where a volume
+  should live so a GPU can mount it. Also use for an account cleanup request: only what
+  this conversation created may be removed; everything else is reported for the user to
+  decide.
 metadata:
   author: runpod
   version: "2.2.2" # x-release-please-version

@@ -1,14 +1,16 @@
 ---
 name: runpod-serverless-deploy
-description: 'Bring any source (a HuggingFace repo, a ComfyUI workflow, a Hub release, a custom container
-  image, a GGUF repo, a Civitai asset, or a community template) to a proven Runpod Serverless endpoint:
-  pick the engine for the modality and model format, size the GPU from the model''s real metadata, provision,
-  warm, prove it with one real job, and hand back the URL with what it bills. Deploys an existing source
-  through the Runpod MCP tools; code-first Python deploys (the Flash dev loop) are out of scope. Use when
-  the user wants a model or worker served on Runpod Serverless, whatever the modality: text generation,
-  speech-to-text or text-to-speech, image or video generation, embeddings, document processing, or their
-  own handler image. For an LLM served with vLLM (Hub worker-vllm, a vllm/vllm-openai image, or a vLLM Pod),
-  defer to runpod-vllm.'
+description: >-
+  Bring any source (a HuggingFace repo, a ComfyUI workflow, a Hub release, a custom
+  container image, a GGUF repo, a Civitai asset, or a community template) to a proven
+  Runpod Serverless endpoint: pick the engine for the modality and model format, size the
+  GPU from the model's real metadata, provision, warm, prove it with one real job, and
+  hand back the URL with what it bills. Deploys an existing source through the Runpod MCP
+  tools; code-first Python deploys (the Flash dev loop) are out of scope. Use when the
+  user wants a model or worker served on Runpod Serverless, whatever the modality: text
+  generation, speech-to-text or text-to-speech, image or video generation, embeddings,
+  document processing, or their own handler image. For an LLM served with vLLM (Hub
+  worker-vllm, a vllm/vllm-openai image, or a vLLM Pod), defer to runpod-vllm.
 metadata:
   author: runpod
   version: "2.2.2" # x-release-please-version

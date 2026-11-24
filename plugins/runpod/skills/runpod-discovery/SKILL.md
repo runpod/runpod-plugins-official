@@ -1,12 +1,14 @@
 ---
 name: runpod-discovery
-description: 'Answer what is available, what fits and the price against Runpod''s catalogs: GPU and CPU
-  types with price, live stock per data center and per product, the CUDA versions that have capacity,
-  the Hub worker marketplace, the public template catalog, and the pay-per-use Public Endpoints. Read-only:
-  it filters to the user''s real constraint, sizes a model''s VRAM need against real stock, quotes price
-  and stock from the reads, and says "none found" rather than inventing an entry. Use when the user asks
-  a catalog, sizing, availability or price question that does not ask to create anything through the Runpod
-  MCP tools.'
+description: >-
+  Answer what is available, what fits and the price against Runpod's catalogs: GPU and CPU
+  types with price, live stock per data center and per product, the CUDA versions that
+  have capacity, the Hub worker marketplace, the public template catalog, and the
+  pay-per-use Public Endpoints. Read-only: it filters to the user's real constraint, sizes
+  a model's VRAM need against real stock, quotes price and stock from the reads, and says
+  "none found" rather than inventing an entry. Use when the user asks a catalog, sizing,
+  availability or price question that does not ask to create anything through the Runpod
+  MCP tools.
 metadata:
   author: runpod
   version: "2.2.2" # x-release-please-version
