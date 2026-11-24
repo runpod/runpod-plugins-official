@@ -1,0 +1,28 @@
+{
+  "id": "08-finetune-to-serverless",
+  "name": "Fine-tune on a pod, serve on serverless",
+  "description": "LoRA-fine-tunes a small LLM on a pod, writes the adapter to a network volume, and serves base model plus adapter from a serverless endpoint.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/08-finetune-to-serverless/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Flash",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-flash/SKILL.md"
+    },
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "Patterns",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-flash/reference/patterns.md"
+    }
+  ],
+  "tags": ["fine-tuning", "lora", "serverless", "network-volume"],
+  "mcp": "partial",
+  "createdAt": "2026-07-10T19:35:01Z",
+  "updatedAt": "2026-11-23T17:17:38Z"
+}

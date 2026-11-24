@@ -82,7 +82,7 @@ A trimmed, whisper-flavored version of the base repo. Four files:
 ### 1. Provision a dev pod (interactive, from an official base)
 Create a GPU pod on an official Runpod PyTorch template (or the base repo's
 template), register an SSH key first, remove it when done. Same shape as golden path
-[06](../06-dev-pod.md)/[07](../07-network-volume-handoff.md):
+[06](../06-dev-pod/README.md)/[07](../07-network-volume-handoff/README.md):
 ```bash
 runpodctl pod create --name whisper-dev-09 \
   --template-id runpod-torch-v280 --gpu-id "NVIDIA GeForce RTX 4090" \
@@ -216,7 +216,7 @@ result: the dual-mode invariant holds end to end.
 Small models (whisper `base` ≈ 140 MB) are fine baked in. For **large** weights
 (`large-v3`, LLMs, LoRA stacks) don't fatten the image — keep a copy on a **network
 volume** and restore it to local disk on each cold start. The volume is the same one golden
-path [07](../07-network-volume-handoff.md) hands off: the pod sees it at **`/workspace`**,
+path [07](../07-network-volume-handoff/README.md) hands off: the pod sees it at **`/workspace`**,
 serverless at **`/runpod-volume`**.
 - Keep the model cache on the container disk (the handler's default, `/app/whisper-cache`),
   not under `/runpod-volume`. Loading straight off the mount reads every byte over the
@@ -270,7 +270,7 @@ Green: #3 passed via a real `/run` from off-platform.
   load errors, that's the base-image torch/CUDA not matching — pin via `BASE_IMAGE`.
 - **Diagnosis:** if a serverless job times out but the worker looks healthy, pull
   worker logs with the Runpod MCP `stream-worker-logs` before assuming a broken image
-  — it's usually a handler/payload bug (lesson from [07](../07-network-volume-handoff.md)).
+  — it's usually a handler/payload bug (lesson from [07](../07-network-volume-handoff/README.md)).
 - **Volume DC pinning:** volume + pod + endpoint must share the data center.
 
 ## Cost & cleanup

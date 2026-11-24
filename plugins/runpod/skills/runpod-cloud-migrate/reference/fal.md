@@ -257,8 +257,8 @@ Other contracts:
 | fal | Runpod |
 |---|---|
 | `@fal.endpoint("/stream")` + `StreamingResponse` | Generator handler or generator `@app.queue` function, read from `/stream/JOB_ID`; or keep the SSE route on a load-balancing endpoint |
-| `@fal.realtime("/realtime")`, `is_websocket=True` | FastAPI `@app.websocket("/ws")` + `GET /ping` in a custom image on a load-balancing endpoint; see [golden path 17](../../runpod/golden-paths/17-serverless-websocket.md) |
-| `exposed_port` server | Same image on a load-balancing endpoint; `GET /ping` returns 200 when ready (204 while starting); bind `PORT`; set `PORT_HEALTH` to the same port; see [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md) |
+| `@fal.realtime("/realtime")`, `is_websocket=True` | FastAPI `@app.websocket("/ws")` + `GET /ping` in a custom image on a load-balancing endpoint; see [golden path 17](../../runpod/golden-paths/17-serverless-websocket/README.md) |
+| `exposed_port` server | Same image on a load-balancing endpoint; `GET /ping` returns 200 when ready (204 while starting); bind `PORT`; set `PORT_HEALTH` to the same port; see [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md) |
 | `handle_exit()` / `teardown()` | Signal handling in the user's own process |
 | Return HTTP 503 to recycle a runner | `return {"refresh_worker": True, ...}` from the handler |
 

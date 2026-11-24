@@ -1,0 +1,58 @@
+{
+  "id": "26-template-project",
+  "name": "Complete template project",
+  "description": "Turns source code or an app request into a documented Dockerfile, the app files it needs, and the exact Runpod configuration to deploy it.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/26-template-project/README.md",
+  "variants": [
+    {
+      "id": "variant-pod",
+      "name": "Application pod",
+      "description": "Package an app that users open on a pod.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/26-template-project/variant-pod.md"
+    },
+    {
+      "id": "variant-queue",
+      "name": "Queue serverless worker",
+      "description": "Turn an operation into a job submitted to a queue endpoint.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/26-template-project/variant-queue.md"
+    },
+    {
+      "id": "variant-load-balanced",
+      "name": "Load-balanced serverless worker",
+      "description": "Keep an existing HTTP API and serve it from a load-balancing endpoint.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/26-template-project/variant-load-balanced.md"
+    },
+    {
+      "id": "variant-pytorch",
+      "name": "PyTorch layering and retained storage",
+      "description": "Cut heavy dependency copying and keep an editable pod workspace.",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/26-template-project/variant-pytorch.md"
+    }
+  ],
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Build template",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-build-template/SKILL.md"
+    },
+    {
+      "name": "GitHub integration",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-build-template/reference/github-integration.md"
+    }
+  ],
+  "tags": ["templates", "docker", "custom-image"],
+  "mcp": "partial",
+  "createdAt": "2026-10-19T17:11:18Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

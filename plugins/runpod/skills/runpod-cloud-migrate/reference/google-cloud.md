@@ -112,7 +112,7 @@ Multi-GPU machine types (`a3-highgpu-8g`) map to `gpu.count`. Pick by VRAM and g
 | Artifact Registry access | `registry` | `--registry-auth-id` | `registry` |
 | CUDA and driver (Deep Learning VM image family) | `gpu.minCudaVersion` | `--min-cuda-version` | `min_cuda_version` |
 
-Load-balancing endpoints: create with `POST /v2/serverless` and `"type": "LOAD_BALANCER"`, the Runpod MCP `create-endpoint` tool, Terraform `endpoint_type = "LOAD_BALANCER"`, or the console. `type` and `scaling` are required on create, `type` is fixed afterwards, and the scaler is `REQUEST_COUNT`. `runpodctl serverless create` makes queue endpoints. Check `runpodctl serverless create --help` for the flags in the installed version. Walkthrough: [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
+Load-balancing endpoints: create with `POST /v2/serverless` and `"type": "LOAD_BALANCER"`, the Runpod MCP `create-endpoint` tool, Terraform `endpoint_type = "LOAD_BALANCER"`, or the console. `type` and `scaling` are required on create, `type` is fixed afterwards, and the scaler is `REQUEST_COUNT`. `runpodctl serverless create` makes queue endpoints. Check `runpodctl serverless create --help` for the flags in the installed version. Walkthrough: [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md).
 
 Contract differences for serving containers:
 

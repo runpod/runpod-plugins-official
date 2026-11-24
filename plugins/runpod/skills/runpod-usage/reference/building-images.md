@@ -156,7 +156,7 @@ Live proof that this is a real filesystem boundary (baked = `overlay`/local, vol
   - **temporary / one-off run** → a **pod using local (non-network) storage** is fastest;
   - **persistent, many small files, or I/O-bound** → a **high-performance network volume**.
 
-  See [golden path 21 — storage tiers](../../runpod/golden-paths/21-storage-tiers.md).
+  See [golden path 21 — storage tiers](../../runpod/golden-paths/21-storage-tiers/README.md).
 
 ## Match the image contract to the target
 
@@ -169,13 +169,13 @@ Live proof that this is a real filesystem boundary (baked = `overlay`/local, vol
 Minimal runnable image per contract (each built + deployed live): pod →
 [golden path 22](../../runpod/golden-paths/22-minimal-pod-image/README.md), queue →
 [golden path 23](../../runpod/golden-paths/23-minimal-queue-image/README.md), load-balanced →
-[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
+[golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md).
 
 Queue vs load-balanced request/response shapes and when to pick each are covered in
 [endpoint-workflows.md](endpoint-workflows.md) and golden paths
-[12 (streaming)](../../runpod/golden-paths/12-serverless-streaming.md),
-[14 (load-balancing)](../../runpod/golden-paths/14-load-balancing-endpoint.md), and
-[17 (WebSocket)](../../runpod/golden-paths/17-serverless-websocket.md). One image can be
+[12 (streaming)](../../runpod/golden-paths/12-serverless-streaming/README.md),
+[14 (load-balancing)](../../runpod/golden-paths/14-load-balancing-endpoint/README.md), and
+[17 (WebSocket)](../../runpod/golden-paths/17-serverless-websocket/README.md). One image can be
 **dual-mode** (pod dev + serverless) — see
 [golden path 09](../../runpod/golden-paths/09-custom-serverless-dev-loop/README.md).
 

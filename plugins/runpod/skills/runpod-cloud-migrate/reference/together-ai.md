@@ -69,7 +69,7 @@ the Terraform Registry under `together-ai/together` or `togethercomputer/togethe
 | Sprocket queue worker | Queue endpoint with a handler | |
 | Sprocket HTTP mode, custom vLLM image | Load balancing endpoint (`/ping` health) | See [runpod-vllm](../../runpod-vllm/SKILL.md) |
 | Batch API | `POST /v2/ENDPOINT_ID/batch` on a queue endpoint, or `/run` + `webhook` | |
-| Fine-tuning job | GPU Pod + network volume, or `@app.task` | Golden paths [04](../../runpod/golden-paths/04-finetune-pod.md), [08](../../runpod/golden-paths/08-finetune-to-serverless.md) |
+| Fine-tuning job | GPU Pod + network volume, or `@app.task` | Golden paths [04](../../runpod/golden-paths/04-finetune-pod/README.md), [08](../../runpod/golden-paths/08-finetune-to-serverless/README.md) |
 | GPU cluster (Slurm) | Instant Cluster, type `SLURM` | Never promise stock |
 | GPU cluster (Kubernetes) | Instant Cluster `TRAINING` or `RAY`, or Serverless for serving | Gap |
 | Cluster shared volume, Jig volume | Network volume | Pinned to one data center |
@@ -91,7 +91,7 @@ Model map (Together string to Public Endpoint slug; same family, verify version 
 | `vidu/vidu-q3` | `vidu-q3-t2v`, `vidu-q3-i2v` | native API |
 
 The live list comes from the MCP `list-public-endpoints` tool or the docs model reference.
-Golden path: [11](../../runpod/golden-paths/11-public-endpoints.md).
+Golden path: [11](../../runpod/golden-paths/11-public-endpoints/README.md).
 
 GPU map:
 
@@ -137,7 +137,7 @@ For exact flags, check `runpodctl serverless create --help` and
 
 ## Code translation
 
-Deploy the vLLM worker (golden path [20](../../runpod/golden-paths/20-model-caching-endpoint.md),
+Deploy the vLLM worker (golden path [20](../../runpod/golden-paths/20-model-caching-endpoint/README.md),
 procedure in [runpod-vllm queue reference](../../runpod-vllm/reference/queue-endpoint.md)):
 
 ```bash
@@ -152,7 +152,7 @@ runpodctl serverless create --hub-id HUB_ID --name qwen3-8b --gpu-id AMPERE_24 \
 Always pass `--gpu-id`. `--model-reference` requires a GPU endpoint and one cached model
 per endpoint. Gated or private model: add `--env HF_TOKEN='{{ RUNPOD_SECRET_hf_token }}'` (a Runpod secret, never the raw token). When the Hub release's vLLM version
 is older than the model needs, use a load balancing endpoint with `vllm/vllm-openai`
-(golden path [27](../../runpod/golden-paths/27-vllm-pod-to-endpoint.md)).
+(golden path [27](../../runpod/golden-paths/27-vllm-pod-to-endpoint/README.md)).
 
 OpenAI client (Python; TypeScript is the same three fields):
 

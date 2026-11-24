@@ -220,7 +220,7 @@ The base image's `/start.sh` starts sshd and, when `JUPYTER_PASSWORD` is set, Ju
    network volume with headroom.
 2. Create the volume in the target data center, then a transfer Pod with the volume and
    `22/tcp`. See [storage.md](../../runpod-usage/reference/storage.md) and
-   [golden path 07](../../runpod/golden-paths/07-network-volume-handoff.md).
+   [golden path 07](../../runpod/golden-paths/07-network-volume-handoff/README.md).
 3. Copy with one of:
 
 | Source state | Method |

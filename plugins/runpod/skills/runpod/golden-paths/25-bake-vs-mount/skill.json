@@ -1,0 +1,28 @@
+{
+  "id": "25-bake-vs-mount",
+  "name": "Bake into the image or mount a network volume",
+  "description": "Shows what belongs baked into the image and what belongs on a mounted network volume, and proves on a live pod that the two sit on different filesystems.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/25-bake-vs-mount/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Building images",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/building-images.md"
+    },
+    {
+      "name": "Docker",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/reference/docker.md"
+    }
+  ],
+  "tags": ["docker", "network-volume", "storage", "custom-image"],
+  "mcp": "partial",
+  "createdAt": "2026-07-16T18:46:19Z",
+  "updatedAt": "2026-11-23T17:17:38Z"
+}

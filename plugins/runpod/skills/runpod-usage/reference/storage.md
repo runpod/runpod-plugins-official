@@ -69,7 +69,7 @@ above is about datasets, checkpoints, and everything else worth keeping.
     https://api.runpod.io/v2/network-volumes` with `"type":"HIGH_PERFORMANCE"`); the tier
     is immutable after creation. High-Performance (~3× throughput / 4× IOPS) is worth it when
     I/O is the bottleneck — training, checkpointing, many small files. Launch: golden path
-    [21 — storage tiers](../../runpod/golden-paths/21-storage-tiers.md); more:
+    [21 — storage tiers](../../runpod/golden-paths/21-storage-tiers/README.md); more:
     [high-performance storage docs](https://docs.runpod.io/storage/high-performance-storage).
 - **Data-center-scoped** — a volume lives in one DC. See the constraint below.
 - Mount paths:

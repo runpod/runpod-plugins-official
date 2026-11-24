@@ -21,7 +21,7 @@ Live checks ran with `rp flash dev --once` on `runpod` 2.1.0 (2026-11-04) unless
 
 Cost and cleanup: dev sessions delete their endpoints on exit, and task Pods terminate when the
 task returns. Remove deployed apps with `rp flash app delete APP --yes`. For a checkpoint shared
-through a network volume, see [golden path 07](../../runpod/golden-paths/07-network-volume-handoff.md).
+through a network volume, see [golden path 07](../../runpod/golden-paths/07-network-volume-handoff/README.md).
 
 The upstream SDK ships more examples in
 [runpod-python `examples/apps`](https://github.com/runpod/runpod-python/tree/main/examples/apps).

@@ -38,13 +38,13 @@ Leave these alone: `from_pretrained(`, `hf_hub_download(`, `snapshot_download(`,
 
 | Hugging Face | Runpod | Notes |
 | --- | --- | --- |
-| Inference Endpoint, engine vLLM, TGI, or SGLang | Serverless vLLM worker (queue-based) | Same repo ID. See [runpod-vllm](../../runpod-vllm/SKILL.md) and golden path [20](../../runpod/golden-paths/20-model-caching-endpoint.md). |
+| Inference Endpoint, engine vLLM, TGI, or SGLang | Serverless vLLM worker (queue-based) | Same repo ID. See [runpod-vllm](../../runpod-vllm/SKILL.md) and golden path [20](../../runpod/golden-paths/20-model-caching-endpoint/README.md). |
 | Inference Endpoint, Inference Toolkit + `handler.py` | Queue-based endpoint with `handler(job)`, or `@app.queue` | See [runpod-serverless-deploy](../../runpod-serverless-deploy/SKILL.md) and [runpod-flash](../../runpod-flash/SKILL.md). |
 | Inference Endpoint, engine TEI | Load balancing endpoint running the TEI image | Or a Hub embeddings worker: search the Hub and read its config first. |
 | Inference Endpoint, engine llama.cpp (GGUF) | Load balancing endpoint with a llama.cpp server image | `HEALTH_CHECK_PATH=/health`. |
-| Inference Endpoint, custom container | Load balancing endpoint | Golden path [14](../../runpod/golden-paths/14-load-balancing-endpoint.md). |
+| Inference Endpoint, custom container | Load balancing endpoint | Golden path [14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md). |
 | Model Catalog | Runpod Hub | `runpodctl hub search`, `runpodctl hub get`. |
-| Inference Providers | Public Endpoint (listed models), else vLLM worker | Golden path [11](../../runpod/golden-paths/11-public-endpoints.md). |
+| Inference Providers | Public Endpoint (listed models), else vLLM worker | Golden path [11](../../runpod/golden-paths/11-public-endpoints/README.md). |
 | GPU Space (Gradio, Streamlit, Docker) | Pod with `PORT/http` exposed | Proxy URL is public and unauthenticated. |
 | ZeroGPU Space | UI host + queue-based endpoint | Gap. |
 | Jobs | `@app.task`, or a Pod | Scheduled Jobs need an external scheduler. |
@@ -205,7 +205,7 @@ Job to task: `hf jobs run --flavor F IMAGE CMD` becomes an `@app.task(gpu=..., d
 - Default: nothing to copy. Attach the Hub repo as a cached model: `--model-reference https://huggingface.co/ORG/NAME:REF` (GPU endpoints) or the console **Model** field. One cached model per endpoint. A repo with several quantization variants downloads all of them.
 - Gated or private repo: `HF_TOKEN` env set to `{{ RUNPOD_SECRET_hf_token }}`. Create the secret with `rp secret add hf_token`, the console, or `POST /v2/account/secrets`. Secret names cannot start with `runpod`.
 - Pinned revision: carry the commit hash into the `:REF` and `MODEL_REVISION`.
-- Several models, non-Hub files, or predictable load times: network volume in the serving data center, filled with `hf download ORG/NAME --local-dir /workspace/models/NAME` from a Pod. The volume mounts at `/runpod-volume` on Serverless. Golden path [07](../../runpod/golden-paths/07-network-volume-handoff.md). See [storage](../../runpod-usage/reference/storage.md).
+- Several models, non-Hub files, or predictable load times: network volume in the serving data center, filled with `hf download ORG/NAME --local-dir /workspace/models/NAME` from a Pod. The volume mounts at `/runpod-volume` on Serverless. Golden path [07](../../runpod/golden-paths/07-network-volume-handoff/README.md). See [storage](../../runpod-usage/reference/storage.md).
 - Weights that exist only on a replica or in a Space: push them to a Hub repo with `hf upload` first.
 
 ## Client and API call map
@@ -288,7 +288,7 @@ Job states: `IN_QUEUE`, `IN_PROGRESS`, `COMPLETED`, `FAILED`, `CANCELLED`, `TIME
 6. Load balancing: the health route returns `200` through `https://ENDPOINT_ID.api.runpod.ai`, then one real route call succeeds.
 7. Worker logs show the model loading from `/runpod-volume/huggingface-cache/hub/` (cache hit) and no `401` or `403` from the Hub.
 8. Compare outputs and latency with the Hugging Face endpoint on a fixed request set, cold and warm.
-9. If a job stays `IN_QUEUE`, read worker logs before changing code. See golden path [15](../../runpod/golden-paths/15-monitor-and-debug.md) and [gotchas](../../runpod-usage/reference/gotchas.md).
+9. If a job stays `IN_QUEUE`, read worker logs before changing code. See golden path [15](../../runpod/golden-paths/15-monitor-and-debug/README.md) and [gotchas](../../runpod-usage/reference/gotchas.md).
 
 ## Shut down Hugging Face
 

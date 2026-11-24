@@ -103,7 +103,7 @@ Caching is GPU-only and needs `runpodctl` ≥ v2.4.0.
 Full comparison and commands:
 [`runpodctl/reference/model-caching.md`](skills/runpodctl/reference/model-caching.md).
 Worked example: golden path
-[20 — host-cached HF model endpoint](skills/runpod/golden-paths/20-model-caching-endpoint.md).
+[20 — host-cached HF model endpoint](skills/runpod/golden-paths/20-model-caching-endpoint/README.md).
 
 ## Setup
 

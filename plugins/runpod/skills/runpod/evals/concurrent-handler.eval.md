@@ -7,7 +7,7 @@ several jobs at once instead of me paying for more workers?
 
 ## Expected behavior
 
-Follows [golden path 18](../golden-paths/18-concurrent-handler.md): an `async` handler
+Follows [golden path 18](../golden-paths/18-concurrent-handler/README.md): an `async` handler
 with real `await` points **and** a `concurrency_modifier` returning N; either one alone
 still runs one job at a time. Says this suits I/O-bound work only (CPU/GPU-bound jobs
 time-slice and can exhaust VRAM), that concurrency ramps up over the first polls after a

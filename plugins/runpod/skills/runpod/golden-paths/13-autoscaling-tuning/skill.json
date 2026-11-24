@@ -1,0 +1,28 @@
+{
+  "id": "13-autoscaling-tuning",
+  "name": "Serverless autoscaling tuning",
+  "description": "Tunes active and max workers, scaler type and value, idle timeout and execution timeout under real load to trade cost against latency.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/13-autoscaling-tuning/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    }
+  ],
+  "tags": ["serverless", "autoscaling"],
+  "mcp": "partial",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-17T20:41:53Z"
+}

@@ -16,7 +16,7 @@ evals: [runpodctl/evals/image-to-template-to-serverless, runpod-usage/evals/imag
 The smallest possible **queue-based** serverless worker: a Python handler wrapped in
 `runpod.serverless.start`. This is the queue *image contract* — Runpod pulls jobs off the
 queue and hands each one to your `handler(event)`. Contrast with the load-balanced contract
-([golden path 14](../14-load-balancing-endpoint.md)), where your worker serves HTTP itself
+([golden path 14](../14-load-balancing-endpoint/README.md)), where your worker serves HTTP itself
 with **no** handler.
 
 See [building-images.md](../../../runpod-usage/reference/building-images.md) for the concepts
@@ -26,7 +26,7 @@ See [building-images.md](../../../runpod-usage/reference/building-images.md) for
 You build your own image for a **queue-based serverless endpoint**: Runpod hands each job to
 your `handler(event)`. If the image is for a pod (long-lived process, SSH, no handler), use
 [22](../22-minimal-pod-image/README.md). If your worker serves HTTP itself, use
-[14](../14-load-balancing-endpoint.md).
+[14](../14-load-balancing-endpoint/README.md).
 
 ## Prerequisites
 

@@ -7,8 +7,8 @@ WebSocket route. Put it on Runpod serverless so clients call those paths directl
 
 ## Expected behavior
 
-Matches [golden path 14](../golden-paths/14-load-balancing-endpoint.md) (and
-[17](../golden-paths/17-serverless-websocket.md) for the WebSocket route): a
+Matches [golden path 14](../golden-paths/14-load-balancing-endpoint/README.md) (and
+[17](../golden-paths/17-serverless-websocket/README.md) for the WebSocket route): a
 load-balancing endpoint, not a queue endpoint. Uses the v2 create (MCP `create-endpoint`
 or `POST /v2/serverless`) with `"type": "LOAD_BALANCER"` and a `REQUEST_COUNT` scaler,
 because neither the REST v1 body nor `runpodctl serverless create` exposes an

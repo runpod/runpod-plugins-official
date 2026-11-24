@@ -162,7 +162,7 @@ runpodctl serverless create --template-id <template-id> --name my-ep \
 
 For a **private** image, attach the registry credential to the template (Console →
 Container Registry, or `runpodctl registry create`) so workers can pull it. Full worked
-example: golden path 05 (`golden-paths/05-model-to-endpoint-pipeline.md`).
+example: golden path 05 (`golden-paths/05-model-to-endpoint-pipeline/README.md`).
 
 ## Payload limits
 

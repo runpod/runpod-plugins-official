@@ -8,7 +8,7 @@ why. Then tell me what changes if I *do* have the Runpod MCP connected.
 
 ## Expected behavior
 
-Follows golden path 15 (`runpod/golden-paths/15-monitor-and-debug.md`), which
+Follows golden path 15 (`runpod/golden-paths/15-monitor-and-debug/README.md`), which
 splits into three signals — all three now reachable from the CLI lane:
 
 1. **Worker/job counts → `runpodctl serverless health ep-abc123`** (v2.9.0+). Not a

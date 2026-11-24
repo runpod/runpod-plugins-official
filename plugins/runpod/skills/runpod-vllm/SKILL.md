@@ -15,7 +15,7 @@ license: Apache-2.0
 
 You take a model id and leave the user with a working OpenAI-compatible vLLM server: the URL, the auth, a tested client snippet, what it costs per hour, and what is still billing. A create call that returned an id is not a working server. The deployment is done only when [`scripts/test_endpoint.py`](scripts/test_endpoint.py) passes against the real URL.
 
-Creating a Pod or an endpoint bills. State the hourly price from the catalog read before each create. The generic endpoint procedure (smoke job, hold limits, hand-back fields) is [runpod-serverless-deploy](../runpod-serverless-deploy/SKILL.md)'s and the generic Pod procedure is [runpod-pod-deploy](../runpod-pod-deploy/SKILL.md)'s. This skill adds what is specific to vLLM. A worked run of the Pod and load-balancing paths is [golden path 27](../runpod/golden-paths/27-vllm-pod-to-endpoint.md); the full index is in [golden-paths/README.md](../runpod/golden-paths/README.md).
+Creating a Pod or an endpoint bills. State the hourly price from the catalog read before each create. The generic endpoint procedure (smoke job, hold limits, hand-back fields) is [runpod-serverless-deploy](../runpod-serverless-deploy/SKILL.md)'s and the generic Pod procedure is [runpod-pod-deploy](../runpod-pod-deploy/SKILL.md)'s. This skill adds what is specific to vLLM. A worked run of the Pod and load-balancing paths is [golden path 27](../runpod/golden-paths/27-vllm-pod-to-endpoint/README.md); the full index is in [golden-paths/README.md](../runpod/golden-paths/README.md).
 
 ## Tool binding
 

@@ -5,6 +5,9 @@ The backend mirrors each `golden-paths/<folder>/skill.json` into its database tw
 day and skips any file it rejects, so a bad file silently keeps the Hub on the last good
 copy. This check fails the build on what the sync would reject:
 
+- a golden path is a loose `NN-name.md` file, or a folder without a `README.md` or `skill.json`;
+- `skill` is not the raw URL of the folder's own `README.md`;
+
 - the file does not match `golden-paths/skill.schema.json`;
 - `id` is not the folder name (the backend keys rows on it);
 - more than one variant is marked `default` (JSON Schema cannot express this);
@@ -60,6 +63,10 @@ def problems(data: object, folder: str, check: Validator) -> list[str]:
     if data["id"] != folder:
         found.append(f"id: {data['id']!r} must equal the folder name {folder!r}")
 
+    readme = f"{RAW_PREFIX}{GOLDEN_PATHS.relative_to(ROOT)}/{folder}/README.md"
+    if data["skill"] != readme:
+        found.append(f"skill: {data['skill']} must be the folder's README, {readme}")
+
     defaults = [v["id"] for v in data.get("variants", []) if v.get("default")]
     if len(defaults) > 1:
         found.append(f"variants: only one may be default, found {', '.join(defaults)}")
@@ -74,6 +81,20 @@ def problems(data: object, folder: str, check: Validator) -> list[str]:
             found.append(f"{where}: {url} is not on this repo's main branch")
         elif not (ROOT / url[len(RAW_PREFIX) :]).is_file():
             found.append(f"{where}: {url[len(RAW_PREFIX) :]} does not exist in this repo")
+    return found
+
+
+def layout_problems(names: list[str], has_readme: set[str], has_skill_json: set[str]) -> list[str]:
+    """Every NN-name entry in golden-paths/ must be a folder with a README.md and a skill.json."""
+    found = []
+    for name in names:
+        if name.endswith(".md"):
+            found.append(f"{name}: move it to {name[:-3]}/README.md and add a skill.json")
+            continue
+        if name not in has_readme:
+            found.append(f"{name}/: no README.md (the path's entry guide)")
+        if name not in has_skill_json:
+            found.append(f"{name}/: no skill.json")
     return found
 
 
@@ -110,7 +131,13 @@ def self_test() -> None:
     fails({"id": "03-other"}, "folder name")
     fails({"name": "a" * 192}, "is too long")
     fails({"skill": base + "MISSING.md"}, "does not exist")
+    fails({"skill": base + "variant-b-prebuilt.md"}, "must be the folder's README")
     fails({"variants": [variant, {**variant, "id": "variant-a"}]}, "only one may be default")
+
+    assert layout_problems(["01-a", "02-b"], {"01-a", "02-b"}, {"01-a", "02-b"}) == []
+    assert any("no skill.json" in p for p in layout_problems(["01-a"], {"01-a"}, set()))
+    assert any("no README.md" in p for p in layout_problems(["01-a"], set(), {"01-a"}))
+    assert any("move it to" in p for p in layout_problems(["01-a.md"], set(), set()))
     print("skill.json self-test OK")
 
 
@@ -121,7 +148,12 @@ def main() -> None:
 
     check = validator()
     files = sorted(GOLDEN_PATHS.glob("*/skill.json"))
-    failed = False
+    entries = sorted(p.name for p in GOLDEN_PATHS.glob("[0-9][0-9]-*"))
+    readmes = {p.parent.name for p in GOLDEN_PATHS.glob("*/README.md")}
+    layout = layout_problems(entries, readmes, {p.parent.name for p in files})
+    for problem in layout:
+        print(f"{GOLDEN_PATHS.relative_to(ROOT)}/{problem}")
+    failed = bool(layout)
     for path in files:
         rel = path.relative_to(ROOT)
         try:

@@ -1,0 +1,24 @@
+{
+  "id": "21-storage-tiers",
+  "name": "Network volume storage tiers",
+  "description": "Creates a standard or high-performance network volume and attaches it to a pod or serverless endpoint.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/21-storage-tiers/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Building images",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/building-images.md"
+    }
+  ],
+  "tags": ["network-volume", "storage"],
+  "mcp": "full",
+  "createdAt": "2026-07-16T17:58:16Z",
+  "updatedAt": "2026-11-05T18:30:36Z"
+}

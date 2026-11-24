@@ -41,14 +41,14 @@ Sources: Fireworks docs, checked 2026-11-14: [index](https://docs.fireworks.ai/l
 | Custom base model | Hugging Face repo plus `--model-reference`, or a network volume path in `MODEL_NAME` | |
 | LoRA addon, live merge | Merge with PEFT and serve as a base model | |
 | LoRA addon, multi-LoRA | `ENABLE_LORA=true`, `LORA_MODULES` | Client `model` becomes the adapter name. |
-| Training API (SFT, DPO, RL) | Pod plus network volume, user's trainer | [Golden path 04](../../runpod/golden-paths/04-finetune-pod.md), [08](../../runpod/golden-paths/08-finetune-to-serverless.md). |
-| Batch API (paused per Fireworks docs) | Queue endpoint `/run` plus webhook, or `/batch` | [Golden path 16](../../runpod/golden-paths/16-serverless-webhooks.md). |
+| Training API (SFT, DPO, RL) | Pod plus network volume, user's trainer | [Golden path 04](../../runpod/golden-paths/04-finetune-pod/README.md), [08](../../runpod/golden-paths/08-finetune-to-serverless/README.md). |
+| Batch API (paused per Fireworks docs) | Queue endpoint `/run` plus webhook, or `/batch` | [Golden path 16](../../runpod/golden-paths/16-serverless-webhooks/README.md). |
 | Image model on a deployment (for example FLUX.1 [dev]) | Public Endpoint if listed, else a Hub worker | Native `{"input": ...}` format, not OpenAI. |
 | Speech-to-text | Hub worker | [Golden path 03](../../runpod/golden-paths/03-whisper-endpoint/README.md). |
 | Secrets | Runpod secrets, `{{ RUNPOD_SECRET_name }}` | [secrets.md](../../runpod-usage/reference/secrets.md). |
 | Reserved capacity | Active workers | Runpod gives no capacity guarantee. |
 
-Public Endpoint text models with an OpenAI route in the Runpod docs: `qwen3-32b-awq` (model `Qwen/Qwen3-32B-AWQ`), `moonshot-kimi` (models `kimi-k2.6`, `kimi-k2.7-code`, `kimi-k3`, `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`). `granite-4-0-h-small` documents the native route. The docs also keep pages for `gpt-oss-120b` and `cogito-671b-v2-1-fp8-dynamic`, which are not in the model reference: map to them only if the live catalog lists them. Confirm each against the live catalog and `GET .../openai/v1/models` before mapping a call site to it. Walkthrough: [golden path 11](../../runpod/golden-paths/11-public-endpoints.md).
+Public Endpoint text models with an OpenAI route in the Runpod docs: `qwen3-32b-awq` (model `Qwen/Qwen3-32B-AWQ`), `moonshot-kimi` (models `kimi-k2.6`, `kimi-k2.7-code`, `kimi-k3`, `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`). `granite-4-0-h-small` documents the native route. The docs also keep pages for `gpt-oss-120b` and `cogito-671b-v2-1-fp8-dynamic`, which are not in the model reference: map to them only if the live catalog lists them. Confirm each against the live catalog and `GET .../openai/v1/models` before mapping a call site to it. Walkthrough: [golden path 11](../../runpod/golden-paths/11-public-endpoints/README.md).
 
 ## Field map
 
@@ -84,7 +84,7 @@ firectl deployment create accounts/fireworks/models/llama-v3p1-8b-instruct \
   --deployment-shape default --min-replica-count 0 --max-replica-count 3 --scale-to-zero-window 10m
 ```
 
-Deploy, after ([golden path 20](../../runpod/golden-paths/20-model-caching-endpoint.md)):
+Deploy, after ([golden path 20](../../runpod/golden-paths/20-model-caching-endpoint/README.md)):
 
 ```bash
 runpodctl hub search vllm

@@ -1,0 +1,20 @@
+{
+  "id": "20-model-caching-endpoint",
+  "name": "Serverless endpoint with a cached model",
+  "description": "Deploys a serverless LLM endpoint that loads a Hugging Face model Runpod caches on the host, with no weights in the image or on a volume.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/20-model-caching-endpoint/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Model caching",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/reference/model-caching.md"
+    }
+  ],
+  "tags": ["serverless", "model-caching", "huggingface", "llm"],
+  "mcp": "partial",
+  "createdAt": "2026-07-14T21:20:11Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

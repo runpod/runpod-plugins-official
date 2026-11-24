@@ -63,7 +63,7 @@ FlashBoot off, and the symptom is slower cold starts, not an error.
 
 | Path | v1 | v2 |
 | --- | --- | --- |
-| `/billing/endpoints` | **serverless** spend | **[Runpod public endpoints](../../runpod/golden-paths/11-public-endpoints.md)** spend |
+| `/billing/endpoints` | **serverless** spend | **[Runpod public endpoints](../../runpod/golden-paths/11-public-endpoints/README.md)** spend |
 | `/billing/serverless` | — | serverless spend |
 
 Both return `200` and neither is broken — v2's `/billing/endpoints` reports public

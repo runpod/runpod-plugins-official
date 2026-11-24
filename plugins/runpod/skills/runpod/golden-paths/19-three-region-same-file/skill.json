@@ -1,0 +1,24 @@
+{
+  "id": "19-three-region-same-file",
+  "name": "Three-region endpoint serving the same file",
+  "description": "Attaches network volumes in three data centers to one endpoint, syncs the same file to all three, and proves every region serves it identically.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/19-three-region-same-file/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    }
+  ],
+  "tags": ["serverless", "high-availability", "multi-region", "network-volume"],
+  "mcp": "partial",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

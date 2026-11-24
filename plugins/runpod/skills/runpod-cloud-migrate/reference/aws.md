@@ -157,7 +157,7 @@ curl -s -X POST https://api.runpod.io/v2/serverless \
        "scaling":{"type":"REQUEST_COUNT","requestCount":4},"timeout":600000}'
 ```
 
-Read the invoke URL from `requestUrls.base` in the response. Walkthrough: [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md).
+Read the invoke URL from `requestUrls.base` in the response. Walkthrough: [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md).
 
 EC2 user data to a Pod: move package installs into the Dockerfile; keep run-time steps in a start script that ends with `exec` of the server; write persistent data under `/workspace`.
 

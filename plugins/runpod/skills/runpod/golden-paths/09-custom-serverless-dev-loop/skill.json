@@ -1,0 +1,40 @@
+{
+  "id": "09-custom-serverless-dev-loop",
+  "name": "Custom serverless worker, developed on a pod",
+  "description": "Builds one image and handler, iterates on it interactively in a pod, then deploys the same image as a serverless endpoint.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/09-custom-serverless-dev-loop/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "Development loop",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/development-loop.md"
+    },
+    {
+      "name": "Docker",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/docker.md"
+    },
+    {
+      "name": "Model caching",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/reference/model-caching.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    }
+  ],
+  "tags": ["serverless", "docker", "custom-image", "development"],
+  "mcp": "partial",
+  "createdAt": "2026-07-14T21:20:11Z",
+  "updatedAt": "2026-11-05T15:50:46Z"
+}

@@ -7,7 +7,7 @@ about 200 tokens. I don't want to deploy anything. How?
 
 ## Expected behavior
 
-Matches [golden path 11](../golden-paths/11-public-endpoints.md): a Public Endpoint, not a
+Matches [golden path 11](../golden-paths/11-public-endpoints/README.md): a Public Endpoint, not a
 new serverless endpoint. Uses the account `RUNPOD_API_KEY` as the Bearer token and nothing
 else (no Docker, runpodctl, template or volume). Sends the instruction to the
 OpenAI-compatible `/openai/v1/chat/completions` route, because the native `/runsync`

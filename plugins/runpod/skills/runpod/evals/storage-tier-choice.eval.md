@@ -7,7 +7,7 @@ cheapest to run an A100 next to it.
 
 ## Expected behavior
 
-Follows [golden path 21](../golden-paths/21-storage-tiers.md): reads the data-center
+Follows [golden path 21](../golden-paths/21-storage-tiers/README.md): reads the data-center
 catalog (`list-data-centers` / `GET /v2/catalog/datacenters`) and only considers DCs whose
 `networkVolumeTypes` include `HIGH_PERFORMANCE`, then intersects with A100 stock. Creates
 with MCP `create-network-volume` and its `volumeType`, or REST v2 `type:

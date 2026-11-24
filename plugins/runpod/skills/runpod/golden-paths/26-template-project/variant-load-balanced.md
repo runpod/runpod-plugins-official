@@ -49,7 +49,7 @@ local `8080` setting into the endpoint.
 
 Supply the endpoint type, current port/health settings, image, secret names and disk
 requirements through a supported configuration form. Refer to
-[path 14](../14-load-balancing-endpoint.md) for the overall flow while confirming live
+[path 14](../14-load-balancing-endpoint/README.md) for the overall flow while confirming live
 tool syntax and platform limits.
 
 ## Verify

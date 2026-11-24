@@ -1,0 +1,32 @@
+{
+  "id": "15-monitor-and-debug",
+  "name": "Monitor and debug a serverless endpoint",
+  "description": "Checks worker and job health, follows a job through its status lifecycle, and reads worker logs to find why a request is slow, stuck or failing.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/15-monitor-and-debug/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "Gotchas",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/gotchas.md"
+    },
+    {
+      "name": "Endpoint workflows",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/endpoint-workflows.md"
+    },
+    {
+      "name": "Output and errors",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/reference/output-and-errors.md"
+    }
+  ],
+  "tags": ["serverless", "monitoring", "debugging", "logs"],
+  "mcp": "full",
+  "createdAt": "2026-07-13T15:58:38Z",
+  "updatedAt": "2026-11-17T20:41:53Z"
+}

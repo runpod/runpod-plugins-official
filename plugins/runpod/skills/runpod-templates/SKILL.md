@@ -87,9 +87,9 @@ CUDA-line variants of the same template — pair it with `runpodctl pod create
 | Workload | Reference | Deploy walkthrough |
 | --- | --- | --- |
 | **ComfyUI** — image generation UI at a URL | [`reference/comfyui.md`](reference/comfyui.md) | [golden path 02, variant B](../runpod/golden-paths/02-comfyui-pod/variant-b-prebuilt.md) |
-| **PyTorch** — general GPU base / dev box (2.1 → 2.9, incl. cluster + ROCm builds) | [`reference/pytorch.md`](reference/pytorch.md) | [golden path 06](../runpod/golden-paths/06-dev-pod.md) |
+| **PyTorch** — general GPU base / dev box (2.1 → 2.9, incl. cluster + ROCm builds) | [`reference/pytorch.md`](reference/pytorch.md) | [golden path 06](../runpod/golden-paths/06-dev-pod/README.md) |
 | **Ubuntu** — bare 20.04 / 22.04 / 24.04 (**CPU** category) | TODO | — |
-| **Network storage file browser** (GPU + CPU) | TODO | [golden path 07](../runpod/golden-paths/07-network-volume-handoff.md) |
+| **Network storage file browser** (GPU + CPU) | TODO | [golden path 07](../runpod/golden-paths/07-network-volume-handoff/README.md) |
 
 Add a template by adding one file here and one row above. Do not create a new skill
 per template — the task shape is identical and every registered skill costs context in

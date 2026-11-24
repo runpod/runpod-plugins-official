@@ -1,0 +1,36 @@
+{
+  "id": "04-finetune-pod",
+  "name": "LoRA fine-tune on a pod",
+  "description": "LoRA-fine-tunes a small LLM on a GPU pod, saves the adapter to a network volume, and frees the GPU when training finishes.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/04-finetune-pod/README.md",
+  "supplementalSkills": [
+    {
+      "name": "runpodctl",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpodctl/SKILL.md"
+    },
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "Getting started",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/getting-started.md"
+    },
+    {
+      "name": "GPU selection",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/gpu-selection.md"
+    },
+    {
+      "name": "On pod setup",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/on-pod-setup.md"
+    },
+    {
+      "name": "Storage",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/storage.md"
+    }
+  ],
+  "tags": ["fine-tuning", "lora", "pod", "network-volume"],
+  "mcp": "partial",
+  "createdAt": "2026-07-07T21:06:57Z",
+  "updatedAt": "2026-11-05T18:30:36Z"
+}

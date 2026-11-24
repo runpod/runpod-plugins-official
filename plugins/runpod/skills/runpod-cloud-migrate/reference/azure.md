@@ -53,7 +53,7 @@ Sources: Microsoft Learn, checked 2026-11-14:
 | NV, NG, Windows GPU VM | None | Keep on Azure. |
 | VM scale set | Serverless endpoint | Pods do not autoscale. |
 | Managed online endpoint, scoring script | Queue endpoint | `init()` becomes module scope, `run()` becomes `handler(job)`. |
-| Managed online endpoint, custom container | Load-balancing endpoint | See [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint.md). |
+| Managed online endpoint, custom container | Load-balancing endpoint | See [golden path 14](../../runpod/golden-paths/14-load-balancing-endpoint/README.md). |
 | Batch endpoint, Azure Batch | Queue endpoint `/run` + webhook, or `@app.task` | Fan out one job per file or shard. |
 | AML job, compute cluster | Pod or `@app.task` | Bring your own pipeline orchestrator. |
 | AML compute instance | Pod with `startJupyter` and `8888/http` | Official Runpod images honor the Jupyter flag. |

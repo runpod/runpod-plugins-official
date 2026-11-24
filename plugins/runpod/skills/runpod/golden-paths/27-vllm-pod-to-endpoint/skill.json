@@ -1,0 +1,24 @@
+{
+  "id": "27-vllm-pod-to-endpoint",
+  "name": "vLLM on a pod, then a load-balancing endpoint",
+  "description": "Proves a vLLM config on a pod, moves the same image and arguments to a load-balancing serverless endpoint, and verifies both with an OpenAI client.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/27-vllm-pod-to-endpoint/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "vLLM",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-vllm/SKILL.md"
+    },
+    {
+      "name": "Queue endpoint",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-vllm/reference/queue-endpoint.md"
+    }
+  ],
+  "tags": ["vllm", "llm", "pod", "serverless", "load-balancing"],
+  "mcp": "partial",
+  "createdAt": "2026-11-09T18:52:28Z",
+  "updatedAt": "2026-11-09T18:52:28Z"
+}

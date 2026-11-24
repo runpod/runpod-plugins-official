@@ -50,8 +50,8 @@ check its *Known differences* first; don't migrate silently.
 
 **Worked examples first for anything multi-step.** Flash appears in end-to-end paths:
 [03 variant B (whisper endpoint)](../runpod/golden-paths/03-whisper-endpoint/variant-b-flash.md),
-[07 (network-volume handoff)](../runpod/golden-paths/07-network-volume-handoff.md) and
-[08 (fine-tune → serve)](../runpod/golden-paths/08-finetune-to-serverless.md); the full index is
+[07 (network-volume handoff)](../runpod/golden-paths/07-network-volume-handoff/README.md) and
+[08 (fine-tune → serve)](../runpod/golden-paths/08-finetune-to-serverless/README.md); the full index is
 [runpod/golden-paths/README.md](../runpod/golden-paths/README.md). Runnable single-file apps
 live in [`examples/`](examples/).
 

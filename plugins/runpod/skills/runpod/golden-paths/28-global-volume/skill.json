@@ -1,0 +1,28 @@
+{
+  "id": "28-global-volume",
+  "name": "Share model files across data centers with a global volume",
+  "description": "Puts model files on one global volume, mounts it on GPU compute in whichever data center has stock, and checks the compute reads them.",
+  "skill": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod/golden-paths/28-global-volume/README.md",
+  "supplementalSkills": [
+    {
+      "name": "Runpod MCP",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-mcp/SKILL.md"
+    },
+    {
+      "name": "Companion CLIs",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/SKILL.md"
+    },
+    {
+      "name": "Storage",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-usage/reference/storage.md"
+    },
+    {
+      "name": "Hugging Face setup",
+      "url": "https://raw.githubusercontent.com/runpod/runpod-plugins-official/main/plugins/runpod/skills/runpod-companion-clis/reference/huggingface-setup.md"
+    }
+  ],
+  "tags": ["global-volume", "storage", "multi-region"],
+  "mcp": "partial",
+  "createdAt": "2026-11-17T20:32:05Z",
+  "updatedAt": "2026-11-17T20:32:05Z"
+}
