@@ -1,12 +1,14 @@
 ---
 name: runpod-cost-audit
-description: 'Read-only Runpod spend audit: find idle spend, explain serverless billing when nothing seems
-  to run, break spend down by resource type and by resource, and give a whole-account snapshot. Every
-  figure comes from the MCP billing and list reads; it recommends actions and never stops or changes anything.
-  Use when the user asks about their bill, what is costing money, what is running on the account, or tells
-  you to stop or delete idle resources it did not name by id: the audit with ids and the user''s own next
-  steps is the answer. A resource the user names by id goes to runpod-pod-doctor or runpod-endpoint-ops, and the change
-  is made.'
+description: >-
+  Read-only Runpod spend audit: find idle spend, explain serverless billing when nothing
+  seems to run, break spend down by resource type and by resource, and give a
+  whole-account snapshot. Every figure comes from the MCP billing and list reads; it
+  recommends actions and never stops or changes anything. Use when the user asks about
+  their bill, what is costing money, what is running on the account, or tells you to stop
+  or delete idle resources it did not name by id: the audit with ids and the user's own
+  next steps is the answer. A resource the user names by id goes to runpod-pod-doctor or
+  runpod-endpoint-ops, and the change is made.
 metadata:
   author: runpod
   version: "2.2.2" # x-release-please-version

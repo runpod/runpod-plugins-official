@@ -1,10 +1,12 @@
 ---
 name: runpod-endpoint-ops
-description: 'Operate a Serverless endpoint that already exists: diagnose queued jobs and dying workers,
-  tune scaling, idle timeout and FlashBoot safely, pin the GPU selection, and manage the queue (cancel
-  a job, purge). Read-only by default; changes only the exact setting the user authorized, with a read
-  before and after. Use when the user has an endpoint and asks why it is slow, stuck or failing, or wants
-  one of its settings changed through the Runpod MCP tools.'
+description: >-
+  Operate a Serverless endpoint that already exists: diagnose queued jobs and dying
+  workers, tune scaling, idle timeout and FlashBoot safely, pin the GPU selection, and
+  manage the queue (cancel a job, purge). Read-only by default; changes only the exact
+  setting the user authorized, with a read before and after. Use when the user has an
+  endpoint and asks why it is slow, stuck or failing, or wants one of its settings changed
+  through the Runpod MCP tools.
 metadata:
   author: runpod
   version: "2.2.2" # x-release-please-version
