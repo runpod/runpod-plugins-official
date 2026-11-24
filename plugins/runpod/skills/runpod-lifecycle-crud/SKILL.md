@@ -12,7 +12,7 @@ description: >-
   decide.
 metadata:
   author: runpod
-  version: "2.2.2" # x-release-please-version
+  version: "2.3.0" # x-release-please-version
   concepts: [template, network-volume, global-volume, audit-log, organization, registry-credential, runpod-secret, ssh-key, instant-cluster, data-center, gpu-availability]
 license: Apache-2.0
 ---

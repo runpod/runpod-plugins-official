@@ -13,7 +13,7 @@ description: >-
   worker-vllm, a vllm/vllm-openai image, or a vLLM Pod), defer to runpod-vllm.
 metadata:
   author: runpod
-  version: "2.2.2" # x-release-please-version
+  version: "2.3.0" # x-release-please-version
   concepts: [serverless-endpoint, serverless-handler, worker, job, gpu-pool, gpu-availability, hub-repo, template, network-volume, endpoint-release, flashboot, registry-credential, volume-cache]
 license: Apache-2.0
 ---

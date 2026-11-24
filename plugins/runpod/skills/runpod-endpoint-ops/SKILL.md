@@ -9,7 +9,7 @@ description: >-
   through the Runpod MCP tools.
 metadata:
   author: runpod
-  version: "2.2.2" # x-release-please-version
+  version: "2.3.0" # x-release-please-version
   concepts: [serverless-endpoint, endpoint-autoscaling, worker, job, flashboot, gpu-pool, log-stream, endpoint-release, volume-cache]
 license: Apache-2.0
 ---
