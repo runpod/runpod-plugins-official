@@ -11,7 +11,7 @@ description: >-
   MCP tools.
 metadata:
   author: runpod
-  version: "2.2.2" # x-release-please-version
+  version: "2.3.0" # x-release-please-version
   concepts: [gpu-type, gpu-availability, gpu-pool, cpu-flavor, data-center, cloud-tier, hub-repo, template, public-endpoint]
 license: Apache-2.0
 ---

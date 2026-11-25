@@ -6,6 +6,18 @@
 All notable changes to the `runpod` plugin are documented here. This project
 follows [Semantic Versioning](https://semver.org/).
 
+## [2.3.0](https://github.com/runpod/runpod-plugins-official/compare/v2.2.2...v2.3.0) (2026-11-24)
+
+
+### Features
+
+* give every golden path a folder and a skill.json ([#135](https://github.com/runpod/runpod-plugins-official/issues/135)) ([0a189cd](https://github.com/runpod/runpod-plugins-official/commit/0a189cddbc6f49f7d967c7ed46c16f8643830c7e))
+
+
+### Bug Fixes
+
+* **skills:** write journey skill descriptions as YAML block scalars ([#137](https://github.com/runpod/runpod-plugins-official/issues/137)) ([e497771](https://github.com/runpod/runpod-plugins-official/commit/e49777141088f36f98602002828b8248c46ad776))
+
 ## [2.2.2](https://github.com/runpod/runpod-plugins-official/compare/v2.2.1...v2.2.2) (2026-11-23)
 
 

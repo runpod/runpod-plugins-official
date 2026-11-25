@@ -9,7 +9,7 @@ description: >-
   Read-only until the user asks for an action.
 metadata:
   author: runpod
-  version: "2.2.2" # x-release-please-version
+  version: "2.3.0" # x-release-please-version
   concepts: [pod, machine, container-disk, pod-volume-disk, exposed-port, log-stream, gpu-availability, pod-migration]
 license: Apache-2.0
 ---
